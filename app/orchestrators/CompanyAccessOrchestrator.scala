@@ -105,13 +105,13 @@ class CompanyAccessOrchestrator(
         logger.debug(s"$company is a head office, returning access for head office")
         for {
           userLevel <- companyAccessRepository.getUserLevel(company.id, user)
-          access <- getHeadOfficeAccess(user, userLevel, company, editable = true)
+          access    <- getHeadOfficeAccess(user, userLevel, company, editable = true)
         } yield access
 
       case maybeHeadOffice =>
         logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
         for {
-          userAccessLevel <- companyAccessRepository.getUserLevel(company.id, user)
+          userAccessLevel      <- companyAccessRepository.getUserLevel(company.id, user)
           subsidiaryUserAccess <- getSubsidiaryAccess(user, userAccessLevel, List(company), editable = true)
           maybeHeadOfficeCompany <- maybeHeadOffice match {
             case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)

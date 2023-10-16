@@ -24,20 +24,20 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
 
   val now = OffsetDateTime.now()
 
-  lazy val userRepository = components.userRepository
+  lazy val userRepository  = components.userRepository
   lazy val eventRepository = components.eventRepository
-  val userToto = Fixtures.genProUser.sample.get
-  val activeDgccrfUser = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusDays(1)))
-  val expiredDgccrfUser = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusYears(2)))
-  val inactiveDgccrfUser = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
+  val userToto             = Fixtures.genProUser.sample.get
+  val activeDgccrfUser     = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusDays(1)))
+  val expiredDgccrfUser    = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusYears(2)))
+  val inactiveDgccrfUser   = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
   val inactiveDgccrfUserWithEmails =
     Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
-  val inactiveProUser = Fixtures.genProUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
+  val inactiveProUser   = Fixtures.genProUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
   val inactiveAdminUser = Fixtures.genAdminUser.sample.get.copy(lastEmailValidation = Some(now.minusMonths(6)))
 
   val user1NotDeleted = Fixtures.genProUser.sample.get
-  val user1Deleted = Fixtures.genProUser.sample.get.copy(email = user1NotDeleted.email, deletionDate = Some(now))
-  val user2Deleted1 = Fixtures.genProUser.sample.get.copy(deletionDate = Some(now))
+  val user1Deleted    = Fixtures.genProUser.sample.get.copy(email = user1NotDeleted.email, deletionDate = Some(now))
+  val user2Deleted1   = Fixtures.genProUser.sample.get.copy(deletionDate = Some(now))
   val user2Deleted2 =
     Fixtures.genProUser.sample.get.copy(email = user2Deleted1.email, deletionDate = Some(now.minusDays(1)))
 

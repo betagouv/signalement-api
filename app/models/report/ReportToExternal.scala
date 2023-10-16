@@ -39,7 +39,7 @@ case class ReportToExternal(
 object ReportToExternal {
 
   val reponseConsoInputLabel = "Votre question"
-  val descriptionInputLabel = "Description"
+  val descriptionInputLabel  = "Description"
 
   def fromReport(r: Report) =
     ReportToExternal(

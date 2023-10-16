@@ -13,10 +13,10 @@ import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 class ResponseConsumerReviewTable(tag: Tag)
     extends TypedDatabaseTable[ResponseConsumerReview, ResponseConsumerReviewId](tag, "report_consumer_review") {
 
-  def reportId = column[UUID]("report_id")
+  def reportId     = column[UUID]("report_id")
   def creationDate = column[OffsetDateTime]("creation_date")
-  def evaluation = column[ResponseEvaluation]("evaluation")
-  def details = column[Option[String]]("details")
+  def evaluation   = column[ResponseEvaluation]("evaluation")
+  def details      = column[Option[String]]("details")
 
   type ResponseConsumerReviewData = (
       ResponseConsumerReviewId,

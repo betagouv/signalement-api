@@ -12,7 +12,7 @@ sealed case class ReportedPhoneStatus(value: String)
 
 object ReportedPhoneStatus {
   val VALIDATED = ReportedPhoneStatus("VALIDATED")
-  val PENDING = ReportedPhoneStatus("PENDING")
+  val PENDING   = ReportedPhoneStatus("PENDING")
 
   val values = List(VALIDATED, PENDING)
 

@@ -30,12 +30,12 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     with JsonMatchers {
 
   implicit val ec: ExecutionContext = ee.executionContext
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                = Logger(this.getClass)
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
+  lazy val userRepository                        = components.userRepository
+  lazy val companyRepository                     = components.companyRepository
+  lazy val companyAccessRepository               = components.companyAccessRepository
+  lazy val companiesVisibilityOrchestrator       = components.companiesVisibilityOrchestrator
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
 //  implicit lazy val frontRoute = components.frontRoute
@@ -51,7 +51,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   val unrelatedCompany = Fixtures.genCompany.sample.get
 
   val reportForSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get
-  val reportForUnrelated = Fixtures.genReportForCompany(unrelatedCompany).sample.get
+  val reportForUnrelated  = Fixtures.genReportForCompany(unrelatedCompany).sample.get
 
   override def setupData() =
     Await.result(

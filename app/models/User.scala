@@ -36,14 +36,14 @@ case class User(
 object User {
   implicit val userWrites: Writes[User] = (user: User) =>
     Json.obj(
-      "id" -> user.id,
-      "email" -> user.email,
-      "firstName" -> user.firstName,
-      "lastName" -> user.lastName,
-      "role" -> user.userRole.entryName,
-      "permissions" -> user.userRole.permissions,
+      "id"                  -> user.id,
+      "email"               -> user.email,
+      "firstName"           -> user.firstName,
+      "lastName"            -> user.lastName,
+      "role"                -> user.userRole.entryName,
+      "permissions"         -> user.userRole.permissions,
       "lastEmailValidation" -> user.lastEmailValidation,
-      "deletionDate" -> user.deletionDate
+      "deletionDate"        -> user.deletionDate
     )
 
 }

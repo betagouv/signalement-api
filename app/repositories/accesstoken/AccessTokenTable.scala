@@ -13,13 +13,13 @@ import java.time._
 import java.util.UUID
 
 class AccessTokenTable(tag: Tag) extends DatabaseTable[AccessToken](tag, "access_tokens") {
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def kind = column[TokenKind]("kind")
-  def token = column[String]("token")
-  def valid = column[Boolean]("valid")
-  def companyId = column[Option[UUID]]("company_id")
-  def level = column[Option[AccessLevel]]("level")
-  def emailedTo = column[Option[EmailAddress]]("emailed_to")
+  def creationDate   = column[OffsetDateTime]("creation_date")
+  def kind           = column[TokenKind]("kind")
+  def token          = column[String]("token")
+  def valid          = column[Boolean]("valid")
+  def companyId      = column[Option[UUID]]("company_id")
+  def level          = column[Option[AccessLevel]]("level")
+  def emailedTo      = column[Option[EmailAddress]]("emailed_to")
   def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
   def * = (
     id,

@@ -34,8 +34,8 @@ object WebsiteExtractActor {
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
   case class ExtractRequest(requestedBy: User, rawFilters: RawFilters) extends WebsiteExtractCommand
-  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends WebsiteExtractCommand
-  case object ExtractRequestFailure extends WebsiteExtractCommand
+  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User)    extends WebsiteExtractCommand
+  case object ExtractRequestFailure                                    extends WebsiteExtractCommand
 
   val logger: Logger = Logger(this.getClass)
 
@@ -54,9 +54,9 @@ object WebsiteExtractActor {
             // FIXME: We might want to move the random name generation
             // in a common place if we want to reuse it for other async files
             asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
-            tmpPath <- genTmpFile(websiteRepository, signalConsoConfiguration, rawFilters)
+            tmpPath   <- genTmpFile(websiteRepository, signalConsoConfiguration, rawFilters)
             remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
-            _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
+            _          <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
           } yield ExtractRequestSuccess(asyncFile.id, requestedBy)
 
           context.pipeToSelf(result) {
@@ -102,7 +102,7 @@ object WebsiteExtractActor {
   )(implicit ec: ExecutionContext): Future[Path] = {
 
     val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseDate(filters.end)
+    val endDate   = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     websiteRepository.getUnkonwnReportCountByHost(filters.query, startDate, endDate).map { reports =>

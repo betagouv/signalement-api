@@ -32,8 +32,8 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   val mockMailRetriesService = mock[MailRetriesService]
-  val mockEventRepository = mock[EventRepositoryInterface]
-  val mockUserRepository = mock[UserRepositoryInterface]
+  val mockEventRepository    = mock[EventRepositoryInterface]
+  val mockUserRepository     = mock[UserRepositoryInterface]
 
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
@@ -49,7 +49,7 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",
-          "play.mailer.mock" -> true
+          "play.mailer.mock"                    -> true
         ).withFallback(
           super.configuration
         )
@@ -60,18 +60,18 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
 
   }
 
-  val appLoader = new FakeApplicationLoader()
+  val appLoader        = new FakeApplicationLoader()
   val app: Application = TestApp.buildApp(appLoader)
-  val mailService = appLoader.components.mailService
+  val mailService      = appLoader.components.mailService
 
   "InactiveDgccrfAccountReminderTask" should {
 
     "send send emails and create events" in {
 
-      val now = OffsetDateTime.now()
-      val firstReminder = now.minusMonths(6)
+      val now            = OffsetDateTime.now()
+      val firstReminder  = now.minusMonths(6)
       val secondReminder = now.minusMonths(9)
-      val expiration = now.minusMonths(12)
+      val expiration     = now.minusMonths(12)
 
       val firstMailToSendUser = Fixtures.genDgccrfUser.sample.get
 

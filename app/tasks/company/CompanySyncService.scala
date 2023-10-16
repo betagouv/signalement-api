@@ -31,7 +31,7 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
 ) extends CompanySyncServiceInterface {
   val logger: Logger = Logger(this.getClass)
 
-  val SearchEndpoint = "/api/companies/search"
+  val SearchEndpoint      = "/api/companies/search"
   val SirenSearchEndpoint = "/api/companies/siren/search"
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()

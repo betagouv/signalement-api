@@ -151,7 +151,7 @@ class ReportOrchestrator(
   ): Future[Option[Website]] = {
     val maybeWebsite: Option[Website] = for {
       websiteUrl <- websiteURLOpt
-      host <- websiteUrl.getHost
+      host       <- websiteUrl.getHost
     } yield Website(host = host, companyCountry = companyCountry.map(_.code), companyId = companyOpt.map(_.id))
 
     maybeWebsite.map { website =>
@@ -162,11 +162,11 @@ class ReportOrchestrator(
 
   def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
     for {
-      _ <- validateCompany(draftReport)
-      _ <- validateSpamSimilarReport(draftReport)
-      _ <- validateReportIdentification(draftReport)
-      _ <- validateConsumerEmail(draftReport)
-      _ <- validateNumberOfAttachments(draftReport)
+      _             <- validateCompany(draftReport)
+      _             <- validateSpamSimilarReport(draftReport)
+      _             <- validateReportIdentification(draftReport)
+      _             <- validateConsumerEmail(draftReport)
+      _             <- validateNumberOfAttachments(draftReport)
       createdReport <- createReport(draftReport)
     } yield createdReport
 
@@ -199,11 +199,11 @@ class ReportOrchestrator(
   private[orchestrators] def validateSpamSimilarReport(draftReport: ReportDraft): Future[Unit] = {
     logger.debug(s"Checking if similar report have been submitted")
 
-    val startOfDay = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC)
+    val startOfDay  = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC)
     val startOfWeek = LocalDate.now().minusDays(7).atStartOfDay().atOffset(ZoneOffset.UTC)
 
     val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK = 4
-    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY = 2
+    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY  = 2
 
     reportRepository
       .findSimilarReportList(draftReport, after = startOfWeek)
@@ -253,7 +253,7 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeReportedCompany <- extractOptionalCompany(draftReport)
+      maybeReportedCompany        <- extractOptionalCompany(draftReport)
       maybeCompanyOfSocialNetwork <- draftReport.influencer.flatTraverse(extractCompanyOfSocialNetwork)
       maybeCompany = maybeReportedCompany.orElse(maybeCompanyOfSocialNetwork)
       maybeCountry = extractOptionnalCountry(draftReport)
@@ -264,7 +264,7 @@ class ReportOrchestrator(
         } yield (company, users)
       }.sequence
       reportCreationDate = OffsetDateTime.now()
-      expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
+      expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
       reportToCreate = draftReport.generateReport(
         maybeReportedCompany.map(_.id),
         maybeCompanyOfSocialNetwork,
@@ -273,11 +273,11 @@ class ReportOrchestrator(
       )
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
-      _ <- createReportMetadata(draftReport, report)
-      files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
+      _             <- createReportMetadata(draftReport, report)
+      files         <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
-      _ <- notifyDgccrfIfNeeded(updatedReport)
-      _ <- notifyConsumer(updatedReport, maybeCompany, files)
+      _             <- notifyDgccrfIfNeeded(updatedReport)
+      _             <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
@@ -290,9 +290,9 @@ class ReportOrchestrator(
       .getOrElse(Future.successful(()))
 
   def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
-    val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())
+    val maybeCompanyId     = draftReport.companySiret.map(_ => UUID.randomUUID())
     val reportCreationDate = OffsetDateTime.now()
-    val expirationDate = chooseExpirationDate(baseDate = reportCreationDate, None)
+    val expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, None)
     draftReport.generateReport(maybeCompanyId, None, reportCreationDate, expirationDate)
   }
 
@@ -301,7 +301,7 @@ class ReportOrchestrator(
       maybeCompanyWithUsers: Option[(Company, List[User])]
   ): OffsetDateTime = {
     val delayIfCompanyHasNoUsers = Period.ofDays(60)
-    val delayIfCompanyHasUsers = Period.ofDays(25)
+    val delayIfCompanyHasUsers   = Period.ofDays(25)
     val delay =
       if (maybeCompanyWithUsers.exists(_._2.nonEmpty)) delayIfCompanyHasUsers
       else delayIfCompanyHasNoUsers
@@ -381,7 +381,7 @@ class ReportOrchestrator(
 
   private def searchCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
     (for {
-      socialNetwork <- OptionT(socialNetworkRepository.get(influencer.socialNetwork))
+      socialNetwork   <- OptionT(socialNetworkRepository.get(influencer.socialNetwork))
       companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
       c = Company(
         siret = companyToCreate.siret,
@@ -406,7 +406,7 @@ class ReportOrchestrator(
   def updateReportCountry(reportId: UUID, countryCode: String, userId: UUID): Future[Option[Report]] =
     for {
       existingReport <- reportRepository.get(reportId)
-      country = Country.fromCode(countryCode)
+      country           = Country.fromCode(countryCode)
       updateCompanyDate = OffsetDateTime.now()
 
       reportWithNewData <- existingReport match {
@@ -472,7 +472,7 @@ class ReportOrchestrator(
         )
       )
       users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
-      companyWithUsers = (company, users)
+      companyWithUsers  = (company, users)
       updateCompanyDate = OffsetDateTime.now()
       // Update the company
       reportWithNewData <- existingReport match {
@@ -633,11 +633,11 @@ class ReportOrchestrator(
   def deleteReport(id: UUID) =
     for {
       report <- reportRepository.get(id)
-      _ <- eventRepository.deleteByReportId(id)
-      _ <- reportFileOrchestrator.removeFromReportId(id)
-      _ <- reportConsumerReviewOrchestrator.remove(id)
-      _ <- reportRepository.delete(id)
-      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
+      _      <- eventRepository.deleteByReportId(id)
+      _      <- reportFileOrchestrator.removeFromReportId(id)
+      _      <- reportConsumerReviewOrchestrator.remove(id)
+      _      <- reportRepository.delete(id)
+      _      <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
@@ -663,9 +663,9 @@ class ReportOrchestrator(
 
   private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
-      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
+      newReport    <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _ <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
+      _            <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
@@ -840,7 +840,7 @@ class ReportOrchestrator(
     for {
       reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
       reports = reportsWithFiles.entities.map(_.report)
-      reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
+      reportEventsMap    <- eventRepository.fetchEventsOfReports(reports)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map(reportWithFiles =>
@@ -868,10 +868,10 @@ class ReportOrchestrator(
           Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
         case a => Future.successful(a)
       }
-      validLimit = limit.orElse(Some(maxResults))
-      validOffset = offset.orElse(Some(0L))
+      validLimit      = limit.orElse(Some(maxResults))
+      validOffset     = offset.orElse(Some(0L))
       startGetReports = System.nanoTime()
-      _ = logger.trace("----------------  BEGIN  getReports  ------------------")
+      _               = logger.trace("----------------  BEGIN  getReports  ------------------")
       paginatedReports <-
         reportRepository.getReports(
           filter,
@@ -883,7 +883,7 @@ class ReportOrchestrator(
         s"----------------  END  getReports ${TimeUnit.MILLISECONDS.convert(endGetReports - startGetReports, TimeUnit.NANOSECONDS)}  ------------------"
       )
       startGetReportFiles = System.nanoTime()
-      _ = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
+      _                   = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
       reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       endGetReportFiles = System.nanoTime()
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
@@ -893,7 +893,7 @@ class ReportOrchestrator(
 
   def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
-      report <- reportRepository.get(reportId)
+      report  <- reportRepository.get(reportId)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address(
         number = company.flatMap(_.address.number),
@@ -918,8 +918,8 @@ class ReportOrchestrator(
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     for {
-      maybeCompany <- companyRepository.get(companyId)
-      company <- maybeCompany.liftTo[Future](AppError.CompanyNotFound(companyId))
+      maybeCompany      <- companyRepository.get(companyId)
+      company           <- maybeCompany.liftTo[Future](AppError.CompanyNotFound(companyId))
       wordOccurenceList <- reportRepository.cloudWord(companyId)
     } yield wordOccurenceList
       .filterNot { wordOccurrence =>

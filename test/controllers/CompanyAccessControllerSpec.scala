@@ -33,8 +33,8 @@ import scala.concurrent.duration._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  val proAdminUser = Fixtures.genProUser.sample.get
-  val proMemberUser = Fixtures.genProUser.sample.get
+  val proAdminUser          = Fixtures.genProUser.sample.get
+  val proMemberUser         = Fixtures.genProUser.sample.get
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   val (app, components) = TestApp.buildApp(
@@ -49,10 +49,10 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
 
   implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val accessTokenRepository = components.accessTokenRepository
+  lazy val userRepository                     = components.userRepository
+  lazy val companyRepository                  = components.companyRepository
+  lazy val companyAccessRepository            = components.companyAccessRepository
+  lazy val accessTokenRepository              = components.accessTokenRepository
   lazy val companyActivationAttemptRepository = components.companyActivationAttemptRepository
 
   val company = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
@@ -60,11 +60,11 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   override def setupData() =
     Await.result(
       for {
-        admin <- userRepository.create(proAdminUser)
+        admin  <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
-        c <- companyRepository.getOrCreate(company.siret, company)
-        _ <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
-        _ <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
+        c      <- companyRepository.getOrCreate(company.siret, company)
+        _      <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
+        _      <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
       } yield (),
       Duration.Inf
     )
@@ -134,7 +134,7 @@ The myCompanies endpoint should
   }
   def checkNotConnected = {
     val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
-    val result = route(app, request).get
+    val result  = route(app, request).get
     status(result) must beEqualTo(UNAUTHORIZED)
   }
 }
@@ -150,7 +150,7 @@ The invitation workflow should
   When the same user is invited again               $e1
   Then the token should be updated                  $e5
                                                     """
-  val invitedEmail = "test@example.com"
+  val invitedEmail                 = "test@example.com"
   var invitationToken: AccessToken = null
 
   def e1 = {
@@ -176,8 +176,8 @@ The invitation workflow should
       Json.toJson(
         List(
           Map(
-            "id" -> invitationToken.id.toString,
-            "level" -> "member",
+            "id"        -> invitationToken.id.toString,
+            "level"     -> "member",
             "emailedTo" -> invitedEmail,
             "expirationDate" -> invitationToken.expirationDate.get.format(
               java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -197,10 +197,10 @@ The invitation workflow should
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(
       Json.obj(
-        "token" -> invitationToken.token,
-        "kind" -> "COMPANY_JOIN",
+        "token"        -> invitationToken.token,
+        "kind"         -> "COMPANY_JOIN",
         "companySiret" -> company.siret,
-        "emailedTo" -> invitedEmail
+        "emailedTo"    -> invitedEmail
       )
     )
   }
@@ -225,8 +225,8 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   Then no activation attempt should be registered $e8
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
-  val newProUser = Fixtures.genProUser.sample.get
+  val newCompany         = Fixtures.genCompany.sample.get
+  val newProUser         = Fixtures.genProUser.sample.get
   var token: AccessToken = null
 
   def e1 = {
@@ -288,11 +288,11 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   Then no activation attempt should be registered $e9
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
-  val existingProUser = Fixtures.genProUser.sample.get
-  var companyActivationToken: AccessToken = null
+  val newCompany                            = Fixtures.genCompany.sample.get
+  val existingProUser                       = Fixtures.genProUser.sample.get
+  var companyActivationToken: AccessToken   = null
   var initialUserCreationToken: AccessToken = null
-  var initialUserTokenValidity = JavaDuration.ofMinutes(1)
+  var initialUserTokenValidity              = JavaDuration.ofMinutes(1)
 
   def e1 = {
     val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
@@ -378,8 +378,8 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   Then no activation attempt should be registered $e7
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
-  val existingProUser = Fixtures.genProUser.sample.get
+  val newCompany         = Fixtures.genCompany.sample.get
+  val existingProUser    = Fixtures.genProUser.sample.get
   var token: AccessToken = null
 
   def e1 = {
@@ -437,8 +437,8 @@ class NewCompanyActivationWithWrongTokenSpec(implicit ee: ExecutionEnv) extends 
   Then there should be ONE activation attempt $e8
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
-  val newProUser = Fixtures.genProUser.sample.get
+  val newCompany         = Fixtures.genCompany.sample.get
+  val newProUser         = Fixtures.genProUser.sample.get
   var token: AccessToken = null
 
   def e1 = {
@@ -498,8 +498,8 @@ class NewCompanyActivationWithWrongTokenAndTooManyAttemptsSpec(implicit ee: Exec
   Then there should be still 20 activation attempts $e8
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
-  val newProUser = Fixtures.genProUser.sample.get
+  val newCompany         = Fixtures.genCompany.sample.get
+  val newProUser         = Fixtures.genProUser.sample.get
   var token: AccessToken = null
 
   def e1 = {
@@ -571,7 +571,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   And the token be used                       $e5
                                               """
 
-  val newCompany = Fixtures.genCompany.sample.get
+  val newCompany         = Fixtures.genCompany.sample.get
   var token: AccessToken = null
   def e1 = {
     val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)

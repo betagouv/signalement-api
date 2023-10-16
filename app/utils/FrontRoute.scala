@@ -10,7 +10,7 @@ import java.util.UUID
 class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
   object website {
-    val url = signalConsoConfiguration.websiteURL
+    val url    = signalConsoConfiguration.websiteURL
     def litige = url.resolve(s"/litige")
 
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
@@ -20,15 +20,15 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
   object dashboard {
     def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
-    def login = url("/connexion")
+    def login             = url("/connexion")
     def subscriptionDGCCRFReport(reportId: UUID) = url(
       s"/suivi-des-signalements/report/${reportId.toString}?mtm_campaign=subscription&anchor=attachment"
     )
 
-    def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
+    def validateEmail(token: String)        = url(s"/connexion/validation-email?token=${token}")
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
-    def activation = url("/activation")
-    def welcome = url("/")
+    def activation                          = url("/activation")
+    def welcome                             = url("/")
 
     object Admin {
       def register(token: String) = url(s"/admin/rejoindre/?token=$token")
@@ -41,7 +41,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
         s"/bilan-entreprise/${companyId.toString}?mtm_campaign=subscription"
       )
       def register(siret: SIRET, token: String) = url(s"/entreprise/rejoindre/${siret}?token=${token}")
-      def manageNotification() = url(s"/mes-entreprises")
+      def manageNotification()                  = url(s"/mes-entreprises")
     }
   }
 }

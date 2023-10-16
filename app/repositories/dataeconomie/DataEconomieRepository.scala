@@ -13,7 +13,7 @@ class DataEconomieRepository(
 ) extends DataEconomieRepositoryInterface {
 
   implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
-  val batchSize = 5000
+  val batchSize                      = 5000
   system.registerOnTermination(() => session.close())
 
   import session.profile.api._

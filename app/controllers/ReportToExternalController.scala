@@ -45,7 +45,7 @@ class ReportToExternalController(
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
-          report <- reportRepository.get(id)
+          report      <- reportRepository.get(id)
           reportFiles <- report.map(r => reportFileRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield report
           .map(report => ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))
@@ -89,7 +89,7 @@ class ReportToExternalController(
       withTags = qs.seq("tags").map(ReportTag.withName)
     )
     val offset = qs.long("offset")
-    val limit = qs.int("limit")
+    val limit  = qs.int("limit")
 
     for {
       reportsWithFiles <- reportOrchestrator.getReportsWithFile(

@@ -57,11 +57,11 @@ class EventsOrchestrator(
       maybeReport <- reportRepository.get(reportId)
       _ = logger.debug("Checking if report exists")
       _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
-      _ = logger.debug("Found report")
+      _      = logger.debug("Found report")
       filter = buildEventFilter(eventType)
-      _ = logger.debug("Fetching events")
+      _      = logger.debug("Fetching events")
       events <- eventRepository.getEventsWithUsers(reportId, filter)
-      _ = logger.debug(s" ${events.length} reports events found")
+      _            = logger.debug(s" ${events.length} reports events found")
       reportEvents = filterAndTransformEvents(userRole, events)
     } yield reportEvents
 
@@ -74,11 +74,11 @@ class EventsOrchestrator(
       maybeCompany <- companyRepository.findBySiret(siret)
       _ = logger.debug("Checking if company exists")
       company <- maybeCompany.liftTo[Future](CompanySiretNotFound(siret))
-      _ = logger.debug("Found company")
+      _      = logger.debug("Found company")
       filter = buildEventFilter(eventType)
-      _ = logger.debug("Fetching events")
+      _      = logger.debug("Fetching events")
       events <- eventRepository.getCompanyEventsWithUsers(company.id, filter)
-      _ = logger.debug(s" ${events.length} company events found")
+      _             = logger.debug(s" ${events.length} company events found")
       companyEvents = filterAndTransformEvents(userRole, events)
     } yield companyEvents
 

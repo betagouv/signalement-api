@@ -54,9 +54,9 @@ object ReportedPhonesExtractActor {
           val result = for {
             // FIXME: We might want to move the random name generation
             // in a common place if we want to reuse it for other async files
-            tmpPath <- genTmpFile(config, reportRepository, rawFilters)
+            tmpPath    <- genTmpFile(config, reportRepository, rawFilters)
             remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
-            _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+            _          <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
           } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
 
           context.pipeToSelf(result) {
@@ -104,7 +104,7 @@ object ReportedPhonesExtractActor {
   ): Future[Path] = {
 
     val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseDate(filters.end)
+    val endDate   = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     reportRepository.getPhoneReports(startDate, endDate).map { reports =>

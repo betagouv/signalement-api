@@ -100,7 +100,7 @@ class AccountController(
   def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       token <- request.parseBody[String](JsPath \ "token")
-      user <- accessesOrchestrator.validateDGCCRFEmail(token)
+      user  <- accessesOrchestrator.validateDGCCRFEmail(token)
       authenticator <- silhouette.env.authenticatorService
         .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
       _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -116,7 +116,7 @@ class AccountController(
 
   def edit() = SecuredAction.async(parse.json) { implicit request =>
     for {
-      userUpdate <- request.parseBody[UserUpdate]()
+      userUpdate     <- request.parseBody[UserUpdate]()
       updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
     } yield updatedUserOpt match {
       case Some(updatedUser) => Ok(Json.toJson(updatedUser))

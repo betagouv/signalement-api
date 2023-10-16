@@ -23,11 +23,11 @@ class AsyncFileController(
       asyncFiles <- asyncFileRepository.list(request.identity, kind.map(AsyncFileKind.withName))
     } yield Ok(Json.toJson(asyncFiles.map { case asyncFile: AsyncFile =>
       Map(
-        "id" -> asyncFile.id.toString,
+        "id"           -> asyncFile.id.toString,
         "creationDate" -> asyncFile.creationDate.toString,
-        "filename" -> asyncFile.filename.getOrElse(""),
-        "kind" -> asyncFile.kind.toString,
-        "url" -> asyncFile.storageFilename.map(s3Service.getSignedUrl(_)).getOrElse("")
+        "filename"     -> asyncFile.filename.getOrElse(""),
+        "kind"         -> asyncFile.kind.toString,
+        "url"          -> asyncFile.storageFilename.map(s3Service.getSignedUrl(_)).getOrElse("")
       )
     }))
   }

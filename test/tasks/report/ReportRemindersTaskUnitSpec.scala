@@ -36,10 +36,10 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
 
   "ReportReminderTask" should {
     "successfully send grouped emails by company" in {
-      val reportRepository = mock[ReportRepositoryInterface]
-      val eventRepository = mock[EventRepositoryInterface]
-      val mailService = mock[MailServiceInterface]
-      val companyRepository = mock[CompanyRepositoryInterface]
+      val reportRepository        = mock[ReportRepositoryInterface]
+      val eventRepository         = mock[EventRepositoryInterface]
+      val mailService             = mock[MailServiceInterface]
+      val companyRepository       = mock[CompanyRepositoryInterface]
       val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
       val companiesVisibilityOrchestrator =
         new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
@@ -49,13 +49,13 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
 
       val company1 = Fixtures.genCompany.sample.get
       val company2 = Fixtures.genCompany.sample.get
-      val report1 = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.TraitementEnCours)
-      val report2 = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.TraitementEnCours)
-      val report3 = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.Transmis)
-      val report4 = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.TraitementEnCours)
-      val report5 = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
-      val report6 = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
-      val report7 = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
+      val report1  = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.TraitementEnCours)
+      val report2  = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.TraitementEnCours)
+      val report3  = Fixtures.genReportForCompany(company1).sample.get.copy(status = ReportStatus.Transmis)
+      val report4  = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.TraitementEnCours)
+      val report5  = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
+      val report6  = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
+      val report7  = Fixtures.genReportForCompany(company2).sample.get.copy(status = ReportStatus.Transmis)
       val proUser1 = Fixtures.genProUser.sample.get
 
       val event3 = Fixtures.genEventForReport(report3.id, eventType = EventType.SYSTEM, EMAIL_PRO_NEW_REPORT).sample.get
@@ -99,7 +99,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
         .thenReturn(Future.successful(null))
 
       val futureRes = reportRemindersTask.runTask(OffsetDateTime.now())
-      val res = Await.result(futureRes, 1.second)
+      val res       = Await.result(futureRes, 1.second)
 
       res._1.length shouldEqual 0 // 0 failures
       res._2.length shouldEqual 3 // 3 emails sent

@@ -9,5 +9,5 @@ object Os extends PlayEnum[Os] {
   val values = findValues
 
   case object Android extends Os
-  case object Ios extends Os
+  case object Ios     extends Os
 }

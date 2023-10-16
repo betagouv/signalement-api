@@ -22,7 +22,7 @@ object HtmlConverterActor {
       converterProperties: ConverterProperties
   ) extends ConvertCommand
   case class ConvertSuccess(outputStream: OutputStream) extends ConvertCommand
-  case class ConvertFailed(outputStream: OutputStream) extends ConvertCommand
+  case class ConvertFailed(outputStream: OutputStream)  extends ConvertCommand
 
   val logger: Logger = Logger(this.getClass)
 

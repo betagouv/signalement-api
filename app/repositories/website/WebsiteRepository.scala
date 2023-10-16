@@ -31,7 +31,7 @@ class WebsiteRepository(
 ) extends TypedCRUDRepository[WebsiteTable, Website, WebsiteId]
     with WebsiteRepositoryInterface {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger                           = Logger(this.getClass())
   override val table: TableQuery[WebsiteTable] = WebsiteTable.table
 
   import dbConfig._

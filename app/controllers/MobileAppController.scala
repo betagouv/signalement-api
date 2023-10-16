@@ -25,7 +25,7 @@ class MobileAppController(
       Seq(
         "minAppVersion" -> JsObject(
           Seq(
-            "ios" -> JsString(signalConsoConfiguration.mobileApp.minimumAppVersionIos),
+            "ios"     -> JsString(signalConsoConfiguration.mobileApp.minimumAppVersionIos),
             "android" -> JsString(signalConsoConfiguration.mobileApp.minimumAppVersionAndroid)
           )
         )

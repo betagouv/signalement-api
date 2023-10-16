@@ -28,8 +28,8 @@ object Fixtures {
   val genGender = Gen.oneOf(Some(Gender.Female), Some(Gender.Male), None)
 
   val genConsumer = for {
-    id <- arbitrary[UUID]
-    name <- arbString.arbitrary
+    id     <- arbitrary[UUID]
+    name   <- arbString.arbitrary
     apiKey <- arbString.arbitrary
   } yield Consumer(
     id = id,
@@ -38,12 +38,12 @@ object Fixtures {
   )
 
   val genUser = for {
-    id <- arbitrary[UUID]
-    password <- arbString.arbitrary
+    id        <- arbitrary[UUID]
+    password  <- arbString.arbitrary
     firstName <- genFirstName
-    lastName <- genLastName
-    userRole <- Gen.oneOf(UserRole.values)
-    email <- genEmailAddress(firstName, lastName)
+    lastName  <- genLastName
+    userRole  <- Gen.oneOf(UserRole.values)
+    email     <- genEmailAddress(firstName, lastName)
   } yield User(
     id = id,
     password = password + "testtesttestA1!",
@@ -55,7 +55,7 @@ object Fixtures {
   )
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
-  val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
+  val genLastName  = Gen.oneOf("Doe", "Durand", "Dupont")
   def genEmailAddress(firstName: String, lastName: String): Gen[EmailAddress] = EmailAddress(
     s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
@@ -64,8 +64,8 @@ object Fixtures {
     s"${genFirstName.sample.get}.${genLastName.sample.get}.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
 
-  val genAdminUser = genUser.map(_.copy(userRole = UserRole.Admin))
-  val genProUser = genUser.map(_.copy(userRole = UserRole.Professionnel))
+  val genAdminUser  = genUser.map(_.copy(userRole = UserRole.Admin))
+  val genProUser    = genUser.map(_.copy(userRole = UserRole.Professionnel))
   val genDgccrfUser = genUser.map(_.copy(userRole = UserRole.DGCCRF))
 
   val genSiren = for {
@@ -73,15 +73,15 @@ object Fixtures {
   } yield SIREN.fromUnsafe("" + randInt takeRight 9)
 
   def genSiret(siren: Option[SIREN] = None) = for {
-    randInt <- Gen.choose(0, 99999)
+    randInt  <- Gen.choose(0, 99999)
     sirenGen <- genSiren
   } yield SIRET.fromUnsafe(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
 
   def genAddress(postalCode: Option[String] = Some("37500")) = for {
-    number <- arbString.arbitrary
-    street <- arbString.arbitrary
+    number            <- arbString.arbitrary
+    street            <- arbString.arbitrary
     addressSupplement <- arbString.arbitrary
-    city <- arbString.arbitrary
+    city              <- arbString.arbitrary
   } yield Address(
     number = Some("number_" + number),
     street = Some("street_" + street),
@@ -91,10 +91,10 @@ object Fixtures {
   )
 
   val genCompany = for {
-    _ <- arbitrary[UUID]
-    name <- arbString.arbitrary
-    brand <- Gen.option(arbString.arbitrary)
-    siret <- genSiret()
+    _       <- arbitrary[UUID]
+    name    <- arbString.arbitrary
+    brand   <- Gen.option(arbString.arbitrary)
+    siret   <- genSiret()
     address <- genAddress()
   } yield Company(
     siret = siret,
@@ -112,8 +112,8 @@ object Fixtures {
     siret <- siren
       .map(s => Gen.choose(0, 99999).map(randInt => SIRET.fromUnsafe(s.value + ("" + randInt takeRight 5))))
       .getOrElse(genSiret())
-    name <- arbString.arbitrary
-    brand <- Gen.option(arbString.arbitrary)
+    name    <- arbString.arbitrary
+    brand   <- Gen.option(arbString.arbitrary)
     address <- genAddress()
   } yield CompanySearchResult(
     siret = siret,
@@ -129,7 +129,7 @@ object Fixtures {
 
   val genInfluencer = for {
     socialNetwork <- Gen.oneOf(SocialNetworkSlug.values)
-    name <- arbString.arbitrary
+    name          <- arbString.arbitrary
   } yield Influencer(socialNetwork, name)
 
   val genWebsiteURL = for {
@@ -141,15 +141,15 @@ object Fixtures {
   } yield randInt.toString
 
   def genDraftReport = for {
-    gender <- genGender
-    category <- arbString.arbitrary
-    subcategory <- arbString.arbitrary
-    firstName <- genFirstName
-    lastName <- genLastName
-    email <- genEmailAddress(firstName, lastName)
+    gender           <- genGender
+    category         <- arbString.arbitrary
+    subcategory      <- arbString.arbitrary
+    firstName        <- genFirstName
+    lastName         <- genLastName
+    email            <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-    company <- genCompany
-    websiteURL <- genWebsiteURL
+    company          <- genCompany
+    websiteURL       <- genWebsiteURL
   } yield ReportDraft(
     gender = gender,
     category = category,
@@ -177,7 +177,7 @@ object Fixtures {
   )
 
   def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
-    val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    val now   = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
     reportDraft.generateReport(maybeCompanyId, None, creationDate = now, expirationDate = later)
   }
@@ -186,15 +186,15 @@ object Fixtures {
     Gen.oneOf(Gen.oneOf(ReportCategory.values.map(_.entryName)), arbString.arbitrary)
 
   def genReportForCompany(company: Company): Gen[Report] = for {
-    id <- arbitrary[UUID]
-    gender <- genGender
-    category <- genReportCategory
-    subcategory <- arbString.arbitrary
-    firstName <- genFirstName
-    lastName <- genLastName
-    email <- genEmailAddress(firstName, lastName)
+    id               <- arbitrary[UUID]
+    gender           <- genGender
+    category         <- genReportCategory
+    subcategory      <- arbString.arbitrary
+    firstName        <- genFirstName
+    lastName         <- genLastName
+    email            <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-    status <- Gen.oneOf(ReportStatus.values)
+    status           <- Gen.oneOf(ReportStatus.values)
   } yield Report(
     id = id,
     gender = gender,
@@ -231,23 +231,23 @@ object Fixtures {
     genReportForCompany(company).map(_.copy(status = status))
 
   def genReportConsumerUpdate = for {
-    firstName <- genFirstName
-    lastName <- genLastName
-    email <- genEmailAddress(firstName, lastName)
+    firstName               <- genFirstName
+    lastName                <- genLastName
+    email                   <- genEmailAddress(firstName, lastName)
     consumerReferenceNumber <- arbString.arbitrary
   } yield ReportConsumerUpdate(firstName, lastName, email, Some(consumerReferenceNumber))
 
   def genReportCompany = for {
-    name <- arbString.arbitrary
-    brand <- Gen.option(arbString.arbitrary)
+    name    <- arbString.arbitrary
+    brand   <- Gen.option(arbString.arbitrary)
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
-    siret <- genSiret()
+    siret   <- genSiret()
   } yield ReportCompany(name, brand, address, siret, None, isHeadOffice = true, isOpen = true, isPublic = true)
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
-    id <- arbitrary[UUID]
+    id        <- arbitrary[UUID]
     companyId <- arbitrary[UUID]
-    details <- arbString.arbitrary
+    details   <- arbString.arbitrary
   } yield Event(
     id = id,
     reportId = Some(reportId),
@@ -260,7 +260,7 @@ object Fixtures {
   )
 
   def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
-    id <- arbitrary[UUID]
+    id      <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
     id = id,
@@ -274,9 +274,9 @@ object Fixtures {
   )
 
   def genWebsite() = for {
-    companyId <- arbitrary[UUID]
+    companyId  <- arbitrary[UUID]
     websiteUrl <- genWebsiteURL
-    kind <- Gen.oneOf(IdentificationStatus.values)
+    kind       <- Gen.oneOf(IdentificationStatus.values)
   } yield Website(
     id = WebsiteId.generateId(),
     creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),

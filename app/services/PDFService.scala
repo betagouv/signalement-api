@@ -23,22 +23,22 @@ class PDFService(
     actor: ActorRef[HtmlConverterActor.ConvertCommand]
 ) {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger       = Logger(this.getClass)
   val tmpDirectory: String = signalConsoConfiguration.tmpDirectory
 
   def createPdfSource(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
-    val dfp = new DefaultFontProvider(false, true, true)
+    val dfp                 = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
     val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
 
     val pipedOutputStream = new PipedOutputStream()
-    val pipeSize = 8192 // To match the akka stream chunk size
-    val pipedInputStream = new PipedInputStream(pipedOutputStream, pipeSize)
+    val pipeSize          = 8192 // To match the akka stream chunk size
+    val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
 
     actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
 
@@ -51,7 +51,7 @@ class PDFService(
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
     val converterProperties = new ConverterProperties
-    val dfp = new DefaultFontProvider(true, true, true)
+    val dfp                 = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 

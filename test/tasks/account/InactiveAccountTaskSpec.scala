@@ -31,10 +31,10 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
   val (app, components) = TestApp.buildApp(
   )
 
-  lazy val userRepository = components.userRepository
-  lazy val asyncFileRepository = components.asyncFileRepository
-  lazy val subscriptionRepository = components.subscriptionRepository
-  lazy val inactiveDgccrfAccountRemoveTask = components.inactiveDgccrfAccountRemoveTask
+  lazy val userRepository                    = components.userRepository
+  lazy val asyncFileRepository               = components.asyncFileRepository
+  lazy val subscriptionRepository            = components.subscriptionRepository
+  lazy val inactiveDgccrfAccountRemoveTask   = components.inactiveDgccrfAccountRemoveTask
   lazy val inactiveDgccrfAccountReminderTask = components.inactiveDgccrfAccountReminderTask
 //  lazy val actorSystem = components.actorSystem
 
@@ -117,12 +117,12 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
                 conf
               )
                 .runTask(now.atOffset(ZoneOffset.UTC))
-              userList <- userRepository.list()
-              deletedUsersList <- userRepository.listDeleted()
-              activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
+              userList                 <- userRepository.list()
+              deletedUsersList         <- userRepository.listDeleted()
+              activeSubscriptionList   <- subscriptionRepository.list(activeDGCCRFUser.id)
               inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
-              inactivefiles <- asyncFileRepository.list(inactiveDGCCRFUser)
-              activefiles <- asyncFileRepository.list(activeDGCCRFUser)
+              inactivefiles            <- asyncFileRepository.list(inactiveDGCCRFUser)
+              activefiles              <- asyncFileRepository.list(activeDGCCRFUser)
             } yield (
               userList,
               deletedUsersList,

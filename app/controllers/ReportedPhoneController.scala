@@ -30,7 +30,7 @@ class ReportedPhoneController(
     extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
@@ -47,11 +47,11 @@ class ReportedPhoneController(
                 }
                 .map { case ((phone, siretOpt, companyNameOpt, category), count) =>
                   Json.obj(
-                    "phone" -> phone,
-                    "siret" -> siretOpt,
+                    "phone"       -> phone,
+                    "siret"       -> siretOpt,
                     "companyName" -> companyNameOpt,
-                    "category" -> category,
-                    "count" -> count
+                    "category"    -> category,
+                    "count"       -> count
                   )
                 }
             )

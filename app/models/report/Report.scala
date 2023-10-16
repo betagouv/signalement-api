@@ -85,50 +85,50 @@ object Report {
     else ReportStatus.TraitementEnCours
 
   @nowarn
-  private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
+  private[this] val jsonFormatX           = Jsonx.formatCaseClass[Report]
   implicit val reportReads: Reads[Report] = jsonFormatX
 
   implicit def writer(implicit userRole: Option[UserRole] = None): Writes[Report] = (report: Report) =>
     Json.obj(
-      "id" -> report.id,
-      "category" -> report.category,
-      "subcategories" -> report.subcategories,
-      "details" -> report.details,
-      "influencer" -> report.influencer,
-      "companyId" -> report.companyId,
-      "companyName" -> report.companyName,
-      "companyBrand" -> report.companyBrand,
-      "companyAddress" -> Json.toJson(report.companyAddress),
-      "companySiret" -> report.companySiret,
-      "creationDate" -> report.creationDate,
+      "id"               -> report.id,
+      "category"         -> report.category,
+      "subcategories"    -> report.subcategories,
+      "details"          -> report.details,
+      "influencer"       -> report.influencer,
+      "companyId"        -> report.companyId,
+      "companyName"      -> report.companyName,
+      "companyBrand"     -> report.companyBrand,
+      "companyAddress"   -> Json.toJson(report.companyAddress),
+      "companySiret"     -> report.companySiret,
+      "creationDate"     -> report.creationDate,
       "contactAgreement" -> report.contactAgreement,
-      "status" -> report.status,
-      "websiteURL" -> report.websiteURL.websiteURL,
-      "host" -> report.websiteURL.host,
-      "vendor" -> report.vendor,
-      "tags" -> report.tags,
-      "activityCode" -> report.companyActivityCode,
-      "expirationDate" -> report.expirationDate
+      "status"           -> report.status,
+      "websiteURL"       -> report.websiteURL.websiteURL,
+      "host"             -> report.websiteURL.host,
+      "vendor"           -> report.vendor,
+      "tags"             -> report.tags,
+      "activityCode"     -> report.companyActivityCode,
+      "expirationDate"   -> report.expirationDate
     ) ++ ((userRole, report.contactAgreement) match {
       case (Some(UserRole.Professionnel), false) => Json.obj()
       case (_, _) =>
         Json.obj(
-          "firstName" -> report.firstName,
-          "lastName" -> report.lastName,
-          "email" -> report.email,
+          "firstName"               -> report.firstName,
+          "lastName"                -> report.lastName,
+          "email"                   -> report.email,
           "consumerReferenceNumber" -> report.consumerReferenceNumber
         )
     }) ++ (userRole match {
       case Some(UserRole.Professionnel) => Json.obj()
       case _ =>
         Json.obj(
-          "ccrfCode" -> report.ccrfCode,
-          "phone" -> report.phone,
-          "consumerPhone" -> report.consumerPhone,
+          "ccrfCode"         -> report.ccrfCode,
+          "phone"            -> report.phone,
+          "consumerPhone"    -> report.consumerPhone,
           "employeeConsumer" -> report.employeeConsumer,
           "reponseconsoCode" -> report.reponseconsoCode,
-          "gender" -> report.gender,
-          "visibleToPro" -> report.visibleToPro
+          "gender"           -> report.gender,
+          "visibleToPro"     -> report.visibleToPro
         )
     })
 }
@@ -193,10 +193,10 @@ object DeprecatedCompanyWithNbReports {
   implicit val companyWithNbReportsWrites: Writes[DeprecatedCompanyWithNbReports] =
     (data: DeprecatedCompanyWithNbReports) =>
       Json.obj(
-        "companySiret" -> data.company.siret,
-        "companyName" -> data.company.name,
+        "companySiret"   -> data.company.siret,
+        "companyName"    -> data.company.name,
         "companyAddress" -> Json.toJson(data.company.address),
-        "count" -> data.count
+        "count"          -> data.count
       )
 
   implicit val paginatedCompanyWithNbReportsWriter: OWrites[PaginatedResult[DeprecatedCompanyWithNbReports]] =

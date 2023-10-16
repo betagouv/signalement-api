@@ -110,7 +110,7 @@ class CompanyAccessController(
     implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)
-        _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(()))
+        _     <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(()))
       } yield if (token.isDefined) Ok else NotFound
   }
 

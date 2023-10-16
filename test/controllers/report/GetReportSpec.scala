@@ -179,7 +179,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   lazy val messagesApi = components.messagesApi
 
   var someLoginInfo: Option[LoginInfo] = None
-  var someResult: Option[Result] = None
+  var someResult: Option[Result]       = None
 
   def getReport(reportUUID: UUID) =
     Await.result(
@@ -334,19 +334,19 @@ trait GetReportContext extends AppSpec {
     lang = None
   )
 
-  val adminUser = Fixtures.genAdminUser.sample.get
+  val adminUser      = Fixtures.genAdminUser.sample.get
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
 
-  val concernedProUser = Fixtures.genProUser.sample.get
+  val concernedProUser      = Fixtures.genProUser.sample.get
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
 
-  val notConcernedProUser = Fixtures.genProUser.sample.get
+  val notConcernedProUser      = Fixtures.genProUser.sample.get
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(
-      adminLoginInfo -> adminUser,
-      concernedProLoginInfo -> concernedProUser,
+      adminLoginInfo           -> adminUser,
+      concernedProLoginInfo    -> concernedProUser,
       notConcernedProLoginInfo -> notConcernedProUser
     )
   )
@@ -360,9 +360,9 @@ trait GetReportContext extends AppSpec {
   mockReportRepository.create(neverRequestedFinalReport)
   mockReportRepository.create(alreadyRequestedReport)
 
-  val mockReportFileRepository = mock[ReportFileRepositoryInterface]
-  val mockEventRepository = mock[EventRepositoryInterface]
-  val mockMailRetriesService = mock[MailRetriesService]
+  val mockReportFileRepository            = mock[ReportFileRepositoryInterface]
+  val mockEventRepository                 = mock[EventRepositoryInterface]
+  val mockMailRetriesService              = mock[MailRetriesService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
@@ -397,18 +397,18 @@ trait GetReportContext extends AppSpec {
     override def load(context: ApplicationLoader.Context): Application = {
       components = new SignalConsoComponents(context) {
 
-        override def authEnv: Environment[AuthEnv] = env
-        override def reportRepository: ReportRepositoryInterface = mockReportRepository
-        override def companyRepository: CompanyRepositoryInterface = mockCompanyRepository
+        override def authEnv: Environment[AuthEnv]                       = env
+        override def reportRepository: ReportRepositoryInterface         = mockReportRepository
+        override def companyRepository: CompanyRepositoryInterface       = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
-        override lazy val mailRetriesService: MailRetriesService = mockMailRetriesService
-        override def eventRepository: EventRepositoryInterface = mockEventRepository
+        override lazy val mailRetriesService: MailRetriesService         = mockMailRetriesService
+        override def eventRepository: EventRepositoryInterface           = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",
-          "play.mailer.mock" -> true
+          "play.mailer.mock"                    -> true
         ).withFallback(
           super.configuration
         )
@@ -419,11 +419,11 @@ trait GetReportContext extends AppSpec {
 
   }
 
-  val appLoader = new FakeApplicationLoader()
-  val app: Application = TestApp.buildApp(appLoader)
+  val appLoader                         = new FakeApplicationLoader()
+  val app: Application                  = TestApp.buildApp(appLoader)
   val components: SignalConsoComponents = appLoader.components
 
   lazy val attachementService = components.attachmentService
-  lazy val mailService = components.mailService
+  lazy val mailService        = components.mailService
 
 }

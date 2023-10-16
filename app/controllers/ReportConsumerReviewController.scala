@@ -29,7 +29,7 @@ class ReportConsumerReviewController(
     implicit request =>
       for {
         review <- request.parseBody[ResponseConsumerReviewApi]()
-        _ <- reportConsumerReviewOrchestrator.handleReviewOnReportResponse(reportUUID, review)
+        _      <- reportConsumerReviewOrchestrator.handleReviewOnReportResponse(reportUUID, review)
       } yield Ok
   }
 

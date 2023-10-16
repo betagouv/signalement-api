@@ -11,7 +11,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   val values = findValues
 
-  case object NA extends ReportStatus
+  case object NA            extends ReportStatus
   case object LanceurAlerte extends ReportStatus
 
   /** Not read by pro status
@@ -20,12 +20,12 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   /** Read by pro status
     */
-  case object Transmis extends ReportStatus
+  case object Transmis       extends ReportStatus
   case object PromesseAction extends ReportStatus
-  case object Infonde extends ReportStatus
-  case object NonConsulte extends ReportStatus
+  case object Infonde        extends ReportStatus
+  case object NonConsulte    extends ReportStatus
   case object ConsulteIgnore extends ReportStatus
-  case object MalAttribue extends ReportStatus
+  case object MalAttribue    extends ReportStatus
 
   val statusVisibleByPro: Seq[ReportStatus] =
     Seq(

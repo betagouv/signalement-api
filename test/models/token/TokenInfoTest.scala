@@ -24,9 +24,9 @@ class TokenInfoTest extends Specification {
       Json.toJson(dGCCRFUserActivationToken) mustEqual
         JsObject(
           Seq(
-            "token" -> Json.toJson(dGCCRFUserActivationToken.token),
+            "token"     -> Json.toJson(dGCCRFUserActivationToken.token),
             "emailedTo" -> Json.toJson(dGCCRFUserActivationToken.emailedTo),
-            "kind" -> Json.toJson(dGCCRFUserActivationToken.kind)
+            "kind"      -> Json.toJson(dGCCRFUserActivationToken.kind)
           )
         )
 
@@ -44,9 +44,9 @@ class TokenInfoTest extends Specification {
       Json.toJson(companyUserActivationToken) mustEqual
         JsObject(
           Seq(
-            "token" -> Json.toJson(companyUserActivationToken.token),
-            "emailedTo" -> Json.toJson(companyUserActivationToken.emailedTo),
-            "kind" -> Json.toJson(companyUserActivationToken.kind),
+            "token"        -> Json.toJson(companyUserActivationToken.token),
+            "emailedTo"    -> Json.toJson(companyUserActivationToken.emailedTo),
+            "kind"         -> Json.toJson(companyUserActivationToken.kind),
             "companySiret" -> Json.toJson(companyUserActivationToken.companySiret)
           )
         )

@@ -24,10 +24,10 @@ import scala.util.Success
 object AntivirusScanActor {
   sealed trait ScanCommand
   final case class ScanFromFile(reportFile: ReportFile, file: java.io.File) extends ScanCommand
-  final case object ScanFromFileSuccess extends ScanCommand
-  final case object ScanFromFileFailed extends ScanCommand
-  final case class ScanFromBucket(reportFile: ReportFile) extends ScanCommand
-  final case class ScanFromBucketFailed(reportFile: ReportFile) extends ScanCommand
+  final case object ScanFromFileSuccess                                     extends ScanCommand
+  final case object ScanFromFileFailed                                      extends ScanCommand
+  final case class ScanFromBucket(reportFile: ReportFile)                   extends ScanCommand
+  final case class ScanFromBucketFailed(reportFile: ReportFile)             extends ScanCommand
 
   val logger: Logger = Logger(this.getClass)
 

@@ -34,7 +34,7 @@ class ReportListController(
     extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
 
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter

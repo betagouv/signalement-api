@@ -37,12 +37,12 @@ import scala.concurrent.ExecutionContext
 
 trait AppSpec extends BeforeAfterAll with Mockito {
 
-  val appEnv: play.api.Environment = play.api.Environment.simple(new File("."))
+  val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
   val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
-  implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
-  val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+  implicit val personReader: ConfigReader[EmailAddress]    = deriveReader[EmailAddress]
+  val csvStringListReader                                  = ConfigReader[String].map(_.split(",").toList)
   @nowarn("msg=Implicit definition should have explicit type")
   // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
@@ -52,16 +52,16 @@ trait AppSpec extends BeforeAfterAll with Mockito {
 
   val configLoader: SignalConsoConfiguration = applicationConfiguration.app
   val emailConfiguration: EmailConfiguration = applicationConfiguration.mail
-  val taskConfiguration: TaskConfiguration = applicationConfiguration.task
+  val taskConfiguration: TaskConfiguration   = applicationConfiguration.task
 
-  lazy val actorSystem: ActorSystem = new ActorSystemProvider(appEnv, context.initialConfiguration).get
+  lazy val actorSystem: ActorSystem      = new ActorSystemProvider(appEnv, context.initialConfiguration).get
   val executionContext: ExecutionContext = actorSystem.dispatcher
   val slickApi: SlickApi = new DefaultSlickApi(appEnv, context.initialConfiguration, new DefaultApplicationLifecycle())(
     executionContext
   )
 //  val database: Database = SlickDBApi(slickApi).database("default")
 
-  def setupData() = {}
+  def setupData()   = {}
   def cleanupData() = {}
 
   def beforeAll(): Unit = {
@@ -94,14 +94,14 @@ object TestApp {
       Application,
       SignalConsoComponents
   ) = {
-    val appEnv: play.api.Environment = play.api.Environment.simple(new File("."))
+    val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
     val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
     val loader = new DefaultApplicationLoader(maybeAuthEnv, maybeApiKeyEnv, maybeConfiguration)
     (loader.load(context), loader.components)
   }
 
   def buildApp(applicationLoader: ApplicationLoader): Application = {
-    val appEnv: play.api.Environment = play.api.Environment.simple(new File("."))
+    val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
     val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
     applicationLoader.load(context)
   }

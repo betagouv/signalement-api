@@ -57,7 +57,7 @@ class ReportClosureTask(
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = taskRunDate)
-      _ <- closeExpiredReportsWithErrorHandling(reportsToClose)
+      _              <- closeExpiredReportsWithErrorHandling(reportsToClose)
     } yield ()
   }
 
@@ -75,8 +75,8 @@ class ReportClosureTask(
         }
       })
       (failures, successes) = successesOrFailuresList.partitionMap(identity)
-      _ = logger.info(s"Successful closures for ${successes.length} reports")
-      _ = if (failures.nonEmpty) logger.error(s"Failed to close ${failures.length} reports")
+      _                     = logger.info(s"Successful closures for ${successes.length} reports")
+      _                     = if (failures.nonEmpty) logger.error(s"Failed to close ${failures.length} reports")
     } yield ()
   }
 
@@ -115,7 +115,7 @@ class ReportClosureTask(
         )
       )
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      _ <- mailService.send(email(report, maybeCompany, messagesApi))
+      _            <- mailService.send(email(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

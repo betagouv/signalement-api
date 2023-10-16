@@ -60,7 +60,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
     override def load(context: ApplicationLoader.Context): Application = {
       components = new SignalConsoComponents(context) {
-        override def passwordHasherRegistry = hasher
+        override def passwordHasherRegistry        = hasher
         override def authEnv: Environment[AuthEnv] = env
       }
       components.application
@@ -68,8 +68,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
   }
 
-  val loader = new FakeApplicationLoader()
-  val app = TestApp.buildApp(loader)
+  val loader     = new FakeApplicationLoader()
+  val app        = TestApp.buildApp(loader)
   val components = loader.components
 
   override def afterAll(): Unit = {
@@ -83,9 +83,9 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   lazy val passwordHasherRegistry = components.passwordHasherRegistry
 
   lazy val authAttemptRepository = components.authAttemptRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val companyRepository     = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
-  lazy val authTokenRepository = components.authTokenRepository
+  lazy val authTokenRepository   = components.authTokenRepository
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
@@ -107,14 +107,14 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       "success on known user " in {
 
-        val login = identity.email.value
+        val login    = identity.email.value
         val jsonBody = Json.obj("login" -> login, "password" -> validPassword)
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
         val result = for {
-          res <- route(app, request).get
+          res          <- route(app, request).get
           authAttempts <- authAttemptRepository.listAuthAttempts(login)
         } yield (res, authAttempts)
 
@@ -146,14 +146,14 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       "fail on invalid password " in {
 
-        val login = proUser.email.value
+        val login    = proUser.email.value
         val jsonBody = Json.obj("login" -> login, "password" -> "password")
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
         val result = for {
-          res <- route(app, request).get
+          res          <- route(app, request).get
           authAttempts <- authAttemptRepository.listAuthAttempts(login)
         } yield (res, authAttempts)
 
@@ -172,14 +172,14 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       "fail on unknown user " in {
 
-        val login = "login"
+        val login    = "login"
         val jsonBody = Json.obj("login" -> "login", "password" -> "password")
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
         val result = for {
-          res <- route(app, request).get
+          res          <- route(app, request).get
           authAttempts <- authAttemptRepository.listAuthAttempts(login)
         } yield (res, authAttempts)
 
@@ -219,7 +219,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
     "not create an auth token when user unknown" in {
 
-      val login = "unknown"
+      val login    = "unknown"
       val jsonBody = Json.obj("login" -> login)
 
       val request = FakeRequest(POST, routes.AuthController.forgotPassword().toString)
@@ -227,8 +227,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       val result = for {
         authTokensBefore <- authTokenRepository.list()
-        res <- route(app, request).get
-        authTokensAfter <- authTokenRepository.list()
+        res              <- route(app, request).get
+        authTokensAfter  <- authTokenRepository.list()
       } yield (res, authTokensBefore.diff(authTokensAfter))
 
       Helpers.status(result.map(_._1)) must beEqualTo(OK)
@@ -239,14 +239,14 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
     "successfully create an auth token" in {
 
-      val login = identity.email.value
+      val login    = identity.email.value
       val jsonBody = Json.obj("login" -> login)
 
       val request = FakeRequest(POST, routes.AuthController.forgotPassword().toString)
         .withJsonBody(jsonBody)
 
       val result = for {
-        res <- route(app, request).get
+        res       <- route(app, request).get
         authToken <- authTokenRepository.findForUserId(identity.id)
       } yield (res, authToken)
 
@@ -304,7 +304,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       val result = for {
         authToken <- authTokenRepository.create(token)
-        res <- route(app, request).get
+        res       <- route(app, request).get
       } yield (res, authToken)
 
       Helpers.status(result.map(_._1)) must beEqualTo(BAD_REQUEST)
@@ -325,7 +325,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       val result = for {
         authToken <- authTokenRepository.create(expiredToken)
-        res <- route(app, request).get
+        res       <- route(app, request).get
       } yield (res, authToken)
 
       Helpers.status(result.map(_._1)) must beEqualTo(NOT_FOUND)
@@ -336,7 +336,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
     "fail on token not found" in {
 
-      val tokenId = UUID.randomUUID()
+      val tokenId  = UUID.randomUUID()
       val jsonBody = Json.obj("password" -> "test")
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
@@ -352,7 +352,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
     "reset password" in {
 
-      val userId = UUID.randomUUID()
+      val userId      = UUID.randomUUID()
       val newPassword = "new_pasS_@#3"
 
       val user = Fixtures.genAdminUser.sample.get
@@ -360,17 +360,17 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
           id = userId,
           password = passwordHasherRegistry.current.hash(validPassword).password
         )
-      val tokenId = UUID.randomUUID()
+      val tokenId      = UUID.randomUUID()
       val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusMonths(10))
-      val jsonBody = Json.obj("password" -> newPassword)
+      val jsonBody     = Json.obj("password" -> newPassword)
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
         .withJsonBody(jsonBody)
 
       val result = for {
-        _ <- userRepository.create(user)
-        _ <- authTokenRepository.create(expiredToken)
-        res <- route(app, request).get
+        _           <- userRepository.create(user)
+        _           <- authTokenRepository.create(expiredToken)
+        res         <- route(app, request).get
         updatedUser <- userRepository.get(user.id)
 
       } yield (res, updatedUser)

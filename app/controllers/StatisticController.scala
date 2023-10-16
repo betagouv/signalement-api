@@ -59,7 +59,7 @@ class StatisticController(
         },
         filters => {
           val mapper = new QueryStringMapper(request.queryString)
-          val ticks = mapper.int("ticks").getOrElse(12)
+          val ticks  = mapper.int("ticks").getOrElse(12)
           val tickDuration = mapper
             .string("tickDuration")
             .flatMap(CurveTickDuration.namesToValuesMap.get)
@@ -155,8 +155,8 @@ class StatisticController(
 
   def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
     val mapper = new QueryStringMapper(request.queryString)
-    val start = mapper.localDate("start")
-    val end = mapper.localDate("end")
+    val start  = mapper.localDate("start")
+    val end    = mapper.localDate("end")
     statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
   }
 

@@ -34,7 +34,7 @@ class ReportNotificationTask(
     taskConfiguration: TaskConfiguration
 )(implicit executionContext: ExecutionContext) {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val departments = Departments.ALL
@@ -46,7 +46,7 @@ class ReportNotificationTask(
     interval = 1.day,
     taskName = "report_notification_task"
   ) {
-    val now = OffsetDateTime.now()
+    val now                      = OffsetDateTime.now()
     val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
       _ <-
@@ -59,7 +59,7 @@ class ReportNotificationTask(
   }
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
-    val end = now
+    val end   = now
     val start = end.minus(period)
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
     val executionFuture = for {

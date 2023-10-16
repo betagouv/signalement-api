@@ -55,7 +55,7 @@ class BlacklistedEmailsController(
   def delete(uuid: UUID) = SecuredAction(WithPermission(UserPermission.manageBlacklistedEmails)).async {
     for {
       item <- blacklistedEmailsRepository.get(uuid)
-      _ <- blacklistedEmailsRepository.delete(uuid)
+      _    <- blacklistedEmailsRepository.delete(uuid)
     } yield if (item.isDefined) Ok else NotFound
   }
 

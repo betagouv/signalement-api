@@ -63,7 +63,7 @@ abstract class ApiKeyBaseController(override val controllerComponents: Controlle
 abstract class BaseController(override val controllerComponents: ControllerComponents)
     extends AbstractController(controllerComponents) {
 
-  type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
+  type SecuredRequestWrapper[A]   = SecuredRequest[AuthEnv, A]
   type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
 
   def silhouette: Silhouette[AuthEnv]

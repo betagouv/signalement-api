@@ -12,7 +12,7 @@ sealed abstract class AntivirusScanExitCode(val value: Int) extends IntEnumEntry
 
 object AntivirusScanExitCode extends IntEnum[AntivirusScanExitCode] {
   case object NoVirusFound extends AntivirusScanExitCode(0)
-  case object VirusFound extends AntivirusScanExitCode(1)
+  case object VirusFound   extends AntivirusScanExitCode(1)
   case object ErrorOccured extends AntivirusScanExitCode(2)
   override def values: IndexedSeq[AntivirusScanExitCode] = findValues
 }
