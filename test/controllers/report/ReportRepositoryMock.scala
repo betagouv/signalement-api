@@ -6,7 +6,6 @@ import models.UserRole
 import models.report._
 import repositories.report.ReportRepositoryInterface
 import utils.CRUDRepositoryMock
-import utils.EmailAddress
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -80,5 +79,12 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] = ???
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] =
+    userRole match {
+      case Some(UserRole.Admin)         => Future.successful(database.get(id))
+      case Some(UserRole.DGCCRF)        => Future.successful(database.get(id))
+      case Some(UserRole.DGAL)          => Future.successful(database.get(id))
+      case Some(UserRole.Professionnel) => Future.successful(database.get(id).filter(_.visibleToPro))
+      case None                         => Future.successful(database.get(id))
+    }
 }

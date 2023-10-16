@@ -149,12 +149,12 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte)
+    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte, visibleToPro = false)
   val reportNAOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.NA)
+    .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = false)
   val allReports = Seq(
     reportToStandaloneCompany,
     reportToProcessOnHeadOffice,

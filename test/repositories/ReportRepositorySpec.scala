@@ -1,5 +1,6 @@
 package repositories
 
+import models.UserRole
 import models.report.ReportFilter
 import models.report.ReportTag
 import models.report.ReportsCountBySubcategoriesFilter
@@ -57,7 +58,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       category = "AchatInternet",
-      subcategories = List("a", "b", "c")
+      subcategories = List("a", "b", "c"),
+      visibleToPro = false
     )
 
   val report3 = Fixtures
@@ -66,7 +68,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       category = "AchatInternet",
-      subcategories = List("a", "b", "d")
+      subcategories = List("a", "b", "d"),
+      visibleToPro = false
     )
 
   val report4 = Fixtures
@@ -78,6 +81,26 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       subcategories = List("a", "b", "c"),
       tags = List(ReportTag.ReponseConso),
       phone = Some("0102030405")
+    )
+
+  val report5 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      category = "IntoxicationAlimentaire",
+      subcategories = List("a"),
+      visibleToPro = false
+    )
+
+  val report6 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      category = "CafeRestaurant",
+      subcategories = List("a"),
+      tags = List(ReportTag.ProduitAlimentaire)
     )
 
   val englishReport = Fixtures
@@ -93,6 +116,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.create(report2), Duration.Inf)
     Await.result(components.reportRepository.create(report3), Duration.Inf)
     Await.result(components.reportRepository.create(report4), Duration.Inf)
+    Await.result(components.reportRepository.create(report5), Duration.Inf)
+    Await.result(components.reportRepository.create(report6), Duration.Inf)
     Await.result(components.reportRepository.create(englishReport), Duration.Inf)
     Await.result(
       components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios))),
@@ -108,6 +133,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.delete(report2.id), Duration.Inf)
     Await.result(components.reportRepository.delete(report3.id), Duration.Inf)
     Await.result(components.reportRepository.delete(report4.id), Duration.Inf)
+    Await.result(components.reportRepository.delete(report5.id), Duration.Inf)
+    Await.result(components.reportRepository.delete(report6.id), Duration.Inf)
     Await.result(components.reportRepository.delete(englishReport.id), Duration.Inf)
     Await.result(components.companyRepository.delete(company.id), Duration.Inf)
 
@@ -118,23 +145,47 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     "getReports" should {
       "not fetch anonymous users" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("anonymousFirstName")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("anonymousReference")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousFirstName")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousReference")))
         } yield (a.entities must beEmpty) && (b.entities must beEmpty)
       }
 
       "fetch users" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("firstName")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("reference")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("firstName")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("reference")))
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
       "be case insensitive" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("LASTNAME")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("REFERENCE")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("LASTNAME")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("REFERENCE")))
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
+      }
+
+      "return all reports for an admin user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.Admin), ReportFilter())
+          .map(result => result.entities must haveLength(8))
+      }
+
+      "return all reports for a DGCCRF user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.DGCCRF), ReportFilter())
+          .map(result => result.entities must haveLength(8))
+      }
+
+      "return only visible to DGAL for a DGAL user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.DGAL), ReportFilter())
+          .map(result => result.entities must haveLength(2))
+      }
+
+      "return all reports for a pro user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.Professionnel), ReportFilter())
+          .map(result => result.entities must haveLength(5))
       }
     }
 
