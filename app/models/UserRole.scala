@@ -21,6 +21,15 @@ object UserRole extends PlayEnum[UserRole] {
     )
   }
 
+  final case object DGAL extends UserRole {
+    override val permissions = Seq(
+      UserPermission.listReports,
+      UserPermission.createReportAction,
+      UserPermission.subscribeReports,
+      UserPermission.crudUserReportsFilters
+    )
+  }
+
   final case object Professionnel extends UserRole {
     override val permissions = Seq(
       UserPermission.listReports,

@@ -66,6 +66,7 @@ class ReportToExternalController(
 
     for {
       reportsWithFiles <- reportRepository.getReportsWithFiles(
+        None,
         filter = filter
       )
     } yield Ok(
@@ -93,6 +94,7 @@ class ReportToExternalController(
 
     for {
       reportsWithFiles <- reportOrchestrator.getReportsWithFile(
+        None,
         filter = filter,
         offset,
         limit,
@@ -118,7 +120,7 @@ class ReportToExternalController(
       end = qs.timeWithLocalDateRetrocompatEndOfDay("end")
     )
     for {
-      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
+      reports <- reportRepository.getReports(None, filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
 

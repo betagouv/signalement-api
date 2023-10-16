@@ -54,7 +54,7 @@ class EventsOrchestrator(
       userRole: UserRole
   ): Future[List[EventWithUser]] =
     for {
-      maybeReport <- reportRepository.get(reportId)
+      maybeReport <- reportRepository.getFor(Some(userRole), reportId)
       _ = logger.debug("Checking if report exists")
       _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
       _      = logger.debug("Found report")

@@ -5,7 +5,6 @@ import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
 import repositories.CRUDRepositoryInterface
-import utils.EmailAddress
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -20,27 +19,28 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]]
 
-  def findByEmail(email: EmailAddress): Future[Seq[Report]]
-
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]]
 
-  def count(filter: ReportFilter): Future[Int]
+  def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int]
 
-  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]]
+  def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]]
 
-  def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]]
+  def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]]
 
   def getDailyCount(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]]
 
   def getReports(companyId: UUID): Future[List[Report]]
 
+  // dead code
   def getWithWebsites(): Future[List[Report]]
 
   def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]]
 
+  // dead code
   def getWithPhones(): Future[List[Report]]
 
   def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]]
@@ -49,9 +49,10 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getHostsByCompany(companyId: UUID): Future[Seq[String]]
 
-  def getReportsWithFiles(filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]]
+  def getReportsWithFiles(userRole: Option[UserRole], filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]]
 
   def getReports(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
@@ -71,5 +72,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
+
+  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]]
 
 }

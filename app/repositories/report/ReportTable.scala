@@ -14,6 +14,7 @@ import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter
+import repositories.report.ReportRepository.orFilter
 import slick.ast.BaseTypedType
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
@@ -282,9 +283,11 @@ object ReportTable {
 
   val table = TableQuery[ReportTable]
 
-  def table(userRole: UserRole): Query[ReportTable, Report, Seq] = userRole match {
-    case UserRole.Admin | UserRole.DGCCRF => table
-    case UserRole.Professionnel =>
-      queryFilter(ReportFilter(status = ReportStatus.statusVisibleByPro, employeeConsumer = Some(false)))
+  def table(userRole: Option[UserRole]): Query[ReportTable, Report, Seq] = userRole match {
+    case None                         => table
+    case Some(UserRole.Admin)         => table
+    case Some(UserRole.DGCCRF)        => table
+    case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
+    case Some(UserRole.Professionnel) => queryFilter(table, ReportFilter(visibleToPro = Some(true)))
   }
 }

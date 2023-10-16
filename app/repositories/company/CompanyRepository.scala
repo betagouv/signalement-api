@@ -51,7 +51,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .map(_._1.companyId)
 
     val query = table
-      .joinLeft(ReportTable.table(userRole))
+      .joinLeft(ReportTable.table(Some(userRole)))
       .on(_.id === _.companyId)
       .filterIf(search.departments.nonEmpty) { case (company, _) =>
         company.department.map(a => a.inSet(search.departments)).getOrElse(false)

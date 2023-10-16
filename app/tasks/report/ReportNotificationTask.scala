@@ -66,12 +66,13 @@ class ReportNotificationTask(
       subscriptionsWithMaybeEmails <- subscriptionRepository.listForFrequency(period)
       subscriptionsWithEmails = subscriptionsWithMaybeEmails.collect { case (s, Some(ea)) => (s, ea) }
       _ = logger.debug(s"Found ${subscriptionsWithEmails.size} subscriptions to handle (period $period)")
-      reportsWithFiles <- reportRepository.getReportsWithFiles {
+      reportsWithFiles <- reportRepository.getReportsWithFiles(
+        None,
         ReportFilter(
           start = Some(start),
           end = Some(end)
         )
-      }
+      )
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
       subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
         val filteredReport = refineReportBasedOnSubscriptionFilters(reportsWithFiles, subscription)

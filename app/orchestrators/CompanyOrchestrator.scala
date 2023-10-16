@@ -8,7 +8,6 @@ import config.TokenConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
-import models.UserRole.Professionnel
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
@@ -136,17 +135,13 @@ class CompanyOrchestrator(
       }
 
   def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
-    val baseReportFilter = ReportFilter(
-      companyIds = Seq(companyId),
-      visibleToPro = if (userRole == Professionnel) Some(true) else None
-    )
     val responseReportsFilter =
-      baseReportFilter.copy(status = ReportStatus.statusWithProResponse)
+      ReportFilter(companyIds = Seq(companyId), status = ReportStatus.statusWithProResponse)
     val totalReportsFilter =
-      baseReportFilter
+      ReportFilter(companyIds = Seq(companyId))
 
-    val totalReportsCount    = reportRepository.count(totalReportsFilter)
-    val responseReportsCount = reportRepository.count(responseReportsFilter)
+    val totalReportsCount    = reportRepository.count(Some(userRole), totalReportsFilter)
+    val responseReportsCount = reportRepository.count(Some(userRole), responseReportsFilter)
     for {
       total     <- totalReportsCount
       responses <- responseReportsCount

@@ -1,8 +1,5 @@
 package models.report
 
-import models.UserRole
-import models.UserRole.Admin
-import models.UserRole.DGCCRF
 import models.report.review.ResponseEvaluation
 import play.api.libs.json.Reads
 import utils.QueryStringMapper
@@ -50,7 +47,7 @@ object ReportFilter {
   private[models] def hostFromWebsiteFilter(websiteFilter: Option[String]) =
     websiteFilter.flatMap(website => URL(website).getHost.orElse(websiteFilter))
 
-  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
+  def fromQueryString(q: Map[String, Seq[String]]): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
@@ -65,17 +62,12 @@ object ReportFilter {
       end = mapper.timeWithLocalDateRetrocompatEndOfDay("end"),
       category = mapper.string("category"),
       companyIds = mapper.seq("companyIds").map(UUID.fromString),
-      status = ReportStatus.filterByUserRole(
-        mapper.seq("status").map(ReportStatus.withName),
-        userRole
-      ),
+      status = {
+        val statuses = mapper.seq("status").map(ReportStatus.withName)
+        if (statuses.isEmpty) ReportStatus.values else statuses
+      },
       details = mapper.string("details"),
       description = mapper.string("description"),
-      employeeConsumer = userRole match {
-        case Admin  => None
-        case DGCCRF => None
-        case _      => Some(false)
-      },
       hasForeignCountry = mapper.boolean("hasForeignCountry"),
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),

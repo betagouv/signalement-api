@@ -38,7 +38,7 @@ class ReportListController(
 
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
@@ -60,7 +60,7 @@ class ReportListController(
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     for {
       reportFilter <- ReportFilter
-        .fromQueryString(request.queryString, request.identity.userRole)
+        .fromQueryString(request.queryString)
         .toOption
         .liftTo[Future] {
           logger.warn(s"Failed to parse ReportFilter query params")

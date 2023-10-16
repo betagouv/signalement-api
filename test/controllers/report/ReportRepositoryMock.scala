@@ -23,17 +23,18 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]] =
     ???
 
-  override def findByEmail(email: EmailAddress): Future[Seq[Report]] = ???
-
   override def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] = ???
 
-  override def count(filter: ReportFilter): Future[Int] = ???
+  override def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int] = ???
 
-  override def getMonthlyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
+  override def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+    ???
 
-  override def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
+  override def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+    ???
 
-  override def getDailyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
+  override def getDailyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+    ???
 
   override def getReports(companyId: UUID): Future[List[Report]] = ???
 
@@ -48,9 +49,13 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getHostsByCompany(companyId: UUID): Future[Seq[String]] = ???
 
-  override def getReportsWithFiles(filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]] = ???
+  override def getReportsWithFiles(
+      userRole: Option[UserRole],
+      filter: ReportFilter
+  ): Future[SortedMap[Report, List[ReportFile]]] = ???
 
   override def getReports(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int]
@@ -74,4 +79,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   ): Future[Seq[(String, List[String], Int, Int)]] = ???
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???
+
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] = ???
 }
