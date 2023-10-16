@@ -230,7 +230,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           LEFT JOIN count_reports_on_period ar ON c.id = ar.company_id
           LEFT OUTER JOIN count_follow_up_on_period cf ON c.id = cf.company_id
        WHERE
-          EXISTS (
+          c.country is null
+          AND EXISTS (
              SELECT 1
              FROM
                 company_accesses ca
