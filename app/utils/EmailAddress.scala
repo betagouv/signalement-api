@@ -14,7 +14,7 @@ object EmailAddress {
   val EmptyEmailAddress: EmailAddress = EmailAddress("")
 
   implicit class EmailAddressOps(emailAddress: EmailAddress) {
-    implicit def isEmpty: Boolean = emailAddress == EmptyEmailAddress
+    implicit def isEmpty: Boolean  = emailAddress == EmptyEmailAddress
     implicit def nonEmpty: Boolean = emailAddress != EmptyEmailAddress
   }
 
@@ -25,6 +25,6 @@ object EmailAddress {
       EmailAddress(_)
     )
   implicit val emailWrites: Writes[EmailAddress] = Json.valueWrites[EmailAddress]
-  implicit val emailReads: Reads[EmailAddress] = Reads.StringReads.map(EmailAddress(_)) // To use the apply method
+  implicit val emailReads: Reads[EmailAddress]   = Reads.StringReads.map(EmailAddress(_)) // To use the apply method
 
 }

@@ -20,10 +20,10 @@ class ReportResponseTypeTest extends Specification {
 
     "parse json as expected" in {
 
-      val ACCEPTEDJson = JsString("ACCEPTED")
-      val REJECTEDJson = JsString("REJECTED")
+      val ACCEPTEDJson      = JsString("ACCEPTED")
+      val REJECTEDJson      = JsString("REJECTED")
       val NOT_CONCERNEDJson = JsString("NOT_CONCERNED")
-      val unknownJson = JsString("XXXXXX")
+      val unknownJson       = JsString("XXXXXX")
 
       ACCEPTEDJson.as[ReportResponseType] shouldEqual ReportResponseType.ACCEPTED
       REJECTEDJson.as[ReportResponseType] shouldEqual ReportResponseType.REJECTED

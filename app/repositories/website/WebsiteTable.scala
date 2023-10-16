@@ -12,14 +12,14 @@ import models.investigation.InvestigationStatus
 import repositories.TypedDatabaseTable
 
 class WebsiteTable(tag: Tag) extends TypedDatabaseTable[Website, WebsiteId](tag, "websites") {
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def host = column[String]("host")
-  def isMarketplace = column[Boolean]("is_marketplace")
-  def companyCountry = column[Option[String]]("company_country")
-  def companyId = column[Option[UUID]]("company_id")
+  def creationDate         = column[OffsetDateTime]("creation_date")
+  def host                 = column[String]("host")
+  def isMarketplace        = column[Boolean]("is_marketplace")
+  def companyCountry       = column[Option[String]]("company_country")
+  def companyId            = column[Option[UUID]]("company_id")
   def identificationStatus = column[IdentificationStatus]("identification_status")
-  def investigationStatus = column[InvestigationStatus]("investigation_status")
-  def lastUpdated = column[OffsetDateTime]("last_updated")
+  def investigationStatus  = column[InvestigationStatus]("investigation_status")
+  def lastUpdated          = column[OffsetDateTime]("last_updated")
   def * = (
     id,
     creationDate,

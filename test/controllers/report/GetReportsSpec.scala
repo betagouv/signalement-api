@@ -111,15 +111,15 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 
   implicit val timeout: Timeout = 30.seconds
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val userRepository          = components.userRepository
+  lazy val companyRepository       = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val accessTokenRepository = components.accessTokenRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val accessTokenRepository   = components.accessTokenRepository
+  lazy val reportRepository        = components.reportRepository
 
-  val noAccessUser = Fixtures.genProUser.sample.get
-  val adminUser = Fixtures.genAdminUser.sample.get
-  val dgccrfUser = Fixtures.genDgccrfUser.sample.get
+  val noAccessUser                  = Fixtures.genProUser.sample.get
+  val adminUser                     = Fixtures.genAdminUser.sample.get
+  val dgccrfUser                    = Fixtures.genDgccrfUser.sample.get
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
@@ -163,7 +163,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     reportNAOnHeadOffice
   )
 
-  var someResult: Option[Result] = None
+  var someResult: Option[Result]       = None
   var someLoginInfo: Option[LoginInfo] = None
 
   override def setupData() =
@@ -224,7 +224,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       controllers.routes.ReportListController.getReports().toString + status.map(x => s"?status=$x").getOrElse("")
     )
     val loggedRequest = someLoginInfo.map(request.withAuthenticator[AuthEnv](_)).getOrElse(request)
-    val result = route(app, loggedRequest).get
+    val result        = route(app, loggedRequest).get
 
     Await.result(
       result,

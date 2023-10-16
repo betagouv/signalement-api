@@ -60,7 +60,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
-  lazy val frontRoute = components.frontRoute
+  lazy val frontRoute     = components.frontRoute
   lazy val contactAddress = emailConfiguration.contactAddress
 
   class FakeApplicationLoader(skipValidation: Boolean = false, emailProviderBlocklist: List[String])
@@ -163,7 +163,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(Json.obj("email" -> unknownEmail.value))
 
         val result = for {
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(unknownEmail)
         } yield (res, emailValidation)
 
@@ -177,20 +177,20 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(unknownEmail), emailSubject, emailBody)
       }
 
       "not validate email when email exist but not validated" in {
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
-        val emailValidation = EmailValidation(email = existingEmail)
+        val emailValidation             = EmailValidation(email = existingEmail)
 
         val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
-          _ <- emailValidationRepository.create(emailValidation)
-          res <- route(app, request).get
+          _               <- emailValidationRepository.create(emailValidation)
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(existingEmail)
         } yield (res, emailValidation)
 
@@ -204,13 +204,13 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
       }
 
       "not validate email when email exist but is outdated" in {
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
-        val oldDate = OffsetDateTime.now().minusYears(2L).truncatedTo(ChronoUnit.MILLIS)
+        val oldDate                     = OffsetDateTime.now().minusYears(2L).truncatedTo(ChronoUnit.MILLIS)
         val emailValidation = EmailValidation(email = existingEmail)
           .copy(lastValidationDate = Some(oldDate))
 
@@ -218,8 +218,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
-          _ <- emailValidationRepository.create(emailValidation)
-          res <- route(app, request).get
+          _               <- emailValidationRepository.create(emailValidation)
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(existingEmail)
         } yield (res, emailValidation)
 
@@ -233,7 +233,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
       }
 
@@ -270,7 +270,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
             .withJsonBody(
               Json.obj("email" -> emailValidation.email.value, "confirmationCode" -> emailValidation.confirmationCode)
             )
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 
@@ -294,7 +294,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           )
 
         val result = for {
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 
@@ -319,7 +319,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
             .withJsonBody(
               Json.obj("email" -> emailValidation.email.value, "confirmationCode" -> "XXXXXX")
             )
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 

@@ -11,7 +11,7 @@ case class UserReportsFilters(userId: UUID, name: String, reportsFilters: JsValu
 object UserReportsFilters {
   implicit val writes: Writes[UserReportsFilters] = Writes { userReportsFilters =>
     Json.obj(
-      "name" -> userReportsFilters.name,
+      "name"    -> userReportsFilters.name,
       "filters" -> userReportsFilters.reportsFilters,
       "default" -> userReportsFilters.defaultFilters
     )

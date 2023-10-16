@@ -65,14 +65,14 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     None
   )
 
-  lazy val userRepository = components.userRepository
-  lazy val subscriptionRepository = components.subscriptionRepository
-  lazy val reportRepository = components.reportRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val reportNotificationTask = components.reportNotificationTask
-  lazy val mailRetriesService = components.mailRetriesService
-  lazy val attachementService = components.attachmentService
-  implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
+  lazy val userRepository                              = components.userRepository
+  lazy val subscriptionRepository                      = components.subscriptionRepository
+  lazy val reportRepository                            = components.reportRepository
+  lazy val companyRepository                           = components.companyRepository
+  lazy val reportNotificationTask                      = components.reportNotificationTask
+  lazy val mailRetriesService                          = components.mailRetriesService
+  lazy val attachementService                          = components.attachmentService
+  implicit lazy val frontRoute: utils.FrontRoute       = components.frontRoute
   implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
   implicit val ec: ExecutionContext = ee.executionContext
@@ -83,8 +83,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   val department1 = "87"
   val department2 = "19"
   val department3 = "23"
-  val guadeloupe = "971"
-  val martinique = "972"
+  val guadeloupe  = "971"
+  val martinique  = "972"
 
   val officeEmail = Fixtures.genEmailAddress("directe", "limousin").sample.get
 

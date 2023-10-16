@@ -1,6 +1,6 @@
 import org.typelevel.scalacoptions.ScalacOptions
 
-name := "signalement-api"
+name         := "signalement-api"
 organization := "fr.gouv.beta"
 
 version := "1.3.13"
@@ -23,7 +23,7 @@ scalacOptions ++= Seq(
   "-Wconf:cat=unused-imports&src=views/.*:s",
   "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",
-  "-Yrangepos",
+  "-Yrangepos"
 //  "-quickfix:any" // should we enable it by default to replace scalafix rule ExplicitResultTypes ? No because we need to disable this rule sometimes
 )
 

@@ -16,16 +16,16 @@ package object repositories {
     )(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
 
       val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
-      val limit = maybeLimit.map(Math.max(_, 0))
+      val limit  = maybeLimit.map(Math.max(_, 0))
 
-      val queryWithOffset = query.drop(offset)
+      val queryWithOffset         = query.drop(offset)
       val queryWithOffsetAndLimit = limit.map(l => queryWithOffset.take(l)).getOrElse(queryWithOffset)
 
       val resultF: Future[Seq[B]] = db.run(queryWithOffsetAndLimit.result)
-      val countF: Future[Int] = db.run(query.length.result)
+      val countF: Future[Int]     = db.run(query.length.result)
       for {
         result <- resultF
-        count <- countF
+        count  <- countF
       } yield PaginatedResult(
         totalCount = count,
         entities = result.toList,

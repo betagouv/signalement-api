@@ -13,13 +13,13 @@ import java.util.UUID
 
 class ReportFileTable(tag: Tag) extends TypedDatabaseTable[ReportFile, ReportFileId](tag, "report_files") {
 
-  def reportId = column[Option[UUID]]("report_id")
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def filename = column[String]("filename")
+  def reportId        = column[Option[UUID]]("report_id")
+  def creationDate    = column[OffsetDateTime]("creation_date")
+  def filename        = column[String]("filename")
   def storageFilename = column[String]("storage_filename")
-  def origin = column[ReportFileOrigin]("origin")
-  def avOutput = column[Option[String]]("av_output")
-  def report = foreignKey("report_files_fk", reportId, ReportTable.table)(_.id.?)
+  def origin          = column[ReportFileOrigin]("origin")
+  def avOutput        = column[Option[String]]("av_output")
+  def report          = foreignKey("report_files_fk", reportId, ReportTable.table)(_.id.?)
 
   type FileData = (ReportFileId, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 

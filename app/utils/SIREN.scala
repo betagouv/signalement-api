@@ -31,5 +31,5 @@ object SIREN {
       _.map(SIREN.fromUnsafe)
     )
   implicit val sirenWrites: Writes[SIREN] = Json.valueWrites[SIREN]
-  implicit val sirenReads: Reads[SIREN] = Reads.StringReads.map(SIREN.fromUnsafe) // To use the apply method
+  implicit val sirenReads: Reads[SIREN]   = Reads.StringReads.map(SIREN.fromUnsafe) // To use the apply method
 }

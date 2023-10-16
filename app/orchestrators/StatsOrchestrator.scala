@@ -71,7 +71,7 @@ class StatsOrchestrator(
 
   def getReportCountPercentage(filter: ReportFilter, basePercentageFilter: ReportFilter): Future[Int] =
     for {
-      count <- reportRepository.count(filter)
+      count     <- reportRepository.count(filter)
       baseCount <- reportRepository.count(basePercentageFilter)
     } yield toPercentage(count, baseCount)
 
@@ -100,7 +100,7 @@ class StatsOrchestrator(
       baseFilter: ReportFilter
   ): Future[Seq[CountByDate]] =
     for {
-      rawCurve <- getReportsCountCurve(reportFilter)
+      rawCurve  <- getReportsCountCurve(reportFilter)
       baseCurve <- getReportsCountCurve(baseFilter)
     } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
       CountByDate(
@@ -181,11 +181,11 @@ object StatsOrchestrator {
       results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
-    val tree = ReportNode("", 0, 0, List.empty, List.empty, None)
+    val tree   = ReportNode("", 0, 0, List.empty, List.empty, None)
 
     arbo.foreach { arborescenceNode =>
-      val res = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
-      val count = res.map(_._2).getOrElse(0)
+      val res          = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
+      val count        = res.map(_._2).getOrElse(0)
       val reclamations = res.map(_._3).getOrElse(0)
       createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
     }

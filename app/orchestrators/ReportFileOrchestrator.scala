@@ -30,7 +30,7 @@ class ReportFileOrchestrator(
     reportFileRepository.prefetchReportsFiles(reportsIds)
 
   def attachFilesToReport(fileIds: List[ReportFileId], reportId: UUID): Future[List[ReportFile]] = for {
-    _ <- reportFileRepository.attachFilesToReport(fileIds, reportId)
+    _     <- reportFileRepository.attachFilesToReport(fileIds, reportId)
     files <- reportFileRepository.retrieveReportFiles(reportId)
   } yield files
 
@@ -60,7 +60,7 @@ class ReportFileOrchestrator(
   def removeFromReportId(reportId: UUID): Future[List[Int]] =
     for {
       reportFilesToDelete <- reportFileRepository.retrieveReportFiles(reportId)
-      res <- reportFilesToDelete.map(file => remove(file.id, file.filename)).sequence
+      res                 <- reportFilesToDelete.map(file => remove(file.id, file.filename)).sequence
     } yield res
 
   def removeReportFile(fileId: ReportFileId, filename: String, user: Option[User]): Future[Int] =
@@ -84,7 +84,7 @@ class ReportFileOrchestrator(
 
   private def remove(fileId: ReportFileId, filename: String): Future[Int] = for {
     res <- reportFileRepository.delete(fileId)
-    _ <- s3Service.delete(filename)
+    _   <- s3Service.delete(filename)
   } yield res
 
   def downloadReportAttachment(reportFileId: ReportFileId, filename: String): Future[String] = {

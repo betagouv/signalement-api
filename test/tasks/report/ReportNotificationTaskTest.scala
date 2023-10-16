@@ -17,13 +17,13 @@ class ReportNotificationTaskTest extends Specification {
 
     "filter subscription report on postal code only when postal code is not in a foreign country" in {
 
-      val department = "75"
-      val company = Fixtures.genCompany.sample.get
-      val frenchAddress = Address(country = None, postalCode = Some(department))
+      val department     = "75"
+      val company        = Fixtures.genCompany.sample.get
+      val frenchAddress  = Address(country = None, postalCode = Some(department))
       val foreignAddress = Address(country = Some(Bangladesh), postalCode = Some(department))
-      val baseReport = Fixtures.genReportForCompany(company).sample.get
+      val baseReport     = Fixtures.genReportForCompany(company).sample.get
 
-      val frenchReport = baseReport.copy(id = UUID.randomUUID(), companyAddress = frenchAddress)
+      val frenchReport  = baseReport.copy(id = UUID.randomUUID(), companyAddress = frenchAddress)
       val foreignReport = baseReport.copy(id = UUID.randomUUID(), companyAddress = foreignAddress)
 
       val reports = List((frenchReport, List.empty[ReportFile]), (foreignReport, List.empty[ReportFile]))

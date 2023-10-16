@@ -23,26 +23,26 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
   "ImportOrchestrator" should {
     "import users" should {
       "import a siren for 3 users (1 not existing)" in {
-        val companyRepository = mock[CompanyRepositoryInterface]
-        val companySyncService = mock[CompanySyncServiceInterface]
-        val userOrchestrator = mock[UserOrchestratorInterface]
+        val companyRepository          = mock[CompanyRepositoryInterface]
+        val companySyncService         = mock[CompanySyncServiceInterface]
+        val userOrchestrator           = mock[UserOrchestratorInterface]
         val proAccessTokenOrchestrator = mock[ProAccessTokenOrchestratorInterface]
 
         val importOrchestrator =
           new ImportOrchestrator(companyRepository, companySyncService, userOrchestrator, proAccessTokenOrchestrator)
 
-        val siren = Fixtures.genSiren.sample.get
-        val existingUser1 = Fixtures.genUser.sample.get
-        val existingUser2 = Fixtures.genUser.sample.get
-        val user3 = Fixtures.genUser.sample.get
-        val existingCompanySR1 = Fixtures.genCompanySearchResult(Some(siren)).sample.get
-        val existingCompanySR2 = Fixtures.genCompanySearchResult(Some(siren)).sample.get
-        val companySR3 = Fixtures.genCompanySearchResult(Some(siren)).sample.get
+        val siren                = Fixtures.genSiren.sample.get
+        val existingUser1        = Fixtures.genUser.sample.get
+        val existingUser2        = Fixtures.genUser.sample.get
+        val user3                = Fixtures.genUser.sample.get
+        val existingCompanySR1   = Fixtures.genCompanySearchResult(Some(siren)).sample.get
+        val existingCompanySR2   = Fixtures.genCompanySearchResult(Some(siren)).sample.get
+        val companySR3           = Fixtures.genCompanySearchResult(Some(siren)).sample.get
         val companySearchResults = List(existingCompanySR1, existingCompanySR2, companySR3)
-        val existingCompany1 = importOrchestrator.toCompany(existingCompanySR1) // hardcode it ?
-        val existingCompany2 = importOrchestrator.toCompany(existingCompanySR2) // hardcode it ?
-        val company3 = importOrchestrator.toCompany(companySR3) // hardcode it ?
-        val users = List(existingUser1, existingUser2, user3)
+        val existingCompany1     = importOrchestrator.toCompany(existingCompanySR1) // hardcode it ?
+        val existingCompany2     = importOrchestrator.toCompany(existingCompanySR2) // hardcode it ?
+        val company3             = importOrchestrator.toCompany(companySR3)         // hardcode it ?
+        val users                = List(existingUser1, existingUser2, user3)
 
         when(companyRepository.findBySirets(List.empty)).thenReturn(Future.successful(List.empty))
         when(companySyncService.companiesBySirets(List.empty)).thenReturn(Future.successful(List.empty))

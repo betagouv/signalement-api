@@ -35,7 +35,7 @@ class WebsiteController(
     extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
 
   def fetchWithCompanies(
       maybeHost: Option[String],
@@ -124,7 +124,7 @@ class WebsiteController(
   def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
       websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
-      updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+      updated                 <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
       _ = logger.debug(updated.toString)
     } yield Ok(Json.toJson(updated))
   }

@@ -28,13 +28,13 @@ class ReportClosureTaskSpec(implicit ee: ExecutionEnv)
 
   val (app, components) = TestApp.buildApp()
 
-  lazy val reportRepository = components.reportRepository
+  lazy val reportRepository  = components.reportRepository
   lazy val reportClosureTask = components.reportClosureTask
-  lazy val eventRepository = components.eventRepository
+  lazy val eventRepository   = components.eventRepository
 
-  val creationDate = OffsetDateTime.parse("2020-01-01T00:00:00Z")
-  val taskRunDate = OffsetDateTime.parse("2020-06-01T00:00:00Z")
-  val dateInThePast = taskRunDate.minusDays(5)
+  val creationDate    = OffsetDateTime.parse("2020-01-01T00:00:00Z")
+  val taskRunDate     = OffsetDateTime.parse("2020-06-01T00:00:00Z")
+  val dateInThePast   = taskRunDate.minusDays(5)
   val dateInTheFuture = taskRunDate.plusDays(5)
 
   def genReport(status: ReportStatus = ReportStatus.TraitementEnCours, expirationDate: OffsetDateTime = dateInThePast) =
@@ -62,10 +62,10 @@ class ReportClosureTaskSpec(implicit ee: ExecutionEnv)
 
   "ReportClosureTask should close the reports that need to be closed" >> {
 
-    val reportExpired = genReport()
-    val reportExpiredSeenByPro = genReport(status = ReportStatus.Transmis)
+    val reportExpired                 = genReport()
+    val reportExpiredSeenByPro        = genReport(status = ReportStatus.Transmis)
     val reportExpiredButAlreadyClosed = genReport(status = ReportStatus.NonConsulte)
-    val reportNotExpired = genReport(expirationDate = dateInTheFuture)
+    val reportNotExpired              = genReport(expirationDate = dateInTheFuture)
 
     def setup(): Future[Unit] =
       for {

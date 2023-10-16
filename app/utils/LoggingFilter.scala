@@ -16,7 +16,7 @@ class LoggingFilter(implicit val mat: Materializer, ec: ExecutionContext) extend
       s"${requestHeader.method} ${requestHeader.uri}"
     )
     nextFilter(requestHeader).map { res =>
-      val endTime = System.currentTimeMillis
+      val endTime  = System.currentTimeMillis
       val duration = endTime - startTime
       logger.infoWithTitle(
         "res",

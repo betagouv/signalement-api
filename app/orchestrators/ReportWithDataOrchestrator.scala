@@ -45,12 +45,12 @@ class ReportWithDataOrchestrator(
       .flatMap { maybeReport =>
         maybeReport.map(report =>
           for {
-            events <- eventRepository.getEventsWithUsers(uuid, EventFilter())
+            events       <- eventRepository.getEventsWithUsers(uuid, EventFilter())
             maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
             companyEvents <- report.companyId
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
               .getOrElse(Future(List.empty))
-            reportFiles <- reportFileRepository.retrieveReportFiles(uuid)
+            reportFiles          <- reportFileRepository.retrieveReportFiles(uuid)
             consumerReviewOption <- reviewRepository.findByReportId(uuid).map(_.headOption)
           } yield {
             val responseOption = events

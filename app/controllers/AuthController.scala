@@ -32,9 +32,9 @@ class AuthController(
 
   def authenticate: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     for {
-      userLogin <- request.parseBody[UserCredentials]()
+      userLogin   <- request.parseBody[UserCredentials]()
       userSession <- authOrchestrator.login(userLogin, request)
-      result <- silhouette.env.authenticatorService.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+      result      <- silhouette.env.authenticatorService.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
     } yield result
   }
 
@@ -49,21 +49,21 @@ class AuthController(
   def forgotPassword: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       userLogin <- request.parseBody[UserLogin]()
-      _ <- authOrchestrator.forgotPassword(userLogin)
+      _         <- authOrchestrator.forgotPassword(userLogin)
     } yield Ok
   }
 
   def resetPassword(token: UUID): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       userPassword <- request.parseBody[UserPassword]()
-      _ <- authOrchestrator.resetPassword(token, userPassword)
+      _            <- authOrchestrator.resetPassword(token, userPassword)
     } yield NoContent
   }
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
     for {
       updatePassword <- request.parseBody[PasswordChange]()
-      _ <- authOrchestrator.changePassword(request.identity, updatePassword)
+      _              <- authOrchestrator.changePassword(request.identity, updatePassword)
     } yield NoContent
 
   }

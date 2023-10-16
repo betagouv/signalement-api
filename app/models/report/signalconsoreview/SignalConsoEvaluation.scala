@@ -8,11 +8,11 @@ sealed abstract class SignalConsoEvaluation(val value: Int) extends IntEnumEntry
 
 object SignalConsoEvaluation extends IntEnum[SignalConsoEvaluation] {
 
-  case object One extends SignalConsoEvaluation(1)
-  case object Two extends SignalConsoEvaluation(2)
+  case object One   extends SignalConsoEvaluation(1)
+  case object Two   extends SignalConsoEvaluation(2)
   case object Three extends SignalConsoEvaluation(3)
-  case object Four extends SignalConsoEvaluation(4)
-  case object Five extends SignalConsoEvaluation(5)
+  case object Four  extends SignalConsoEvaluation(4)
+  case object Five  extends SignalConsoEvaluation(5)
 
   val values: IndexedSeq[SignalConsoEvaluation] = findValues
 

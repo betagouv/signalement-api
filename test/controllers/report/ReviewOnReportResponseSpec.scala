@@ -96,7 +96,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  val adminUser = Fixtures.genAdminUser.sample.get
+  val adminUser             = Fixtures.genAdminUser.sample.get
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env: Environment[AuthEnv] =
@@ -108,10 +108,10 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     )
   )
 
-  lazy val reportRepository = components.reportRepository
-  lazy val eventRepository = components.eventRepository
+  lazy val reportRepository                 = components.reportRepository
+  lazy val eventRepository                  = components.eventRepository
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val companyRepository                = components.companyRepository
 
   val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, Some("Response Details..."))
 

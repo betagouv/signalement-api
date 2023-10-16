@@ -80,7 +80,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new WithApplication(app) {
 
         val draftReport = Fixtures.genDraftReport.sample
-        val jsonBody = Json.toJson(draftReport)
+        val jsonBody    = Json.toJson(draftReport)
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
@@ -95,7 +95,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     "block spammed email but return normally" in new Context {
       val blockedEmail = "spammer@gmail.com"
-      val testEnv = application(skipValidation = true)
+      val testEnv      = application(skipValidation = true)
       import testEnv._
 
       new WithApplication(app) {
@@ -113,7 +113,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         )
 
         val draftReport = Fixtures.genDraftReport.sample.get.copy(email = EmailAddress(blockedEmail))
-        val jsonBody = Json.toJson(draftReport)
+        val jsonBody    = Json.toJson(draftReport)
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
@@ -132,8 +132,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new WithApplication(app) {
 
         val company = Fixtures.genCompany.sample.get
-        val report = Fixtures.genReportForCompany(company).sample.get
-        val event = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
+        val report  = Fixtures.genReportForCompany(company).sample.get
+        val event   = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
         val reportFile = ReportFile(
           ReportFileId.generateId(),
           Some(report.id),
@@ -172,10 +172,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val (maybeReport, maybeReportFile, maybeEvent, maybeReview) = Await.result(
           for {
-            maybeReport <- reportRepository.get(report.id)
+            maybeReport     <- reportRepository.get(report.id)
             maybeReportFile <- reportFileRepository.get(reportFile.id)
-            maybeEvent <- eventRepository.get(event.id)
-            maybeReview <- responseConsumerReviewRepository.get(review.id)
+            maybeEvent      <- eventRepository.get(event.id)
+            maybeReview     <- responseConsumerReviewRepository.get(review.id)
           } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview),
           Duration.Inf
         )
@@ -191,10 +191,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   trait Context extends Scope {
 
-    val adminIdentity = Fixtures.genAdminUser.sample.get
+    val adminIdentity  = Fixtures.genAdminUser.sample.get
     val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
-    val proIdentity = Fixtures.genProUser.sample.get
-    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
+    val proIdentity    = Fixtures.genProUser.sample.get
+    val proLoginInfo   = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
 
     val companyId = UUID.randomUUID
 
@@ -202,7 +202,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mailRetriesService = mock[MailRetriesService]
-    val mockS3Service = new S3ServiceMock()
+    val mockS3Service      = new S3ServiceMock()
 
     def application(skipValidation: Boolean = false) = new {
 
@@ -215,9 +215,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             override def authEnv: Environment[AuthEnv] = env
             override def configuration: Configuration = Configuration(
               "slick.dbs.default.db.connectionPool" -> "disabled",
-              "play.mailer.mock" -> true,
-              "skip-report-email-validation" -> true,
-              "play.tmpDirectory" -> "./target"
+              "play.mailer.mock"                    -> true,
+              "skip-report-email-validation"        -> true,
+              "play.tmpDirectory"                   -> "./target"
             ).withFallback(
               super.configuration
             )
@@ -263,12 +263,12 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
       val app = TestApp.buildApp(loader)
 
-      lazy val reportRepository = loader.components.reportRepository
-      lazy val reportFileRepository = loader.components.reportFileRepository
-      lazy val eventRepository = loader.components.eventRepository
+      lazy val reportRepository                 = loader.components.reportRepository
+      lazy val reportFileRepository             = loader.components.reportFileRepository
+      lazy val eventRepository                  = loader.components.eventRepository
       lazy val responseConsumerReviewRepository = loader.components.responseConsumerReviewRepository
-      lazy val companyRepository = loader.components.companyRepository
-      lazy val blacklistedEmailsRepository = loader.components.blacklistedEmailsRepository
+      lazy val companyRepository                = loader.components.companyRepository
+      lazy val blacklistedEmailsRepository      = loader.components.blacklistedEmailsRepository
     }
 
   }

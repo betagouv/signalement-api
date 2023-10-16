@@ -39,7 +39,7 @@ class AccessesOrchestrator(
     tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
-  val logger = Logger(this.getClass)
+  val logger                              = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listDGCCRFPendingToken(user: User): Future[List[DGCCRFAccessToken]] =
@@ -51,7 +51,7 @@ class AccessesOrchestrator(
       }
 
   def activateAdminOrDGCCRFUser(draftUser: DraftUser, token: String) = for {
-    _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _                <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {
@@ -113,7 +113,7 @@ class AccessesOrchestrator(
         } else {
           Future.failed(InvalidDGCCRFOrAdminEmail(email))
         }
-      _ <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
+      _              <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)
       existingToken = existingTokens.find(_.kind == kind)
       token <-
@@ -176,17 +176,17 @@ class AccessesOrchestrator(
         ServerError("ValidateEmailToken should have valid email associated")
       )
       user <- userOrchestrator.findOrError(emailTo)
-      _ <- accessTokenRepository.validateEmail(emailValidationToken, user)
+      _    <- accessTokenRepository.validateEmail(emailValidationToken, user)
       _ = logger.debug(s"Validated email ${emailValidationToken.emailedTo.get}")
       updatedUser <- userOrchestrator.findOrError(emailTo)
     } yield updatedUser
 
   def resetLastEmailValidation(email: EmailAddress): Future[User] = for {
     tokens <- accessTokenRepository.fetchPendingTokens(email)
-    _ = logger.debug("Fetching email validation token")
+    _                    = logger.debug("Fetching email validation token")
     emailValidationToken = tokens.filter(_.kind == ValidateEmail)
-    _ = logger.debug(s"Found email validation token : $emailValidationToken")
-    _ = logger.debug(s"Fetching user for $email")
+    _                    = logger.debug(s"Found email validation token : $emailValidationToken")
+    _                    = logger.debug(s"Fetching user for $email")
     user <- userOrchestrator
       .findOrError(email)
       .ensure {

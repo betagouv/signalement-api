@@ -109,7 +109,7 @@ class ReportController(
       logger.debug(s"reportResponse ${uuid}")
       for {
         reportResponse <- request.parseBody[ReportResponse]()
-        visibleReport <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        visibleReport  <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -123,7 +123,7 @@ class ReportController(
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
         reportAction <- request.parseBody[ReportAction]()
-        report <- reportRepository.get(uuid)
+        report       <- reportRepository.get(uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -158,7 +158,7 @@ class ReportController(
       .map(_.flatten)
       .map(
         _.map { reportData =>
-          val lang = Lang(reportData.report.lang.getOrElse(Locale.FRENCH))
+          val lang                               = Lang(reportData.report.lang.getOrElse(Locale.FRENCH))
           val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
           views.html.pdfs
             .report(
@@ -196,8 +196,8 @@ class ReportController(
     SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
       for {
         maybeReport <- reportRepository.get(uuid)
-        company <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
-        files <- reportFileRepository.retrieveReportFiles(uuid)
+        company     <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+        files       <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
           reportId = uuid,
           eventType = None,
@@ -206,7 +206,7 @@ class ReportController(
         proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
         source = maybeReport
           .map { report =>
-            val lang = Lang(report.lang.getOrElse(Locale.FRENCH))
+            val lang                                        = Lang(report.lang.getOrElse(Locale.FRENCH))
             implicit val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
             val notificationHtml =
               views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(

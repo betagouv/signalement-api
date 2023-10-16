@@ -43,17 +43,17 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     with JsonMatchers {
 
   implicit val ec: ExecutionContext = ee.executionContext
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                = Logger(this.getClass)
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val userRepository        = components.userRepository
+  lazy val companyRepository     = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
-  lazy val eventRepository = components.eventRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository       = components.eventRepository
+  lazy val reportRepository      = components.reportRepository
 
-  val tokenDuration = java.time.Period.parse("P60D")
+  val tokenDuration             = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
-  val defaultTokenCreationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1)
+  val defaultTokenCreationDate  = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1)
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
@@ -93,21 +93,21 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseNewCompany =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseNewCompanyWithMultiplePendingReports =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
-      _ <- createPendingReport(c)
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
+      _      <- createPendingReport(c)
+      _      <- createPendingReport(c)
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedOnce =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -122,7 +122,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -138,7 +138,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwice =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -167,7 +167,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
       (c, a) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -199,7 +199,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNoticeRequired =
     for {
       (c, a) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -255,7 +255,7 @@ The companies to activate endpoint should
       .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content  = contentAsJson(result).toString
     val matchers = expectedCompaniesToActivate.map(c => buildMatcherForCase(c._1, c._2, c._3))
     content must haveCompaniesToActivate(matchers)
   }

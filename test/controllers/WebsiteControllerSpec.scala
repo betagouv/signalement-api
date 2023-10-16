@@ -28,15 +28,15 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  lazy val userRepository = components.userRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val userRepository    = components.userRepository
+  lazy val reportRepository  = components.reportRepository
   lazy val companyRepository = components.companyRepository
   lazy val websiteRepository = components.websiteRepository
 
-  val adminUser = Fixtures.genAdminUser.sample.get
-  val company = Fixtures.genCompany.sample.get
-  val website1 = Fixtures.genWebsiteURL.sample.get
-  val website2 = Fixtures.genWebsiteURL.sample.get
+  val adminUser          = Fixtures.genAdminUser.sample.get
+  val company            = Fixtures.genCompany.sample.get
+  val website1           = Fixtures.genWebsiteURL.sample.get
+  val website2           = Fixtures.genWebsiteURL.sample.get
   val websiteWithCompany = Fixtures.genWebsiteURL.sample.get
 
   override def setupData() =

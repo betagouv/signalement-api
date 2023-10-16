@@ -13,10 +13,10 @@ import java.time.OffsetDateTime
 class SignalConsoReviewTable(tag: Tag)
     extends TypedDatabaseTable[SignalConsoReview, SignalConsoReviewId](tag, "signalconso_review") {
 
-  def evaluation = column[SignalConsoEvaluation]("evaluation")
-  def details = column[Option[String]]("details")
+  def evaluation   = column[SignalConsoEvaluation]("evaluation")
+  def details      = column[Option[String]]("details")
   def creationDate = column[OffsetDateTime]("creation_date")
-  def platform = column[Os]("platform")
+  def platform     = column[Os]("platform")
 
   type SignalConsoReviewData = (
       SignalConsoReviewId,

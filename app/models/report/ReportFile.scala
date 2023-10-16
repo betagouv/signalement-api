@@ -9,7 +9,7 @@ import java.util.UUID
 sealed case class ReportFileOrigin(value: String)
 
 object ReportFileOrigin {
-  val CONSUMER = ReportFileOrigin("consumer")
+  val CONSUMER     = ReportFileOrigin("consumer")
   val PROFESSIONAL = ReportFileOrigin("professional")
 
   implicit def reportFileOriginWrites: Writes[ReportFileOrigin] = (reportFileOrigin: ReportFileOrigin) =>

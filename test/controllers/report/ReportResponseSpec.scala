@@ -244,21 +244,21 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  lazy val reportRepository = components.reportRepository
-  lazy val reportFileRepository = components.reportFileRepository
-  lazy val userRepository = components.userRepository
-  lazy val eventRepository = components.eventRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
-  lazy val mailRetriesService = components.mailRetriesService
-  lazy val attachementService = components.attachmentService
+  lazy val reportRepository                      = components.reportRepository
+  lazy val reportFileRepository                  = components.reportFileRepository
+  lazy val userRepository                        = components.userRepository
+  lazy val eventRepository                       = components.eventRepository
+  lazy val companyRepository                     = components.companyRepository
+  lazy val companyAccessRepository               = components.companyAccessRepository
+  lazy val AccessTokenRepositoryInterface        = components.accessTokenRepository
+  lazy val mailRetriesService                    = components.mailRetriesService
+  lazy val attachementService                    = components.attachmentService
   implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
-  lazy val messagesApi = components.messagesApi
+  lazy val messagesApi                           = components.messagesApi
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
-  val siretForConcernedPro = Fixtures.genSiret().sample.get
+  val siretForConcernedPro    = Fixtures.genSiret().sample.get
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
   val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro, isHeadOffice = false)
@@ -269,19 +269,19 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
   var reviewUrl = new URI("")
-  var report = reportFixture
+  var report    = reportFixture
 
-  val concernedProUser = Fixtures.genProUser.sample.get
+  val concernedProUser      = Fixtures.genProUser.sample.get
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
 
-  val concernedHeadOfficeProUser = Fixtures.genProUser.sample.get
+  val concernedHeadOfficeProUser      = Fixtures.genProUser.sample.get
   val concernedHeadOfficeProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedHeadOfficeProUser.email.value)
 
-  val notConcernedProUser = Fixtures.genProUser.sample.get
+  val notConcernedProUser      = Fixtures.genProUser.sample.get
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
 
   var someLoginInfo: Option[LoginInfo] = None
-  var someResult: Option[Result] = None
+  var someResult: Option[Result]       = None
 
   val reportResponseFile = ReportFile(
     ReportFileId.generateId(),
@@ -333,9 +333,9 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(
-      concernedProLoginInfo -> concernedProUser,
+      concernedProLoginInfo           -> concernedProUser,
       concernedHeadOfficeProLoginInfo -> concernedHeadOfficeProUser,
-      notConcernedProLoginInfo -> notConcernedProUser
+      notConcernedProLoginInfo        -> notConcernedProUser
     )
   )
 

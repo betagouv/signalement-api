@@ -30,7 +30,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val identity = Fixtures.genAdminUser.sample.get
+  val identity       = Fixtures.genAdminUser.sample.get
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
 
   val (app, components) = TestApp.buildApp(
@@ -39,10 +39,10 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
     )
   )
 
-  val userRepository = components.userRepository
-  val companyRepository = components.companyRepository
+  val userRepository          = components.userRepository
+  val companyRepository       = components.companyRepository
   val companyAccessRepository = components.companyAccessRepository
-  val accessTokenRepository = components.accessTokenRepository
+  val accessTokenRepository   = components.accessTokenRepository
 
   implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
@@ -69,12 +69,12 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> proUser.email,
+                "email"     -> proUser.email,
                 "firstName" -> proUser.firstName,
-                "lastName" -> proUser.lastName,
-                "password" -> proUser.password
+                "lastName"  -> proUser.lastName,
+                "password"  -> proUser.password
               ),
-              "token" -> "123456",
+              "token"        -> "123456",
               "companySiret" -> company.siret
             )
           )
@@ -93,12 +93,12 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> proUser.email,
+                "email"     -> proUser.email,
                 "firstName" -> proUser.firstName,
-                "lastName" -> proUser.lastName,
-                "password" -> proUser.password
+                "lastName"  -> proUser.lastName,
+                "password"  -> proUser.password
               ),
-              "token" -> "123456",
+              "token"        -> "123456",
               "companySiret" -> "XXXXXXXXXXXXXX"
             )
           )
@@ -112,7 +112,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "use preexisting tokens with same email, if any" in {
-        val newUser = Fixtures.genUser.sample.get
+        val newUser      = Fixtures.genUser.sample.get
         val otherCompany = Fixtures.genCompany.sample.get
         Await.result(
           for {
@@ -144,12 +144,12 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> newUser.email,
+                "email"     -> newUser.email,
                 "firstName" -> newUser.firstName,
-                "lastName" -> newUser.lastName,
-                "password" -> newUser.password
+                "lastName"  -> newUser.lastName,
+                "password"  -> newUser.password
               ),
-              "token" -> "000000",
+              "token"        -> "000000",
               "companySiret" -> company.siret
             )
           )
@@ -187,10 +187,10 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> "user@dgccrf.gouv.fr",
+                "email"     -> "user@dgccrf.gouv.fr",
                 "firstName" -> ccrfUser.firstName,
-                "lastName" -> ccrfUser.lastName,
-                "password" -> ccrfUser.password
+                "lastName"  -> ccrfUser.lastName,
+                "password"  -> ccrfUser.password
               ),
               "token" -> ccrfToken.token
             )

@@ -54,7 +54,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
       .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(0, startDate.minusMonths(2L))),
@@ -74,7 +74,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
         .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1L))),
@@ -87,7 +87,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
       FakeRequest(GET, routes.StatisticController.getPublicStatCurve(PublicStat.PromesseAction).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsAccepted.length, startDate.minusMonths(1L))),
@@ -103,7 +103,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     with JsonMatchers {
 
   lazy val companyRepository = components.companyRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val reportRepository  = components.reportRepository
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
@@ -146,9 +146,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
       .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
 
   val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
-  val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
+  val lastYearReportsReadByPro    = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
   val lastYearReportsForwardedToPro = lastYearReportsToProcess ::: lastYearReportsReadByPro
-  val lastYearReports = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
+  val lastYearReports               = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
 
   val lastMonthReportsToProcess = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
@@ -188,9 +188,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   val lastMonthReportsWithResponse =
     lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
-  val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
+  val lastMonthReportsReadByPro      = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
   val lastMonthReportsForwardedToPro = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
-  val lastMonthReports = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
+  val lastMonthReports               = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
 
   val currentMonthReportsToProcess =
     Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours).sample.get
@@ -214,9 +214,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val currentMonthReports =
     currentMonthReportsToProcess ::: currentMonthReportsSend ::: currentMonthReportsReadByPro ::: currentMonthReportsNotForwarded
 
-  val reportsWithResponseCutoff = lastYearReportsWithResponse ::: lastMonthReportsWithResponse
-  val reportsReadByProCutoff = lastYearReportsReadByPro ::: lastMonthReportsReadByPro
-  val reportsForwardedToProCutoff = lastYearReportsForwardedToPro ::: lastMonthReportsForwardedToPro
+  val reportsWithResponseCutoff     = lastYearReportsWithResponse ::: lastMonthReportsWithResponse
+  val reportsReadByProCutoff        = lastYearReportsReadByPro ::: lastMonthReportsReadByPro
+  val reportsForwardedToProCutoff   = lastYearReportsForwardedToPro ::: lastMonthReportsForwardedToPro
   val reportsClosedByNoActionCutoff = lastYearReportsClosedByNoAction ::: lastMonthReportsClosedByNoAction
 
   val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports

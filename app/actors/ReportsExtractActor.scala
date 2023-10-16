@@ -54,7 +54,7 @@ object ReportsExtractActor {
   case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId)
       extends ReportsExtractCommand
   case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends ReportsExtractCommand
-  case object ExtractRequestFailure extends ReportsExtractCommand
+  case object ExtractRequestFailure                                 extends ReportsExtractCommand
 
   val logger: Logger = Logger(this.getClass)
 
@@ -88,7 +88,7 @@ object ReportsExtractActor {
               zone
             )
             remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
-            _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+            _          <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
           } yield ExtractRequestSuccess(fileId, requestedBy)
 
           context.pipeToSelf(result) {
@@ -124,9 +124,9 @@ object ReportsExtractActor {
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  private val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
+  private val leftAlignmentColumn   = Column(autoSized = true, style = leftAlignmentStyle)
   private val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
-  private val MaxCharInSingleCell = 10000
+  private val MaxCharInSingleCell   = 10000
 
   // Columns definition
   case class ReportColumn(
@@ -415,8 +415,8 @@ object ReportsExtractActor {
           limit = Some(signalConsoConfiguration.reportsExportLimitMax)
         )
         .map(_.entities.map(_.report))
-      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
-      reportEventsMap <- eventRepository.fetchEventsOfReports(paginatedReports)
+      reportFilesMap     <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportEventsMap    <- eventRepository.fetchEventsOfReports(paginatedReports)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(paginatedReports.map(_.id))
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.flatMap(_.companyId),

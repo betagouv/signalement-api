@@ -20,7 +20,7 @@ class APIKeyRequestProvider(
   val logger: Logger = Logger(this.getClass)
 
   def authenticate[B](request: Request[B]): Future[Option[LoginInfo]] = {
-    val hasher = passwordHasherRegistry.current
+    val hasher         = passwordHasherRegistry.current
     val headerValueOpt = request.headers.get("X-Api-Key")
 
     headerValueOpt

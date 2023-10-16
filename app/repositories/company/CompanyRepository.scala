@@ -118,7 +118,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .filter(_.siret.asColumnOf[String] like s"${SIREN.fromSIRET(siret).value}%")
         .filter { companyTable =>
           val companyWithSameSiret: Rep[Boolean] = companyTable.siret === siret
-          val companyHeadOffice: Rep[Boolean] = companyTable.isHeadOffice
+          val companyHeadOffice: Rep[Boolean]    = companyTable.isHeadOffice
           companyWithSameSiret || companyHeadOffice
         }
         .filter(_.isOpen)

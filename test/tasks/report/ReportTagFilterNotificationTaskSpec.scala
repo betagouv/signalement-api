@@ -60,22 +60,22 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
   )
 
   lazy val subscriptionRepository = components.subscriptionRepository
-  lazy val reportRepository = components.reportRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val reportRepository       = components.reportRepository
+  lazy val companyRepository      = components.companyRepository
   lazy val reportNotificationTask = components.reportNotificationTask
-  lazy val mailRetriesService = components.mailRetriesService
-  lazy val attachementService = components.attachmentService
+  lazy val mailRetriesService     = components.mailRetriesService
+  lazy val attachementService     = components.attachmentService
 
-  implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
+  implicit lazy val frontRoute: utils.FrontRoute       = components.frontRoute
   implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
   implicit val ec: ExecutionContext = ee.executionContext
 
   val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   val runningDate = runningTime.toLocalDate()
-  val tagDept = "02"
+  val tagDept     = "02"
 
-  val tagEmail = Fixtures.genEmailAddress("tag", "abo").sample.get
+  val tagEmail   = Fixtures.genEmailAddress("tag", "abo").sample.get
   val noTagEmail = Fixtures.genEmailAddress("notag", "abo").sample.get
 
   val tagSubscription = Subscription(

@@ -72,7 +72,7 @@ class AuthOrchestrator(
     ec: ExecutionContext
 ) {
 
-  private val logger: Logger = Logger(this.getClass)
+  private val logger: Logger                        = Logger(this.getClass)
   private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
   private def handleDeletedUser(user: User, userLogin: UserCredentials): Future[Unit] =
@@ -95,9 +95,9 @@ class AuthOrchestrator(
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
     logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
-      _ <- validateAuthenticationAttempts(userLogin.login)
+      _         <- validateAuthenticationAttempts(userLogin.login)
       maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
-      user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
+      user      <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
@@ -182,9 +182,9 @@ class AuthOrchestrator(
 
   private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
-      loginInfo <- authenticate(userLogin.login, userLogin.password)
+      loginInfo     <- authenticate(userLogin.login, userLogin.password)
       authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-      cookie <- silhouette.env.authenticatorService.init(authenticator)
+      cookie        <- silhouette.env.authenticatorService.init(authenticator)
     } yield cookie
 
   private def authenticate(login: String, password: String) =
@@ -228,8 +228,8 @@ class AuthOrchestrator(
 }
 
 object AuthOrchestrator {
-  val AuthAttemptPeriod: Duration = 30 minutes
-  val MaxAllowedAuthAttempts: Int = 20
-  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now().plusDays(1)
+  val AuthAttemptPeriod: Duration           = 30 minutes
+  val MaxAllowedAuthAttempts: Int           = 20
+  def authTokenExpiration: OffsetDateTime   = OffsetDateTime.now().plusDays(1)
   def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
 }

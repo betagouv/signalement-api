@@ -29,7 +29,7 @@ class InactiveDgccrfAccountRemoveTask(
     logger.info(s"Soft delete inactive DGCCRF accounts with last validation below $expirationDateThreshold")
     for {
       inactiveDGCCRFAccounts <- userRepository.listExpiredDGCCRF(expirationDateThreshold)
-      results <- inactiveDGCCRFAccounts.map(removeWithSubscriptions).sequence
+      results                <- inactiveDGCCRFAccounts.map(removeWithSubscriptions).sequence
     } yield results.sequence
   }
 

@@ -20,5 +20,5 @@ object URL {
     URL(_)
   )
   implicit val urlWrites: Writes[URL] = Json.valueWrites[URL]
-  implicit val urlReads: Reads[URL] = Reads.StringReads.map(URL(_)) // To use the apply method
+  implicit val urlReads: Reads[URL]   = Reads.StringReads.map(URL(_)) // To use the apply method
 }

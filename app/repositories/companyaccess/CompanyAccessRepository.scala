@@ -70,7 +70,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     db.run(
       (for {
         access <- table if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
-        user <- UserTable.table if user.id === access.userId
+        user   <- UserTable.table if user.id === access.userId
       } yield (access.companyId, user)).to[List].result
     )
 

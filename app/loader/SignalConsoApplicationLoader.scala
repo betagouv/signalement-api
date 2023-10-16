@@ -144,8 +144,8 @@ class SignalConsoComponents(
   val logger: Logger = Logger(this.getClass)
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
-  implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
-  val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+  implicit val personReader: ConfigReader[EmailAddress]    = deriveReader[EmailAddress]
+  val csvStringListReader                                  = ConfigReader[String].map(_.split(",").toList)
   @nowarn("msg=Implicit definition should have explicit type")
   // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
@@ -169,10 +169,10 @@ class SignalConsoComponents(
     .load()
     .migrate()
 
-  def emailConfiguration = applicationConfiguration.mail
+  def emailConfiguration                                 = applicationConfiguration.mail
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
-  def tokenConfiguration = signalConsoConfiguration.token
-  def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
+  def tokenConfiguration                                 = signalConsoConfiguration.token
+  def uploadConfiguration: UploadConfiguration           = signalConsoConfiguration.upload
 
   def mobileAppConfiguration = signalConsoConfiguration.mobileApp
 
@@ -185,36 +185,36 @@ class SignalConsoComponents(
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
   val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
-  val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
+  val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
-  val asyncFileRepository: AsyncFileRepositoryInterface = new AsyncFileRepository(dbConfig)
+  val asyncFileRepository: AsyncFileRepositoryInterface     = new AsyncFileRepository(dbConfig)
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
-  val authTokenRepository: AuthTokenRepositoryInterface = new AuthTokenRepository(dbConfig)
-  def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
+  val authTokenRepository: AuthTokenRepositoryInterface     = new AuthTokenRepository(dbConfig)
+  def companyRepository: CompanyRepositoryInterface         = new CompanyRepository(dbConfig)
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
-  val consumerRepository: ConsumerRepositoryInterface = new ConsumerRepository(dbConfig)
-  val dataEconomieRepository: DataEconomieRepositoryInterface = new DataEconomieRepository(actorSystem)
+  val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
+  val dataEconomieRepository: DataEconomieRepositoryInterface       = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
-  def eventRepository: EventRepositoryInterface = new EventRepository(dbConfig)
-  val ratingRepository: RatingRepositoryInterface = new RatingRepository(dbConfig)
-  def reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
+  def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
+  val ratingRepository: RatingRepositoryInterface                 = new RatingRepository(dbConfig)
+  def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
-  def reportFileRepository: ReportFileRepositoryInterface = new ReportFileRepository(dbConfig)
-  val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
-  val userRepository: UserRepositoryInterface = new UserRepository(dbConfig, passwordHasherRegistry)
-  val websiteRepository: WebsiteRepositoryInterface = new WebsiteRepository(dbConfig)
+  def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
+  val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
+  val userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
+  val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
-  val userService = new UserService(userRepository)
+  val userService    = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
 
   val authenticatorService: AuthenticatorService[CookieAuthenticator] =
@@ -279,10 +279,10 @@ class SignalConsoComponents(
   val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
     actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
 
-  val pdfService = new PDFService(signalConsoConfiguration, htmlConverterActor)
+  val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
-  val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
-  lazy val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
+  val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
+  lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)
   val mailService = new MailService(
     mailRetriesService,
     emailConfiguration,
@@ -553,8 +553,8 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val constantController = new ConstantController(silhouette, controllerComponents)
-  val mobileAppController = new MobileAppController(signalConsoConfiguration, silhouette, controllerComponents)
+  val constantController     = new ConstantController(silhouette, controllerComponents)
+  val mobileAppController    = new MobileAppController(signalConsoConfiguration, silhouette, controllerComponents)
   val dataEconomieController = new DataEconomieController(dataEconomieOrchestrator, silhouetteApi, controllerComponents)
   val emailValidationController =
     new EmailValidationController(silhouette, emailValidationOrchestrator, controllerComponents)
@@ -647,7 +647,7 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
+  val siretExtractorService    = new SiretExtractorService(applicationConfiguration.siretExtractor)
   val siretExtractorController = new SiretExtractorController(siretExtractorService, silhouette, controllerComponents)
 
   val importOrchestrator = new ImportOrchestrator(

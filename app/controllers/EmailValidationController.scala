@@ -44,14 +44,14 @@ class EmailValidationController(
     logger.debug("Calling validate email API")
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()
-      validationResult <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
+      validationResult  <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
     } yield Ok(Json.toJson(validationResult))
   }
 
   def validate(): Action[JsValue] = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
     for {
-      body <- request.parseBody[ValidateEmail]()
+      body             <- request.parseBody[ValidateEmail]()
       validationResult <- emailValidationOrchestrator.validateEmail(body.email)
     } yield Ok(Json.toJson(validationResult))
   }

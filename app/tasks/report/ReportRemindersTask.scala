@@ -45,7 +45,7 @@ class ReportRemindersTask(
   // At J+16 during the night, the pro receives the second reminder email
   // At J+25 the report is closed
   val delayBetweenReminderEmails: Period = Period.ofDays(7)
-  val maxReminderCount = 2
+  val maxReminderCount                   = 2
 
   def schedule(actorSystem: ActorSystem, taskConfiguration: TaskConfiguration): Unit = {
     val conf = taskConfiguration.reportReminders
@@ -84,7 +84,7 @@ class ReportRemindersTask(
       reportsWithUsers: List[(Report, List[User])]
   ): Future[(List[List[UUID]], List[List[UUID]])] = {
     logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
-    val reportsPerUsers = reportsWithUsers.groupBy(_._2).view.mapValues(_.map(_._1))
+    val reportsPerUsers           = reportsWithUsers.groupBy(_._2).view.mapValues(_.map(_._1))
     val reportsPerCompanyPerUsers = reportsPerUsers.mapValues(_.groupBy(_.companyId)).mapValues(_.values)
 
     for {
@@ -189,7 +189,7 @@ class ReportRemindersTask(
       companiesSiretsAndIds = reports.flatMap(r =>
         for {
           siret <- r.companySiret
-          id <- r.companyId
+          id    <- r.companyId
         } yield (siret, id)
       )
       usersByCompanyId <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(companiesSiretsAndIds.distinct)

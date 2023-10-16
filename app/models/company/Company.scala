@@ -11,13 +11,13 @@ import scala.util.Try
 sealed case class AccessLevel(value: String)
 
 object AccessLevel {
-  val NONE = AccessLevel("none")
+  val NONE   = AccessLevel("none")
   val MEMBER = AccessLevel("member")
-  val ADMIN = AccessLevel("admin")
+  val ADMIN  = AccessLevel("admin")
 
   def fromValue(v: String) =
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
-  implicit val reads: Reads[AccessLevel] = (json: JsValue) => json.validate[String].map(fromValue)
+  implicit val reads: Reads[AccessLevel]   = (json: JsValue) => json.validate[String].map(fromValue)
   implicit val writes: Writes[AccessLevel] = (level: AccessLevel) => Json.toJson(level.value)
 }
 

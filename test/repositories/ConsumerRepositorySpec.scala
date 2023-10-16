@@ -20,7 +20,7 @@ class ConsumerRepositorySpec(implicit ee: ExecutionEnv)
 
   val (app, components) = TestApp.buildApp()
 
-  val consumer = Fixtures.genConsumer.sample.get
+  val consumer        = Fixtures.genConsumer.sample.get
   val deletedConsumer = Fixtures.genConsumer.sample.get.copy(deleteDate = Some(OffsetDateTime.now()))
 
   "ConsumerRepository" should {
