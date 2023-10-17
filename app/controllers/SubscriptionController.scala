@@ -46,7 +46,7 @@ class SubscriptionController(
                   countries = draftSubscription.countries.map(Country.fromCode),
                   sirets = draftSubscription.sirets,
                   frequency = draftSubscription.frequency,
-                  userRole = request.identity.userRole
+                  userRole = Some(request.identity.userRole)
                 )
               )
               .map(subscription => Ok(Json.toJson(subscription)))

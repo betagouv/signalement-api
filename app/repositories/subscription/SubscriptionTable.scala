@@ -32,7 +32,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
   def countries    = column[List[Country]]("countries")
   def sirets       = column[List[SIRET]]("sirets")
   def frequency    = column[Period]("frequency")
-  def userRole     = column[UserRole]("user_role")
+  def userRole     = column[Option[UserRole]]("user_role")
 
   type SubscriptionData = (
       UUID,
@@ -46,7 +46,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
       List[Country],
       List[SIRET],
       Period,
-      UserRole
+      Option[UserRole]
   )
 
   def constructSubscription: SubscriptionData => Subscription = {

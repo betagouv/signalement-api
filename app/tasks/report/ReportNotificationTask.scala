@@ -121,7 +121,7 @@ object ReportNotificationTask {
   ): SortedMap[Report, List[ReportFile]] = reportsWithFiles
     .filter { case (report, _) =>
       subscription.userRole match {
-        case UserRole.DGAL =>
+        case Some(UserRole.DGAL) =>
           PreFilter.DGALFilter.category.forall(_.entryName == report.category) || (if (
                                                                                      PreFilter.DGALFilter.tags.isEmpty
                                                                                    ) true
@@ -129,9 +129,10 @@ object ReportNotificationTask {
                                                                                      PreFilter.DGALFilter.tags
                                                                                        .intersect(report.tags)
                                                                                        .nonEmpty)
-        case UserRole.DGCCRF        => true
-        case UserRole.Admin         => true
-        case UserRole.Professionnel => true
+        case Some(UserRole.DGCCRF)        => true
+        case Some(UserRole.Admin)         => true
+        case Some(UserRole.Professionnel) => true
+        case None                         => true
       }
     }
     .filter { case (report, _) =>

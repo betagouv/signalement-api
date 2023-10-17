@@ -52,7 +52,7 @@ case class Subscription(
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
     frequency: Period,
-    userRole: UserRole
+    userRole: Option[UserRole]
 )
 
 object Subscription {
