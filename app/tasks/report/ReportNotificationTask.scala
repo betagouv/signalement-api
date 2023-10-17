@@ -4,6 +4,8 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.Subscription
+import models.UserRole
+import models.report.PreFilter
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFilter
@@ -117,6 +119,21 @@ object ReportNotificationTask {
       reportsWithFiles: SortedMap[Report, List[ReportFile]],
       subscription: Subscription
   ): SortedMap[Report, List[ReportFile]] = reportsWithFiles
+    .filter { case (report, _) =>
+      subscription.userRole match {
+        case UserRole.DGAL =>
+          PreFilter.DGALFilter.category.forall(_.entryName == report.category) || (if (
+                                                                                     PreFilter.DGALFilter.tags.isEmpty
+                                                                                   ) true
+                                                                                   else
+                                                                                     PreFilter.DGALFilter.tags
+                                                                                       .intersect(report.tags)
+                                                                                       .nonEmpty)
+        case UserRole.DGCCRF        => true
+        case UserRole.Admin         => true
+        case UserRole.Professionnel => true
+      }
+    }
     .filter { case (report, _) =>
       subscription.departments.isEmpty || (report.companyAddress.country.isEmpty && subscription.departments
         .map(Some(_))

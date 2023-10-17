@@ -8,10 +8,11 @@ import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models._
 import models.token.AdminOrDgccrfTokenKind
-import models.token.DGCCRFAccessToken
+import models.token.AgentAccessToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
 import models.token.TokenKind.AdminAccount
+import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
@@ -42,20 +43,29 @@ class AccessesOrchestrator(
   val logger                              = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listDGCCRFPendingToken(user: User): Future[List[DGCCRFAccessToken]] =
-    for {
-      tokens <- accessTokenRepository.fetchPendingTokensDGCCRF
-    } yield tokens
-      .map { token =>
-        DGCCRFAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
-      }
+  def listDGCCRFPendingToken(user: User): Future[List[AgentAccessToken]] =
+    accessTokenRepository.fetchPendingTokensDGCCRF
+      .map(
+        _.map(token =>
+          AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
+        )
+      )
 
-  def activateAdminOrDGCCRFUser(draftUser: DraftUser, token: String) = for {
+  def listDGALPendingToken(user: User): Future[List[AgentAccessToken]] =
+    accessTokenRepository.fetchPendingTokensDGAL
+      .map(
+        _.map(token =>
+          AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
+        )
+      )
+
+  def activateAdminOrAgentUser(draftUser: DraftUser, token: String) = for {
     _                <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {
         case t if t.kind == TokenKind.DGCCRFAccount => (t, UserRole.DGCCRF)
+        case t if t.kind == TokenKind.DGALAccount   => (t, UserRole.DGAL)
         case t if t.kind == TokenKind.AdminAccount  => (t, UserRole.Admin)
       }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
@@ -84,14 +94,24 @@ class AccessesOrchestrator(
     .transform
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
-    sendAdminOrDgccrfInvitation(email, TokenKind.DGCCRFAccount)
+    sendAdminOrAgentInvitation(email, TokenKind.DGCCRFAccount)
+
+  def sendDGALInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrAgentInvitation(email, TokenKind.DGALAccount)
 
   def sendAdminInvitation(email: EmailAddress): Future[Unit] =
-    sendAdminOrDgccrfInvitation(email, TokenKind.AdminAccount)
+    sendAdminOrAgentInvitation(email, TokenKind.AdminAccount)
 
-  def sendAdminOrDgccrfInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
+  def sendAdminOrAgentInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
     val (emailValidationFunction, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
       case DGCCRFAccount =>
+        (
+          EmailAddressService.isEmailAcceptableForDgccrfAccount _,
+          tokenConfiguration.dgccrfJoinDuration,
+          DgccrfAccessLink,
+          frontRoute.dashboard.Dgccrf.register _
+        )
+      case DGALAccount =>
         (
           EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,

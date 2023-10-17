@@ -7,6 +7,7 @@ import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyFollowUp
 import models.token.TokenKind.CompanyInit
+import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
@@ -138,6 +139,16 @@ class AccessTokenRepository(
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (DGCCRFAccount: TokenKind))
+        .to[List]
+        .result
+    )
+
+  override def fetchPendingTokensDGAL: Future[List[AccessToken]] =
+    db.run(
+      table
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
+        .filter(_.valid)
+        .filter(_.kind === (DGALAccount: TokenKind))
         .to[List]
         .result
     )

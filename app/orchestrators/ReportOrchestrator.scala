@@ -907,7 +907,7 @@ class ReportOrchestrator(
         country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
       visibleReport <-
-        if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
+        if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
           Future(report)
         else {
           companiesVisibilityOrchestrator

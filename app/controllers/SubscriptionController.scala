@@ -45,7 +45,8 @@ class SubscriptionController(
                   withoutTags = draftSubscription.withoutTags,
                   countries = draftSubscription.countries.map(Country.fromCode),
                   sirets = draftSubscription.sirets,
-                  frequency = draftSubscription.frequency
+                  frequency = draftSubscription.frequency,
+                  userRole = request.identity.userRole
                 )
               )
               .map(subscription => Ok(Json.toJson(subscription)))
@@ -96,7 +97,7 @@ class SubscriptionController(
         .get(uuid)
         .map(subscription =>
           subscription
-            .filter(s => s.userId == Some(request.identity.id))
+            .filter(_.userId.contains(request.identity.id))
             .map(s => Ok(Json.toJson(s)))
             .getOrElse(NotFound)
         )

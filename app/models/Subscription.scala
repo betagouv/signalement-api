@@ -51,7 +51,8 @@ case class Subscription(
     withoutTags: List[ReportTag] = List.empty,
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
-    frequency: Period
+    frequency: Period,
+    userRole: UserRole
 )
 
 object Subscription {

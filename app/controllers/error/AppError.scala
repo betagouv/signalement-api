@@ -1,5 +1,6 @@
 package controllers.error
 
+import models.UserRole
 import models.report.Report
 import models.report.reportfile.ReportFileId
 import models.website.WebsiteId
@@ -460,5 +461,12 @@ object AppError {
     override val title: String        = ""
     override val details: String      = ""
     override val titleForLogs: String = ""
+  }
+
+  final case class WrongUserRole(userRole: UserRole) extends BadRequestError {
+    override val `type`: String       = "SC-0049"
+    override val title: String        = "Wrong UserRole"
+    override val details: String      = s"The user role $userRole is forbidden"
+    override val titleForLogs: String = "wrong_user_role"
   }
 }
