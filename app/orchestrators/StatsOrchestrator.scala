@@ -36,14 +36,15 @@ class StatsOrchestrator(
     arborescenceEn: List[ArborescenceNode]
 )(implicit val executionContext: ExecutionContext) {
 
-  def reportsCountBySubcategories(filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] = for {
-    reportNodesFr <- reportRepository
-      .reportsCountBySubcategories(filters, Locale.FRENCH)
-      .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
-    reportNodesEn <- reportRepository
-      .reportsCountBySubcategories(filters, Locale.ENGLISH)
-      .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
-  } yield ReportNodes(reportNodesFr, reportNodesEn)
+  def reportsCountBySubcategories(userRole: UserRole, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
+    for {
+      reportNodesFr <- reportRepository
+        .reportsCountBySubcategories(userRole, filters, Locale.FRENCH)
+        .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
+      reportNodesEn <- reportRepository
+        .reportsCountBySubcategories(userRole, filters, Locale.ENGLISH)
+        .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
+    } yield ReportNodes(reportNodesFr, reportNodesEn)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {

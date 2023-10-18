@@ -69,6 +69,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]
 
   def reportsCountBySubcategories(
+      userRole: UserRole,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]

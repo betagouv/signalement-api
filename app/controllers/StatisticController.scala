@@ -168,14 +168,16 @@ class StatisticController(
     statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
   }
 
-  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
+  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async {
     implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
           Future.failed(MalformedQueryParams)
         case Success(filters) =>
-          statsOrchestrator.reportsCountBySubcategories(filters).map(res => Ok(Json.toJson(res)))
+          statsOrchestrator
+            .reportsCountBySubcategories(request.identity.userRole, filters)
+            .map(res => Ok(Json.toJson(res)))
       }
   }
 

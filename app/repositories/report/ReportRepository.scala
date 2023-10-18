@@ -55,13 +55,15 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   }
 
   def reportsCountBySubcategories(
+      userRole: UserRole,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
     db.run(
-      table
+      ReportTable
+        .table(Some(userRole))
         .filterOpt(filters.start) { case (table, s) =>
           table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
