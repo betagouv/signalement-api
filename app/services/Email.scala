@@ -185,10 +185,10 @@ object Email {
       views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
   }
 
-  final case class DgccrfAccessLink(recipient: EmailAddress, invitationUrl: URI) extends DgccrfEmail {
+  final case class AgentAccessLink(role: String)(recipient: EmailAddress, invitationUrl: URI) extends DgccrfEmail {
     override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.dgccrf.accessLink(invitationUrl).toString
+      views.html.mails.dgccrf.accessLink(invitationUrl, role).toString
     override val recipients: List[EmailAddress] = List(recipient)
   }
 

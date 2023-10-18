@@ -179,6 +179,24 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         Helpers.status(result) must beEqualTo(200)
       }
 
+      "send an invalid DGAL invitation" in {
+        val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGAL).toString)
+          .withAuthenticator[AuthEnv](identLoginInfo)
+          .withJsonBody(Json.obj("email" -> "user@example.com"))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(403)
+      }
+
+      "send a DGAL invitation" in {
+        val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGAL).toString)
+          .withAuthenticator[AuthEnv](identLoginInfo)
+          .withJsonBody(Json.obj("email" -> "user@dgal.gouv.fr"))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(200)
+      }
+
       "activate the DGCCF user" in {
         val ccrfUser = Fixtures.genUser.sample.get
         val ccrfToken =

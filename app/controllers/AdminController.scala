@@ -40,7 +40,7 @@ import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
-import services.Email.DgccrfAccessLink
+import services.Email.AgentAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
 import services.Email.InactiveDgccrfAccount
@@ -274,7 +274,7 @@ class AdminController(
       )
     }),
     "dgccrf.access_link" ->
-      (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
+      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.validate_email" ->
       (ValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
