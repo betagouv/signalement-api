@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.Subscription
+import models.User
 import models.UserRole
 import models.report.PreFilter
 import models.report.Report
@@ -12,6 +13,7 @@ import models.report.ReportFilter
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
@@ -32,6 +34,7 @@ class ReportNotificationTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
+    userRepository: UserRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration
 )(implicit executionContext: ExecutionContext) {
@@ -76,10 +79,11 @@ class ReportNotificationTask(
         )
       )
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
-      subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
-        val filteredReport = refineReportBasedOnSubscriptionFilters(reportsWithFiles, subscription)
-        (subscription, emailAddress, filteredReport)
-      }
+      subscriptionsEmailAndReports <- Future.sequence(subscriptionsWithEmails.map { case (subscription, emailAddress) =>
+        refineReportBasedOnSubscriptionFilters(userRepository, reportsWithFiles, subscription).map { filteredReport =>
+          (subscription, emailAddress, filteredReport)
+        }
+      })
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
       _ = logger.debug(
         s"We have ${subscriptionEmailAndNonEmptyReports.size} emails of notifications to send (period $period)"
@@ -115,47 +119,58 @@ class ReportNotificationTask(
 
 object ReportNotificationTask {
 
+  private def userFromSubscription(
+      userRepository: UserRepositoryInterface,
+      subscription: Subscription
+  ): Future[Option[User]] = subscription.userId match {
+    case Some(userId) => userRepository.get(userId)
+    case None         => Future.successful(None)
+  }
+
   def refineReportBasedOnSubscriptionFilters(
+      userRepository: UserRepositoryInterface,
       reportsWithFiles: SortedMap[Report, List[ReportFile]],
       subscription: Subscription
-  ): SortedMap[Report, List[ReportFile]] = reportsWithFiles
-    .filter { case (report, _) =>
-      subscription.userRole match {
-        case Some(UserRole.DGAL) =>
-          PreFilter.DGALFilter.category.forall(_.entryName == report.category) || (if (
-                                                                                     PreFilter.DGALFilter.tags.isEmpty
-                                                                                   ) true
-                                                                                   else
-                                                                                     PreFilter.DGALFilter.tags
-                                                                                       .intersect(report.tags)
-                                                                                       .nonEmpty)
-        case Some(UserRole.DGCCRF)        => true
-        case Some(UserRole.Admin)         => true
-        case Some(UserRole.Professionnel) => true
-        case None                         => true
-      }
-    }
-    .filter { case (report, _) =>
-      subscription.departments.isEmpty || (report.companyAddress.country.isEmpty && subscription.departments
-        .map(Some(_))
-        .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode)))
-    }
-    .filter { case (report, _) =>
-      subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
-    }
-    .filter { case (report, _) =>
-      subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
-    }
-    .filter { case (report, _) =>
-      subscription.countries.isEmpty || subscription.countries
-        .map(Some(_))
-        .contains(report.companyAddress.country)
-    }
-    .filter { case (report, _) =>
-      subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty
-    }
-    .filter { case (report, _) =>
-      subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
+  )(implicit ec: ExecutionContext): Future[SortedMap[Report, List[ReportFile]]] =
+    userFromSubscription(userRepository, subscription).map { maybeUser =>
+      reportsWithFiles
+        .filter { case (report, _) =>
+          maybeUser.map(_.userRole) match {
+            case Some(UserRole.DGAL) =>
+              PreFilter.DGALFilter.category
+                .forall(_.entryName == report.category) || (if (PreFilter.DGALFilter.tags.isEmpty) true
+                                                            else
+                                                              PreFilter.DGALFilter.tags
+                                                                .intersect(report.tags)
+                                                                .nonEmpty)
+            case Some(UserRole.DGCCRF)        => true
+            case Some(UserRole.Admin)         => true
+            case Some(UserRole.Professionnel) => true
+            case None                         => true
+          }
+        }
+        .filter { case (report, _) =>
+          subscription.departments.isEmpty || (report.companyAddress.country.isEmpty && subscription.departments
+            .map(Some(_))
+            .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode)))
+        }
+        .filter { case (report, _) =>
+          subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
+        }
+        .filter { case (report, _) =>
+          subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
+        }
+        .filter { case (report, _) =>
+          subscription.countries.isEmpty || subscription.countries
+            .map(Some(_))
+            .contains(report.companyAddress.country)
+        }
+        .filter { case (report, _) =>
+          subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty
+        }
+        .filter { case (report, _) =>
+          subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
+        }
     }
 
 }

@@ -476,7 +476,14 @@ class SignalConsoComponents(
   logger.debug("Starting App and sending sentry alert")
 
   val reportNotificationTask =
-    new ReportNotificationTask(actorSystem, reportRepository, subscriptionRepository, mailService, taskConfiguration)
+    new ReportNotificationTask(
+      actorSystem,
+      reportRepository,
+      subscriptionRepository,
+      userRepository,
+      mailService,
+      taskConfiguration
+    )
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)

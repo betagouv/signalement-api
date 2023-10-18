@@ -98,8 +98,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
-    frequency = Period.ofDays(7),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(7)
   )
 
   val userSubscription = Subscription(
@@ -111,8 +110,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
-    frequency = Period.ofDays(7),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(7)
   )
 
   val userSubscriptionCountries = Subscription(
@@ -124,8 +122,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     withoutTags = List.empty,
     countries = List(Country.Tunisie, Country.Argentine),
     sirets = List.empty,
-    frequency = Period.ofDays(7),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(7)
   )
 
   val userSubscriptionWithoutReport = Subscription(
@@ -137,8 +134,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
-    frequency = Period.ofDays(7),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(7)
   )
 
   val company = Fixtures.genCompany.sample.get

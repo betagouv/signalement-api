@@ -1,7 +1,6 @@
 package repositories.subscription
 
 import models.Subscription
-import models.UserRole
 import models.report.ReportCategory
 import models.report.ReportTag
 import repositories.DatabaseTable
@@ -14,13 +13,8 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
 import repositories.report.ReportColumnType.ReportTagListColumnType
-import slick.ast.BaseTypedType
-import slick.jdbc.JdbcType
 
 class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subscriptions") {
-
-  implicit val userRoleColumnType: JdbcType[UserRole] with BaseTypedType[UserRole] =
-    MappedColumnType.base[UserRole, String](_.entryName, UserRole.withName)
 
   def creationDate = column[OffsetDateTime]("creation_date")
   def userId       = column[Option[UUID]]("user_id")
@@ -32,7 +26,6 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
   def countries    = column[List[Country]]("countries")
   def sirets       = column[List[SIRET]]("sirets")
   def frequency    = column[Period]("frequency")
-  def userRole     = column[Option[UserRole]]("user_role")
 
   type SubscriptionData = (
       UUID,
@@ -45,8 +38,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
       List[ReportTag],
       List[Country],
       List[SIRET],
-      Period,
-      Option[UserRole]
+      Period
   )
 
   def constructSubscription: SubscriptionData => Subscription = {
@@ -61,8 +53,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
           withoutTags,
           countries,
           sirets,
-          frequency,
-          userRole
+          frequency
         ) =>
       Subscription(
         id = id,
@@ -75,8 +66,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
         withoutTags = withoutTags,
         countries = countries,
         sirets = sirets,
-        frequency = frequency,
-        userRole = userRole
+        frequency = frequency
       )
   }
 
@@ -92,8 +82,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
           withoutTags,
           countries,
           sirets,
-          frequency,
-          userRole
+          frequency
         ) =>
       (
         id,
@@ -106,8 +95,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
         withoutTags,
         countries,
         sirets,
-        frequency,
-        userRole
+        frequency
       )
   }
 
@@ -123,8 +111,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
       withoutTags,
       countries,
       sirets,
-      frequency,
-      userRole
+      frequency
     ) <> (constructSubscription, extractSubscription.lift)
 }
 

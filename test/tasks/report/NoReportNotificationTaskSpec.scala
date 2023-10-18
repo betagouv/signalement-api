@@ -62,8 +62,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(covidEmail),
     departments = List(covidDept),
     categories = List(ReportCategory.Coronavirus),
-    frequency = Period.ofDays(1),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(1)
   )
 
   val tagSubscription = Subscription(
@@ -71,16 +70,14 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(tagEmail),
     departments = List(tagDept),
     withTags = List(ReportTag.ProduitDangereux),
-    frequency = Period.ofDays(1),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(1)
   )
 
   val countrySubscription = Subscription(
     userId = None,
     email = Some(countryEmail),
     countries = List(Country.Suisse),
-    frequency = Period.ofDays(1),
-    userRole = Some(UserRole.Admin)
+    frequency = Period.ofDays(1)
   )
 
   val company = Fixtures.genCompany.sample.get

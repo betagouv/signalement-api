@@ -5,7 +5,6 @@ import models.AsyncFile
 import models.AsyncFileKind
 import models.Subscription
 import models.User
-import models.UserRole
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
@@ -84,8 +83,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
             email = None,
             creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
             userId = Some(inactiveDGCCRFUser.id),
-            frequency = Period.ofDays(1),
-            userRole = Some(UserRole.Admin)
+            frequency = Period.ofDays(1)
           )
 
         // Subscriptions that should be kept
@@ -94,8 +92,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
             email = None,
             creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
             userId = Some(activeDGCCRFUser.id),
-            frequency = Period.ofDays(1),
-            userRole = Some(UserRole.Admin)
+            frequency = Period.ofDays(1)
           )
 
         val (userList, deletedUsersList, activeSubscriptionList, inactiveSubscriptionList, inactivefiles, activefiles) =
