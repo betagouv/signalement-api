@@ -11,6 +11,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.TraversableMatchers
 import org.specs2.mutable
 import org.specs2.specification.BeforeAfterAll
+import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 
@@ -20,6 +21,7 @@ import scala.concurrent.duration.Duration
 
 class ReportRepositorySpec(implicit ee: ExecutionEnv)
     extends mutable.Specification
+    with AppSpec
     with FutureMatchers
     with TraversableMatchers
     with BeforeAfterAll {
@@ -109,7 +111,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .get
     .copy(lang = Some(Locale.ENGLISH))
 
-  override def beforeAll(): Unit = {
+  override def setupData(): Unit = {
     Await.result(components.companyRepository.create(company), Duration.Inf)
     Await.result(components.reportRepository.create(report), Duration.Inf)
     Await.result(components.reportRepository.create(anonymousReport), Duration.Inf)
@@ -123,20 +125,6 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios))),
       Duration.Inf
     )
-
-    ()
-  }
-
-  override def afterAll(): Unit = {
-    Await.result(components.reportRepository.delete(report.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(anonymousReport.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report2.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report3.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report4.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report5.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report6.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(englishReport.id), Duration.Inf)
-    Await.result(components.companyRepository.delete(company.id), Duration.Inf)
 
     ()
   }

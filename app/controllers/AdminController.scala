@@ -190,7 +190,7 @@ class AdminController(
     categories = Nil,
     sirets = Nil,
     frequency = java.time.Period.ofDays(1),
-    userRole = UserRole.DGCCRF
+    userRole = Some(UserRole.DGCCRF)
   )
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)

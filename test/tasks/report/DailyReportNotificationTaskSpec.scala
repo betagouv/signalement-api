@@ -83,7 +83,8 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(covidEmail),
     departments = List(covidDept),
     categories = List(ReportCategory.Coronavirus),
-    frequency = Period.ofDays(1)
+    frequency = Period.ofDays(1),
+    userRole = Some(UserRole.Admin)
   )
 
   val tagSubscription = Subscription(
@@ -91,14 +92,16 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(tagEmail),
     departments = List(tagDept),
     withTags = List(ReportTag.ProduitDangereux),
-    frequency = Period.ofDays(1)
+    frequency = Period.ofDays(1),
+    userRole = Some(UserRole.Admin)
   )
 
   val countrySubscription = Subscription(
     userId = None,
     email = Some(countryEmail),
     countries = List(Country.Suisse),
-    frequency = Period.ofDays(1)
+    frequency = Period.ofDays(1),
+    userRole = Some(UserRole.Admin)
   )
 
   val company = Fixtures.genCompany.sample.get

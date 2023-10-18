@@ -83,7 +83,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(EmailAddress("tag.abo.546438@example.com")),
     departments = List(tagDept),
     withTags = List(ReportTag.ProduitDangereux),
-    frequency = Period.ofDays(1)
+    frequency = Period.ofDays(1),
+    userRole = Some(UserRole.Admin)
   )
 
   val noTagSubscription = Subscription(
@@ -91,7 +92,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(EmailAddress("notag.abo.263682@example.com")),
     departments = List(tagDept),
     withoutTags = List(ReportTag.ProduitDangereux),
-    frequency = Period.ofDays(1)
+    frequency = Period.ofDays(1),
+    userRole = Some(UserRole.Admin)
   )
 
   val company = Fixtures.genCompany.sample.get

@@ -162,7 +162,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send an invalid DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
+        val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGCCRF).toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@example.com"))
 
@@ -171,7 +171,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send a DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
+        val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGCCRF).toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
 

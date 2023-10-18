@@ -1,6 +1,7 @@
 package tasks.report
 
 import models.Subscription
+import models.UserRole
 import models.company.Address
 import models.report.ReportFile
 import org.specs2.mutable.Specification
@@ -35,7 +36,8 @@ class ReportNotificationTaskTest extends Specification {
           userId = None,
           email = None,
           departments = List(department),
-          frequency = java.time.Period.ofDays(1)
+          frequency = java.time.Period.ofDays(1),
+          userRole = Some(UserRole.Admin)
         )
 
       val res = ReportNotificationTask.refineReportBasedOnSubscriptionFilters(reportsMap, subscription)
