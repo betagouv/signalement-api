@@ -149,7 +149,8 @@ object Constants {
       Map(
         UserRole.Professionnel -> List(COMMENT),
         UserRole.Admin         -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
-        UserRole.DGCCRF        -> List(COMMENT, CONTROL)
+        UserRole.DGCCRF        -> List(COMMENT, CONTROL),
+        UserRole.DGAL          -> List(COMMENT, CONTROL)
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
