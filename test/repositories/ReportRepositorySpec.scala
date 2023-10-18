@@ -181,14 +181,35 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       "fetch french jobs" in {
         for {
           res <- components.reportRepository.reportsCountBySubcategories(
+            UserRole.Admin,
             ReportsCountBySubcategoriesFilter(),
             Locale.FRENCH
           )
         } yield res should contain(
           ("AchatInternet", List("a", "b", "c"), 1, 0),
           ("AchatInternet", List("a", "b", "d"), 1, 0),
-          ("AchatMagasin", List("a", "b", "c"), 3, 1)
+          ("AchatMagasin", List("a", "b", "c"), 3, 1),
+          ("IntoxicationAlimentaire", List("a"), 1, 0)
         )
+      }
+
+      "filter results when user is DGAL" in {
+        for {
+          res <- components.reportRepository.reportsCountBySubcategories(
+            UserRole.DGAL,
+            ReportsCountBySubcategoriesFilter(),
+            Locale.FRENCH
+          )
+        } yield {
+          res should not(
+            contain(
+              ("AchatInternet", List("a", "b", "c"), 1, 0),
+              ("AchatInternet", List("a", "b", "d"), 1, 0),
+              ("AchatMagasin", List("a", "b", "c"), 3, 1)
+            )
+          )
+          res should contain(("IntoxicationAlimentaire", List("a"), 1, 0))
+        }
       }
     }
 
