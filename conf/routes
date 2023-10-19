@@ -110,7 +110,7 @@ GET           /api/account/token                                        controll
 POST          /api/account/activation                                   controllers.AccountController.activateAccount()
 POST          /api/account/admin/invitation                             controllers.AccountController.sendAdminInvitation()
 POST          /api/account/agent/invitation                             controllers.AccountController.sendAgentInvitation(role: UserRole)
-GET           /api/account/agent/pending                                controllers.AccountController.fetchPendingAgent(role: UserRole)
+GET           /api/account/agent/pending                                controllers.AccountController.fetchPendingAgent(role: Option[UserRole])
 GET           /api/account/admin-or-agent/users                         controllers.AccountController.fetchAdminOrAgentUsers()
 GET           /api/account/all/deleted-users                            controllers.AccountController.fetchAllSoftDeletedUsers()
 POST          /api/account/validate-email                               controllers.AccountController.validateEmail()
