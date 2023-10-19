@@ -2,8 +2,6 @@ package models.report
 
 import enumeratum._
 import models.UserRole
-import models.UserRole.Admin
-import models.UserRole.DGCCRF
 
 sealed trait ReportStatus extends EnumEntry
 
@@ -44,15 +42,6 @@ object ReportStatus extends PlayEnum[ReportStatus] {
     Transmis,
     ConsulteIgnore
   ) ++ statusWithProResponse
-
-  def filterByUserRole(status: Seq[ReportStatus], userRole: UserRole) = {
-    val requestedStatus = if (status.isEmpty) ReportStatus.values else status
-    userRole match {
-      case Admin  => requestedStatus
-      case DGCCRF => requestedStatus
-      case _      => requestedStatus.intersect(statusVisibleByPro)
-    }
-  }
 
   def hasResponse(report: Report): Boolean = statusWithProResponse.contains(report.status)
 

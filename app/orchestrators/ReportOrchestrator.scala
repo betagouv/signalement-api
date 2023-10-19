@@ -622,7 +622,7 @@ class ReportOrchestrator(
     for {
       company <- companyRepository.get(companyId)
       reports <- company
-        .map(c => reportRepository.getReports(ReportFilter(companyIds = Seq(c.id))).map(_.entities))
+        .map(c => reportRepository.getReports(None, ReportFilter(companyIds = Seq(c.id))).map(_.entities))
         .getOrElse(Future(Nil))
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
@@ -823,6 +823,7 @@ class ReportOrchestrator(
           Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
         } else {
           getReportsWithFile[ReportWithFiles](
+            Some(connectedUser.userRole),
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
@@ -854,6 +855,7 @@ class ReportOrchestrator(
     )
 
   def getReportsWithFile[T](
+      userRole: Option[UserRole],
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
@@ -874,6 +876,7 @@ class ReportOrchestrator(
       _               = logger.trace("----------------  BEGIN  getReports  ------------------")
       paginatedReports <-
         reportRepository.getReports(
+          userRole,
           filter,
           validOffset,
           validLimit
@@ -893,7 +896,7 @@ class ReportOrchestrator(
 
   def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
-      report  <- reportRepository.get(reportId)
+      report  <- reportRepository.getFor(Some(user.userRole), reportId)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address(
         number = company.flatMap(_.address.number),
@@ -904,7 +907,7 @@ class ReportOrchestrator(
         country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
       visibleReport <-
-        if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
+        if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
           Future(report)
         else {
           companiesVisibilityOrchestrator

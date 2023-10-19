@@ -96,7 +96,7 @@ class SubscriptionController(
         .get(uuid)
         .map(subscription =>
           subscription
-            .filter(s => s.userId == Some(request.identity.id))
+            .filter(_.userId.contains(request.identity.id))
             .map(s => Ok(Json.toJson(s)))
             .getOrElse(NotFound)
         )

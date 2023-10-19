@@ -33,8 +33,8 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     object Admin {
       def register(token: String) = url(s"/admin/rejoindre/?token=$token")
     }
-    object Dgccrf {
-      def register(token: String) = url(s"/dgccrf/rejoindre/?token=$token")
+    object Agent {
+      def register(token: String) = url(s"/agent/rejoindre/?token=$token")
     }
     object Pro {
       def subscriptionDGCCRFCompanySummary(companyId: UUID) = url(

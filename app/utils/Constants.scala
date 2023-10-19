@@ -21,6 +21,7 @@ object Constants {
     object PRO    extends EventTypeValue("PRO")
     object CONSO  extends EventTypeValue("CONSO")
     object DGCCRF extends EventTypeValue("DGCCRF")
+    object DGAL   extends EventTypeValue("DGAL")
     object ADMIN  extends EventTypeValue("ADMIN")
     object SYSTEM extends EventTypeValue("SYSTEM")
 
@@ -28,6 +29,7 @@ object Constants {
       PRO,
       CONSO,
       DGCCRF,
+      DGAL,
       ADMIN,
       SYSTEM
     )
@@ -38,6 +40,7 @@ object Constants {
       userRole match {
         case UserRole.Admin         => ADMIN
         case UserRole.DGCCRF        => DGCCRF
+        case UserRole.DGAL          => DGAL
         case UserRole.Professionnel => PRO
       }
 
@@ -146,7 +149,8 @@ object Constants {
       Map(
         UserRole.Professionnel -> List(COMMENT),
         UserRole.Admin         -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
-        UserRole.DGCCRF        -> List(COMMENT, CONTROL)
+        UserRole.DGCCRF        -> List(COMMENT, CONTROL),
+        UserRole.DGAL          -> List(COMMENT, CONTROL)
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))

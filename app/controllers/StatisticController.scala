@@ -34,7 +34,7 @@ class StatisticController(
 
   def getReportsCount() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -42,7 +42,7 @@ class StatisticController(
         },
         filters =>
           statsOrchestrator
-            .getReportCount(filters)
+            .getReportCount(Some(request.identity.userRole), filters)
             .map(count => Ok(Json.obj("value" -> count)))
       )
   }
@@ -51,7 +51,7 @@ class StatisticController(
     */
   def getReportsCountCurve() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -64,7 +64,9 @@ class StatisticController(
             .string("tickDuration")
             .flatMap(CurveTickDuration.namesToValuesMap.get)
             .getOrElse(CurveTickDuration.Month)
-          statsOrchestrator.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
+          statsOrchestrator
+            .getReportsCountCurve(Some(request.identity.userRole), filters, ticks, tickDuration)
+            .map(curve => Ok(Json.toJson(curve)))
         }
       )
   }
@@ -72,18 +74,18 @@ class StatisticController(
   def getPublicStatCount(publicStat: PublicStat) = UnsecuredAction.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
-        statsOrchestrator.getReportCountPercentageWithinReliableDates(filter, percentageBaseFilter)
+        statsOrchestrator.getReportCountPercentageWithinReliableDates(None, filter, percentageBaseFilter)
       case (filter, _) =>
-        statsOrchestrator.getReportCount(filter)
+        statsOrchestrator.getReportCount(None, filter)
     }).map(curve => Ok(Json.toJson(curve)))
   }
 
   def getPublicStatCurve(publicStat: PublicStat) = UnsecuredAction.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
-        statsOrchestrator.getReportsCountPercentageCurve(filter, percentageBaseFilter)
+        statsOrchestrator.getReportsCountPercentageCurve(None, filter, percentageBaseFilter)
       case (filter, _) =>
-        statsOrchestrator.getReportsCountCurve(filter)
+        statsOrchestrator.getReportsCountCurve(None, filter)
     }).map(curve => Ok(Json.toJson(curve)))
   }
 
@@ -114,27 +116,33 @@ class StatisticController(
   }
 
   def getProReportToTransmitStat() =
-    SecuredAction.async { _ =>
+    SecuredAction.async { request =>
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(
         visibleToPro = Some(true)
       )
-      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
+      statsOrchestrator
+        .getReportsCountCurve(Some(request.identity.userRole), filter)
+        .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getProReportTransmittedStat() = SecuredAction.async { _ =>
-    statsOrchestrator.getReportsCountCurve(transmittedReportsFilter).map(curve => Ok(Json.toJson(curve)))
+  def getProReportTransmittedStat() = SecuredAction.async { request =>
+    statsOrchestrator
+      .getReportsCountCurve(Some(request.identity.userRole), transmittedReportsFilter)
+      .map(curve => Ok(Json.toJson(curve)))
   }
 
   def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
-    SecuredAction.async(parse.empty) { _ =>
+    SecuredAction.async(parse.empty) { request =>
       val statusFilter = responseTypeQuery
         .filter(_.nonEmpty)
         .map(_.map(ReportStatus.fromResponseType))
         .getOrElse(statusWithProResponse)
       val filter = ReportFilter(status = statusFilter)
-      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
+      statsOrchestrator
+        .getReportsCountCurve(Some(request.identity.userRole), filter)
+        .map(curve => Ok(Json.toJson(curve)))
     }
 
   def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
@@ -160,14 +168,16 @@ class StatisticController(
     statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
   }
 
-  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
+  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async {
     implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
           Future.failed(MalformedQueryParams)
         case Success(filters) =>
-          statsOrchestrator.reportsCountBySubcategories(filters).map(res => Ok(Json.toJson(res)))
+          statsOrchestrator
+            .reportsCountBySubcategories(request.identity.userRole, filters)
+            .map(res => Ok(Json.toJson(res)))
       }
   }
 

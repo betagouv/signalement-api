@@ -36,6 +36,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def fetchPendingTokensDGCCRF: Future[List[AccessToken]]
 
+  def fetchPendingTokensDGAL: Future[List[AccessToken]]
+
   def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean]
 
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit]

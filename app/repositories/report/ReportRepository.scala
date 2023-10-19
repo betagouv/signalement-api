@@ -55,13 +55,15 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   }
 
   def reportsCountBySubcategories(
+      userRole: UserRole,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
     db.run(
-      table
+      ReportTable
+        .table(Some(userRole))
         .filterOpt(filters.start) { case (table, s) =>
           table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
@@ -100,9 +102,6 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
   }
 
-  def findByEmail(email: EmailAddress): Future[Seq[Report]] =
-    db.run(table.filter(_.email === email).result)
-
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     db.run(
       table
@@ -117,12 +116,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
+  def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int] =
+    db.run(queryFilter(ReportTable.table(userRole), filter).length.result)
 
-  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
+  def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
     db
       .run(
-        queryFilter(filter)
+        queryFilter(ReportTable.table(userRole), filter)
           .filter(report =>
             report.creationDate > OffsetDateTime
               .now()
@@ -138,9 +138,9 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
       .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i.toLong).withDayOfMonth(1)))
 
-  def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+  def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
-      queryFilter(filter)
+      queryFilter(ReportTable.table(userRole), filter)
         .filter(report => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong))
         .groupBy(report =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
@@ -166,11 +166,12 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
 
   def getDailyCount(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
-      queryFilter(filter)
+      queryFilter(ReportTable.table(userRole), filter)
         .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
         .groupBy(report =>
           (
@@ -239,7 +240,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
     db.run(
       ReportTable
-        .table(userRole)
+        .table(Some(userRole))
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.status)
         .map { case (status, report) => status -> report.size }
@@ -254,7 +255,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
     db.run(
       ReportTable
-        .table(userRole)
+        .table(Some(userRole))
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.tags)
         .map { case (status, report) => (status, report.size) }
@@ -274,10 +275,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     ).map(_.map(_.getOrElse("")))
 
   def getReportsWithFiles(
+      userRole: Option[UserRole],
       filter: ReportFilter
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
-      queryResult <- queryFilter(filter)
+      queryResult <- queryFilter(ReportTable.table(userRole), filter)
         .joinLeft(ReportFileTable.table)
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
@@ -294,11 +296,12 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     } yield filesGroupedByReports
 
   def getReports(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
   ): Future[PaginatedResult[Report]] = for {
-    res <- queryFilter(filter)
+    res <- queryFilter(ReportTable.table(userRole), filter)
       .sortBy(_.creationDate.desc)
       .withPagination(db)(offset, limit)
   } yield res
@@ -376,6 +379,9 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .to[List]
           .result
       )
+
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] =
+    db.run(ReportTable.table(userRole).filter(_.id === id).result.headOption)
 }
 
 object ReportRepository {
@@ -403,10 +409,21 @@ object ReportRepository {
     }
   }
 
-  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] = {
+  def orFilter(table: Query[ReportTable, Report, Seq], filter: PreFilter): Query[ReportTable, Report, Seq] = {
+    val default = LiteralColumn(1) === LiteralColumn(1)
+
+    table.filter { table =>
+      List(
+        if (filter.tags.isEmpty) None else Some(table.tags @& filter.tags.bind),
+        filter.category.map(category => table.category === category.entryName)
+      ).collect { case Some(f) => f }.reduceLeftOption(_ || _).getOrElse(default)
+    }
+  }
+
+  def queryFilter(table: Query[ReportTable, Report, Seq], filter: ReportFilter): Query[ReportTable, Report, Seq] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
-    ReportTable.table
+    table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
       }

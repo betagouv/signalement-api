@@ -1,8 +1,5 @@
 package models
 
-import models.UserRole.Admin
-import models.UserRole.DGCCRF
-import models.UserRole.Professionnel
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
@@ -19,38 +16,28 @@ class ReportFilterTest extends Specification {
 
   "ReportFilter" should {
 
-    "fromQueryString should parse empty map for Admin user" in {
+    "fromQueryString should parse empty map" in {
       val emptyFilter = ReportFilter(status = ReportStatus.values)
-      ReportFilter.fromQueryString(Map.empty, Admin) shouldEqual Success(emptyFilter)
-    }
-
-    "fromQueryString should parse empty map for DGCCRF user" in {
-      val emptyFilter = ReportFilter(status = ReportStatus.values)
-      ReportFilter.fromQueryString(Map.empty, DGCCRF) shouldEqual Success(emptyFilter)
-    }
-
-    "fromQueryString should parse empty map for Pro user" in {
-      val emptyFilter = ReportFilter(employeeConsumer = Some(false), status = ReportStatus.statusVisibleByPro)
-      ReportFilter.fromQueryString(Map.empty, Professionnel) shouldEqual Success(emptyFilter)
+      ReportFilter.fromQueryString(Map.empty) shouldEqual Success(emptyFilter)
     }
 
     "fromQueryString should parse website http://www.domain.com as domain.com" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
       ReportFilter
-        .fromQueryString(Map("websiteURL" -> Seq("http://www.domain.com")), Admin)
+        .fromQueryString(Map("websiteURL" -> Seq("http://www.domain.com")))
         .map(_.websiteURL) shouldEqual Success(expectedResult.websiteURL)
     }
 
     "fromQueryString should parse website domain.com as domain.com" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
-      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain.com")), Admin).map(_.websiteURL) shouldEqual Success(
+      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain.com"))).map(_.websiteURL) shouldEqual Success(
         expectedResult.websiteURL
       )
     }
 
     "fromQueryString should parse website domain as domain" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain"))
-      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain")), Admin).map(_.websiteURL) shouldEqual Success(
+      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain"))).map(_.websiteURL) shouldEqual Success(
         expectedResult.websiteURL
       )
     }
@@ -75,7 +62,6 @@ class ReportFilterTest extends Specification {
         category = Some("Categorie"),
         status = ReportStatus.statusVisibleByPro,
         details = Some("My Details"),
-        employeeConsumer = Some(false),
         hasCompany = Some(true),
         withTags = ReportTag.values,
         withoutTags = ReportTag.values,
@@ -105,7 +91,7 @@ class ReportFilterTest extends Specification {
         "withoutTags"       -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
         "activityCodes"     -> expectedReportFilter.activityCodes.toSeq
       )
-      ReportFilter.fromQueryString(input, Professionnel) shouldEqual Success(expectedReportFilter)
+      ReportFilter.fromQueryString(input) shouldEqual Success(expectedReportFilter)
     }
 
   }

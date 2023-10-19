@@ -1,5 +1,6 @@
 package repositories
 
+import models.UserRole
 import models.report.ReportFilter
 import models.report.ReportTag
 import models.report.ReportsCountBySubcategoriesFilter
@@ -10,6 +11,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.TraversableMatchers
 import org.specs2.mutable
 import org.specs2.specification.BeforeAfterAll
+import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 
@@ -19,6 +21,7 @@ import scala.concurrent.duration.Duration
 
 class ReportRepositorySpec(implicit ee: ExecutionEnv)
     extends mutable.Specification
+    with AppSpec
     with FutureMatchers
     with TraversableMatchers
     with BeforeAfterAll {
@@ -57,7 +60,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       category = "AchatInternet",
-      subcategories = List("a", "b", "c")
+      subcategories = List("a", "b", "c"),
+      visibleToPro = false
     )
 
   val report3 = Fixtures
@@ -66,7 +70,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       category = "AchatInternet",
-      subcategories = List("a", "b", "d")
+      subcategories = List("a", "b", "d"),
+      visibleToPro = false
     )
 
   val report4 = Fixtures
@@ -80,19 +85,41 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       phone = Some("0102030405")
     )
 
+  val report5 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      category = "IntoxicationAlimentaire",
+      subcategories = List("a"),
+      visibleToPro = false
+    )
+
+  val report6 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      category = "CafeRestaurant",
+      subcategories = List("a"),
+      tags = List(ReportTag.ProduitAlimentaire)
+    )
+
   val englishReport = Fixtures
     .genReportForCompany(company)
     .sample
     .get
     .copy(lang = Some(Locale.ENGLISH))
 
-  override def beforeAll(): Unit = {
+  override def setupData(): Unit = {
     Await.result(components.companyRepository.create(company), Duration.Inf)
     Await.result(components.reportRepository.create(report), Duration.Inf)
     Await.result(components.reportRepository.create(anonymousReport), Duration.Inf)
     Await.result(components.reportRepository.create(report2), Duration.Inf)
     Await.result(components.reportRepository.create(report3), Duration.Inf)
     Await.result(components.reportRepository.create(report4), Duration.Inf)
+    Await.result(components.reportRepository.create(report5), Duration.Inf)
+    Await.result(components.reportRepository.create(report6), Duration.Inf)
     Await.result(components.reportRepository.create(englishReport), Duration.Inf)
     Await.result(
       components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios))),
@@ -102,39 +129,51 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  override def afterAll(): Unit = {
-    Await.result(components.reportRepository.delete(report.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(anonymousReport.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report2.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report3.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(report4.id), Duration.Inf)
-    Await.result(components.reportRepository.delete(englishReport.id), Duration.Inf)
-    Await.result(components.companyRepository.delete(company.id), Duration.Inf)
-
-    ()
-  }
-
   "ReportRepository" should {
     "getReports" should {
       "not fetch anonymous users" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("anonymousFirstName")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("anonymousReference")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousFirstName")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousReference")))
         } yield (a.entities must beEmpty) && (b.entities must beEmpty)
       }
 
       "fetch users" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("firstName")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("reference")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("firstName")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("reference")))
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
       "be case insensitive" in {
         for {
-          a <- components.reportRepository.getReports(ReportFilter(fullText = Some("LASTNAME")))
-          b <- components.reportRepository.getReports(ReportFilter(fullText = Some("REFERENCE")))
+          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("LASTNAME")))
+          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("REFERENCE")))
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
+      }
+
+      "return all reports for an admin user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.Admin), ReportFilter())
+          .map(result => result.entities must haveLength(8))
+      }
+
+      "return all reports for a DGCCRF user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.DGCCRF), ReportFilter())
+          .map(result => result.entities must haveLength(8))
+      }
+
+      "return only visible to DGAL for a DGAL user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.DGAL), ReportFilter())
+          .map(result => result.entities must haveLength(2))
+      }
+
+      "return all reports for a pro user" in {
+        components.reportRepository
+          .getReports(Some(UserRole.Professionnel), ReportFilter())
+          .map(result => result.entities must haveLength(5))
       }
     }
 
@@ -142,14 +181,35 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       "fetch french jobs" in {
         for {
           res <- components.reportRepository.reportsCountBySubcategories(
+            UserRole.Admin,
             ReportsCountBySubcategoriesFilter(),
             Locale.FRENCH
           )
         } yield res should contain(
           ("AchatInternet", List("a", "b", "c"), 1, 0),
           ("AchatInternet", List("a", "b", "d"), 1, 0),
-          ("AchatMagasin", List("a", "b", "c"), 3, 1)
+          ("AchatMagasin", List("a", "b", "c"), 3, 1),
+          ("IntoxicationAlimentaire", List("a"), 1, 0)
         )
+      }
+
+      "filter results when user is DGAL" in {
+        for {
+          res <- components.reportRepository.reportsCountBySubcategories(
+            UserRole.DGAL,
+            ReportsCountBySubcategoriesFilter(),
+            Locale.FRENCH
+          )
+        } yield {
+          res should not(
+            contain(
+              ("AchatInternet", List("a", "b", "c"), 1, 0),
+              ("AchatInternet", List("a", "b", "d"), 1, 0),
+              ("AchatMagasin", List("a", "b", "c"), 3, 1)
+            )
+          )
+          res should contain(("IntoxicationAlimentaire", List("a"), 1, 0))
+        }
       }
     }
 

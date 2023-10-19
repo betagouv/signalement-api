@@ -50,7 +50,7 @@ object User {
 
 object UserPermission extends Enumeration {
   val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
-      editDocuments, subscribeReports, manageAdminOrDgccrfUsers, softDeleteUsers, viewDeletedUsers,
+      editDocuments, subscribeReports, manageAdminOrAgentUsers, softDeleteUsers, viewDeletedUsers,
       manageBlacklistedEmails, crudUserReportsFilters, generateConsumerReportEmailAsPDF =
     Value
 

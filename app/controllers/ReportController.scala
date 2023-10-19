@@ -123,7 +123,7 @@ class ReportController(
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
         reportAction <- request.parseBody[ReportAction]()
-        report       <- reportRepository.get(uuid)
+        report       <- reportRepository.getFor(Some(request.identity.userRole), uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -195,7 +195,7 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
       for {
-        maybeReport <- reportRepository.get(uuid)
+        maybeReport <- reportRepository.getFor(Some(request.identity.userRole), uuid)
         company     <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
         files       <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
