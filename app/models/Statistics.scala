@@ -44,7 +44,7 @@ sealed abstract class PublicStat(val filter: ReportFilter, val percentageBaseFil
 object PublicStat extends PlayEnum[PublicStat] {
   lazy val values = findValues
   case object PromesseAction extends PublicStat(ReportFilter(status = Seq(ReportStatus.PromesseAction)))
-  case object Reports extends PublicStat(allReportsFilter)
+  case object Reports        extends PublicStat(allReportsFilter)
   case object TransmittedPercentage
       extends PublicStat(
         transmittedReportsFilter,

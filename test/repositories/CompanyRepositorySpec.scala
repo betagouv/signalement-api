@@ -14,7 +14,7 @@ class CompanyRepositorySpec(implicit ee: ExecutionEnv) extends mutable.Specifica
   "CompanyRepository" should {
     "update by SIRET correctly" in {
       val repository = components.companyRepository
-      val company = Fixtures.genCompany.sample.get
+      val company    = Fixtures.genCompany.sample.get
       val expectedAddress = company.address.copy(
         number = Gen.option(Gen.alphaNumStr).sample.get,
         street = Gen.option(Gen.alphaNumStr).sample.get,
@@ -28,7 +28,7 @@ class CompanyRepositorySpec(implicit ee: ExecutionEnv) extends mutable.Specifica
         name = Gen.alphaNumStr.sample.get
       )
       for {
-        _ <- repository.create(company)
+        _      <- repository.create(company)
         before <- repository.get(company.id)
         _ <- repository.updateBySiret(
           expectedCompany.siret,

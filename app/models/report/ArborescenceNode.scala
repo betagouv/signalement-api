@@ -16,11 +16,11 @@ object ArborescenceNode {
       currentCategoryName: Option[String] = None,
       currentPath: Vector[(String, NodeInfo)] = Vector.empty
   ): List[ArborescenceNode] = {
-    val id = (json \ "id").as[String]
-    val title = (json \ "title").as[String]
-    val category = (json \ "category").asOpt[String]
+    val id            = (json \ "id").as[String]
+    val title         = (json \ "title").as[String]
+    val category      = (json \ "category").asOpt[String]
     val subcategories = (json \ "subcategories").asOpt[List[JsValue]].getOrElse(List.empty)
-    val tags = (json \ "tags").asOpt[List[String]].getOrElse(List.empty)
+    val tags          = (json \ "tags").asOpt[List[String]].getOrElse(List.empty)
 
     subcategories match {
       case Nil =>

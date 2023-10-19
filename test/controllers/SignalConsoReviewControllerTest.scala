@@ -39,7 +39,7 @@ class SignalConsoReviewControllerTest(implicit ee: ExecutionEnv)
       .withJsonBody(jsonBody)
 
     val result = for {
-      res <- route(app, request).get
+      res          <- route(app, request).get
       savedReviews <- components.signalConsoReviewRepository.list()
     } yield (res, savedReviews.find(_.details.contains(uniqueComment)))
 

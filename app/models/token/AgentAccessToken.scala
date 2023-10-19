@@ -9,27 +9,27 @@ import utils.EmailAddress
 
 import java.time.OffsetDateTime
 
-case class DGCCRFAccessToken private (
+case class AgentAccessToken private (
     tokenCreation: OffsetDateTime,
     token: String,
     email: Option[EmailAddress],
     tokenExpirationDate: Option[OffsetDateTime]
 )
 
-object DGCCRFAccessToken {
+object AgentAccessToken {
   def apply(
       tokenCreation: OffsetDateTime,
       token: String,
       email: Option[EmailAddress],
       tokenExpirationDate: Option[OffsetDateTime],
       userRole: UserRole
-  ): DGCCRFAccessToken =
+  ): AgentAccessToken =
     userRole match {
-      case UserRole.Admin => new DGCCRFAccessToken(tokenCreation, token, email, tokenExpirationDate)
+      case UserRole.Admin => new AgentAccessToken(tokenCreation, token, email, tokenExpirationDate)
       case _ =>
         logger.error(s"DGCCRF token accessed by unexpected user with role $userRole")
         throw CantPerformAction
     }
 
-  implicit val DGCCRFAccessTokenFormat: OFormat[DGCCRFAccessToken] = Json.format[DGCCRFAccessToken]
+  implicit val DGCCRFAccessTokenFormat: OFormat[AgentAccessToken] = Json.format[AgentAccessToken]
 }

@@ -9,7 +9,7 @@ object ResponseEvaluation extends PlayEnum[ResponseEvaluation] {
 
   case object Positive extends ResponseEvaluation
   case object Negative extends ResponseEvaluation
-  case object Neutral extends ResponseEvaluation
+  case object Neutral  extends ResponseEvaluation
 
   def translate(evaluation: ResponseEvaluation): String = evaluation match {
     case Positive => "Positive"

@@ -13,21 +13,21 @@ import java.util.UUID
 import java.time.OffsetDateTime
 
 class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
-  def siret = column[SIRET]("siret", O.Unique)
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def name = column[String]("name")
-  def streetNumber = column[Option[String]]("street_number")
-  def street = column[Option[String]]("street")
+  def siret             = column[SIRET]("siret", O.Unique)
+  def creationDate      = column[OffsetDateTime]("creation_date")
+  def name              = column[String]("name")
+  def streetNumber      = column[Option[String]]("street_number")
+  def street            = column[Option[String]]("street")
   def addressSupplement = column[Option[String]]("address_supplement")
-  def city = column[Option[String]]("city")
-  def postalCode = column[Option[String]]("postal_code")
-  def department = column[Option[String]]("department")
-  def activityCode = column[Option[String]]("activity_code")
-  def isHeadOffice = column[Boolean]("is_headoffice")
-  def isOpen = column[Boolean]("is_open")
-  def isPublic = column[Boolean]("is_public")
-  def brand = column[Option[String]]("brand")
-  def country = column[Option[Country]]("country")
+  def city              = column[Option[String]]("city")
+  def postalCode        = column[Option[String]]("postal_code")
+  def department        = column[Option[String]]("department")
+  def activityCode      = column[Option[String]]("activity_code")
+  def isHeadOffice      = column[Boolean]("is_headoffice")
+  def isOpen            = column[Boolean]("is_open")
+  def isPublic          = column[Boolean]("is_public")
+  def brand             = column[Option[String]]("brand")
+  def country           = column[Option[Country]]("country")
 
   type CompanyTuple = (
       UUID,

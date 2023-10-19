@@ -10,10 +10,10 @@ import repositories.PostgresProfile.api._
 
 class RatingTable(tag: Tag) extends DatabaseTable[Rating](tag, "ratings") {
 
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def category = column[String]("category")
+  def creationDate  = column[OffsetDateTime]("creation_date")
+  def category      = column[String]("category")
   def subcategories = column[List[String]]("subcategories")
-  def positive = column[Boolean]("positive")
+  def positive      = column[Boolean]("positive")
 
   type RatingData = (UUID, OffsetDateTime, String, List[String], Boolean)
 

@@ -249,36 +249,36 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
 
 trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatchers {
 
-  implicit val ec = ExecutionContext.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
-  lazy val reportRepository = components.reportRepository
-  lazy val eventRepository = components.eventRepository
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val mailRetriesService = components.mailRetriesService
-  lazy val attachmentService = components.attachmentService
+  lazy val reportRepository          = components.reportRepository
+  lazy val eventRepository           = components.eventRepository
+  lazy val userRepository            = components.userRepository
+  lazy val companyRepository         = components.companyRepository
+  lazy val companyAccessRepository   = components.companyAccessRepository
+  lazy val mailRetriesService        = components.mailRetriesService
+  lazy val attachmentService         = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
-  lazy val messagesApi = components.messagesApi
+  lazy val messagesApi               = components.messagesApi
 
-  implicit lazy val frontRoute = components.frontRoute
-  implicit lazy val contactAddress = emailConfiguration.contactAddress
+  implicit lazy val frontRoute: utils.FrontRoute       = components.frontRoute
+  implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
   val existingCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
-  val anotherCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
+  val anotherCompany  = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
-  var report = Fixtures.genReportFromDraft(draftReport)
-  val proUser = Fixtures.genProUser.sample.get
+  var report      = Fixtures.genReportFromDraft(draftReport)
+  val proUser     = Fixtures.genProUser.sample.get
 
-  val concernedAdminUser = Fixtures.genAdminUser.sample.get
+  val concernedAdminUser      = Fixtures.genAdminUser.sample.get
   val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
 
-  val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
+  val reportConsumerUpdate   = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
     .copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))

@@ -1,6 +1,7 @@
 package controllers.report
 
 import akka.util.Timeout
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -110,15 +111,15 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 
   implicit val timeout: Timeout = 30.seconds
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val userRepository          = components.userRepository
+  lazy val companyRepository       = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val accessTokenRepository = components.accessTokenRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val accessTokenRepository   = components.accessTokenRepository
+  lazy val reportRepository        = components.reportRepository
 
-  val noAccessUser = Fixtures.genProUser.sample.get
-  val adminUser = Fixtures.genAdminUser.sample.get
-  val dgccrfUser = Fixtures.genDgccrfUser.sample.get
+  val noAccessUser                  = Fixtures.genProUser.sample.get
+  val adminUser                     = Fixtures.genAdminUser.sample.get
+  val dgccrfUser                    = Fixtures.genDgccrfUser.sample.get
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
@@ -148,12 +149,12 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte)
+    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte, visibleToPro = false)
   val reportNAOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.NA)
+    .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = false)
   val allReports = Seq(
     reportToStandaloneCompany,
     reportToProcessOnHeadOffice,
@@ -162,7 +163,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     reportNAOnHeadOffice
   )
 
-  var someResult: Option[Result] = None
+  var someResult: Option[Result]       = None
   var someLoginInfo: Option[LoginInfo] = None
 
   override def setupData() =
@@ -205,7 +206,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](
+  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(adminUser, dgccrfUser, proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary, noAccessUser).map(user =>
       loginInfo(user) -> user
     )
@@ -223,7 +224,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       controllers.routes.ReportListController.getReports().toString + status.map(x => s"?status=$x").getOrElse("")
     )
     val loggedRequest = someLoginInfo.map(request.withAuthenticator[AuthEnv](_)).getOrElse(request)
-    val result = route(app, loggedRequest).get
+    val result        = route(app, loggedRequest).get
 
     Await.result(
       result,

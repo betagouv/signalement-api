@@ -17,15 +17,15 @@ import repositories.report.ReportColumnType.ReportTagListColumnType
 class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subscriptions") {
 
   def creationDate = column[OffsetDateTime]("creation_date")
-  def userId = column[Option[UUID]]("user_id")
-  def email = column[Option[EmailAddress]]("email")
-  def departments = column[List[String]]("departments")
-  def categories = column[List[String]]("categories")
-  def withTags = column[List[ReportTag]]("with_tags")
-  def withoutTags = column[List[ReportTag]]("without_tags")
-  def countries = column[List[Country]]("countries")
-  def sirets = column[List[SIRET]]("sirets")
-  def frequency = column[Period]("frequency")
+  def userId       = column[Option[UUID]]("user_id")
+  def email        = column[Option[EmailAddress]]("email")
+  def departments  = column[List[String]]("departments")
+  def categories   = column[List[String]]("categories")
+  def withTags     = column[List[ReportTag]]("with_tags")
+  def withoutTags  = column[List[ReportTag]]("without_tags")
+  def countries    = column[List[Country]]("countries")
+  def sirets       = column[List[SIRET]]("sirets")
+  def frequency    = column[Period]("frequency")
 
   type SubscriptionData = (
       UUID,

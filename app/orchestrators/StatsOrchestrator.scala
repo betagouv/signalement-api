@@ -36,14 +36,15 @@ class StatsOrchestrator(
     arborescenceEn: List[ArborescenceNode]
 )(implicit val executionContext: ExecutionContext) {
 
-  def reportsCountBySubcategories(filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] = for {
-    reportNodesFr <- reportRepository
-      .reportsCountBySubcategories(filters, Locale.FRENCH)
-      .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
-    reportNodesEn <- reportRepository
-      .reportsCountBySubcategories(filters, Locale.ENGLISH)
-      .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
-  } yield ReportNodes(reportNodesFr, reportNodesEn)
+  def reportsCountBySubcategories(userRole: UserRole, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
+    for {
+      reportNodesFr <- reportRepository
+        .reportsCountBySubcategories(userRole, filters, Locale.FRENCH)
+        .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
+      reportNodesEn <- reportRepository
+        .reportsCountBySubcategories(userRole, filters, Locale.ENGLISH)
+        .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
+    } yield ReportNodes(reportNodesFr, reportNodesEn)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {
@@ -66,42 +67,50 @@ class StatsOrchestrator(
       .sortWith(_._2 > _._2)
   }
 
-  def getReportCount(reportFilter: ReportFilter): Future[Int] =
-    reportRepository.count(reportFilter)
+  def getReportCount(userRole: Option[UserRole], reportFilter: ReportFilter): Future[Int] =
+    reportRepository.count(userRole, reportFilter)
 
-  def getReportCountPercentage(filter: ReportFilter, basePercentageFilter: ReportFilter): Future[Int] =
+  def getReportCountPercentage(
+      userRole: Option[UserRole],
+      filter: ReportFilter,
+      basePercentageFilter: ReportFilter
+  ): Future[Int] =
     for {
-      count <- reportRepository.count(filter)
-      baseCount <- reportRepository.count(basePercentageFilter)
+      count     <- reportRepository.count(userRole, filter)
+      baseCount <- reportRepository.count(userRole, basePercentageFilter)
     } yield toPercentage(count, baseCount)
 
   def getReportCountPercentageWithinReliableDates(
+      userRole: Option[UserRole],
       filter: ReportFilter,
       basePercentageFilter: ReportFilter
   ): Future[Int] =
     getReportCountPercentage(
+      userRole,
       restrictToReliableDates(filter),
       restrictToReliableDates(basePercentageFilter)
     )
 
   def getReportsCountCurve(
+      userRole: Option[UserRole],
       reportFilter: ReportFilter,
       ticks: Int = 12,
       tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
     tickDuration match {
-      case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
-      case CurveTickDuration.Week  => reportRepository.getWeeklyCount(reportFilter, ticks)
-      case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
+      case CurveTickDuration.Month => reportRepository.getMonthlyCount(userRole, reportFilter, ticks)
+      case CurveTickDuration.Week  => reportRepository.getWeeklyCount(userRole, reportFilter, ticks)
+      case CurveTickDuration.Day   => reportRepository.getDailyCount(userRole, reportFilter, ticks)
     }
 
   def getReportsCountPercentageCurve(
+      userRole: Option[UserRole],
       reportFilter: ReportFilter,
       baseFilter: ReportFilter
   ): Future[Seq[CountByDate]] =
     for {
-      rawCurve <- getReportsCountCurve(reportFilter)
-      baseCurve <- getReportsCountCurve(baseFilter)
+      rawCurve  <- getReportsCountCurve(userRole, reportFilter)
+      baseCurve <- getReportsCountCurve(userRole, baseFilter)
     } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
       CountByDate(
         count = toPercentage(a.count, b.count),
@@ -181,11 +190,11 @@ object StatsOrchestrator {
       results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
-    val tree = ReportNode("", 0, 0, List.empty, List.empty, None)
+    val tree   = ReportNode("", 0, 0, List.empty, List.empty, None)
 
     arbo.foreach { arborescenceNode =>
-      val res = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
-      val count = res.map(_._2).getOrElse(0)
+      val res          = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
+      val count        = res.map(_._2).getOrElse(0)
       val reclamations = res.map(_._3).getOrElse(0)
       createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
     }

@@ -31,7 +31,7 @@ class WebsiteRepository(
 ) extends TypedCRUDRepository[WebsiteTable, Website, WebsiteId]
     with WebsiteRepositoryInterface {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger                           = Logger(this.getClass())
   override val table: TableQuery[WebsiteTable] = WebsiteTable.table
 
   import dbConfig._
@@ -76,8 +76,6 @@ class WebsiteRepository(
         .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .result
     )
-
-  SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
   private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(

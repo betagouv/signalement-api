@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 class CompanyActivationAttemptTable(tag: Tag)
     extends DatabaseTable[CompanyActivationAttempt](tag, "company_activation_attempts") {
 
-  def siret = column[String]("siret")
+  def siret     = column[String]("siret")
   def timestamp = column[OffsetDateTime]("timestamp")
 
   def * = (id, siret, timestamp) <> ((CompanyActivationAttempt.apply _).tupled, CompanyActivationAttempt.unapply)

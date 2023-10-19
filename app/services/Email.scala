@@ -33,10 +33,10 @@ sealed trait Email {
   def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
-sealed trait AdminEmail extends Email
+sealed trait AdminEmail  extends Email
 sealed trait DgccrfEmail extends Email
 
-sealed trait ProEmail extends Email
+sealed trait ProEmail         extends Email
 sealed trait ProFilteredEmail extends ProEmail
 sealed trait ProFilteredEmailSingleReport extends ProFilteredEmail {
   val report: Report
@@ -50,7 +50,7 @@ object Email {
 
   final case class ResetPassword(user: User, authToken: AuthToken) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(user.email)
-    override val subject: String = EmailSubjects.RESET_PASSWORD
+    override val subject: String                = EmailSubjects.RESET_PASSWORD
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
       views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
@@ -58,7 +58,7 @@ object Email {
 
   final case class ValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(email)
-    override val subject: String = EmailSubjects.VALIDATE_EMAIL
+    override val subject: String                = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
@@ -71,7 +71,7 @@ object Email {
       invitedBy: Option[User]
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
+    override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
@@ -84,7 +84,7 @@ object Email {
       invitationUrl: URI
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
+    override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (_, _) =>
@@ -97,7 +97,7 @@ object Email {
       invitedBy: Option[User]
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
+    override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (frontRoute, _) =>
@@ -112,7 +112,7 @@ object Email {
       siren: SIREN
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
+    override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (frontRoute, _) =>
@@ -123,7 +123,7 @@ object Email {
 
   final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
       extends ProFilteredEmailSingleReport {
-    override val subject: String = EmailSubjects.NEW_REPORT
+    override val subject: String                = EmailSubjects.NEW_REPORT
     override val recipients: List[EmailAddress] = userList.toList
 
     override def getBody: (FrontRoute, EmailAddress) => String =
@@ -155,7 +155,7 @@ object Email {
   final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
       extends ProFilteredEmailSingleReport {
     override val recipients: List[EmailAddress] = List(user.email)
-    override val subject: String = EmailSubjects.REPORT_ACK_PRO
+    override val subject: String                = EmailSubjects.REPORT_ACK_PRO
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (frontRoute, _) =>
@@ -185,10 +185,10 @@ object Email {
       views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
   }
 
-  final case class DgccrfAccessLink(recipient: EmailAddress, invitationUrl: URI) extends DgccrfEmail {
+  final case class AgentAccessLink(role: String)(recipient: EmailAddress, invitationUrl: URI) extends DgccrfEmail {
     override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.dgccrf.accessLink(invitationUrl).toString
+      views.html.mails.dgccrf.accessLink(invitationUrl, role).toString
     override val recipients: List[EmailAddress] = List(recipient)
   }
 
@@ -197,7 +197,7 @@ object Email {
       expirationDate: Option[LocalDate]
   ) extends DgccrfEmail {
     override val recipients: Seq[EmailAddress] = List(user.email)
-    override val subject: String = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
+    override val subject: String               = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
@@ -217,11 +217,11 @@ object Email {
       files: Seq[ReportFile],
       messagesApi: MessagesApi
   ) extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(report.lang))
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ReportAckEmail.subject")(lang)
+    override val subject: String                = messagesApi("ReportAckEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer
@@ -238,11 +238,11 @@ object Email {
       maybeCompany: Option[Company],
       messagesApi: MessagesApi
   ) extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(report.lang))
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ConsumerReportAckProEmail.subject")(lang)
+    override val subject: String                = messagesApi("ConsumerReportAckProEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer
@@ -260,11 +260,11 @@ object Email {
 
   final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
       extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(report.lang))
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ReportNotAnswered.subject")(lang)
+    override val subject: String                = messagesApi("ReportNotAnswered.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportClosedByNoAction(report, maybeCompany)(frontRoute, messagesProvider).toString
@@ -279,11 +279,11 @@ object Email {
       maybeCompany: Option[Company],
       messagesApi: MessagesApi
   ) extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(report.lang))
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ReportClosedByNoReadingEmail.subject")(lang)
+    override val subject: String                = messagesApi("ReportClosedByNoReadingEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportClosedByNoReading(report, maybeCompany)(frontRoute, messagesProvider).toString
@@ -298,11 +298,11 @@ object Email {
       locale: Option[Locale],
       messagesApi: MessagesApi
   ) extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(locale))
+    private val lang                                        = Lang(getLocaleOrDefault(locale))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(emailValidation.email)
-    override val subject: String = messagesApi("ConsumerValidateEmail.subject")(lang)
+    override val subject: String                = messagesApi("ConsumerValidateEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
       views.html.mails.consumer
@@ -319,11 +319,11 @@ object Email {
       maybeCompany: Option[Company],
       messagesApi: MessagesApi
   ) extends ConsumerEmail {
-    private val lang = Lang(getLocaleOrDefault(report.lang))
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
     implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ConsumerReportTransmittedEmail.subject")(lang)
+    override val subject: String                = messagesApi("ConsumerReportTransmittedEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.consumer.reportTransmission(report, maybeCompany).toString

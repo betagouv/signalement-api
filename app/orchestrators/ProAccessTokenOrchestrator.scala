@@ -70,7 +70,7 @@ class ProAccessTokenOrchestrator(
 )(implicit val executionContext: ExecutionContext)
     extends ProAccessTokenOrchestratorInterface {
 
-  val logger = Logger(this.getClass)
+  val logger                              = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]] =
@@ -87,10 +87,10 @@ class ProAccessTokenOrchestrator(
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit] = for {
-    _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _     <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     token <- fetchCompanyToken(token, siret)
-    user <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
-    _ <- bindPendingTokens(user)
+    user  <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
+    _     <- bindPendingTokens(user)
     _ <- eventRepository.create(
       Event(
         UUID.randomUUID(),

@@ -1,6 +1,6 @@
 @import java.net.URI
 @import utils.FrontRoute
-@(invitationUrl: URI)
+@(invitationUrl: URI, role: String)
 
 @views.html.mails.layout("Accédez à SignalConso") {
     <p>
@@ -8,7 +8,7 @@
     </p>
 
     <p>
-        Vous avez été invité à accéder à l'interface DGCCRF sur SignalConso.
+        Vous avez été invité à accéder à l'interface @role sur SignalConso.
         <br/>Afin de procéder à l'activation de votre compte, veuillez suivre le lien sécurisé ci-dessous :
     </p>
 

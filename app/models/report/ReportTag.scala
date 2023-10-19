@@ -42,22 +42,22 @@ object ReportTag extends PlayEnum[ReportTag] {
 
   val ReportTagHiddenToProfessionnel = Seq(Bloctel, ReponseConso)
 
-  case object LitigeContractuel extends ReportTag
-  case object Hygiene extends ReportTag
-  case object ProduitDangereux extends ReportTag
-  case object DemarchageADomicile extends ReportTag
-  case object Ehpad extends ReportTag
+  case object LitigeContractuel      extends ReportTag
+  case object Hygiene                extends ReportTag
+  case object ProduitDangereux       extends ReportTag
+  case object DemarchageADomicile    extends ReportTag
+  case object Ehpad                  extends ReportTag
   case object DemarchageTelephonique extends ReportTag
-  case object DemarchageInternet extends ReportTag
-  case object AbsenceDeMediateur extends ReportTag
-  case object Bloctel extends ReportTag
-  case object Influenceur extends ReportTag
-  case object ReponseConso extends ReportTag
-  case object Internet extends ReportTag
-  case object ProduitIndustriel extends ReportTag
-  case object ProduitAlimentaire extends ReportTag
-  case object CompagnieAerienne extends ReportTag
-  case object Resiliation extends ReportTag
+  case object DemarchageInternet     extends ReportTag
+  case object AbsenceDeMediateur     extends ReportTag
+  case object Bloctel                extends ReportTag
+  case object Influenceur            extends ReportTag
+  case object ReponseConso           extends ReportTag
+  case object Internet               extends ReportTag
+  case object ProduitIndustriel      extends ReportTag
+  case object ProduitAlimentaire     extends ReportTag
+  case object CompagnieAerienne      extends ReportTag
+  case object Resiliation            extends ReportTag
 
   implicit class ReportTagTranslationOps(reportTag: ReportTag) {
 

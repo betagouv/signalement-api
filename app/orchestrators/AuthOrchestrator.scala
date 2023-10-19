@@ -26,10 +26,8 @@ import cats.instances.future.catsStdInstancesForFuture
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthAttempt
@@ -74,7 +72,7 @@ class AuthOrchestrator(
     ec: ExecutionContext
 ) {
 
-  private val logger: Logger = Logger(this.getClass)
+  private val logger: Logger                        = Logger(this.getClass)
   private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
   private def handleDeletedUser(user: User, userLogin: UserCredentials): Future[Unit] =
@@ -97,9 +95,9 @@ class AuthOrchestrator(
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
     logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
-      _ <- validateAuthenticationAttempts(userLogin.login)
+      _         <- validateAuthenticationAttempts(userLogin.login)
       maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
-      user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
+      user      <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
@@ -184,17 +182,12 @@ class AuthOrchestrator(
 
   private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
-      loginInfo <- authenticate(userLogin.login, userLogin.password)
+      loginInfo     <- authenticate(userLogin.login, userLogin.password)
       authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-      cookie <- silhouette.env.authenticatorService.init(authenticator)
+      cookie        <- silhouette.env.authenticatorService.init(authenticator)
     } yield cookie
 
-  private def authenticate(login: String, password: String) = {
-    val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-      new BCryptPasswordHasher()
-    )
-
-    passwordHasherRegistry.current.hash(password)
+  private def authenticate(login: String, password: String) =
     credentialsProvider
       .authenticate(Credentials(login, password))
       .recoverWith {
@@ -204,7 +197,6 @@ class AuthOrchestrator(
         case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
         case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
       }
-  }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>
@@ -236,8 +228,8 @@ class AuthOrchestrator(
 }
 
 object AuthOrchestrator {
-  val AuthAttemptPeriod: Duration = 30 minutes
-  val MaxAllowedAuthAttempts: Int = 20
-  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now().plusDays(1)
+  val AuthAttemptPeriod: Duration           = 30 minutes
+  val MaxAllowedAuthAttempts: Int           = 20
+  def authTokenExpiration: OffsetDateTime   = OffsetDateTime.now().plusDays(1)
   def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
 }

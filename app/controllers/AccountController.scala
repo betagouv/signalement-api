@@ -18,6 +18,7 @@ import utils.silhouette.auth.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class AccountController(
     val silhouette: Silhouette[AuthEnv],
@@ -32,7 +33,7 @@ class AccountController(
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {
@@ -51,35 +52,52 @@ class AccountController(
         case Some(siret) =>
           proAccessTokenOrchestrator.activateProUser(activationRequest.draftUser, activationRequest.token, siret)
         case None =>
-          accessesOrchestrator.activateAdminOrDGCCRFUser(activationRequest.draftUser, activationRequest.token)
+          accessesOrchestrator.activateAdminOrAgentUser(activationRequest.draftUser, activationRequest.token)
       }
     } yield NoContent
 
   }
 
-  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async(parse.json) {
-    implicit request =>
-      request
-        .parseBody[EmailAddress](JsPath \ "email")
-        .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
-  }
+  def sendAgentInvitation(role: UserRole) =
+    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) { implicit request =>
+      role match {
+        case UserRole.DGCCRF =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
+        case UserRole.DGAL =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
+        case _ => Future.failed(error.AppError.WrongUserRole(role))
+      }
+    }
 
-  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async(parse.json) {
+  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
     implicit request =>
       request
         .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
   }
 
-  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { request =>
-    accessesOrchestrator
-      .listDGCCRFPendingToken(request.identity)
-      .map(tokens => Ok(Json.toJson(tokens)))
-  }
+  def fetchPendingAgent(role: UserRole) =
+    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { request =>
+      role match {
+        case UserRole.DGCCRF =>
+          accessesOrchestrator
+            .listDGCCRFPendingToken(request.identity)
+            .map(tokens => Ok(Json.toJson(tokens)))
+        case UserRole.DGAL =>
+          accessesOrchestrator
+            .listDGALPendingToken(request.identity)
+            .map(tokens => Ok(Json.toJson(tokens)))
+        case _ => Future.failed(error.AppError.WrongUserRole(role))
+      }
+    }
 
-  def fetchAdminOrDgccrfUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
+  def fetchAdminOrAgentUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
     for {
-      users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.Admin))
+      users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin))
     } yield Ok(Json.toJson(users))
   }
 
@@ -100,7 +118,7 @@ class AccountController(
   def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       token <- request.parseBody[String](JsPath \ "token")
-      user <- accessesOrchestrator.validateDGCCRFEmail(token)
+      user  <- accessesOrchestrator.validateDGCCRFEmail(token)
       authenticator <- silhouette.env.authenticatorService
         .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
       _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -110,13 +128,13 @@ class AccountController(
   }
 
   def forceValidateEmail(email: String) =
-    SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
+    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
   def edit() = SecuredAction.async(parse.json) { implicit request =>
     for {
-      userUpdate <- request.parseBody[UserUpdate]()
+      userUpdate     <- request.parseBody[UserUpdate]()
       updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
     } yield updatedUserOpt match {
       case Some(updatedUser) => Ok(Json.toJson(updatedUser))

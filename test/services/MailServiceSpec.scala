@@ -1,6 +1,7 @@
 package services
 
 import cats.data.NonEmptyList
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -18,6 +19,7 @@ import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -27,13 +29,13 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  implicit val ec = ee.executionContext
-  val logger: Logger = Logger(this.getClass)
+  implicit val ec: ExecutionContext = ee.executionContext
+  val logger: Logger                = Logger(this.getClass)
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
+  lazy val userRepository                        = components.userRepository
+  lazy val companyRepository                     = components.companyRepository
+  lazy val companyAccessRepository               = components.companyAccessRepository
+  lazy val companiesVisibilityOrchestrator       = components.companiesVisibilityOrchestrator
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
 //  implicit lazy val frontRoute = components.frontRoute
@@ -49,7 +51,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   val unrelatedCompany = Fixtures.genCompany.sample.get
 
   val reportForSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get
-  val reportForUnrelated = Fixtures.genReportForCompany(unrelatedCompany).sample.get
+  val reportForUnrelated  = Fixtures.genReportForCompany(unrelatedCompany).sample.get
 
   override def setupData() =
     Await.result(
@@ -83,7 +85,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](
+  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(proWithAccessToHeadOffice, proWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
   )
 

@@ -21,7 +21,7 @@ class ResponseConsumerReviewRepository(
     with ResponseConsumerReviewRepositoryInterface {
 
   override val table: TableQuery[ResponseConsumerReviewTable] = ResponseConsumerReviewTable.table
-  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  val dateTimeFormatter                                       = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
 

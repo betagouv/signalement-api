@@ -1,5 +1,6 @@
 package tasks.company
 
+import akka.stream.Materializer
 import models.company.CompanySync
 import org.scalacheck.Gen
 import org.specs2.concurrent.ExecutionEnv
@@ -21,8 +22,8 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
     with Mockito
     with FutureMatchers {
 
-  val (app, components) = TestApp.buildApp()
-  implicit val mat = app.materializer
+  val (app, components)          = TestApp.buildApp()
+  implicit val mat: Materializer = app.materializer
 
   "CompanyUpdateTask" should {
     sequential
@@ -37,9 +38,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
       // Truncated to MILLIS because PG does not handle nanos
-      val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
-      val companySync = CompanySync(UUID.randomUUID(), now.minus(1, ChronoUnit.DAYS))
-      val expectedCompany = company.copy(name = newName)
+      val now                 = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      val companySync         = CompanySync(UUID.randomUUID(), now.minus(1, ChronoUnit.DAYS))
+      val expectedCompany     = company.copy(name = newName)
       val expectedCompanySync = companySync.copy(lastUpdated = now)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
@@ -63,13 +64,13 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         )
 
       for {
-        _ <- components.companyRepository.create(company)
-        _ <- components.companySyncRepository.create(companySync)
-        _ <- task.runTask()
-        updatedCompany <- components.companyRepository.get(company.id)
+        _                  <- components.companyRepository.create(company)
+        _                  <- components.companySyncRepository.create(companySync)
+        _                  <- task.runTask()
+        updatedCompany     <- components.companyRepository.get(company.id)
         updatedCompanySync <- components.companySyncRepository.get(companySync.id)
-        _ <- components.companyRepository.delete(company.id)
-        _ <- components.companySyncRepository.delete(companySync.id)
+        _                  <- components.companyRepository.delete(company.id)
+        _                  <- components.companySyncRepository.delete(companySync.id)
       } yield (updatedCompany shouldEqual Some(expectedCompany)) and (updatedCompanySync shouldEqual Some(
         expectedCompanySync
       ))
@@ -86,7 +87,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
       // Truncated to MILLIS because PG does not handle nanos
-      val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      val now             = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       val expectedCompany = company.copy(name = newName)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
@@ -110,12 +111,12 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         )
 
       for {
-        _ <- components.companyRepository.create(company)
-        _ <- task.runTask()
-        updatedCompany <- components.companyRepository.get(company.id)
+        _                  <- components.companyRepository.create(company)
+        _                  <- task.runTask()
+        updatedCompany     <- components.companyRepository.get(company.id)
         createdCompanySync <- components.companySyncRepository.list().map(_.head)
-        _ <- components.companyRepository.delete(company.id)
-        _ <- components.companySyncRepository.delete(createdCompanySync.id)
+        _                  <- components.companyRepository.delete(company.id)
+        _                  <- components.companySyncRepository.delete(createdCompanySync.id)
       } yield (updatedCompany shouldEqual Some(expectedCompany)) and (createdCompanySync.lastUpdated shouldEqual now)
     }
 
@@ -129,9 +130,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos
-      val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
-      val companySync = CompanySync(UUID.randomUUID(), now.minus(1, ChronoUnit.DAYS))
-      val expectedCompany = company.copy(name = "")
+      val now                 = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      val companySync         = CompanySync(UUID.randomUUID(), now.minus(1, ChronoUnit.DAYS))
+      val expectedCompany     = company.copy(name = "")
       val expectedCompanySync = companySync.copy(lastUpdated = now)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
@@ -155,13 +156,13 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         )
 
       for {
-        _ <- components.companyRepository.create(company)
-        _ <- components.companySyncRepository.create(companySync)
-        _ <- task.runTask()
-        updatedCompany <- components.companyRepository.get(company.id)
+        _                  <- components.companyRepository.create(company)
+        _                  <- components.companySyncRepository.create(companySync)
+        _                  <- task.runTask()
+        updatedCompany     <- components.companyRepository.get(company.id)
         updatedCompanySync <- components.companySyncRepository.get(companySync.id)
-        _ <- components.companyRepository.delete(company.id)
-        _ <- components.companySyncRepository.delete(companySync.id)
+        _                  <- components.companyRepository.delete(company.id)
+        _                  <- components.companySyncRepository.delete(companySync.id)
       } yield (updatedCompany shouldEqual Some(expectedCompany)) and (updatedCompanySync shouldEqual Some(
         expectedCompanySync
       ))
@@ -177,7 +178,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos
-      val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      val now         = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       val companySync = CompanySync(UUID.randomUUID(), now.plus(1, ChronoUnit.DAYS))
 
       serviceMock.syncCompanies(
@@ -189,13 +190,13 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         )
 
       for {
-        _ <- components.companyRepository.create(company)
-        _ <- components.companySyncRepository.create(companySync)
-        _ <- task.runTask()
-        updatedCompany <- components.companyRepository.get(company.id)
+        _                  <- components.companyRepository.create(company)
+        _                  <- components.companySyncRepository.create(companySync)
+        _                  <- task.runTask()
+        updatedCompany     <- components.companyRepository.get(company.id)
         updatedCompanySync <- components.companySyncRepository.get(companySync.id)
-        _ <- components.companyRepository.delete(company.id)
-        _ <- components.companySyncRepository.delete(companySync.id)
+        _                  <- components.companyRepository.delete(company.id)
+        _                  <- components.companySyncRepository.delete(companySync.id)
       } yield (updatedCompany shouldEqual Some(company)) and (updatedCompanySync shouldEqual Some(companySync))
     }
   }

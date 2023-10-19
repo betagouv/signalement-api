@@ -21,27 +21,26 @@ class InactiveAccountTask(
     executionContext: ExecutionContext
 ) {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = taskConfiguration.inactiveAccounts.startTime
+  val startTime                    = taskConfiguration.inactiveAccounts.startTime
   val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.day) { () =>
-    logger.debug(s"initialDelay - ${initialDelay}");
+    logger.debug(s"initialDelay - ${initialDelay}")
     if (taskConfiguration.active) {
       runTask(
         OffsetDateTime.now()
-      )
+      ): Unit
     }
-    ()
-  }
+  }: Unit
 
   def runTask(now: OffsetDateTime): Future[Unit] = {
     logger.info(s"taskDate - ${now}")
     val expirationDateThreshold: OffsetDateTime = now.minus(taskConfiguration.inactiveAccounts.inactivePeriod)
-    val first = now.minus(taskConfiguration.inactiveAccounts.firstReminder)
-    val second = now.minus(taskConfiguration.inactiveAccounts.secondReminder)
+    val first                                   = now.minus(taskConfiguration.inactiveAccounts.firstReminder)
+    val second                                  = now.minus(taskConfiguration.inactiveAccounts.secondReminder)
 
     val sendReminderEmailsTask = inactiveDgccrfAccountSendReminderTask.sendReminderEmail(
       first,

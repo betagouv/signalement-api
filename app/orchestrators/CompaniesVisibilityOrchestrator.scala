@@ -27,7 +27,7 @@ class CompaniesVisibilityOrchestrator(
   def fetchUsersWithHeadOffices(siret: SIRET): Future[List[User]] =
     for {
       companies <- companyRepo.findCompanyAndHeadOffice(siret)
-      users <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
+      users     <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
     } yield users
 
   // Fetch all users of these companies, and of their head offices
@@ -55,7 +55,7 @@ class CompaniesVisibilityOrchestrator(
         .toMap
     } yield usersByCompanyIdMap.map { case (companyId, usersOfCompany) =>
       // we could just find the head office here based on the SIREN, no need to bother with constructing the "headOfficeIdByCompanyIdMap" earlier
-      val headOfficeId = headOfficeIdByCompanyIdMap.get(companyId).flatten
+      val headOfficeId    = headOfficeIdByCompanyIdMap.get(companyId).flatten
       val headOfficeUsers = headOfficeId.flatMap(headOfficeUsersByHeadOfficesCompanyIdMap.get).getOrElse(List())
       (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
@@ -80,7 +80,7 @@ class CompaniesVisibilityOrchestrator(
       accessibleSubsidiaries: List[Company]
   ) = {
     val levelPriority = Map(
-      AccessLevel.ADMIN -> 1,
+      AccessLevel.ADMIN  -> 1,
       AccessLevel.MEMBER -> 0
     ).withDefaultValue(-1)
     val getLevelBySiren = authorizedCompaniesWithAccesses

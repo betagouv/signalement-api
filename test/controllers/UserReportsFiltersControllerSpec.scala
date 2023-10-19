@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -28,7 +29,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val user = Fixtures.genDgccrfUser.sample.get
+  val user  = Fixtures.genDgccrfUser.sample.get
   val user2 = Fixtures.genDgccrfUser.sample.get
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
@@ -44,9 +45,9 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  implicit val authEnv = components.authEnv
-  lazy val userRepository = components.userRepository
-  lazy val userReportsFiltersRepository = components.userReportsFiltersRepository
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
+  lazy val userRepository                    = components.userRepository
+  lazy val userReportsFiltersRepository      = components.userReportsFiltersRepository
 
   override def setupData() =
     Await.result(
@@ -64,8 +65,8 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
         .withAuthenticator[AuthEnv](loginInfo(user))
 
       val result = for {
-        _ <- userReportsFiltersRepository.createOrUpdate(UserReportsFilters(user.id, "test_list", Json.obj()))
-        _ <- userReportsFiltersRepository.createOrUpdate(UserReportsFilters(user2.id, "test_list", Json.obj()))
+        _   <- userReportsFiltersRepository.createOrUpdate(UserReportsFilters(user.id, "test_list", Json.obj()))
+        _   <- userReportsFiltersRepository.createOrUpdate(UserReportsFilters(user2.id, "test_list", Json.obj()))
         res <- route(app, request).get
       } yield res
 
@@ -74,7 +75,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     }
     "save minimal reports filters" in {
       val jsonBody = Json.obj(
-        "name" -> "test",
+        "name"    -> "test",
         "filters" -> Json.obj()
       )
 
@@ -83,7 +84,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
         .withAuthenticator[AuthEnv](loginInfo(user))
 
       val result = for {
-        res <- route(app, request).get
+        res          <- route(app, request).get
         savedFilters <- userReportsFiltersRepository.get(user.id, "test")
       } yield (res, savedFilters.get.reportsFilters)
 
@@ -131,7 +132,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
           |}
           |""".stripMargin
       val jsonBody = Json.obj(
-        "name" -> "test",
+        "name"    -> "test",
         "filters" -> Json.parse(jsonString)
       )
 
@@ -140,7 +141,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
         .withAuthenticator[AuthEnv](loginInfo(user))
 
       val result = for {
-        res <- route(app, request).get
+        res          <- route(app, request).get
         savedFilters <- userReportsFiltersRepository.get(user.id, "test")
       } yield (res, savedFilters.get.reportsFilters)
 
@@ -150,7 +151,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
 
     "reject when user is not authenticated" in {
       val jsonBody = Json.obj(
-        "name" -> "",
+        "name"    -> "",
         "filters" -> Json.obj("test" -> "test")
       )
 

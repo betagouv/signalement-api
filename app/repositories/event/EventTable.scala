@@ -11,13 +11,13 @@ import repositories.PostgresProfile.api._
 
 class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
 
-  def reportId = column[Option[UUID]]("report_id")
-  def companyId = column[Option[UUID]]("company_id")
-  def userId = column[Option[UUID]]("user_id")
+  def reportId     = column[Option[UUID]]("report_id")
+  def companyId    = column[Option[UUID]]("company_id")
+  def userId       = column[Option[UUID]]("user_id")
   def creationDate = column[OffsetDateTime]("creation_date")
-  def eventType = column[String]("event_type")
-  def action = column[String]("action")
-  def details = column[JsValue]("details")
+  def eventType    = column[String]("event_type")
+  def action       = column[String]("action")
+  def details      = column[JsValue]("details")
 
   type EventData = (UUID, Option[UUID], Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
 

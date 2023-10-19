@@ -58,10 +58,10 @@ object SilhouetteEnv {
       configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator.cookie")
 
     val crypterSettings = configuration.underlying.as[JcaCrypterSettings]("silhouette.authenticator.crypter")
-    val crypter = new JcaCrypter(crypterSettings)
+    val crypter         = new JcaCrypter(crypterSettings)
 
     val signerSettings = configuration.underlying.as[JcaSignerSettings]("silhouette.authenticator.signer")
-    val signer = new JcaSigner(signerSettings)
+    val signer         = new JcaSigner(signerSettings)
 
     val encoder = new CrypterAuthenticatorEncoder(crypter)
 

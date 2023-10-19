@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ReportsExtractActor
-import akka.actor.ActorRef
+import akka.actor.typed
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.error.AppError.MalformedQueryParams
 import models._
@@ -15,16 +15,18 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import cats.implicits.catsSyntaxOption
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.QueryStringMapper
+
 import java.time.ZoneId
 
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    reportsExtractActor: ActorRef,
+    reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand],
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     controllerComponents: ControllerComponents
@@ -32,11 +34,11 @@ class ReportListController(
     extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
 
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
@@ -58,7 +60,7 @@ class ReportListController(
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     for {
       reportFilter <- ReportFilter
-        .fromQueryString(request.queryString, request.identity.userRole)
+        .fromQueryString(request.queryString)
         .toOption
         .liftTo[Future] {
           logger.warn(s"Failed to parse ReportFilter query params")

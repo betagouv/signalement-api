@@ -24,6 +24,8 @@ import models.report.WebsiteURL
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
+import play.api.i18n.Messages
+import play.api.i18n.MessagesImpl
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -38,7 +40,7 @@ import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
-import services.Email.DgccrfAccessLink
+import services.Email.AgentAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
 import services.Email.InactiveDgccrfAccount
@@ -69,7 +71,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import play.api.i18n.MessagesImpl
 class AdminController(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
@@ -85,9 +86,9 @@ class AdminController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(controllerComponents) {
 
-  val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = emailConfiguration.contactAddress
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  val logger: Logger                        = Logger(this.getClass)
+  implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
+  implicit val timeout: akka.util.Timeout   = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
 
@@ -193,7 +194,7 @@ class AdminController(
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  implicit val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
+  implicit val messagesProvider: Messages = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   val availablePdfs = Seq[(String, Html)](
     "accountActivation" -> views.html.pdfs.accountActivation(
       genCompany,
@@ -243,8 +244,8 @@ class AdminController(
     "dgccrf.inactive_account_reminder" -> (recipient =>
       InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
     ),
-    "dgccrf.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
-    "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
+    "dgccrf.reset_password"  -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "pro.access_invitation"  -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.report_ack_pro" -> (recipient =>
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
@@ -272,7 +273,7 @@ class AdminController(
       )
     }),
     "dgccrf.access_link" ->
-      (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
+      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.validate_email" ->
       (ValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
@@ -547,7 +548,7 @@ class AdminController(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         results =>
           for {
-            reports <- reportRepository.getReportsByIds(results.reportIds)
+            reports   <- reportRepository.getReportsByIds(results.reportIds)
             eventsMap <- eventRepository.fetchEventsOfReports(reports)
             companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
             filteredEvents = reports.flatMap { report =>
@@ -574,7 +575,7 @@ class AdminController(
   def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
       reportInputList <- request.parseBody[ReportInputList]()
-      reportIds <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportIds       <- reportRepository.getReportsByIds(reportInputList.reportIds)
       reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
       reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
         companyAccessRepository
@@ -598,10 +599,10 @@ class AdminController(
     logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
     for {
       reportInputList <- request.parseBody[ReportInputList]()
-      reports <- reportRepository.getReportsByIds(reportInputList.reportIds)
-      reportFiles <- reportFileOrchestrator.prefetchReportsFiles(reportInputList.reportIds)
-      events <- eventRepository.fetchEventsOfReports(reports)
-      companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
+      reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reportInputList.reportIds)
+      events          <- eventRepository.fetchEventsOfReports(reports)
+      companies       <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
 
       emailsToSend = reports.flatMap { report =>
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))

@@ -63,7 +63,7 @@ abstract class ApiKeyBaseController(override val controllerComponents: Controlle
 abstract class BaseController(override val controllerComponents: ControllerComponents)
     extends AbstractController(controllerComponents) {
 
-  type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
+  type SecuredRequestWrapper[A]   = SecuredRequest[AuthEnv, A]
   type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
 
   def silhouette: Silhouette[AuthEnv]
@@ -95,13 +95,15 @@ abstract class BaseController(override val controllerComponents: ControllerCompo
     silhouette.UserAwareAction andThen
       new ErrorHandlerActionFunction[UserAwareRequestWrapper](request => request.identity.map(_.id))
 
-  implicit def securedRequest2User[A](implicit req: SecuredRequest[AuthEnv, A]) = req.identity
+  implicit def securedRequest2User[A](implicit req: SecuredRequest[AuthEnv, A]): User = req.identity
 
-  implicit def securedRequest2UserRoleOpt[A](implicit req: SecuredRequest[AuthEnv, A]) = Some(req.identity.userRole)
+  implicit def securedRequest2UserRoleOpt[A](implicit req: SecuredRequest[AuthEnv, A]): Option[UserRole] = Some(
+    req.identity.userRole
+  )
 
-  implicit def securedRequest2UserOpt[A](implicit req: SecuredRequest[AuthEnv, A]) = Some(req.identity)
+  implicit def securedRequest2UserOpt[A](implicit req: SecuredRequest[AuthEnv, A]): Option[User] = Some(req.identity)
 
-  implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]) = req.identity
+  implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]): Option[User] = req.identity
 }
 
 abstract class BaseCompanyController(override val controllerComponents: ControllerComponents)

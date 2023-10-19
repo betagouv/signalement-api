@@ -11,13 +11,13 @@ import repositories.PostgresProfile.api._
 
 class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
 
-  def password = column[String]("password")
-  def email = column[EmailAddress]("email")
-  def firstName = column[String]("firstname")
-  def lastName = column[String]("lastname")
-  def role = column[String]("role")
+  def password            = column[String]("password")
+  def email               = column[EmailAddress]("email")
+  def firstName           = column[String]("firstname")
+  def lastName            = column[String]("lastname")
+  def role                = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
-  def deletionDate = column[Option[OffsetDateTime]]("deletion_date")
+  def deletionDate        = column[Option[OffsetDateTime]]("deletion_date")
 
   type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime], Option[OffsetDateTime])
 

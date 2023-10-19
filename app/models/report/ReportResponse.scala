@@ -21,8 +21,8 @@ sealed trait ReportResponseType extends EnumEntry
 
 object ReportResponseType extends PlayEnum[ReportResponseType] {
 
-  final case object ACCEPTED extends ReportResponseType
-  final case object REJECTED extends ReportResponseType
+  final case object ACCEPTED      extends ReportResponseType
+  final case object REJECTED      extends ReportResponseType
   final case object NOT_CONCERNED extends ReportResponseType
 
   override def values: IndexedSeq[ReportResponseType] = findValues

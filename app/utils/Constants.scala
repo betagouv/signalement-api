@@ -12,23 +12,24 @@ object Constants {
     case class EventTypeValue(value: String)
 
     object EventTypeValue {
-      implicit val eventTypeValueWrites = new Writes[EventTypeValue] {
-        def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
-      }
+      implicit val eventTypeValueWrites: Writes[EventTypeValue] = (eventTypeValue: EventTypeValue) =>
+        Json.toJson(eventTypeValue.value)
       implicit val eventTypeValueReads: Reads[EventTypeValue] =
         JsPath.read[String].map(fromValue(_))
     }
 
-    object PRO extends EventTypeValue("PRO")
-    object CONSO extends EventTypeValue("CONSO")
+    object PRO    extends EventTypeValue("PRO")
+    object CONSO  extends EventTypeValue("CONSO")
     object DGCCRF extends EventTypeValue("DGCCRF")
-    object ADMIN extends EventTypeValue("ADMIN")
+    object DGAL   extends EventTypeValue("DGAL")
+    object ADMIN  extends EventTypeValue("ADMIN")
     object SYSTEM extends EventTypeValue("SYSTEM")
 
     val eventTypes = Seq(
       PRO,
       CONSO,
       DGCCRF,
+      DGAL,
       ADMIN,
       SYSTEM
     )
@@ -39,6 +40,7 @@ object Constants {
       userRole match {
         case UserRole.Admin         => ADMIN
         case UserRole.DGCCRF        => DGCCRF
+        case UserRole.DGAL          => DGAL
         case UserRole.Professionnel => PRO
       }
 
@@ -49,8 +51,8 @@ object Constants {
     case class ActionEventValue(value: String)
 
     object ActionEventValue {
-      implicit val actionEventValueReads: Reads[ActionEventValue] = JsPath.read[String].map(fromValue(_))
-      implicit val actionEventValueWriter = Json.writes[ActionEventValue]
+      implicit val actionEventValueReads: Reads[ActionEventValue]    = JsPath.read[String].map(fromValue(_))
+      implicit val actionEventValueWriter: OWrites[ActionEventValue] = Json.writes[ActionEventValue]
     }
 
     @Deprecated
@@ -65,19 +67,19 @@ object Constants {
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
 
     object POST_ACCOUNT_ACTIVATION_DOC extends ActionEventValue("Envoi du courrier d'activation")
-    object POST_FOLLOW_UP_DOC extends ActionEventValue("Envoi du courrier de relance")
+    object POST_FOLLOW_UP_DOC          extends ActionEventValue("Envoi du courrier de relance")
     object POST_FOLLOW_UP_TOKEN_GEN
         extends ActionEventValue("Gereration d'un token de relance pour entreprise inactive")
-    object ACCOUNT_ACTIVATION extends ActionEventValue("Activation d'un compte")
+    object ACCOUNT_ACTIVATION      extends ActionEventValue("Activation d'un compte")
     object ACTIVATION_DOC_RETURNED extends ActionEventValue("Courrier d'activation retourné")
     object ACTIVATION_DOC_REQUIRED extends ActionEventValue("Courrier d'activation à renvoyer")
-    object COMPANY_ADDRESS_CHANGE extends ActionEventValue("Modification de l'adresse de l'entreprise")
+    object COMPANY_ADDRESS_CHANGE  extends ActionEventValue("Modification de l'adresse de l'entreprise")
 
     object REPORT_READING_BY_PRO extends ActionEventValue("Première consultation du signalement par le professionnel")
-    object REPORT_PRO_RESPONSE extends ActionEventValue("Réponse du professionnel au signalement")
-    object REPORT_REVIEW_ON_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
+    object REPORT_PRO_RESPONSE   extends ActionEventValue("Réponse du professionnel au signalement")
+    object REPORT_REVIEW_ON_RESPONSE   extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
     object REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Signalement non consulté")
-    object REPORT_CLOSED_BY_NO_ACTION extends ActionEventValue("Signalement consulté ignoré")
+    object REPORT_CLOSED_BY_NO_ACTION  extends ActionEventValue("Signalement consulté ignoré")
 
     object EMAIL_CONSUMER_ACKNOWLEDGMENT
         extends ActionEventValue("Email « Accusé de réception » envoyé au consommateur")
@@ -100,13 +102,13 @@ object Constants {
     object EMAIL_PRO_REMIND_NO_ACTION
         extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
 
-    object REPORT_COMPANY_CHANGE extends ActionEventValue("Modification du commerçant")
-    object REPORT_COUNTRY_CHANGE extends ActionEventValue("Modification du pays")
-    object REPORT_CONSUMER_CHANGE extends ActionEventValue("Modification du consommateur")
-    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
-    object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par le consommateur")
+    object REPORT_COMPANY_CHANGE    extends ActionEventValue("Modification du commerçant")
+    object REPORT_COUNTRY_CHANGE    extends ActionEventValue("Modification du pays")
+    object REPORT_CONSUMER_CHANGE   extends ActionEventValue("Modification du consommateur")
+    object COMMENT                  extends ActionEventValue("Ajout d'un commentaire")
+    object CONSUMER_ATTACHMENTS     extends ActionEventValue("Ajout de pièces jointes fournies par le consommateur")
     object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par l'entreprise")
-    object CONTROL extends ActionEventValue("Contrôle effectué")
+    object CONTROL                  extends ActionEventValue("Contrôle effectué")
 
     object USER_DELETION extends ActionEventValue("Suppression d'un utilisateur")
 
@@ -146,32 +148,33 @@ object Constants {
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
       Map(
         UserRole.Professionnel -> List(COMMENT),
-        UserRole.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
-        UserRole.DGCCRF -> List(COMMENT, CONTROL)
+        UserRole.Admin         -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
+        UserRole.DGCCRF        -> List(COMMENT, CONTROL),
+        UserRole.DGAL          -> List(COMMENT, CONTROL)
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
   object Departments {
 
-    val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
-    val BretagneFrancheComte = List("21", "25", "39", "58", "70", "71", "89", "90")
-    val Bretagne = List("22", "29", "35", "56")
-    val CDVL = List("18", "28", "36", "37", "41", "45")
+    val AURA                  = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+    val BretagneFrancheComte  = List("21", "25", "39", "58", "70", "71", "89", "90")
+    val Bretagne              = List("22", "29", "35", "56")
+    val CDVL                  = List("18", "28", "36", "37", "41", "45")
     val CollectivitesOutreMer = List("975", "977", "978", "984", "986", "987", "988", "989")
-    val Corse = List("2A", "2B")
-    val GrandEst = List("08", "10", "51", "52", "54", "55", "57", "67", "68", "88")
-    val Guadeloupe = List("971")
-    val Guyane = List("973")
-    val HautsDeFrance = List("02", "59", "60", "62", "80")
-    val IleDeFrance = List("75", "77", "78", "91", "92", "93", "94", "95")
-    val LaReunion = List("974")
-    val Martinique = List("972")
-    val Mayotte = List("976")
-    val Normandie = List("14", "27", "50", "61", "76")
-    val NouvelleAquitaine = List("16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87")
-    val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
-    val PaysDeLaLoire = List("44", "49", "53", "72", "85")
+    val Corse                 = List("2A", "2B")
+    val GrandEst              = List("08", "10", "51", "52", "54", "55", "57", "67", "68", "88")
+    val Guadeloupe            = List("971")
+    val Guyane                = List("973")
+    val HautsDeFrance         = List("02", "59", "60", "62", "80")
+    val IleDeFrance           = List("75", "77", "78", "91", "92", "93", "94", "95")
+    val LaReunion             = List("974")
+    val Martinique            = List("972")
+    val Mayotte               = List("976")
+    val Normandie             = List("14", "27", "50", "61", "76")
+    val NouvelleAquitaine     = List("16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87")
+    val OCC                   = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
+    val PaysDeLaLoire         = List("44", "49", "53", "72", "85")
     val ProvenceAlpesCoteAzur = List("04", "05", "06", "13", "83", "84")
 
     val METROPOLE = AURA ++ BretagneFrancheComte ++ Bretagne ++ CDVL ++ Corse ++ GrandEst ++ HautsDeFrance ++

@@ -36,9 +36,9 @@ class ReportDraftTest extends Specification {
         companyActivityCode = Some("40.7Z")
       )
 
-      val reportId = UUID.randomUUID()
+      val reportId                     = UUID.randomUUID()
       val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
-      val expirationDate = creationDate.plusDays(100)
+      val expirationDate               = creationDate.plusDays(100)
       val res =
         aDraftReport.generateReport(
           maybeCompanyId = None,
@@ -140,7 +140,7 @@ class ReportDraftTest extends Specification {
 
       def generateReportFromDraft(draft: ReportDraft, socialNetworkCompany: Option[Company] = None) = {
         val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
-        val expirationDate = creationDate.plusDays(100)
+        val expirationDate               = creationDate.plusDays(100)
         draft.generateReport(
           maybeCompanyId = None,
           socialNetworkCompany = socialNetworkCompany,

@@ -2,8 +2,6 @@ package models.report
 
 import enumeratum._
 import models.UserRole
-import models.UserRole.Admin
-import models.UserRole.DGCCRF
 
 sealed trait ReportStatus extends EnumEntry
 
@@ -11,7 +9,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   val values = findValues
 
-  case object NA extends ReportStatus
+  case object NA            extends ReportStatus
   case object LanceurAlerte extends ReportStatus
 
   /** Not read by pro status
@@ -20,12 +18,12 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   /** Read by pro status
     */
-  case object Transmis extends ReportStatus
+  case object Transmis       extends ReportStatus
   case object PromesseAction extends ReportStatus
-  case object Infonde extends ReportStatus
-  case object NonConsulte extends ReportStatus
+  case object Infonde        extends ReportStatus
+  case object NonConsulte    extends ReportStatus
   case object ConsulteIgnore extends ReportStatus
-  case object MalAttribue extends ReportStatus
+  case object MalAttribue    extends ReportStatus
 
   val statusVisibleByPro: Seq[ReportStatus] =
     Seq(
@@ -44,15 +42,6 @@ object ReportStatus extends PlayEnum[ReportStatus] {
     Transmis,
     ConsulteIgnore
   ) ++ statusWithProResponse
-
-  def filterByUserRole(status: Seq[ReportStatus], userRole: UserRole) = {
-    val requestedStatus = if (status.isEmpty) ReportStatus.values else status
-    userRole match {
-      case Admin  => requestedStatus
-      case DGCCRF => requestedStatus
-      case _      => requestedStatus.intersect(statusVisibleByPro)
-    }
-  }
 
   def hasResponse(report: Report): Boolean = statusWithProResponse.contains(report.status)
 

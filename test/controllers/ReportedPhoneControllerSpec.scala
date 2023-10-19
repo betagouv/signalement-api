@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -26,12 +27,12 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  lazy val userRepository = components.userRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val userRepository    = components.userRepository
+  lazy val reportRepository  = components.reportRepository
   lazy val companyRepository = components.companyRepository
 
-  val adminUser = Fixtures.genAdminUser.sample.get
-  val company = Fixtures.genCompany.sample.get
+  val adminUser     = Fixtures.genAdminUser.sample.get
+  val company       = Fixtures.genCompany.sample.get
   val reportedPhone = Fixtures.genReportedPhone.sample.get
 
   override def setupData() =
@@ -54,7 +55,8 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
+  implicit val env: Environment[AuthEnv] =
+    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(
     Some(

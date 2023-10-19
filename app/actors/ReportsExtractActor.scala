@@ -1,6 +1,7 @@
 package actors
 
-import akka.actor._
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import spoiwo.model._
@@ -41,70 +42,91 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Random
+import scala.util.Success
 import java.time.ZoneId
 import java.time.OffsetDateTime
 
 object ReportsExtractActor {
-  def props = Props[ReportsExtractActor]()
-
+  sealed trait ReportsExtractCommand
   case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId)
-}
-
-class ReportsExtractActor(
-    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
-    reportFileRepository: ReportFileRepositoryInterface,
-    companyAccessRepository: CompanyAccessRepositoryInterface,
-    reportOrchestrator: ReportOrchestrator,
-    eventRepository: EventRepositoryInterface,
-    asyncFileRepository: AsyncFileRepositoryInterface,
-    s3Service: S3ServiceInterface,
-    signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val mat: Materializer)
-    extends Actor {
-  import ReportsExtractActor._
-  implicit val ec: ExecutionContext = context.dispatcher
+      extends ReportsExtractCommand
+  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends ReportsExtractCommand
+  case object ExtractRequestFailure                                 extends ReportsExtractCommand
 
   val logger: Logger = Logger(this.getClass)
-  override def preStart() =
-    logger.debug("Starting")
-  override def preRestart(reason: Throwable, message: Option[Any]): Unit =
-    logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
-  override def receive = {
-    case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId) =>
-      for {
-        // FIXME: We might want to move the random name generation
-        // in a common place if we want to reuse it for other async files
-        tmpPath <- genTmpFile(requestedBy, filters, zone)
-        remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
-      ()
-    case _ =>
-      logger.debug("Could not handle request")
-      ()
-  }
+
+  def create(
+      reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+      reportFileRepository: ReportFileRepositoryInterface,
+      companyAccessRepository: CompanyAccessRepositoryInterface,
+      reportOrchestrator: ReportOrchestrator,
+      eventRepository: EventRepositoryInterface,
+      asyncFileRepository: AsyncFileRepositoryInterface,
+      s3Service: S3ServiceInterface,
+      signalConsoConfiguration: SignalConsoConfiguration
+  )(implicit mat: Materializer): Behavior[ReportsExtractCommand] =
+    Behaviors.setup { context =>
+      import context.executionContext
+
+      Behaviors.receiveMessage[ReportsExtractCommand] {
+        case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId) =>
+          val result = for {
+            // FIXME: We might want to move the random name generation
+            // in a common place if we want to reuse it for other async files
+            tmpPath <- genTmpFile(
+              reportOrchestrator,
+              signalConsoConfiguration,
+              reportFileRepository,
+              eventRepository,
+              reportConsumerReviewOrchestrator,
+              companyAccessRepository,
+              requestedBy,
+              filters,
+              zone
+            )
+            remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
+            _          <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+          } yield ExtractRequestSuccess(fileId, requestedBy)
+
+          context.pipeToSelf(result) {
+            case Success(success) => success
+            case Failure(_)       => ExtractRequestFailure
+          }
+          Behaviors.same
+
+        case ExtractRequestSuccess(fileId: UUID, requestedBy: User) =>
+          logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
+          Behaviors.same
+
+        case ExtractRequestFailure =>
+          logger.info(s"Extract failed")
+          Behaviors.same
+      }
+    }
 
   // Common layout variables
-  val headerStyle = CellStyle(
+  private val headerStyle = CellStyle(
     fillPattern = CellFill.Solid,
     fillForegroundColor = Color.Gainsborough,
     font = Font(bold = true),
     horizontalAlignment = CellHorizontalAlignment.Center
   )
-  val centerAlignmentStyle = CellStyle(
+  private val centerAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Center,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val leftAlignmentStyle = CellStyle(
+  private val leftAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Left,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
-  val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
-  val MaxCharInSingleCell = 10000
+  private val leftAlignmentColumn   = Column(autoSized = true, style = leftAlignmentStyle)
+  private val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+  private val MaxCharInSingleCell   = 10000
 
   // Columns definition
   case class ReportColumn(
@@ -121,7 +143,12 @@ class ReportsExtractActor(
         users: List[User]
     ): String = extract(report, reportFiles, events, consumerReview, users).take(MaxCharInSingleCell)
   }
-  def buildColumns(requestedBy: User, zone: ZoneId) = {
+
+  private def buildColumns(
+      signalConsoConfiguration: SignalConsoConfiguration,
+      requestedBy: User,
+      zone: ZoneId
+  ): List[ReportColumn] = {
     List(
       ReportColumn(
         "Date de création",
@@ -137,13 +164,13 @@ class ReportsExtractActor(
         "Code postal",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Siret",
@@ -154,13 +181,13 @@ class ReportsExtractActor(
         "Nom de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.companyName.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.companyAddress.toString,
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise",
@@ -172,19 +199,19 @@ class ReportsExtractActor(
         "Site web de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.phone.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.vendor.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie",
@@ -213,25 +240,25 @@ class ReportsExtractActor(
                   .url}"
             )
             .mkString("\n"),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Influenceur ou influenceuse",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.influencer.map(_.name).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Plateforme (réseau social)",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.influencer.map(_.socialNetwork.entryName).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
         (report, _, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Réponse du professionnel",
@@ -285,55 +312,55 @@ class ReportsExtractActor(
         "Évaluation du consommateur",
         leftAlignmentColumn,
         (_, _, _, review, _) => review.map(r => ResponseEvaluation.translate(r.evaluation)).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Réponse du consommateur",
         leftAlignmentColumn,
         (_, _, _, review, _) => review.flatMap(_.details).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Date de l'évaluation du consommateur",
         leftAlignmentColumn,
         (_, _, _, review, _) => review.map(r => frenchFormatDate(r.creationDate, zone)).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Identifiant",
         centerAlignmentColumn,
         (report, _, _, _, _) => report.id.toString,
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.firstName,
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.lastName,
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.email.value,
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.consumerPhone.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Numéro de référence dossier",
         leftAlignmentColumn,
         (report, _, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Accord pour contact",
@@ -367,8 +394,18 @@ class ReportsExtractActor(
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: ReportFilter, zone: ZoneId) = {
-    val reportColumns = buildColumns(requestedBy, zone)
+  private def genTmpFile(
+      reportOrchestrator: ReportOrchestrator,
+      signalConsoConfiguration: SignalConsoConfiguration,
+      reportFileRepository: ReportFileRepositoryInterface,
+      eventRepository: EventRepositoryInterface,
+      reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+      companyAccessRepository: CompanyAccessRepositoryInterface,
+      requestedBy: User,
+      filters: ReportFilter,
+      zone: ZoneId
+  )(implicit ec: ExecutionContext): Future[Path] = {
+    val reportColumns = buildColumns(signalConsoConfiguration, requestedBy, zone)
     for {
       paginatedReports <- reportOrchestrator
         .getReportsForUser(
@@ -378,8 +415,8 @@ class ReportsExtractActor(
           limit = Some(signalConsoConfiguration.reportsExportLimitMax)
         )
         .map(_.entities.map(_.report))
-      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
-      reportEventsMap <- eventRepository.fetchEventsOfReports(paginatedReports)
+      reportFilesMap     <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportEventsMap    <- eventRepository.fetchEventsOfReports(paginatedReports)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(paginatedReports.map(_.id))
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.flatMap(_.companyId),
@@ -432,7 +469,7 @@ class ReportsExtractActor(
                 Some(Row().withCellValues("Période", s"Depuis le ${frenchFormatDate(startDate, zone)}"))
               case (_, Some(endDate)) =>
                 Some(Row().withCellValues("Période", s"Jusqu'au ${frenchFormatDate(endDate, zone)}"))
-              case (_) => None
+              case _ => None
             },
             Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
@@ -445,7 +482,7 @@ class ReportsExtractActor(
               ),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
-          ).filter(_.isDefined).map(_.get)
+          ).flatten
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),
@@ -459,9 +496,11 @@ class ReportsExtractActor(
     }
   }
 
-  def saveRemotely(localPath: Path, remoteName: String) = {
-    val remotePath = s"extracts/${remoteName}"
+  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[String] = {
+    val remotePath = s"extracts/$remoteName"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
-
 }

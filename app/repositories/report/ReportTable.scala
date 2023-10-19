@@ -14,49 +14,53 @@ import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter
+import repositories.report.ReportRepository.orFilter
+import slick.ast.BaseTypedType
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
+import slick.jdbc.JdbcType
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
-  implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+  implicit val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
+    MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
-  def gender = column[Option[Gender]]("gender")
-  def category = column[String]("category")
-  def subcategories = column[List[String]]("subcategories")
-  def details = column[List[String]]("details")
-  def socialNetwork = column[Option[SocialNetworkSlug]]("social_network")
-  def influencerName = column[Option[String]]("influencer_name")
-  def companyId = column[Option[UUID]]("company_id")
-  def companyName = column[Option[String]]("company_name")
-  def companyBrand = column[Option[String]]("company_brand")
-  def companySiret = column[Option[SIRET]]("company_siret")
-  def companyStreetNumber = column[Option[String]]("company_street_number")
-  def companyStreet = column[Option[String]]("company_street")
+  def gender                   = column[Option[Gender]]("gender")
+  def category                 = column[String]("category")
+  def subcategories            = column[List[String]]("subcategories")
+  def details                  = column[List[String]]("details")
+  def socialNetwork            = column[Option[SocialNetworkSlug]]("social_network")
+  def influencerName           = column[Option[String]]("influencer_name")
+  def companyId                = column[Option[UUID]]("company_id")
+  def companyName              = column[Option[String]]("company_name")
+  def companyBrand             = column[Option[String]]("company_brand")
+  def companySiret             = column[Option[SIRET]]("company_siret")
+  def companyStreetNumber      = column[Option[String]]("company_street_number")
+  def companyStreet            = column[Option[String]]("company_street")
   def companyAddressSupplement = column[Option[String]]("company_address_supplement")
-  def companyPostalCode = column[Option[String]]("company_postal_code")
-  def companyCity = column[Option[String]]("company_city")
-  def companyCountry = column[Option[Country]]("company_country")
-  def companyActivityCode = column[Option[String]]("company_activity_code")
-  def websiteURL = column[Option[URL]]("website_url")
-  def host = column[Option[String]]("host")
-  def phone = column[Option[String]]("phone")
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def firstName = column[String]("first_name")
-  def lastName = column[String]("last_name")
-  def email = column[EmailAddress]("email")
-  def consumerPhone = column[Option[String]]("consumer_phone")
-  def consumerReferenceNumber = column[Option[String]]("consumer_reference_number")
-  def contactAgreement = column[Boolean]("contact_agreement")
-  def employeeConsumer = column[Boolean]("employee_consumer")
-  def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
-  def status = column[String]("status")
-  def vendor = column[Option[String]]("vendor")
-  def tags = column[List[ReportTag]]("tags")
-  def reponseconsoCode = column[List[String]]("reponseconso_code")
-  def ccrfCode = column[List[String]]("ccrf_code")
-  def expirationDate = column[OffsetDateTime]("expiration_date")
-  def visibleToPro = column[Boolean]("visible_to_pro")
-  def lang = column[Option[Locale]]("lang")
+  def companyPostalCode        = column[Option[String]]("company_postal_code")
+  def companyCity              = column[Option[String]]("company_city")
+  def companyCountry           = column[Option[Country]]("company_country")
+  def companyActivityCode      = column[Option[String]]("company_activity_code")
+  def websiteURL               = column[Option[URL]]("website_url")
+  def host                     = column[Option[String]]("host")
+  def phone                    = column[Option[String]]("phone")
+  def creationDate             = column[OffsetDateTime]("creation_date")
+  def firstName                = column[String]("first_name")
+  def lastName                 = column[String]("last_name")
+  def email                    = column[EmailAddress]("email")
+  def consumerPhone            = column[Option[String]]("consumer_phone")
+  def consumerReferenceNumber  = column[Option[String]]("consumer_reference_number")
+  def contactAgreement         = column[Boolean]("contact_agreement")
+  def employeeConsumer         = column[Boolean]("employee_consumer")
+  def forwardToReponseConso    = column[Boolean]("forward_to_reponseconso")
+  def status                   = column[String]("status")
+  def vendor                   = column[Option[String]]("vendor")
+  def tags                     = column[List[ReportTag]]("tags")
+  def reponseconsoCode         = column[List[String]]("reponseconso_code")
+  def ccrfCode                 = column[List[String]]("ccrf_code")
+  def expirationDate           = column[OffsetDateTime]("expiration_date")
+  def visibleToPro             = column[Boolean]("visible_to_pro")
+  def lang                     = column[Option[Locale]]("lang")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -143,7 +147,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         visibleToPro = visibleToPro,
         lang = lang,
         influencer = for {
-          socialNetwork <- socialNetwork
+          socialNetwork  <- socialNetwork
           influencerName <- influencerName
         } yield Influencer(socialNetwork, influencerName)
       )
@@ -279,9 +283,11 @@ object ReportTable {
 
   val table = TableQuery[ReportTable]
 
-  def table(userRole: UserRole): Query[ReportTable, Report, Seq] = userRole match {
-    case UserRole.Admin | UserRole.DGCCRF => table
-    case UserRole.Professionnel =>
-      queryFilter(ReportFilter(status = ReportStatus.statusVisibleByPro, employeeConsumer = Some(false)))
+  def table(userRole: Option[UserRole]): Query[ReportTable, Report, Seq] = userRole match {
+    case None                         => table
+    case Some(UserRole.Admin)         => table
+    case Some(UserRole.DGCCRF)        => table
+    case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
+    case Some(UserRole.Professionnel) => queryFilter(table, ReportFilter(visibleToPro = Some(true)))
   }
 }

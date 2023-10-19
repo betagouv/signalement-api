@@ -1,9 +1,11 @@
-name := "signalement-api"
+import org.typelevel.scalacoptions.ScalacOptions
+
+name         := "signalement-api"
 organization := "fr.gouv.beta"
 
 version := "1.3.13"
 
-scalaVersion := "2.13.10"
+scalaVersion := "2.13.12"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
@@ -22,9 +24,11 @@ scalacOptions ++= Seq(
   "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",
   "-Yrangepos"
+//  "-quickfix:any" // should we enable it by default to replace scalafix rule ExplicitResultTypes ? No because we need to disable this rule sometimes
 )
 
 routesImport ++= Seq(
+  "models.UserRole",
   "models.website.IdentificationStatus",
   "java.time.OffsetDateTime",
   "models.investigation.InvestigationStatus",
@@ -45,6 +49,10 @@ routesImport ++= Seq(
 
 semanticdbVersion := scalafixSemanticdb.revision
 scalafixOnCompile := true
+// Required by scalafix to use ExplicitResultTypes
+ThisBuild / scalafixScalaBinaryVersion := "2.13"
+
+Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 

@@ -25,6 +25,6 @@ object IdentificationStatus extends PlayEnum[IdentificationStatus] {
   override def withName(name: String): IdentificationStatus =
     super.withNameOption(name).getOrElse(withNameRetroCompatibility(name))
 
-  final case object Identified extends IdentificationStatus
+  final case object Identified    extends IdentificationStatus
   final case object NotIdentified extends IdentificationStatus
 }

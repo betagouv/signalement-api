@@ -1,5 +1,6 @@
 package controllers.company
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -25,10 +26,12 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
@@ -39,18 +42,18 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  implicit val ec = ee.executionContext
-  val logger: Logger = Logger(this.getClass)
+  implicit val ec: ExecutionContext = ee.executionContext
+  val logger: Logger                = Logger(this.getClass)
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val userRepository        = components.userRepository
+  lazy val companyRepository     = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
-  lazy val eventRepository = components.eventRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository       = components.eventRepository
+  lazy val reportRepository      = components.reportRepository
 
-  val tokenDuration = java.time.Period.parse("P60D")
+  val tokenDuration             = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
-  val defaultTokenCreationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1)
+  val defaultTokenCreationDate  = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1)
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
@@ -90,21 +93,21 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseNewCompany =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseNewCompanyWithMultiplePendingReports =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
-      _ <- createPendingReport(c)
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
+      _      <- createPendingReport(c)
+      _      <- createPendingReport(c)
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedOnce =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -119,7 +122,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -135,7 +138,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwice =
     for {
       (c, _) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -164,7 +167,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
       (c, a) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -196,7 +199,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNoticeRequired =
     for {
       (c, a) <- createCompanyAndToken
-      _ <- createPendingReport(c)
+      _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -229,7 +232,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
+  implicit val env: Environment[AuthEnv] =
+    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(
     Some(
@@ -251,7 +255,7 @@ The companies to activate endpoint should
       .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content  = contentAsJson(result).toString
     val matchers = expectedCompaniesToActivate.map(c => buildMatcherForCase(c._1, c._2, c._3))
     content must haveCompaniesToActivate(matchers)
   }

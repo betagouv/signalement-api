@@ -31,18 +31,18 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
 
   val (app, components) = TestApp.buildApp()
 
-  lazy val reportRepository = components.reportRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val userRepository = components.userRepository
+  lazy val reportRepository        = components.reportRepository
+  lazy val companyRepository       = components.companyRepository
+  lazy val userRepository          = components.userRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val reportReminderTask = components.reportReminderTask
-  lazy val eventRepository = components.eventRepository
+  lazy val reportReminderTask      = components.reportReminderTask
+  lazy val eventRepository         = components.eventRepository
 
-  val creationDate = OffsetDateTime.parse("2020-01-01T00:00:00Z")
-  val taskRunDate = OffsetDateTime.parse("2020-06-01T00:00:00Z")
+  val creationDate     = OffsetDateTime.parse("2020-01-01T00:00:00Z")
+  val taskRunDate      = OffsetDateTime.parse("2020-06-01T00:00:00Z")
   val date20DaysBefore = taskRunDate.minusDays(20)
   val date10DaysBefore = taskRunDate.minusDays(10)
-  val date2DaysBefore = taskRunDate.minusDays(2)
+  val date2DaysBefore  = taskRunDate.minusDays(2)
 
   def buildReportWithCompanyAndUserAndPastEvents(
       status: ReportStatus = ReportStatus.TraitementEnCours,
@@ -51,7 +51,7 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
   ): Future[Report] = {
     val company = Fixtures.genCompany.sample.get
     val proUser = Fixtures.genProUser.sample.get
-    val report = Fixtures.genReportForCompany(company).sample.get.copy(status = status)
+    val report  = Fixtures.genReportForCompany(company).sample.get.copy(status = status)
     for {
       finalCompany <- companyRepository.create(company)
       _ <-
@@ -97,8 +97,8 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
       Await.result(
         for {
           // Setup
-          ongoingReport <- buildReportWithCompanyAndUserAndPastEvents()
-          ongoingReportWasRead <- buildReportWithCompanyAndUserAndPastEvents(status = ReportStatus.Transmis)
+          ongoingReport           <- buildReportWithCompanyAndUserAndPastEvents()
+          ongoingReportWasRead    <- buildReportWithCompanyAndUserAndPastEvents(status = ReportStatus.Transmis)
           ongoingReportWithNoUser <- buildReportWithCompanyAndUserAndPastEvents(withUser = false)
           ongoingReportWithMaxRemindersAlready <- buildReportWithCompanyAndUserAndPastEvents(events =
             List(

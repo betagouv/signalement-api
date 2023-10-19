@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -16,6 +17,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -52,7 +54,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
       .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(0, startDate.minusMonths(2L))),
@@ -72,7 +74,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
         .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1L))),
@@ -85,7 +87,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
       FakeRequest(GET, routes.StatisticController.getPublicStatCurve(PublicStat.PromesseAction).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
+    val content   = contentAsJson(result).toString
     val startDate = LocalDate.now().withDayOfMonth(1)
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsAccepted.length, startDate.minusMonths(1L))),
@@ -101,7 +103,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     with JsonMatchers {
 
   lazy val companyRepository = components.companyRepository
-  lazy val reportRepository = components.reportRepository
+  lazy val reportRepository  = components.reportRepository
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
@@ -144,9 +146,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
       .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
 
   val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
-  val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
+  val lastYearReportsReadByPro    = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
   val lastYearReportsForwardedToPro = lastYearReportsToProcess ::: lastYearReportsReadByPro
-  val lastYearReports = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
+  val lastYearReports               = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
 
   val lastMonthReportsToProcess = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
@@ -186,9 +188,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   val lastMonthReportsWithResponse =
     lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
-  val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
+  val lastMonthReportsReadByPro      = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
   val lastMonthReportsForwardedToPro = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
-  val lastMonthReports = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
+  val lastMonthReports               = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
 
   val currentMonthReportsToProcess =
     Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours).sample.get
@@ -212,9 +214,9 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val currentMonthReports =
     currentMonthReportsToProcess ::: currentMonthReportsSend ::: currentMonthReportsReadByPro ::: currentMonthReportsNotForwarded
 
-  val reportsWithResponseCutoff = lastYearReportsWithResponse ::: lastMonthReportsWithResponse
-  val reportsReadByProCutoff = lastYearReportsReadByPro ::: lastMonthReportsReadByPro
-  val reportsForwardedToProCutoff = lastYearReportsForwardedToPro ::: lastMonthReportsForwardedToPro
+  val reportsWithResponseCutoff     = lastYearReportsWithResponse ::: lastMonthReportsWithResponse
+  val reportsReadByProCutoff        = lastYearReportsReadByPro ::: lastMonthReportsReadByPro
+  val reportsForwardedToProCutoff   = lastYearReportsForwardedToPro ::: lastMonthReportsForwardedToPro
   val reportsClosedByNoActionCutoff = lastYearReportsClosedByNoAction ::: lastMonthReportsClosedByNoAction
 
   val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports
@@ -227,7 +229,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env: FakeEnvironment[AuthEnv] =
+  implicit val env: Environment[AuthEnv] =
     new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(

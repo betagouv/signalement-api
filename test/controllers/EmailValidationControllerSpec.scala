@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import config.EmailConfiguration
 import controllers.error.AppError.EmailOrCodeIncorrect
@@ -27,6 +28,7 @@ import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -48,7 +50,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  implicit val authEnv = components.authEnv
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   lazy val messagesApi = components.messagesApi
 
@@ -58,7 +60,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
-  lazy val frontRoute = components.frontRoute
+  lazy val frontRoute     = components.frontRoute
   lazy val contactAddress = emailConfiguration.contactAddress
 
   class FakeApplicationLoader(skipValidation: Boolean = false, emailProviderBlocklist: List[String])
@@ -97,7 +99,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(EmailValidationResult.success)
@@ -109,7 +111,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@yopmail.com"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(ErrorPayload(InvalidEmailProvider))
@@ -127,7 +129,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(EmailValidationResult.success)
@@ -141,7 +143,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           val malformedEmail = "user@dgccrf"
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> malformedEmail))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(ErrorPayload(InvalidEmail(malformedEmail)))
@@ -161,7 +163,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(Json.obj("email" -> unknownEmail.value))
 
         val result = for {
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(unknownEmail)
         } yield (res, emailValidation)
 
@@ -175,20 +177,20 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(unknownEmail), emailSubject, emailBody)
       }
 
       "not validate email when email exist but not validated" in {
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
-        val emailValidation = EmailValidation(email = existingEmail)
+        val emailValidation             = EmailValidation(email = existingEmail)
 
         val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
-          _ <- emailValidationRepository.create(emailValidation)
-          res <- route(app, request).get
+          _               <- emailValidationRepository.create(emailValidation)
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(existingEmail)
         } yield (res, emailValidation)
 
@@ -202,13 +204,13 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
       }
 
       "not validate email when email exist but is outdated" in {
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
-        val oldDate = OffsetDateTime.now().minusYears(2L).truncatedTo(ChronoUnit.MILLIS)
+        val oldDate                     = OffsetDateTime.now().minusYears(2L).truncatedTo(ChronoUnit.MILLIS)
         val emailValidation = EmailValidation(email = existingEmail)
           .copy(lastValidationDate = Some(oldDate))
 
@@ -216,8 +218,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
-          _ <- emailValidationRepository.create(emailValidation)
-          res <- route(app, request).get
+          _               <- emailValidationRepository.create(emailValidation)
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(existingEmail)
         } yield (res, emailValidation)
 
@@ -231,7 +233,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val expectedEmail =
           maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
-        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
       }
 
@@ -268,7 +270,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
             .withJsonBody(
               Json.obj("email" -> emailValidation.email.value, "confirmationCode" -> emailValidation.confirmationCode)
             )
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 
@@ -292,7 +294,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           )
 
         val result = for {
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 
@@ -317,7 +319,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
             .withJsonBody(
               Json.obj("email" -> emailValidation.email.value, "confirmationCode" -> "XXXXXX")
             )
-          res <- route(app, request).get
+          res             <- route(app, request).get
           emailValidation <- emailValidationRepository.findByEmail(email)
         } yield (res, emailValidation)
 

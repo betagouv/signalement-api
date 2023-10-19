@@ -2,7 +2,8 @@ package controllers
 
 import actors.ReportedPhonesExtractActor
 import actors.ReportedPhonesExtractActor.RawFilters
-import akka.actor.ActorRef
+import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
+import akka.actor.typed
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
@@ -22,14 +23,14 @@ class ReportedPhoneController(
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    reportedPhonesExtractActor: ActorRef,
+    reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand],
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                      = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
@@ -41,17 +42,16 @@ class ReportedPhoneController(
               reports
                 .groupBy(report => (report.phone, report.companySiret, report.companyName, report.category))
                 .collect {
-                  case ((Some(phone), siretOpt, companyNameOpt, category), reports)
-                      if q.map(phone.contains(_)).getOrElse(true) =>
+                  case ((Some(phone), siretOpt, companyNameOpt, category), reports) if q.forall(phone.contains(_)) =>
                     ((phone, siretOpt, companyNameOpt, category), reports.length)
                 }
                 .map { case ((phone, siretOpt, companyNameOpt, category), count) =>
                   Json.obj(
-                    "phone" -> phone,
-                    "siret" -> siretOpt,
+                    "phone"       -> phone,
+                    "siret"       -> siretOpt,
                     "companyName" -> companyNameOpt,
-                    "category" -> category,
-                    "count" -> count
+                    "category"    -> category,
+                    "count"       -> count
                   )
                 }
             )

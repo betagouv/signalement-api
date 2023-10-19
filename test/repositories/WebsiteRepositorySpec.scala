@@ -23,9 +23,9 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   lazy val companyRepository = components.companyRepository
   lazy val websiteRepository = components.websiteRepository
 
-  val defaultCompany = Fixtures.genCompany.sample.get
+  val defaultCompany     = Fixtures.genCompany.sample.get
   val marketplaceCompany = Fixtures.genCompany.sample.get
-  val pendingCompany = Fixtures.genCompany.sample.get
+  val pendingCompany     = Fixtures.genCompany.sample.get
 
   val defaultWebsite = Fixtures
     .genWebsite()

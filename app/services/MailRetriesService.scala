@@ -53,7 +53,7 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
 
   private def sendEmail(
       req: EmailRequest
-  ): Unit = {
+  ): Unit =
     // synchronous, and can block for quite a while
     mailerClient.send(
       Email(
@@ -64,9 +64,7 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
         bodyHtml = Some(req.bodyHtml),
         attachments = req.attachments
       )
-    )
-    ()
-  }
+    ): Unit
 
   def sendEmailWithRetries(emailRequest: EmailRequest): Unit =
     sendEmailWithRetries(emailRequest, numAttempt = 1)

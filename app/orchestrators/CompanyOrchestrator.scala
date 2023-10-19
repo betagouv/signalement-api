@@ -8,7 +8,6 @@ import config.TokenConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
-import models.UserRole.Professionnel
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
@@ -136,19 +135,15 @@ class CompanyOrchestrator(
       }
 
   def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
-    val baseReportFilter = ReportFilter(
-      companyIds = Seq(companyId),
-      visibleToPro = if (userRole == Professionnel) Some(true) else None
-    )
     val responseReportsFilter =
-      baseReportFilter.copy(status = ReportStatus.statusWithProResponse)
+      ReportFilter(companyIds = Seq(companyId), status = ReportStatus.statusWithProResponse)
     val totalReportsFilter =
-      baseReportFilter
+      ReportFilter(companyIds = Seq(companyId))
 
-    val totalReportsCount = reportRepository.count(totalReportsFilter)
-    val responseReportsCount = reportRepository.count(responseReportsFilter)
+    val totalReportsCount    = reportRepository.count(Some(userRole), totalReportsFilter)
+    val responseReportsCount = reportRepository.count(Some(userRole), responseReportsFilter)
     for {
-      total <- totalReportsCount
+      total     <- totalReportsCount
       responses <- responseReportsCount
     } yield (responses.toFloat / total * 100).round
   }
@@ -186,11 +181,11 @@ class CompanyOrchestrator(
   def companiesToActivate(): Future[List[JsObject]] =
     for {
       tokensAndCompanies <- accessTokenRepository.companiesToActivate()
-      pendingReports <- reportRepository.getPendingReports(tokensAndCompanies.map(_._2.id))
-      eventsMap <- eventRepository.fetchEvents(tokensAndCompanies.map { case (_, c) => c.id })
+      pendingReports     <- reportRepository.getPendingReports(tokensAndCompanies.map(_._2.id))
+      eventsMap          <- eventRepository.fetchEvents(tokensAndCompanies.map { case (_, c) => c.id })
     } yield tokensAndCompanies
       .map { case (accessToken, company) =>
-        val companyEvents = eventsMap.getOrElse(company.id, Nil)
+        val companyEvents     = eventsMap.getOrElse(company.id, Nil)
         val nbPreviousNotices = companyEvents.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
         val lastNoticeDate = companyEvents
           .find(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
@@ -225,8 +220,8 @@ class CompanyOrchestrator(
       }
       .map { case (company, token, _, lastNotice, _, _) =>
         Json.obj(
-          "company" -> Json.toJson(company),
-          "lastNotice" -> lastNotice,
+          "company"       -> Json.toJson(company),
+          "lastNotice"    -> lastNotice,
           "tokenCreation" -> token.creationDate
         )
       }
@@ -238,7 +233,7 @@ class CompanyOrchestrator(
 
   def getFollowUpDocument(companyIds: List[UUID], userId: UUID): Future[Option[Source[ByteString, Unit]]] =
     for {
-      companies <- companyRepository.fetchCompanies(companyIds)
+      companies      <- companyRepository.fetchCompanies(companyIds)
       followUpTokens <- companies.traverse(getFollowUpToken(_, userId))
       tokenMap = followUpTokens.collect { case token @ AccessToken(_, _, _, _, _, Some(companyId), _, _, _) =>
         (companyId, token)
@@ -296,10 +291,10 @@ class CompanyOrchestrator(
 
   def getActivationDocument(companyIds: List[UUID]): Future[Option[Source[ByteString, Unit]]] =
     for {
-      companies <- companyRepository.fetchCompanies(companyIds)
+      companies          <- companyRepository.fetchCompanies(companyIds)
       activationCodesMap <- accessTokenRepository.prefetchActivationCodes(companyIds)
-      eventsMap <- eventRepository.fetchEvents(companyIds)
-      pendingReports <- reportRepository.getPendingReports(companyIds)
+      eventsMap          <- eventRepository.fetchEvents(companyIds)
+      pendingReports     <- reportRepository.getPendingReports(companyIds)
     } yield {
       val pendingReportsMap = pendingReports.filter(_.companyId.isDefined).groupBy(_.companyId.get)
       val htmlDocuments = companies.flatMap(company =>
@@ -331,7 +326,7 @@ class CompanyOrchestrator(
       .filter(_.expirationDate.isAfter(OffsetDateTime.now()))
       .sortBy(_.expirationDate)
       .headOption
-    val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
+    val reportCreationLocalDate   = report.map(_.creationDate.toLocalDate)
     val reportExpirationLocalDate = report.map(_.expirationDate.toLocalDate)
 
     mailSentEvents match {

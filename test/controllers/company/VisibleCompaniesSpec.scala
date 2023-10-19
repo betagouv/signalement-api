@@ -1,5 +1,6 @@
 package controllers.company
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -19,6 +20,7 @@ import utils._
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
@@ -27,18 +29,18 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  implicit val ec = ee.executionContext
-  val logger: Logger = Logger(this.getClass)
+  implicit val ec: ExecutionContext = ee.executionContext
+  val logger: Logger                = Logger(this.getClass)
 
-  lazy val userRepository = components.userRepository
-  lazy val companyRepository = components.companyRepository
-  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val userRepository                  = components.userRepository
+  lazy val companyRepository               = components.companyRepository
+  lazy val companyAccessRepository         = components.companyAccessRepository
   lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
 
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
-  val adminWithAccessToHeadOffice = Fixtures.genProUser.sample.get
+  val adminWithAccessToHeadOffice   = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
-  val adminWithAccessToSubsidiary = Fixtures.genProUser.sample.get
+  val adminWithAccessToSubsidiary   = Fixtures.genProUser.sample.get
 
   val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany =
@@ -92,7 +94,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](
+  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
   )
 

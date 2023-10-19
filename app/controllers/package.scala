@@ -34,7 +34,7 @@ package object controllers {
         identificationStatus => identificationStatus.entryName
       )
 
-  implicit val UUIDPathBindable =
+  implicit val UUIDPathBindable: PathBindable[UUID] =
     PathBindable.bindableString
       .transform[UUID](
         id => extractUUID(id),
@@ -48,21 +48,21 @@ package object controllers {
         offsetDateTime => offsetDateTime.toString
       )
 
-  implicit val ReportFileIdPathBindable =
+  implicit val ReportFileIdPathBindable: PathBindable[ReportFileId] =
     PathBindable.bindableString
       .transform[ReportFileId](
         id => ReportFileId(extractUUID(id)),
         reportFileId => reportFileId.value.toString
       )
 
-  implicit val WebsiteIdPathBindable =
+  implicit val WebsiteIdPathBindable: PathBindable[WebsiteId] =
     PathBindable.bindableString
       .transform[WebsiteId](
         id => WebsiteId(extractUUID(id)),
         websiteId => websiteId.value.toString
       )
 
-  implicit val SIRETPathBindable =
+  implicit val SIRETPathBindable: PathBindable[SIRET] =
     PathBindable.bindableString
       .transform[SIRET](
         siret => SIRET(siret),

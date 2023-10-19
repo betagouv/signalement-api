@@ -1,6 +1,7 @@
 package models
 
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -11,7 +12,7 @@ case class BlacklistedEmailInput(
 )
 
 object BlacklistedEmailInput {
-  implicit val format = Json.format[BlacklistedEmailInput]
+  implicit val format: OFormat[BlacklistedEmailInput] = Json.format[BlacklistedEmailInput]
 }
 
 case class BlacklistedEmail(
@@ -22,7 +23,7 @@ case class BlacklistedEmail(
 )
 
 object BlacklistedEmail {
-  implicit val format = Json.format[BlacklistedEmail]
+  implicit val format: OFormat[BlacklistedEmail] = Json.format[BlacklistedEmail]
 
   def fromInput(input: BlacklistedEmailInput) =
     BlacklistedEmail(email = input.email, comments = input.comments)

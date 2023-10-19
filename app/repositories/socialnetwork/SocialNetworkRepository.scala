@@ -8,11 +8,9 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import repositories.PostgresProfile.api._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class SocialNetworkRepository(dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
-    extends SocialNetworkRepositoryInterface {
+class SocialNetworkRepository(dbConfig: DatabaseConfig[JdbcProfile]) extends SocialNetworkRepositoryInterface {
 
   val table: TableQuery[SocialNetworkTable] = SocialNetworkTable.table
 

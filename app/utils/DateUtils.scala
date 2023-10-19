@@ -11,8 +11,8 @@ import java.time.ZoneId
 
 object DateUtils {
 
-  val DATE_FORMAT = "yyyy-MM-dd"
-  val FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT)
+  val DATE_FORMAT    = "yyyy-MM-dd"
+  val FORMATTER      = DateTimeFormatter.ofPattern(DATE_FORMAT)
   val TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
   def parseDate(source: Option[String]): Option[LocalDate] =

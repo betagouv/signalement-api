@@ -43,7 +43,7 @@ class InactiveDgccrfAccountReminderTask(
         secondReminderThreshold,
         expirationDateThreshold
       )
-      usersToSendFirstReminder = firstReminderEvents.collect { case (user, None) => user }
+      usersToSendFirstReminder  = firstReminderEvents.collect { case (user, None) => user }
       usersToSendSecondReminder = secondReminderEvents.collect { case (user, Some(1)) => user }
       _ <- sendReminderEmailsWithErrorHandling(usersToSendFirstReminder ++ usersToSendSecondReminder, inactivePeriod)
     } yield ()
@@ -53,7 +53,7 @@ class InactiveDgccrfAccountReminderTask(
       inactivePeriod: Period
   ): Future[Unit] = {
     logger.debug(s"Sending inactive dgccrf account emails")
-    val now = OffsetDateTime.now()
+    val now            = OffsetDateTime.now()
     val expirationDate = user.lastEmailValidation.map(_.plus(inactivePeriod))
     for {
       _ <- mailService.send(InactiveDgccrfAccount(user, expirationDate.map(_.toLocalDate)))
@@ -68,7 +68,7 @@ class InactiveDgccrfAccountReminderTask(
           ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT,
           Json.obj(
             "lastEmailValidation" -> user.lastEmailValidation,
-            "expirationDate" -> expirationDate
+            "expirationDate"      -> expirationDate
           )
         )
       )

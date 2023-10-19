@@ -38,9 +38,9 @@ class ImportController(
 
   def importUsers = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
-      importInput <- request.parseBody[ImportInput]()
+      importInput             <- request.parseBody[ImportInput]()
       (siren, sirets, emails) <- validateInput(importInput)
-      _ <- importOrchestrator.importUsers(siren, sirets, emails)
+      _                       <- importOrchestrator.importUsers(siren, sirets, emails)
     } yield NoContent
   }
 }

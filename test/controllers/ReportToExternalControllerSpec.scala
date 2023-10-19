@@ -23,6 +23,7 @@ import repositories.reportfile.ReportFileRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 
 import java.util.UUID
 import scala.collection.SortedMap
@@ -48,7 +49,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       "ReportController1" in new Context {
         new WithApplication(app) {
           val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture")
-          val result = route(app, request).get
+          val result  = route(app, request).get
           Helpers.status(result) must beEqualTo(UNAUTHORIZED)
         }
       }
@@ -95,15 +96,15 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     val companyId = UUID.randomUUID
 
-    val mockReportRepository: ReportRepositoryInterface = mock[ReportRepositoryInterface]
+    val mockReportRepository: ReportRepositoryInterface         = mock[ReportRepositoryInterface]
     val mockReportFileRepository: ReportFileRepositoryInterface = mock[ReportFileRepositoryInterface]
 
     implicit val ordering: ReportRepository.ReportFileOrdering.type = ReportRepository.ReportFileOrdering
 
-    mockReportRepository.getReports(any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future(
+    mockReportRepository.getReports(eqTo(None), any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future(
       PaginatedResult(0, false, List())
     )
-    mockReportRepository.getReportsWithFiles(any[ReportFilter]) returns Future(
+    mockReportRepository.getReportsWithFiles(eqTo(None), any[ReportFilter]) returns Future(
       SortedMap.empty[Report, List[ReportFile]]
     )
     mockReportFileRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map())
@@ -113,17 +114,17 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       override def load(context: ApplicationLoader.Context): Application = {
         components = new SignalConsoComponents(context) {
-          override def reportRepository: ReportRepositoryInterface = mockReportRepository
+          override def reportRepository: ReportRepositoryInterface         = mockReportRepository
           override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
-          override def configuration: Configuration = super.configuration
+          override def configuration: Configuration                        = super.configuration
         }
         components.application
       }
 
     }
 
-    val appLoader = new FakeApplicationLoader()
-    val app: Application = TestApp.buildApp(appLoader)
+    val appLoader                         = new FakeApplicationLoader()
+    val app: Application                  = TestApp.buildApp(appLoader)
     val components: SignalConsoComponents = appLoader.components
 
   }

@@ -14,6 +14,7 @@ import utils.TestApp
 
 import java.time.Period
 import java.util.UUID
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class AccessesOrchestratorTest extends Specification with AppSpec {
@@ -25,8 +26,8 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
 
   val (app, components) = TestApp.buildApp()
 
-  implicit val ec = components.executionContext
-  implicit val ee = ExecutionEnv.fromExecutionContext(ec)
+  implicit val ec: ExecutionContext = components.executionContext
+  implicit val ee: ExecutionEnv     = ExecutionEnv.fromExecutionContext(ec)
 
   "AccessesOrchestratorTest" should {
 
@@ -65,9 +66,9 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         )
 
         val result: Future[(User, Option[AccessToken])] = for {
-          savedToken <- components.accessTokenRepository.create(validationEmailToken)
-          _ <- components.userRepository.create(dgccrfUser)
-          user <- components.accessesOrchestrator.resetLastEmailValidation(dgccrfUser.email)
+          savedToken   <- components.accessTokenRepository.create(validationEmailToken)
+          _            <- components.userRepository.create(dgccrfUser)
+          user         <- components.accessesOrchestrator.resetLastEmailValidation(dgccrfUser.email)
           updatedToken <- components.accessTokenRepository.get(savedToken.id)
         } yield (user, updatedToken)
 
@@ -80,7 +81,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         val dgccrfUser: User = Fixtures.genDgccrfUser.sample.get.copy(lastEmailValidation = None)
 
         val result: Future[User] = for {
-          _ <- components.userRepository.create(dgccrfUser)
+          _    <- components.userRepository.create(dgccrfUser)
           user <- components.accessesOrchestrator.resetLastEmailValidation(dgccrfUser.email)
         } yield user
 
@@ -107,7 +108,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
           emailedTo = Some(EmailAddress("email@signal.conso.com"))
         )
         val result = for {
-          _ <- components.accessTokenRepository.create(nonRelevantToken)
+          _   <- components.accessTokenRepository.create(nonRelevantToken)
           res <- components.accessesOrchestrator.validateDGCCRFEmail(nonRelevantToken.token)
 
         } yield res
@@ -126,7 +127,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         )
 
         val result = for {
-          _ <- components.accessTokenRepository.create(invalidValidationEmailToken)
+          _   <- components.accessTokenRepository.create(invalidValidationEmailToken)
           res <- components.accessesOrchestrator.validateDGCCRFEmail(invalidValidationEmailToken.token)
 
         } yield res
@@ -145,7 +146,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         )
 
         val result = for {
-          _ <- components.accessTokenRepository.create(validationEmailToken)
+          _   <- components.accessTokenRepository.create(validationEmailToken)
           res <- components.accessesOrchestrator.validateDGCCRFEmail(validationEmailToken.token)
 
         } yield res
@@ -167,8 +168,8 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         )
 
         val result = for {
-          _ <- components.accessTokenRepository.create(validationEmailToken)
-          _ <- components.userRepository.create(dgccrfUser)
+          _   <- components.accessTokenRepository.create(validationEmailToken)
+          _   <- components.userRepository.create(dgccrfUser)
           res <- components.accessesOrchestrator.validateDGCCRFEmail(validationEmailToken.token)
 
         } yield res

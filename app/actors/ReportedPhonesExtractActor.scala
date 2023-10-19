@@ -1,6 +1,7 @@
 package actors
 
-import akka.actor._
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import spoiwo.model._
@@ -10,7 +11,7 @@ import spoiwo.model.enums.CellStyleInheritance
 import spoiwo.model.enums.CellVerticalAlignment
 import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
-import models._
+import models.User
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -23,72 +24,94 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Random
+import scala.util.Success
+
 object ReportedPhonesExtractActor {
-  def props = Props[ReportedPhonesExtractActor]()
-
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
-  case class ExtractRequest(fileId: UUID, requestedBy: User, rawFilters: RawFilters)
-}
 
-class ReportedPhonesExtractActor(
-    config: SignalConsoConfiguration,
-    reportRepository: ReportRepositoryInterface,
-    asyncFileRepository: AsyncFileRepositoryInterface,
-    s3Service: S3ServiceInterface
-)(implicit val mat: Materializer)
-    extends Actor {
-  import ReportedPhonesExtractActor._
-  implicit val ec: ExecutionContext = context.dispatcher
+  sealed trait ReportedPhonesExtractCommand
+  final case class ExtractRequest(fileId: UUID, requestedBy: User, rawFilters: RawFilters)
+      extends ReportedPhonesExtractCommand
+  final case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends ReportedPhonesExtractCommand
+  final case class ExtractRequestFailure(fileId: UUID, requestedBy: User) extends ReportedPhonesExtractCommand
 
   val logger: Logger = Logger(this.getClass)
-  override def preStart() = logger.debug("Starting")
-  override def preRestart(reason: Throwable, message: Option[Any]): Unit =
-    logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
-  override def receive = {
-    case ExtractRequest(fileId, requestedBy, rawFilters) =>
-      for {
-        // FIXME: We might want to move the random name generation
-        // in a common place if we want to reuse it for other async files
-        tmpPath <- genTmpFile(rawFilters)
-        remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
-      ()
-    case _ => logger.debug("Could not handle request")
-  }
+
+  def create(
+      config: SignalConsoConfiguration,
+      reportRepository: ReportRepositoryInterface,
+      asyncFileRepository: AsyncFileRepositoryInterface,
+      s3Service: S3ServiceInterface
+  )(implicit mat: Materializer): Behavior[ReportedPhonesExtractCommand] =
+    Behaviors.setup { context =>
+      import context.executionContext
+
+      Behaviors.receiveMessage[ReportedPhonesExtractCommand] {
+        case ExtractRequest(fileId, requestedBy, rawFilters) =>
+          val result = for {
+            // FIXME: We might want to move the random name generation
+            // in a common place if we want to reuse it for other async files
+            tmpPath    <- genTmpFile(config, reportRepository, rawFilters)
+            remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
+            _          <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+          } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
+
+          context.pipeToSelf(result) {
+            case Success(_) => ExtractRequestSuccess(fileId, requestedBy)
+            case Failure(_) => ExtractRequestFailure(fileId, requestedBy)
+          }
+          Behaviors.same
+
+        case ExtractRequestSuccess(fileId, requestedBy) =>
+          logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
+          Behaviors.same
+
+        case ExtractRequestFailure(fileId, requestedBy) =>
+          logger.info(s"ExtractRequest failure for User ${requestedBy.id} — async file ${fileId}")
+          Behaviors.same
+      }
+    }
 
   // Common layout variables
-  val headerStyle = CellStyle(
+  private val headerStyle = CellStyle(
     fillPattern = CellFill.Solid,
     fillForegroundColor = Color.Gainsborough,
     font = Font(bold = true),
     horizontalAlignment = CellHorizontalAlignment.Center
   )
-  val centerAlignmentStyle = CellStyle(
+  private val centerAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Center,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
-  val leftAlignmentStyle = CellStyle(
+  private val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+  private val leftAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Left,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
+  private val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
 
-  def genTmpFile(filters: RawFilters) = {
+  private def genTmpFile(
+      config: SignalConsoConfiguration,
+      reportRepository: ReportRepositoryInterface,
+      filters: RawFilters
+  )(implicit
+      ec: ExecutionContext
+  ): Future[Path] = {
 
     val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseDate(filters.end)
+    val endDate   = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     reportRepository.getPhoneReports(startDate, endDate).map { reports =>
       val hostsWithCount = reports
         .groupBy(report => (report.phone, report.companySiret))
         .collect {
-          case ((Some(phone), siretOpt), reports) if filters.query.map(phone.contains(_)).getOrElse(true) =>
+          case ((Some(phone), siretOpt), reports) if filters.query.forall(phone.contains(_)) =>
             ((phone, siretOpt), reports.length)
         }
 
@@ -131,9 +154,9 @@ class ReportedPhonesExtractActor(
               case (Some(startDate), _) =>
                 Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
-              case (_)                => None
+              case _                  => None
             }
-          ).filter(_.isDefined).map(_.get)
+          ).flatten
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),
@@ -147,7 +170,10 @@ class ReportedPhonesExtractActor(
     }
   }
 
-  def saveRemotely(localPath: Path, remoteName: String) = {
+  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[String] = {
     val remotePath = s"reported-phones-extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }

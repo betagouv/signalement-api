@@ -51,7 +51,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .map(_._1.companyId)
 
     val query = table
-      .joinLeft(ReportTable.table(userRole))
+      .joinLeft(ReportTable.table(Some(userRole)))
       .on(_.id === _.companyId)
       .filterIf(search.departments.nonEmpty) { case (company, _) =>
         company.department.map(a => a.inSet(search.departments)).getOrElse(false)
@@ -118,7 +118,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .filter(_.siret.asColumnOf[String] like s"${SIREN.fromSIRET(siret).value}%")
         .filter { companyTable =>
           val companyWithSameSiret: Rep[Boolean] = companyTable.siret === siret
-          val companyHeadOffice: Rep[Boolean] = companyTable.isHeadOffice
+          val companyHeadOffice: Rep[Boolean]    = companyTable.isHeadOffice
           companyWithSameSiret || companyHeadOffice
         }
         .filter(_.isOpen)
@@ -230,7 +230,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           LEFT JOIN count_reports_on_period ar ON c.id = ar.company_id
           LEFT OUTER JOIN count_follow_up_on_period cf ON c.id = cf.company_id
        WHERE
-          EXISTS (
+          c.country is null
+          AND EXISTS (
              SELECT 1
              FROM
                 company_accesses ca

@@ -28,9 +28,9 @@ package object tasks {
 
   val logger: Logger = Logger(this.getClass)
 
-  type Task = (UUID, TaskType)
+  type Task                 = (UUID, TaskType)
   type TaskExecutionResults = ValidatedNel[Task, List[Task]]
-  type TaskExecutionResult = ValidatedNel[Task, Task]
+  type TaskExecutionResult  = ValidatedNel[Task, Task]
 
   def toValidated[T](taskExecution: Future[T], elementId: UUID, taskType: TaskType)(implicit
       ec: ExecutionContext
@@ -76,10 +76,8 @@ package object tasks {
             logger.errorWithTitle("task_failed", s"$taskName failed", err)
         }
       } else logger.info(s"$taskName not launched, tasks are disabled")
-      ()
-    }
+    }: Unit
     logger.info(s"$taskName scheduled for $startTime (in $initialDelay)")
-    ()
   }
 
   def getTodayAtStartOfDayParis() =

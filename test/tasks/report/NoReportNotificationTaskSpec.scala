@@ -14,6 +14,7 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 
 class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificationTaskSpec {
@@ -36,24 +37,24 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   )
 
   lazy val subscriptionRepository = components.subscriptionRepository
-  lazy val reportRepository = components.reportRepository
-  lazy val companyRepository = components.companyRepository
+  lazy val reportRepository       = components.reportRepository
+  lazy val companyRepository      = components.companyRepository
   lazy val reportNotificationTask = components.reportNotificationTask
-  lazy val mailRetriesService = components.mailRetriesService
-  lazy val attachementService = components.attachmentService
+  lazy val mailRetriesService     = components.mailRetriesService
+  lazy val attachementService     = components.attachmentService
 
-  implicit lazy val frontRoute = components.frontRoute
-  implicit lazy val contactAddress = emailConfiguration.contactAddress
+  implicit lazy val frontRoute: utils.FrontRoute       = components.frontRoute
+  implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
-  implicit val ec = ee.executionContext
+  implicit val ec: ExecutionContext = ee.executionContext
 
   val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   val runningDate = runningTime.toLocalDate()
-  val covidDept = "01"
-  val tagDept = "02"
+  val covidDept   = "01"
+  val tagDept     = "02"
 
-  val covidEmail = Fixtures.genEmailAddress("covid", "abo").sample.get
-  val tagEmail = Fixtures.genEmailAddress("tag", "abo").sample.get
+  val covidEmail   = Fixtures.genEmailAddress("covid", "abo").sample.get
+  val tagEmail     = Fixtures.genEmailAddress("tag", "abo").sample.get
   val countryEmail = Fixtures.genEmailAddress("tag", "abo").sample.get
 
   val covidSubscription = Subscription(

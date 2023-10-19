@@ -20,7 +20,7 @@ class UserOrchestratorTest(implicit ee: ExecutionEnv)
   val (app, components) = TestApp.buildApp(
   )
 
-  lazy val userRepository = components.userRepository
+  lazy val userRepository   = components.userRepository
   lazy val userOrchestrator = components.userOrchestrator
 
   "UserOrchestrator" should {
@@ -29,9 +29,9 @@ class UserOrchestratorTest(implicit ee: ExecutionEnv)
 
       new WithApplication(app) {
 
-        val targetUser = Fixtures.genUser.sample.get
+        val targetUser  = Fixtures.genUser.sample.get
         val currentUser = Fixtures.genUser.sample.get
-        val otherUser = Fixtures.genUser.sample.get
+        val otherUser   = Fixtures.genUser.sample.get
 
         val expectedUsers = Seq(currentUser, otherUser)
 
@@ -44,7 +44,7 @@ class UserOrchestratorTest(implicit ee: ExecutionEnv)
 
               _ <- userOrchestrator.softDelete(targetUserId = targetUser.id, currentUserId = currentUser.id)
 
-              userList <- userRepository.list()
+              userList         <- userRepository.list()
               deletedUsersList <- userRepository.listDeleted()
 
             } yield (

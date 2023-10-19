@@ -21,7 +21,7 @@ class EmailValidationRepository(
     extends CRUDRepository[EmailValidationTable, EmailValidation]
     with EmailValidationRepositoryInterface {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: Logger                                   = Logger(this.getClass)
   override val table: TableQuery[EmailValidationTable] = EmailValidationTable.table
   import dbConfig._
 
