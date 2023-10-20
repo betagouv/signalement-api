@@ -43,21 +43,36 @@ class AccessesOrchestrator(
   val logger                              = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listDGCCRFPendingToken(user: User): Future[List[AgentAccessToken]] =
-    accessTokenRepository.fetchPendingTokensDGCCRF
-      .map(
-        _.map(token =>
-          AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
-        )
-      )
+  private def tokenKindToUserRole(tokenKind: TokenKind) = tokenKind match {
+    case TokenKind.DGALAccount   => Some(UserRole.DGAL)
+    case TokenKind.DGCCRFAccount => Some(UserRole.DGCCRF)
+    case _                       => None
+  }
 
-  def listDGALPendingToken(user: User): Future[List[AgentAccessToken]] =
-    accessTokenRepository.fetchPendingTokensDGAL
-      .map(
-        _.map(token =>
-          AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
-        )
-      )
+  def listAgentPendingTokens(user: User, maybeRequestedRole: Option[UserRole]): Future[List[AgentAccessToken]] =
+    user.userRole match {
+      case UserRole.Admin =>
+        accessTokenRepository.fetchPendingAgentTokens
+          .map(
+            _.flatMap { token =>
+              val maybeUserRole = tokenKindToUserRole(token.kind)
+              (maybeUserRole, maybeRequestedRole) match {
+                case (Some(userRole), Some(requestedRole)) if userRole == requestedRole =>
+                  Some(
+                    AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
+                  )
+                case (Some(userRole), None) =>
+                  Some(
+                    AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
+                  )
+                case _ => None
+              }
+            }
+          )
+      case _ =>
+        logger.error(s"DGCCRF/DGAL token accessed by unexpected user with role ${user.userRole}")
+        Future.failed(CantPerformAction)
+    }
 
   def activateAdminOrAgentUser(draftUser: DraftUser, token: String) = for {
     _                <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))

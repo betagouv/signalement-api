@@ -133,22 +133,12 @@ class AccessTokenRepository(
         .result
     )
 
-  override def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
+  override def fetchPendingAgentTokens: Future[List[AccessToken]] =
     db.run(
       table
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
-        .filter(_.kind === (DGCCRFAccount: TokenKind))
-        .to[List]
-        .result
-    )
-
-  override def fetchPendingTokensDGAL: Future[List[AccessToken]] =
-    db.run(
-      table
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
-        .filter(_.valid)
-        .filter(_.kind === (DGALAccount: TokenKind))
+        .filter(t => t.kind === (DGCCRFAccount: TokenKind) || t.kind === (DGALAccount: TokenKind))
         .to[List]
         .result
     )
