@@ -108,6 +108,32 @@ class AccessesOrchestrator(
     .withFieldConst(_.emailedTo, emailTo)
     .transform
 
+  private def parseEmails(emails: List[String]): List[EmailAddress] =
+    emails
+      .flatMap(email => email.split(",").toList)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(email => EmailAddress(email))
+
+  def sendAgentsInvitations(role: UserRole, emails: List[String]): Future[List[Unit]] =
+    role match {
+      case UserRole.DGCCRF =>
+        val parsedEmails = parseEmails(emails)
+        if (parsedEmails.forall(email => EmailAddressService.isEmailAcceptableForDgccrfAccount(email.value))) {
+          Future.sequence(parsedEmails.map(sendDGCCRFInvitation))
+        } else {
+          Future.failed(InvalidDGCCRFOrAdminEmail(parsedEmails.head))
+        }
+      case UserRole.DGAL =>
+        val parsedEmails = parseEmails(emails)
+        if (parsedEmails.forall(email => EmailAddressService.isEmailAcceptableForDgalAccount(email.value))) {
+          Future.sequence(parsedEmails.map(sendDGALInvitation))
+        } else {
+          Future.failed(InvalidDGCCRFOrAdminEmail(parsedEmails.head))
+        }
+      case _ => Future.failed(WrongUserRole(role))
+    }
+
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGCCRFAccount)
 

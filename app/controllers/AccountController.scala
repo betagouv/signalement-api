@@ -1,5 +1,6 @@
 package controllers
 
+import cats.implicits.catsSyntaxOption
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
@@ -15,10 +16,12 @@ import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
+import error.AppError.MalformedFileKey
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.io.Source
 
 class AccountController(
     val silhouette: Silhouette[AuthEnv],
@@ -71,6 +74,18 @@ class AccountController(
             .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
         case _ => Future.failed(error.AppError.WrongUserRole(role))
       }
+    }
+
+  def sendAgentsInvitations(role: UserRole) =
+    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.multipartFormData) {
+      implicit request =>
+        for {
+          filePart <- request.body.file("emails").liftTo[Future](MalformedFileKey("emails"))
+          source = Source.fromFile(filePart.ref.path.toFile)
+          lines  = source.getLines().toList
+          _      = source.close()
+          _ <- accessesOrchestrator.sendAgentsInvitations(role, lines)
+        } yield Ok
     }
 
   def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
