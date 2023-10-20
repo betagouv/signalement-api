@@ -80,18 +80,14 @@ class AccountController(
         .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
   }
 
-  def fetchPendingAgent(role: UserRole) =
+  def fetchPendingAgent(role: Option[UserRole]) =
     SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { request =>
       role match {
-        case UserRole.DGCCRF =>
+        case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | None =>
           accessesOrchestrator
-            .listDGCCRFPendingToken(request.identity)
+            .listAgentPendingTokens(request.identity, role)
             .map(tokens => Ok(Json.toJson(tokens)))
-        case UserRole.DGAL =>
-          accessesOrchestrator
-            .listDGALPendingToken(request.identity)
-            .map(tokens => Ok(Json.toJson(tokens)))
-        case _ => Future.failed(error.AppError.WrongUserRole(role))
+        case Some(role) => Future.failed(error.AppError.WrongUserRole(role))
       }
     }
 
