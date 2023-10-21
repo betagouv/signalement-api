@@ -19,6 +19,8 @@ import models.event.Event
 import models.event.Event._
 import models.report._
 import models.report.ReportWordOccurrence.StopWords
+import models.report.delete.ReportAdminAction
+import models.report.delete.ReportAdminActionType
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
@@ -630,15 +632,95 @@ class ReportOrchestrator(
       ()
     }
 
-  def deleteReport(id: UUID) =
+  private def fetchStrict(reportId: UUID): Future[Report] =
+    reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
+
+  def reportDeletion(id: UUID, reason: ReportAdminAction, user: User): Future[Unit] =
+    fetchStrict(id).map { report =>
+      reason.reportAdminActionType match {
+        case ReportAdminActionType.SolvedContractualDispute =>
+          handleAdminReportCompletion(report, reason.comment, user)
+        case ReportAdminActionType.ConsumerThreatenByPro =>
+          deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reason)
+        case ReportAdminActionType.RefundBlackMail =>
+          deleteReport(id, report, user, REFUND_BLACKMAIL, reason)
+        case ReportAdminActionType.RGPDRequest =>
+          deleteReport(id, report, user, RGPD_REQUEST, reason)
+      }
+    }
+
+  private def createDeletionReportEvent(
+      report: Report,
+      user: User,
+      event: ActionEventValue,
+      comment: Option[String]
+  ) =
+    eventRepository.create(
+      Event(
+        UUID.randomUUID(),
+        Some(report.id),
+        report.companyId,
+        Some(user.id),
+        OffsetDateTime.now(),
+        Constants.EventType.ADMIN,
+        event,
+        comment.map(stringToDetailsJsValue).getOrElse(Json.obj())
+      )
+    )
+
+  private def deleteReport(
+      id: UUID,
+      report: Report,
+      user: User,
+      event: ActionEventValue,
+      reason: ReportAdminAction
+  ) =
     for {
-      report <- reportRepository.get(id)
-      _      <- eventRepository.deleteByReportId(id)
-      _      <- reportFileOrchestrator.removeFromReportId(id)
-      _      <- reportConsumerReviewOrchestrator.remove(id)
-      _      <- reportRepository.delete(id)
-      _      <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
-    } yield report.isDefined
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+//      _            <- createDeletionReportEvent(report, user, event, reason.comment)
+//      _            <- eventRepository.deleteByReportId(id)
+//      _            <- reportFileOrchestrator.removeFromReportId(id)
+//      _            <- reportConsumerReviewOrchestrator.remove(id)
+//      _            <- reportRepository.delete(id)
+//      _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
+      _ <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
+    } yield ()
+
+  def handleAdminReportCompletion(report: Report, comment: Option[String], user: User): Future[Report] =
+    for {
+//      updatedReport <- reportRepository.update(
+//        report.id,
+//        report.copy(
+//          status = ReportStatus.PromesseAction
+//        )
+//      )
+      _            <- createDeletionReportEvent(report, user, SOLVED_CONTRACTUAL_DISPUTE, comment)
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+      _            <- mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, user))
+      _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
+      _ <- eventRepository.create(
+        Event(
+          UUID.randomUUID(),
+          Some(report.id),
+          report.companyId,
+          None,
+          OffsetDateTime.now(),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+        )
+      )
+      _ <- eventRepository.create(
+        Event(
+          UUID.randomUUID(),
+          Some(report.id),
+          report.companyId,
+          Some(user.id),
+          OffsetDateTime.now(),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+        )
+      )
+    } yield report
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {

@@ -10,6 +10,7 @@ import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
 import models.report.ReportResponse
 import models.report.ReportWithFiles
+import models.report.delete.ReportAdminAction
 import orchestrators.EventsOrchestratorInterface
 import orchestrators.ReportOrchestrator
 import orchestrators.ReportWithDataOrchestrator
@@ -20,7 +21,6 @@ import play.api.i18n.MessagesProvider
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -188,9 +188,17 @@ class ReportController(
       .map(cloudword => Ok(Json.toJson(cloudword)))
   }
 
-  def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
-    reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
-  }
+  def deleteReport(uuid: UUID) =
+    SecuredAction(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+      for {
+        reportDeletionReason <- request.parseBody[ReportAdminAction]()
+        _ <- reportOrchestrator.reportDeletion(
+          uuid,
+          reportDeletionReason,
+          request.identity
+        )
+      } yield NoContent
+    }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
