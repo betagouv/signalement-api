@@ -84,11 +84,13 @@ object AppError {
     override val titleForLogs: String = "malformed_website_host"
   }
 
-  final case class InvalidDGCCRFOrAdminEmail(email: EmailAddress) extends ForbiddenError {
+  final case class InvalidDGCCRFOrAdminEmail(emails: List[EmailAddress]) extends ForbiddenError {
     override val `type`: String = "SC-0008"
     override val title: String  = "Invalid email for this type of user"
-    override val details: String =
-      s"Email ${email.value} invalide pour ce type d'utilisateur"
+    override val details: String = emails match {
+      case email :: Nil => s"Email ${email.value} invalide pour ce type d'utilisateur"
+      case _            => s"""Emails ${emails.mkString("[", ",", "]")} invalides pour ce type d'utilisateur"""
+    }
     override val titleForLogs: String = "invalid_email_for_admin_or_dgccrf"
   }
 
