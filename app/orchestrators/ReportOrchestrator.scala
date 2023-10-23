@@ -635,8 +635,8 @@ class ReportOrchestrator(
   private def fetchStrict(reportId: UUID): Future[Report] =
     reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
 
-  def reportDeletion(id: UUID, reason: ReportAdminAction, user: User): Future[Unit] =
-    fetchStrict(id).map { report =>
+  def reportDeletion(id: UUID, reason: ReportAdminAction, user: User): Future[Report] =
+    fetchStrict(id).flatMap { report =>
       reason.reportAdminActionType match {
         case ReportAdminActionType.SolvedContractualDispute =>
           handleAdminReportCompletion(report, reason.comment, user)
@@ -677,6 +677,10 @@ class ReportOrchestrator(
   ) =
     for {
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+      _ = println(s"------------------ ud = ${id} ------------------")
+      _ = println(s"------------------ ud = ${user} ------------------")
+      _ = println(s"------------------ ud = ${event} ------------------")
+      _ = println(s"------------------ ud = ${reason} ------------------")
 //      _            <- createDeletionReportEvent(report, user, event, reason.comment)
 //      _            <- eventRepository.deleteByReportId(id)
 //      _            <- reportFileOrchestrator.removeFromReportId(id)
@@ -684,7 +688,7 @@ class ReportOrchestrator(
 //      _            <- reportRepository.delete(id)
 //      _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
       _ <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
-    } yield ()
+    } yield report
 
   def handleAdminReportCompletion(report: Report, comment: Option[String], user: User): Future[Report] =
     for {
