@@ -653,18 +653,18 @@ class ReportOrchestrator(
       report: Report,
       user: User,
       event: ActionEventValue,
-      comment: Option[String]
+      comment: String
   ) =
     eventRepository.create(
       Event(
         UUID.randomUUID(),
-        Some(report.id),
+        None,
         report.companyId,
         Some(user.id),
         OffsetDateTime.now(),
         Constants.EventType.ADMIN,
         event,
-        comment.map(stringToDetailsJsValue).getOrElse(Json.obj())
+        stringToDetailsJsValue(comment)
       )
     )
 
@@ -677,27 +677,23 @@ class ReportOrchestrator(
   ) =
     for {
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _ = println(s"------------------ ud = ${id} ------------------")
-      _ = println(s"------------------ ud = ${user} ------------------")
-      _ = println(s"------------------ ud = ${event} ------------------")
-      _ = println(s"------------------ ud = ${reason} ------------------")
-//      _            <- createDeletionReportEvent(report, user, event, reason.comment)
-//      _            <- eventRepository.deleteByReportId(id)
-//      _            <- reportFileOrchestrator.removeFromReportId(id)
-//      _            <- reportConsumerReviewOrchestrator.remove(id)
-//      _            <- reportRepository.delete(id)
-//      _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
-      _ <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
+      _            <- eventRepository.deleteByReportId(id)
+      _            <- reportFileOrchestrator.removeFromReportId(id)
+      _            <- reportConsumerReviewOrchestrator.remove(id)
+      _            <- reportRepository.delete(id)
+      _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
+      _            <- createDeletionReportEvent(report, user, event, reason.comment)
+      _            <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
     } yield report
 
-  def handleAdminReportCompletion(report: Report, comment: Option[String], user: User): Future[Report] =
+  private def handleAdminReportCompletion(report: Report, comment: String, user: User): Future[Report] =
     for {
-//      updatedReport <- reportRepository.update(
-//        report.id,
-//        report.copy(
-//          status = ReportStatus.PromesseAction
-//        )
-//      )
+      _ <- reportRepository.update(
+        report.id,
+        report.copy(
+          status = ReportStatus.PromesseAction
+        )
+      )
       _            <- createDeletionReportEvent(report, user, SOLVED_CONTRACTUAL_DISPUTE, comment)
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
       users        <- maybeCompany.traverse(c => companiesVisibilityOrchestrator.fetchUsersByCompany(c.id))

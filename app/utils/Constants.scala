@@ -147,7 +147,11 @@ object Constants {
       COMMENT,
       CONSUMER_ATTACHMENTS,
       PROFESSIONAL_ATTACHMENTS,
-      CONTROL
+      CONTROL,
+      CONSUMER_THREATEN_BY_PRO,
+      REFUND_BLACKMAIL,
+      RGPD_REQUEST,
+      SOLVED_CONTRACTUAL_DISPUTE
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =

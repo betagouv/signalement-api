@@ -300,7 +300,7 @@ object Email {
         .toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
+      s => s.defaultAttachments ++ s.attachmentSeqForWorkflowStepN(4, report.lang.getOrElse(Locale.FRENCH))
   }
 
   final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)

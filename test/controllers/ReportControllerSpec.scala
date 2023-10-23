@@ -16,6 +16,12 @@ import loader.SignalConsoComponents
 import models.BlacklistedEmail
 import models.report.ReportFile
 import models.report.ReportFileOrigin
+import models.report.ReportStatus.PromesseAction
+import models.report.delete.ReportAdminAction
+import models.report.delete.ReportAdminActionType.ConsumerThreatenByPro
+import models.report.delete.ReportAdminActionType.RGPDRequest
+import models.report.delete.ReportAdminActionType.RefundBlackMail
+import models.report.delete.ReportAdminActionType.SolvedContractualDispute
 import models.report.reportfile.ReportFileId
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewId
@@ -32,9 +38,14 @@ import play.api.libs.json.Json
 import play.api.mvc.Results
 import play.api.test.Helpers._
 import play.api.test._
+import repositories.event.EventFilter
 import services.MailRetriesService
 import services.S3ServiceInterface
+import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
+import utils.Constants.ActionEvent.REFUND_BLACKMAIL
+import utils.Constants.ActionEvent.RGPD_REQUEST
+import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
 import utils.Constants.EventType
 import utils.EmailAddress
 import utils.Fixtures
@@ -94,7 +105,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     }
 
     "block spammed email but return normally" in new Context {
-      val blockedEmail = "spammer@gmail.com"
+      val blockedEmail = s"${UUID.randomUUID().toString}@gmail.com"
       val testEnv      = application(skipValidation = true)
       import testEnv._
 
@@ -124,9 +135,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "delete report" in new Context {
+    "admin close report" in new Context {
 
       val testEnv = application()
+
       import testEnv._
 
       new WithApplication(app) {
@@ -154,6 +166,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         Await.result(
           for {
+            _ <- userRepository.create(adminIdentity)
             _ <- companyRepository.create(company)
             _ <- reportRepository.create(report)
             _ <- reportFileRepository.create(reportFile)
@@ -163,27 +176,113 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           Duration.Inf
         )
 
+        val jsonBody = Json.toJson(ReportAdminAction(SolvedContractualDispute, comment = "comment"))
+
         val request =
-          FakeRequest("DELETE", s"/api/reports/${report.id.toString}").withAuthenticator[AuthEnv](adminLoginInfo)
+          FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
+            .withAuthenticator[AuthEnv](adminLoginInfo)
+            .withJsonBody(jsonBody)
+
         val result = route(app, request).get
 
         Helpers.status(result) must beEqualTo(NO_CONTENT)
         Helpers.contentAsBytes(result).isEmpty mustEqual true
 
-        val (maybeReport, maybeReportFile, maybeEvent, maybeReview) = Await.result(
+        val (maybeReport, maybeReportFile, maybeEvent, maybeReview, events) = Await.result(
           for {
             maybeReport     <- reportRepository.get(report.id)
             maybeReportFile <- reportFileRepository.get(reportFile.id)
             maybeEvent      <- eventRepository.get(event.id)
             maybeReview     <- responseConsumerReviewRepository.get(review.id)
-          } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview),
+            events          <- eventRepository.getCompanyEventsWithUsers(company.id, EventFilter(None, None))
+          } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview, events),
           Duration.Inf
         )
-        maybeReport must beNone
-        maybeReportFile must beNone
-        maybeEvent must beNone
-        maybeReview must beNone
 
+        maybeReport.map(_.status.entryName) must beSome(PromesseAction.entryName)
+        events.headOption.map(_._1.action) shouldEqual Some(SOLVED_CONTRACTUAL_DISPUTE)
+
+      }
+    }
+
+    "delete report" in new Context {
+
+      forall(
+        List(
+          (ConsumerThreatenByPro, CONSUMER_THREATEN_BY_PRO),
+          (RefundBlackMail, REFUND_BLACKMAIL),
+          (RGPDRequest, RGPD_REQUEST)
+        )
+      ) { case (actionType, expectedActionEvent) =>
+        val testEnv = application()
+
+        import testEnv._
+
+        new WithApplication(app) {
+
+          val company = Fixtures.genCompany.sample.get
+          val report  = Fixtures.genReportForCompany(company).sample.get
+          val event   = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
+          val reportFile = ReportFile(
+            ReportFileId.generateId(),
+            Some(report.id),
+            OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+            "fileName",
+            "storageName",
+            ReportFileOrigin(""),
+            None
+          )
+          val review =
+            ResponseConsumerReview(
+              ResponseConsumerReviewId.generateId(),
+              report.id,
+              Positive,
+              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+              None
+            )
+
+          Await.result(
+            for {
+              _ <- userRepository.create(adminIdentity)
+              _ <- companyRepository.create(company)
+              _ <- reportRepository.create(report)
+              _ <- reportFileRepository.create(reportFile)
+              _ <- eventRepository.create(event)
+              _ <- responseConsumerReviewRepository.create(review)
+            } yield (),
+            Duration.Inf
+          )
+
+          val jsonBody = Json.toJson(ReportAdminAction(actionType, comment = "comment"))
+
+          val request =
+            FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
+              .withAuthenticator[AuthEnv](adminLoginInfo)
+              .withJsonBody(jsonBody)
+
+          val result = route(app, request).get
+
+          Helpers.status(result) must beEqualTo(NO_CONTENT)
+          Helpers.contentAsBytes(result).isEmpty mustEqual true
+
+          val (maybeReport, maybeReportFile, maybeEvent, maybeReview, events) = Await.result(
+            for {
+              maybeReport     <- reportRepository.get(report.id)
+              maybeReportFile <- reportFileRepository.get(reportFile.id)
+              maybeEvent      <- eventRepository.get(event.id)
+              maybeReview     <- responseConsumerReviewRepository.get(review.id)
+              events          <- eventRepository.getCompanyEventsWithUsers(company.id, EventFilter(None, None))
+            } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview, events),
+            Duration.Inf
+          )
+
+          maybeReport must beNone
+          maybeReportFile must beNone
+          maybeEvent must beNone
+          maybeReview must beNone
+          events.headOption.map(_._1.action) shouldEqual Some(expectedActionEvent)
+
+        }
       }
     }
 
@@ -191,20 +290,33 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   trait Context extends Scope {
 
-    val adminIdentity  = Fixtures.genAdminUser.sample.get
-    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
-    val proIdentity    = Fixtures.genProUser.sample.get
-    val proLoginInfo   = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
-
-    val companyId = UUID.randomUUID
-
-    implicit val env: Environment[AuthEnv] =
-      new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
-
-    val mailRetriesService = mock[MailRetriesService]
-    val mockS3Service      = new S3ServiceMock()
+//    val adminIdentity  = Fixtures.genAdminUser.sample.get
+//    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
+//    val proIdentity    = Fixtures.genProUser.sample.get
+//    val proLoginInfo   = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
+//
+//    val companyId = UUID.randomUUID
+//
+//    implicit val env: Environment[AuthEnv] =
+//      new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
+//
+//    val mailRetriesService = mock[MailRetriesService]
+//    val mockS3Service      = new S3ServiceMock()
 
     def application(skipValidation: Boolean = false) = new {
+
+      val adminIdentity  = Fixtures.genAdminUser.sample.get
+      val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
+      val proIdentity    = Fixtures.genProUser.sample.get
+      val proLoginInfo   = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
+
+      val companyId = UUID.randomUUID
+
+      implicit val env: Environment[AuthEnv] =
+        new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
+
+      val mailRetriesService = mock[MailRetriesService]
+      val mockS3Service      = new S3ServiceMock()
 
       class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
@@ -268,7 +380,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       lazy val eventRepository                  = loader.components.eventRepository
       lazy val responseConsumerReviewRepository = loader.components.responseConsumerReviewRepository
       lazy val companyRepository                = loader.components.companyRepository
+      lazy val userRepository                   = loader.components.userRepository
       lazy val blacklistedEmailsRepository      = loader.components.blacklistedEmailsRepository
+
     }
 
   }

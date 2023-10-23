@@ -1,33 +1,29 @@
-
 @import utils.FrontRoute
 
 
 @(implicit frontRoute: FrontRoute)
 
-@views.html.mails.layout(s"Signalement résolu") {
-    <p>
-        Bonjour,
-    </p>
+    @views.html.mails.layout(s"Signalement résolu") {
+        <p>
+            Bonjour,
+        </p>
 
-    <p>Le consommateur nous a informé que le signalement a été résolu en dehors de signal conso et nous vous en félicitons !</p>
+        <p>Le consommateur nous a informé que le signalement a été résolu en dehors de SignalConso, et nous vous en félicitons !</p>
 
-    <p>Le signalement est donc considéré comme clôt et aucune action n'est nécéssaire de votre part.</p>
+        <p>Nous avons <b>exceptionnellement</b> clôturé le signalement, et aucune action n'est nécessaire de votre part.</p>
 
-    <p>
-        Votre coopération est également visible par la DGCCRF et s’inscrit dans la relation de transparence
-        et d’efficacité avec l’administration.
-    </p>
+        <p>Cependant, nous vous invitons la prochaine fois à répondre directement sur votre espace professionnel SignalConso pour que le signalement soit considéré comme résolu et vu par nos services.</p>
 
-    <p>
-        Par ailleurs, nous vous rappelons que seuls les constats effectués par les enquêteurs de la DGCCRF
-        peuvent donner suite à des poursuites.
-    </p>
+        <p>Votre coopération est visible par la DGCCRF et s'inscrit dans la relation de transparence et d'efficacité avec l'administration.</p>
 
-    <p>Cordialement,</p>
+        <p>Par ailleurs, nous vous rappelons que seuls les constats effectués par les enquêteurs de la DGCCRF peuvent donner lieu à des poursuites.</p>
 
-    <p>
-        <i>L'équipe SignalConso</i>
-    </p>
+        <p>Cordialement,</p>
 
-    @views.html.fragments.linkNotificationsManager()
-}
+        <p>
+            <i>L'équipe SignalConso</i>
+        </p>
+
+
+        @views.html.fragments.linkNotificationsManager()
+    }
