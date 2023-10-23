@@ -183,3 +183,11 @@ attachment.report.step2=schemaSignalConso-Step2
 attachment.report.step2.public.path=images/schemaSignalConso-Step2.png
 attachment.report.step3=schemaSignalConso-Step3
 attachment.report.step4=schemaSignalConso-Step4
+
+ConsumerReportDeletionEmail.subject=Confirmation of the deletion of your report
+ConsumerReportDeletionEmail.title=Deletion of your report
+ConsumerReportDeletionEmail.hello=Hello,
+ConsumerReportDeletionEmail.body=In accordance with your request, we have deleted the report dated <b>{0}</b> regarding a company:
+ConsumerReportDeletionEmail.companySiret=SIRET: <b>{0}</b>
+ConsumerReportDeletionEmail.team=The SignalConso Team
+ConsumerReportDeletionEmail.notRequested=If you did not make this request, please contact support.
