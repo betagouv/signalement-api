@@ -89,7 +89,7 @@ class ReportOrchestrator(
         .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, validity))
         .getOrElse(Future(None))
       token <- existingToken
-        .map(Future(_))
+        .map(Future.successful)
         .getOrElse(
           accessTokenRepository.create(
             AccessToken.build(
