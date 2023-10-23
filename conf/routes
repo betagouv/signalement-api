@@ -201,4 +201,6 @@ POST          /api/extract-siret                                        controll
 
 POST          /api/import/companies                                     controllers.ImportController.importUsers()
 
+GET  /api/gs1/:gtin controllers.GS1Controller.getProductByGTIN(gtin)
+
 GET           /assets/*file                                             controllers.Assets.versioned(path="/public", file: Asset)

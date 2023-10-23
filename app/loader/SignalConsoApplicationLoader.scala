@@ -5,6 +5,7 @@ import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
+import akka.util.Timeout
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.SilhouetteProvider
@@ -113,6 +114,7 @@ import utils.silhouette.auth.UserService
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import scala.annotation.nowarn
+import scala.concurrent.duration.DurationInt
 
 class SignalConsoApplicationLoader() extends ApplicationLoader {
   var components: SignalConsoComponents = _
@@ -682,6 +684,15 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  val gs1Service = new GS1Service(applicationConfiguration.gs1)
+  val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
+    GS1AuthTokenActor(gs1Service),
+    "gs1-auth-token-actor"
+  )
+  implicit val timeout: Timeout = 30.seconds
+  val gs1Orchestrator           = new GS1Orchestrator(gs1AuthTokenActor, gs1Service)
+  val gs1Controller             = new GS1Controller(gs1Orchestrator, silhouette, controllerComponents)
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -718,6 +729,7 @@ class SignalConsoComponents(
       signalConsoReviewController,
       siretExtractorController,
       importController,
+      gs1Controller,
       assets
     )
 
