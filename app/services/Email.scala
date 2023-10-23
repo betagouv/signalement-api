@@ -162,14 +162,13 @@ object Email {
         views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
   }
 
-  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, user: User)
+  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
       extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = List(user.email)
+    override val recipients: List[EmailAddress] = users.map(_.email)
     override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
 
     override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(user)(frontRoute).toString
+      (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
   }
 
   final case class DgccrfReportNotification(

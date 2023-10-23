@@ -700,7 +700,8 @@ class ReportOrchestrator(
 //      )
       _            <- createDeletionReportEvent(report, user, SOLVED_CONTRACTUAL_DISPUTE, comment)
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _            <- mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, user))
+      users        <- maybeCompany.traverse(c => companiesVisibilityOrchestrator.fetchUsersByCompany(c.id))
+      _            <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, u)))
       _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(
