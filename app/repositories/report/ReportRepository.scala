@@ -507,11 +507,9 @@ object ReportRepository {
         table.tags @& filter.withoutTags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ ArrayToStringSQLFunction(
-          table.details,
-          ",",
-          ""
-        ) regexLike s"${details}"
+        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ " " ++
+          ArrayToStringSQLFunction(table.details, ",", "") ++ " " ++
+          table.influencerName.getOrElse("") regexLike s"$details"
       }
       .filterOpt(filter.description) { case (table, description) =>
         // unique separator use to match the string between  "Description :" et and separator
