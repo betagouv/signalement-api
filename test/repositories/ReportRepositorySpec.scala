@@ -2,6 +2,7 @@ package repositories
 
 import models.UserRole
 import models.report.ReportFilter
+import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.ReportsCountBySubcategoriesFilter
 import models.report.reportmetadata.Os
@@ -39,7 +40,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       contactAgreement = false,
       consumerReferenceNumber = Some("anonymousReference"),
       firstName = "anonymousFirstName",
-      lastName = "anonymousLastName"
+      lastName = "anonymousLastName",
+      status = ReportStatus.NonConsulte
     )
   val report = Fixtures
     .genReportForCompany(company)
@@ -51,7 +53,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       contactAgreement = true,
       consumerReferenceNumber = Some("reference"),
       firstName = "firstName",
-      lastName = "lastName"
+      lastName = "lastName",
+      status = ReportStatus.Transmis
     )
 
   val report2 = Fixtures
@@ -82,7 +85,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       category = "AchatMagasin",
       subcategories = List("a", "b", "c"),
       tags = List(ReportTag.ReponseConso),
-      phone = Some("0102030405")
+      phone = Some("0102030405"),
+      status = ReportStatus.TraitementEnCours
     )
 
   val report5 = Fixtures
@@ -92,7 +96,8 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .copy(
       category = "IntoxicationAlimentaire",
       subcategories = List("a"),
-      visibleToPro = false
+      visibleToPro = false,
+      status = ReportStatus.TraitementEnCours
     )
 
   val report6 = Fixtures
@@ -102,14 +107,18 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .copy(
       category = "CafeRestaurant",
       subcategories = List("a"),
-      tags = List(ReportTag.ProduitAlimentaire)
+      tags = List(ReportTag.ProduitAlimentaire),
+      status = ReportStatus.NA
     )
 
   val englishReport = Fixtures
     .genReportForCompany(company)
     .sample
     .get
-    .copy(lang = Some(Locale.ENGLISH))
+    .copy(
+      lang = Some(Locale.ENGLISH),
+      status = ReportStatus.Infonde
+    )
 
   override def setupData(): Unit = {
     Await.result(components.companyRepository.create(company), Duration.Inf)
@@ -173,7 +182,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       "return all reports for a pro user" in {
         components.reportRepository
           .getReports(Some(UserRole.Professionnel), ReportFilter())
-          .map(result => result.entities must haveLength(5))
+          .map(result => result.entities must haveLength(4))
       }
     }
 
