@@ -108,6 +108,42 @@ class AccessesOrchestrator(
     .withFieldConst(_.emailedTo, emailTo)
     .transform
 
+  private def parseEmails(emails: List[String]): List[EmailAddress] =
+    emails
+      .flatMap(email => email.split(",").toList)
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(email => EmailAddress(email))
+
+  private def validateEmails(emails: List[EmailAddress], validateFunction: String => Boolean) =
+    if (emails.isEmpty)
+      Future.failed(InvalidDGCCRFOrAdminEmail(List.empty))
+    else {
+      val invalidEmails = emails.filter(email => !validateFunction(email.value))
+      if (invalidEmails.isEmpty) {
+        Future.successful(())
+      } else {
+        Future.failed(InvalidDGCCRFOrAdminEmail(invalidEmails))
+      }
+    }
+
+  def sendAgentsInvitations(role: UserRole, emails: List[String]): Future[List[Unit]] =
+    role match {
+      case UserRole.DGCCRF =>
+        val parsedEmails = parseEmails(emails)
+        for {
+          _   <- validateEmails(parsedEmails, EmailAddressService.isEmailAcceptableForDgccrfAccount)
+          res <- Future.sequence(parsedEmails.map(sendDGCCRFInvitation))
+        } yield res
+      case UserRole.DGAL =>
+        val parsedEmails = parseEmails(emails)
+        for {
+          _   <- validateEmails(parsedEmails, EmailAddressService.isEmailAcceptableForDgalAccount)
+          res <- Future.sequence(parsedEmails.map(sendDGALInvitation))
+        } yield res
+      case _ => Future.failed(WrongUserRole(role))
+    }
+
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGCCRFAccount)
 
@@ -146,11 +182,14 @@ class AccessesOrchestrator(
         if (emailValidationFunction(email.value)) {
           Future.successful(())
         } else {
-          Future.failed(InvalidDGCCRFOrAdminEmail(email))
+          Future.failed(InvalidDGCCRFOrAdminEmail(List(email)))
         }
       _              <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)
-      existingToken = existingTokens.find(_.kind == kind)
+      existingToken = kind match {
+        case AdminAccount                => existingTokens.find(_.kind == AdminAccount)
+        case DGALAccount | DGCCRFAccount => existingTokens.find(t => t.kind == DGCCRFAccount || t.kind == DGALAccount)
+      }
       token <-
         existingToken match {
           case Some(token) =>
