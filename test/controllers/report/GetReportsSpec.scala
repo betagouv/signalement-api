@@ -155,12 +155,18 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = false)
+  val reportNAOnHeadOfficeButVisible = Fixtures
+    .genReportForCompany(headOfficeCompany)
+    .sample
+    .get
+    .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = true)
   val allReports = Seq(
     reportToStandaloneCompany,
     reportToProcessOnHeadOffice,
     reportToProcessOnSubsidiary,
     reportFromEmployeeOnHeadOffice,
-    reportNAOnHeadOffice
+    reportNAOnHeadOffice,
+    reportNAOnHeadOfficeButVisible
   )
 
   var someResult: Option[Result]       = None
@@ -200,6 +206,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
         _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
         _ <- reportRepository.create(reportNAOnHeadOffice)
+        _ <- reportRepository.create(reportNAOnHeadOfficeButVisible)
       } yield (),
       Duration.Inf
     )
@@ -255,7 +262,13 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
-          not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportNAOnHeadOffice)))
+          not(
+            haveReports(
+              aReport(reportFromEmployeeOnHeadOffice),
+              aReport(reportNAOnHeadOffice),
+              aReport(reportNAOnHeadOfficeButVisible)
+            )
+          )
       case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 1) and
@@ -264,7 +277,8 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
             haveReports(
               aReport(reportFromEmployeeOnHeadOffice),
               aReport(reportToProcessOnHeadOffice),
-              aReport(reportNAOnHeadOffice)
+              aReport(reportNAOnHeadOffice),
+              aReport(reportNAOnHeadOfficeButVisible)
             )
           )
       case _ =>
