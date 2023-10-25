@@ -5,18 +5,23 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Scheduler
 import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.util.Timeout
-import models.gs1.{GS1APIProduct, OAuthAccessToken}
-import repositories.gs1.GS1RepositoryInterface
+import models.gs1.GS1APIProduct
+import models.gs1.GS1Product
+import models.gs1.OAuthAccessToken
+import repositories.gs1.GS1ProductRepositoryInterface
 import services.GS1ServiceInterface
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class GS1Orchestrator(gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command], gs1Service: GS1ServiceInterface,
-                      gs1Repository: GS1RepositoryInterface)(implicit
-                                                             val executionContext: ExecutionContext,
-                                                             timeout: Timeout,
-                                                             scheduler: Scheduler
+class GS1Orchestrator(
+    gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command],
+    gs1Service: GS1ServiceInterface,
+    gs1Repository: GS1ProductRepositoryInterface
+)(implicit
+    val executionContext: ExecutionContext,
+    timeout: Timeout,
+    scheduler: Scheduler
 ) {
 
   private def getToken(
@@ -27,7 +32,7 @@ class GS1Orchestrator(gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command], gs
       case GS1AuthTokenActor.TokenError(error) => Future.failed(error)
     }
 
-  def get_(gtin: String) =
+  private def getFromAPI(gtin: String): Future[Option[GS1APIProduct]] =
     for {
       accessToken <- getToken(GS1AuthTokenActor.GetToken.apply)
       firstTry    <- gs1Service.getProductByGTIN(accessToken, gtin)
@@ -38,30 +43,28 @@ class GS1Orchestrator(gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command], gs
           for {
             renewedAccessToken <- getToken(GS1AuthTokenActor.RenewToken.apply)
             secondTry          <- gs1Service.getProductByGTIN(renewedAccessToken, gtin)
-            r <- secondTry match {
+            maybeProductFromAPI <- secondTry match {
               case Right(value) => Future.successful(value)
-              case Left(_)      => Future.failed(new Exception("Unexpected"))
+              case Left(_)      => Future.successful(None)
             }
-          } yield r
+          } yield maybeProductFromAPI
       }
 
     } yield result
 
-  def get(gtin: String) = {
+  def get(gtin: String): Future[Option[GS1Product]] =
     for {
-      existingProduct <- gs1Repository.get(gtin)
-      product <- existingProduct match {
-        case Some(_) => Future.successful(existingProduct)
+      maybeExistingProductInDB <- gs1Repository.getByGTIN(gtin)
+      product <- maybeExistingProductInDB match {
+        case Some(_) => Future.successful(maybeExistingProductInDB)
         case None =>
           for {
-            test <- get_(gtin)
-            _ <- test match {
-              case Some(a) =>
-                gs1Repository.create(GS1APIProduct.toDomain(a))
-              case None => Future.successful(())
+            maybeProductFromAPI <- getFromAPI(gtin)
+            createdProduct <- maybeProductFromAPI match {
+              case Some(product) => gs1Repository.create(GS1APIProduct.toDomain(product)).map(Some(_))
+              case None          => Future.successful(None)
             }
-          } yield test.map(GS1APIProduct.toDomain)
+          } yield createdProduct
       }
     } yield product
-  }
 }

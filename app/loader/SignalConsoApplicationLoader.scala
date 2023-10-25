@@ -66,6 +66,7 @@ import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
+import repositories.gs1.GS1ProductRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -684,13 +685,14 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val gs1Service = new GS1Service(applicationConfiguration.gs1)
+  val gs1ProductRepository = new GS1ProductRepository(dbConfig)
+  val gs1Service           = new GS1Service(applicationConfiguration.gs1)
   val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
     GS1AuthTokenActor(gs1Service),
     "gs1-auth-token-actor"
   )
   implicit val timeout: Timeout = 30.seconds
-  val gs1Orchestrator           = new GS1Orchestrator(gs1AuthTokenActor, gs1Service)
+  val gs1Orchestrator           = new GS1Orchestrator(gs1AuthTokenActor, gs1Service, gs1ProductRepository)
   val gs1Controller             = new GS1Controller(gs1Orchestrator, silhouette, controllerComponents)
 
   io.sentry.Sentry.captureException(

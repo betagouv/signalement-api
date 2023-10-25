@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 
 class GS1ProductTable(tag: Tag) extends DatabaseTable[GS1Product](tag, "gs1_product") {
 
-  def gtin        = column[String]("gtin")
+  def gtin         = column[String]("gtin")
   def siren        = column[SIREN]("siren")
   def creationDate = column[OffsetDateTime]("creation_date")
 
@@ -22,5 +22,5 @@ class GS1ProductTable(tag: Tag) extends DatabaseTable[GS1Product](tag, "gs1_prod
 }
 
 object GS1ProductTable {
-  val table = TableQuery[GS1Product]
+  val table = TableQuery[GS1ProductTable]
 }

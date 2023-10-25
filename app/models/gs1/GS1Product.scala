@@ -8,10 +8,10 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class GS1Product(
-                       id: UUID = UUID.randomUUID(),
-                       gtin: String,
-                       siren: SIREN,
-                       creationDate: OffsetDateTime = OffsetDateTime.now()
+    id: UUID = UUID.randomUUID(),
+    gtin: String,
+    siren: SIREN,
+    creationDate: OffsetDateTime = OffsetDateTime.now()
 )
 
 object GS1Product {

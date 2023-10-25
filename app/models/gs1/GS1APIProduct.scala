@@ -17,10 +17,9 @@ object GS1APIProduct {
       (JsPath \ "itemOffered" \ "additionalPartyIdentificationValue").read[SIREN]
   )(GS1APIProduct.apply _)
 
-  def toDomain(product: GS1APIProduct) =
+  def toDomain(product: GS1APIProduct): GS1Product =
     product
       .into[GS1Product]
-      .withFieldRenamed(_.gtin, _.id)
       .enableDefaultValues
       .transform
 }
