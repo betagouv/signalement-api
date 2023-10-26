@@ -30,6 +30,9 @@ class CompaniesVisibilityOrchestrator(
       users     <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
     } yield users
 
+  def fetchUsersByCompany(companyId: UUID): Future[List[User]] =
+    companyAccessRepository.fetchUsersByCompanies(List(companyId))
+
   // Fetch all users of these companies, and of their head offices
   // convoluted, could be simplified
   // Why do we bother with company id + siret ? could a report company_id + company_siret point at different companies ?

@@ -40,6 +40,21 @@ ConsumerReportAckProEmail.positive=Positive
 ConsumerReportAckProEmail.neutral=Neutral
 ConsumerReportAckProEmail.negative=Negative
 
+
+ConsumerReportAckProEmailOnAdminCompletion.subject=Your report is resolved
+ConsumerReportAckProEmailOnAdminCompletion.title=Your report is resolved
+ConsumerReportAckProEmailOnAdminCompletion.greeting=Hello {0} {1},
+ConsumerReportAckProEmailOnAdminCompletion.reportDescription=You submitted a report on {0} regarding a company:
+ConsumerReportAckProEmailOnAdminCompletion.companySiret=SIRET: <b>{0}</b>
+ConsumerReportAckProEmailOnAdminCompletion.responseHeader=You have informed us that your issue has been resolved outside the SignalConso platform.
+ConsumerReportAckProEmailOnAdminCompletion.newReportLink=Feel free to submit a new report if you find that the issue has not been corrected. This way, the consumer protection authorities will be better informed of the situation.
+ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest=If SignalConso satisfies you, don't hesitate to support us with a post on <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> and <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
+ConsumerReportAckProEmailOnAdminCompletion.serviceImprovement=Please share your feedback about your SignalConso experience and let us know your satisfaction, the issues you encountered, or your improvement suggestions on <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, the government platform dedicated to improving public services.
+ConsumerReportAckProEmailOnAdminCompletion.contributionThanks=Your contribution helps other consumers, and it is essential for our continuous development!
+ConsumerReportAckProEmailOnAdminCompletion.spreadTheWord=Feel free to spread the word about SignalConso among your network and encourage your contacts to do the same! Thank you!
+ConsumerReportAckProEmailOnAdminCompletion.teamSignature=The SignalConso Team
+ConsumerReportAckProEmailOnAdminCompletion.signalConsoExplanationHeader=Understanding SignalConso
+
 ReportClosedByNoReadingEmail.subject=The company chose not to review your report
 ReportClosedByNoReadingEmail.entrepriseNoConsultation=The company chose not to review your report
 ReportClosedByNoReadingEmail.bonjourMessage=Hello {0} {1},
@@ -168,3 +183,11 @@ attachment.report.step2=schemaSignalConso-Step2
 attachment.report.step2.public.path=images/schemaSignalConso-Step2.png
 attachment.report.step3=schemaSignalConso-Step3
 attachment.report.step4=schemaSignalConso-Step4
+
+ConsumerReportDeletionEmail.subject=Confirmation of the deletion of your report
+ConsumerReportDeletionEmail.title=Deletion of your report
+ConsumerReportDeletionEmail.hello=Hello,
+ConsumerReportDeletionEmail.body=In accordance with your request, we have deleted the report dated <b>{0}</b> regarding a company:
+ConsumerReportDeletionEmail.companySiret=SIRET: <b>{0}</b>
+ConsumerReportDeletionEmail.team=The SignalConso Team
+ConsumerReportDeletionEmail.notRequested=If you did not make this request, please contact support.

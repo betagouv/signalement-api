@@ -1,0 +1,59 @@
+
+@import models.report.Report
+@import java.net.URI
+
+
+@import models.company.Company
+@(report: Report,maybeCompany: Option[Company])(implicit messageProvider: MessagesProvider)
+
+@views.html.mails.layout(Messages("ConsumerReportAckProEmailOnAdminCompletion.title")) {
+    <p>
+    @Messages("ConsumerReportAckProEmailOnAdminCompletion.greeting", report.firstName, report.lastName)
+    </p>
+
+    <p>
+    @Messages("ConsumerReportAckProEmailOnAdminCompletion.reportDescription", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+    </p>
+    @if(report.companySiret.isDefined) {
+        <p style="text-align: center;">
+        @Html(Messages("ConsumerReportAckProEmailOnAdminCompletion.companySiret", report.companySiret.get))
+        </p>
+    }
+    <p style="text-align: center;">
+    @views.html.fragments.proAddressForConsumer(maybeCompany)
+    </p>
+
+    <p>
+        <b>@Messages("ConsumerReportAckProEmailOnAdminCompletion.responseHeader")</b>
+    </p>
+
+
+    <p>
+        @Messages("ConsumerReportAckProEmailOnAdminCompletion.newReportLink")
+    </p>
+
+    <p>
+        @Html(Messages("ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest"))
+    </p>
+    <p>
+        @Html(Messages("ConsumerReportAckProEmailOnAdminCompletion.serviceImprovement"))
+    </p>
+    <p>@Messages("ConsumerReportAckProEmailOnAdminCompletion.contributionThanks")</p>
+    <p>@Messages("ConsumerReportAckProEmailOnAdminCompletion.spreadTheWord")</p>
+
+    <p>
+        <i>@Messages("ConsumerReportAckProEmailOnAdminCompletion.teamSignature")</i>
+    </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+        @Messages("ConsumerReportAckProEmailOnAdminCompletion.signalConsoExplanationHeader")
+        </div>
+        <img src="cid:@Messages("attachment.report.step4")" style="max-width: 100%"/>
+    </div>
+}

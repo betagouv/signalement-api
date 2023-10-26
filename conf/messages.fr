@@ -40,6 +40,24 @@ ConsumerReportAckProEmail.positive=Satisfait
 ConsumerReportAckProEmail.neutral=Neutre
 ConsumerReportAckProEmail.negative=Mécontent
 
+
+ConsumerReportAckProEmailOnAdminCompletion.subject=Votre signalement est résolu
+ConsumerReportAckProEmailOnAdminCompletion.title=Votre signalement est résolu
+ConsumerReportAckProEmailOnAdminCompletion.greeting=Bonjour {0} {1},
+ConsumerReportAckProEmailOnAdminCompletion.reportDescription=Vous avez fait un signalement le {0} concernant une entreprise :
+ConsumerReportAckProEmailOnAdminCompletion.companySiret=SIRET : <b>{0}</b>
+ConsumerReportAckProEmailOnAdminCompletion.responseHeader=Vous nous avez communiqué que votre problème a été résolu en dehors de la plateforme SignalConso.
+ConsumerReportAckProEmailOnAdminCompletion.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation.
+ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest=Si SignalConso vous donne satisfaction, n''hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> et <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
+ConsumerReportAckProEmailOnAdminCompletion.serviceImprovement= N''hésitez pas à déposer votre avis concernant votre expérience SignalConso et nous faire part de votre satisfaction, des problèmes rencontrés ou de vos propositions d''amélioration sur <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, la plateforme de l''État dédiée à l''amélioration des services publics.
+ConsumerReportAckProEmailOnAdminCompletion.contributionThanks=Votre contribution aide d''autres consommateurs et nous est vraiment indispensable pour nous développer encore et encore !
+ConsumerReportAckProEmailOnAdminCompletion.spreadTheWord=N''hésitez également pas à parler de SignalConso autour de vous et à encourager vos connaissances à en parler à leur tour autour d''elles ! Merci !
+ConsumerReportAckProEmailOnAdminCompletion.teamSignature=L''équipe SignalConso
+ConsumerReportAckProEmailOnAdminCompletion.signalConsoExplanationHeader=Comprendre SignalConso
+
+
+
+
 ReportClosedByNoReadingEmail.subject=L''entreprise n''a pas souhaité consulter votre signalement
 ReportClosedByNoReadingEmail.entrepriseNoConsultation=L''entreprise n''a pas souhaité consulter votre signalement
 ReportClosedByNoReadingEmail.bonjourMessage=Bonjour {0} {1},
@@ -168,3 +186,12 @@ attachment.report.step2=schemaSignalConso-Etape2
 attachment.report.step2.public.path=images/schemaSignalConso-Etape2.png
 attachment.report.step3=schemaSignalConso-Etape3
 attachment.report.step4=schemaSignalConso-Etape4
+
+
+ConsumerReportDeletionEmail.subject=Confirmation de la suppression de votre signalement
+ConsumerReportDeletionEmail.title=Suppression de votre signalement
+ConsumerReportDeletionEmail.hello=Bonjour,
+ConsumerReportDeletionEmail.body=Conformément à votre demande, nous avons supprimé le signalement daté du <b>{0}</b> concernant une entreprise :
+ConsumerReportDeletionEmail.companySiret=SIRET : <b>{0}</b>
+ConsumerReportDeletionEmail.team=L''équipe SignalConso
+ConsumerReportDeletionEmail.notRequested=Si vous n''avez pas effectué cette demande, merci de contacter le support .
