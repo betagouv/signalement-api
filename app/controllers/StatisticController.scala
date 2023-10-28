@@ -9,6 +9,7 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportsCountBySubcategoriesFilter
 import models.report.ReportStatus.statusWithProResponse
+import models.report.delete.ReportAdminActionType
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -179,6 +180,13 @@ class StatisticController(
             .reportsCountBySubcategories(request.identity.userRole, filters)
             .map(res => Ok(Json.toJson(res)))
       }
+  }
+
+  def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = SecuredAction.async {
+    _ =>
+      statsOrchestrator
+        .fetchAdminActionEvents(companyId, reportAdminActionType)
+        .map(count => Ok(Json.obj("value" -> count)))
   }
 
 }

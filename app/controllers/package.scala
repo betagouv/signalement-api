@@ -1,5 +1,4 @@
 import controllers.error.AppError.MalformedBody
-
 import models.website.IdentificationStatus
 import models.website.WebsiteId
 import play.api.Logger
@@ -14,6 +13,7 @@ import cats.syntax.either._
 import models.PublicStat
 import models.extractUUID
 import models.report.ReportResponseType
+import models.report.delete.ReportAdminActionType
 import models.report.reportfile.ReportFileId
 import utils.DateUtils
 import utils.SIRET
@@ -74,6 +74,13 @@ package object controllers {
       .transform[ReportResponseType](
         reportResponseType => ReportResponseType.withName(reportResponseType),
         reportResponseType => reportResponseType.entryName
+      )
+
+  implicit val ReportAdminActionTypeQueryStringBindable: QueryStringBindable[ReportAdminActionType] =
+    QueryStringBindable.bindableString
+      .transform[ReportAdminActionType](
+        reportAdminActionType => ReportAdminActionType.withName(reportAdminActionType),
+        reportAdminActionType => reportAdminActionType.entryName
       )
 
   implicit val PublicStatQueryStringBindable: QueryStringBindable[PublicStat] =

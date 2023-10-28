@@ -43,4 +43,8 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
       actions: NonEmptyList[ActionEvent.ActionEventValue]
   ): Future[Vector[(Timestamp, Int)]]
 
+  def fetchAdminActionEvents(
+      companyId: UUID,
+      action: ActionEvent.ActionEventValue
+  ): Future[Int]
 }

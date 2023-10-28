@@ -118,6 +118,18 @@ class EventRepository(
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
+  override def fetchAdminActionEvents(
+      companyId: UUID,
+      action: ActionEventValue
+  ): Future[Int] =
+    db.run(
+      table
+        .filter(_.companyId === companyId)
+        .filter(e => e.action === action.value)
+        .length
+        .result
+    )
+
   override def getAvgTimeUntilEvent(
       action: ActionEventValue,
       companyId: Option[UUID] = None,
