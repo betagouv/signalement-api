@@ -11,6 +11,7 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
+import io.scalaland.chimney.dsl.TransformerOps
 import models._
 import models.company.AccessLevel
 import models.company.Address
@@ -21,6 +22,7 @@ import models.report._
 import models.report.ReportWordOccurrence.StopWords
 import models.report.delete.ReportAdminAction
 import models.report.delete.ReportAdminActionType
+import models.report.delete.ReportAdminCompletionDetails
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
@@ -637,34 +639,57 @@ class ReportOrchestrator(
 
   def reportDeletion(id: UUID, reason: ReportAdminAction, user: User): Future[Report] =
     fetchStrict(id).flatMap { report =>
+      val reportAdminCompletionDetails =
+        report.into[ReportAdminCompletionDetails].withFieldConst(_.comment, reason.comment).transform
+
       reason.reportAdminActionType match {
         case ReportAdminActionType.SolvedContractualDispute =>
-          handleAdminReportCompletion(report, reason.comment, user)
+          handleAdminReportCompletion(report, reportAdminCompletionDetails, user)
         case ReportAdminActionType.ConsumerThreatenByPro =>
-          deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reason)
+          deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reportAdminCompletionDetails)
         case ReportAdminActionType.RefundBlackMail =>
-          deleteReport(id, report, user, REFUND_BLACKMAIL, reason)
+          deleteReport(id, report, user, REFUND_BLACKMAIL, reportAdminCompletionDetails)
         case ReportAdminActionType.RGPDRequest =>
-          deleteReport(id, report, user, RGPD_REQUEST, reason)
+          deleteReport(id, report, user, RGPD_REQUEST, reportAdminCompletionDetails)
       }
     }
 
-  private def createDeletionReportEvent(
-      report: Report,
+  private def createAdminDeletionReportEvent(
+      maybeCompanyId: Option[UUID],
       user: User,
       event: ActionEventValue,
-      comment: String
+      reportAdminCompletionDetails: ReportAdminCompletionDetails
   ) =
     eventRepository.create(
       Event(
         UUID.randomUUID(),
         None,
-        report.companyId,
+        maybeCompanyId,
         Some(user.id),
         OffsetDateTime.now(),
         Constants.EventType.ADMIN,
         event,
-        stringToDetailsJsValue(comment)
+        Json.toJson(reportAdminCompletionDetails)
+      )
+    )
+
+  private def createAdminCompletionReportEvent(
+      reportId: UUID,
+      maybeCompanyId: Option[UUID],
+      user: User,
+      event: ActionEventValue,
+      reportAdminCompletionDetails: ReportAdminCompletionDetails
+  ) =
+    eventRepository.create(
+      Event(
+        UUID.randomUUID(),
+        Some(reportId),
+        maybeCompanyId,
+        Some(user.id),
+        OffsetDateTime.now(),
+        Constants.EventType.ADMIN,
+        event,
+        Json.toJson(reportAdminCompletionDetails)
       )
     )
 
@@ -673,7 +698,7 @@ class ReportOrchestrator(
       report: Report,
       user: User,
       event: ActionEventValue,
-      reason: ReportAdminAction
+      reportAdminCompletionDetails: ReportAdminCompletionDetails
   ) =
     for {
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
@@ -682,11 +707,15 @@ class ReportOrchestrator(
       _            <- reportConsumerReviewOrchestrator.remove(id)
       _            <- reportRepository.delete(id)
       _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
-      _            <- createDeletionReportEvent(report, user, event, reason.comment)
+      _            <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
       _            <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
     } yield report
 
-  private def handleAdminReportCompletion(report: Report, comment: String, user: User): Future[Report] =
+  private def handleAdminReportCompletion(
+      report: Report,
+      reportAdminCompletionDetails: ReportAdminCompletionDetails,
+      user: User
+  ): Future[Report] =
     for {
       _ <- reportRepository.update(
         report.id,
@@ -694,7 +723,13 @@ class ReportOrchestrator(
           status = ReportStatus.PromesseAction
         )
       )
-      _            <- createDeletionReportEvent(report, user, SOLVED_CONTRACTUAL_DISPUTE, comment)
+      _ <- createAdminCompletionReportEvent(
+        report.id,
+        report.companyId,
+        user,
+        SOLVED_CONTRACTUAL_DISPUTE,
+        reportAdminCompletionDetails
+      )
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
       users        <- maybeCompany.traverse(c => companiesVisibilityOrchestrator.fetchUsersByCompany(c.id))
       _            <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, u)))

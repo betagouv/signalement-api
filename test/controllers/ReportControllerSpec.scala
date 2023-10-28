@@ -188,19 +188,16 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Helpers.status(result) must beEqualTo(NO_CONTENT)
         Helpers.contentAsBytes(result).isEmpty mustEqual true
 
-        val (maybeReport, maybeReportFile, maybeEvent, maybeReview, events) = Await.result(
+        val (maybeReport, events) = Await.result(
           for {
-            maybeReport     <- reportRepository.get(report.id)
-            maybeReportFile <- reportFileRepository.get(reportFile.id)
-            maybeEvent      <- eventRepository.get(event.id)
-            maybeReview     <- responseConsumerReviewRepository.get(review.id)
-            events          <- eventRepository.getCompanyEventsWithUsers(company.id, EventFilter(None, None))
-          } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview, events),
+            maybeReport <- reportRepository.get(report.id)
+            events      <- eventRepository.getEventsWithUsers(report.id, EventFilter(None, None))
+          } yield (maybeReport, events),
           Duration.Inf
         )
 
         maybeReport.map(_.status.entryName) must beSome(PromesseAction.entryName)
-        events.headOption.map(_._1.action) shouldEqual Some(SOLVED_CONTRACTUAL_DISPUTE)
+        events.exists(_._1.action == SOLVED_CONTRACTUAL_DISPUTE) shouldEqual true
 
       }
     }
