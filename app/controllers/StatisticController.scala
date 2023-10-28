@@ -182,11 +182,10 @@ class StatisticController(
       }
   }
 
-  def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = SecuredAction.async {
-    _ =>
-      statsOrchestrator
-        .fetchAdminActionEvents(companyId, reportAdminActionType)
-        .map(count => Ok(Json.obj("value" -> count)))
+  def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = SecuredAction.async { _ =>
+    statsOrchestrator
+      .fetchAdminActionEvents(companyId, reportAdminActionType)
+      .map(count => Ok(Json.obj("value" -> count)))
   }
 
 }
