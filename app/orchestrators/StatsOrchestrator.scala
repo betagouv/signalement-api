@@ -6,6 +6,7 @@ import models.CurveTickDuration
 import models.ReportReviewStats
 import models.UserRole
 import models.report._
+import models.report.delete.ReportAdminActionType
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
@@ -69,6 +70,17 @@ class StatsOrchestrator(
 
   def getReportCount(userRole: Option[UserRole], reportFilter: ReportFilter): Future[Int] =
     reportRepository.count(userRole, reportFilter)
+
+  def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = {
+    val action = reportAdminActionType match {
+      case ReportAdminActionType.SolvedContractualDispute => SOLVED_CONTRACTUAL_DISPUTE
+      case ReportAdminActionType.ConsumerThreatenByPro    => CONSUMER_THREATEN_BY_PRO
+      case ReportAdminActionType.RefundBlackMail          => REFUND_BLACKMAIL
+      case ReportAdminActionType.RGPDRequest              => RGPD_REQUEST
+    }
+    eventRepository.fetchAdminActionEvents(companyId, action)
+
+  }
 
   def getReportCountPercentage(
       userRole: Option[UserRole],
