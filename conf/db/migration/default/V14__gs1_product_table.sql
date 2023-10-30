@@ -1,10 +1,10 @@
 ALTER TABLE reports
-    ADD gtin   varchar;
+    ADD gs1_product_id varchar;
 
 CREATE TABLE IF NOT EXISTS gs1_product (
     id UUID NOT NULL PRIMARY KEY,
     gtin varchar NOT NULL UNIQUE,
-    siren varchar NOT NULL,
+    siren varchar,
+    description varchar,
     creation_date TIMESTAMP WITH TIME ZONE NOT NULL
 );
-

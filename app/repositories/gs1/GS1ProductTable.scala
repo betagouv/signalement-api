@@ -10,13 +10,15 @@ import java.time.OffsetDateTime
 class GS1ProductTable(tag: Tag) extends DatabaseTable[GS1Product](tag, "gs1_product") {
 
   def gtin         = column[String]("gtin")
-  def siren        = column[SIREN]("siren")
+  def siren        = column[Option[SIREN]]("siren")
+  def description  = column[Option[String]]("description")
   def creationDate = column[OffsetDateTime]("creation_date")
 
   override def * = (
     id,
     gtin,
     siren,
+    description,
     creationDate
   ) <> ((GS1Product.apply _).tupled, GS1Product.unapply)
 }

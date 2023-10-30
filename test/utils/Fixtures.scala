@@ -221,7 +221,8 @@ object Fixtures {
     status = status,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     visibleToPro = true,
-    lang = None
+    lang = None,
+    gs1ProductId = None
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =

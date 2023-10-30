@@ -55,7 +55,8 @@ case class Report(
     expirationDate: OffsetDateTime,
     visibleToPro: Boolean,
     lang: Option[Locale],
-    reopenDate: Option[OffsetDateTime] = None
+    reopenDate: Option[OffsetDateTime] = None,
+    gs1ProductId: Option[String]
 ) {
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))

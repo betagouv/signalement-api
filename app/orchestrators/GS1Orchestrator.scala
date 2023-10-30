@@ -8,6 +8,7 @@ import akka.util.Timeout
 import models.gs1.GS1APIProduct
 import models.gs1.GS1Product
 import models.gs1.OAuthAccessToken
+import play.api.Logger
 import repositories.gs1.GS1ProductRepositoryInterface
 import services.GS1ServiceInterface
 
@@ -23,6 +24,8 @@ class GS1Orchestrator(
     timeout: Timeout,
     scheduler: Scheduler
 ) {
+
+  private val logger = Logger(this.getClass)
 
   private def getToken(
       request: ActorRef[GS1AuthTokenActor.Reply] => GS1AuthTokenActor.Command
@@ -56,8 +59,11 @@ class GS1Orchestrator(
     for {
       maybeExistingProductInDB <- gs1Repository.getByGTIN(gtin)
       product <- maybeExistingProductInDB match {
-        case Some(_) => Future.successful(maybeExistingProductInDB)
+        case Some(_) =>
+          logger.debug(s"Fetched product with gtin $gtin from DB")
+          Future.successful(maybeExistingProductInDB)
         case None =>
+          logger.debug(s"Product with gtin $gtin not in DB, fetching from GS1 API")
           for {
             maybeProductFromAPI <- getFromAPI(gtin)
             createdProduct <- maybeProductFromAPI match {

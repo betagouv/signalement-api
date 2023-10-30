@@ -10,7 +10,8 @@ import java.util.UUID
 case class GS1Product(
     id: UUID = UUID.randomUUID(),
     gtin: String,
-    siren: SIREN,
+    siren: Option[SIREN],
+    description: Option[String],
     creationDate: OffsetDateTime = OffsetDateTime.now()
 )
 
