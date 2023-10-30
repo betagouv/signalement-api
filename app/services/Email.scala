@@ -162,6 +162,15 @@ object Email {
         views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
   }
 
+  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
+      extends ProFilteredEmailSingleReport {
+    override val recipients: List[EmailAddress] = users.map(_.email)
+    override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+  }
+
   final case class DgccrfReportNotification(
       recipients: List[EmailAddress],
       subscription: Subscription,
@@ -210,6 +219,19 @@ object Email {
     override val recipients: List[EmailAddress] = List(recipient)
   }
 
+  final case class ReportDeletionConfirmation(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
+      extends ConsumerEmail {
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+    override val recipients: List[EmailAddress]             = List(report.email)
+    override val subject: String                            = messagesApi("ConsumerReportDeletionEmail.subject")(lang)
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
+      views.html.mails.consumer
+        .confirmReportDeletionEmail(report, maybeCompany)(frontRoute, messagesProvider)
+        .toString
+  }
+
   final case class ConsumerReportAcknowledgment(
       report: Report,
       maybeCompany: Option[Company],
@@ -256,6 +278,29 @@ object Email {
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
+  }
+
+  final case class ConsumerProResponseNotificationOnAdminCompletion(
+      report: Report,
+      maybeCompany: Option[Company],
+      messagesApi: MessagesApi
+  ) extends ConsumerEmail {
+    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
+    override val recipients: List[EmailAddress] = List(report.email)
+    override val subject: String = messagesApi("ConsumerReportAckProEmailOnAdminCompletion.subject")(lang)
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.consumer
+        .reportToConsumerAcknowledgmentOnAdminCompletion(
+          report,
+          maybeCompany
+        )
+        .toString
+
+    override def getAttachements: AttachmentService => Seq[Attachment] =
+      s => s.defaultAttachments ++ s.attachmentSeqForWorkflowStepN(4, report.lang.getOrElse(Locale.FRENCH))
   }
 
   final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)

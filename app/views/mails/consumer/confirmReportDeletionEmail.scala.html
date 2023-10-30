@@ -1,0 +1,34 @@
+@import utils.FrontRoute
+@import java.util.UUID
+
+@import models.company.Company
+@import models.report.Report
+@(report: Report, company: Option[Company])(implicit frontRoute: FrontRoute,  messageProvider: MessagesProvider)
+
+@views.html.mails.layout(Messages("ConsumerReportDeletionEmail.title")) {
+    <p>
+        @Messages("ConsumerReportDeletionEmail.hello")
+    </p>
+    <p>
+    @Html(Messages("ConsumerReportDeletionEmail.body", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))))
+    </p>
+    @if(report.companySiret.isDefined) {
+        <p style="text-align: center;">
+        @Html(Messages("ConsumerReportDeletionEmail.companySiret", report.companySiret.get))
+        </p>
+    }
+    <p style="text-align: center;">
+        <b>
+        @views.html.fragments.proAddressForConsumer(company)
+        </b>
+    </p>
+
+    <p>
+        <i>@Messages("ConsumerReportDeletionEmail.team")</i>
+    </p>
+
+    <hr />
+    <ul>
+        <li>@Messages("ConsumerReportDeletionEmail.notRequested")</li>
+    </ul>
+}

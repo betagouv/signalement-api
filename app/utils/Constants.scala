@@ -114,6 +114,11 @@ object Constants {
 
     object EMAIL_INACTIVE_DGCCRF_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
 
+    object CONSUMER_THREATEN_BY_PRO   extends ActionEventValue("ConsumerThreatenByProReportDeletion")
+    object REFUND_BLACKMAIL           extends ActionEventValue("RefundBlackMailReportDeletion")
+    object RGPD_REQUEST               extends ActionEventValue("RGPDRequestReportDeletion")
+    object SOLVED_CONTRACTUAL_DISPUTE extends ActionEventValue("SolvedContractualDisputeReportDeletion")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -142,7 +147,11 @@ object Constants {
       COMMENT,
       CONSUMER_ATTACHMENTS,
       PROFESSIONAL_ATTACHMENTS,
-      CONTROL
+      CONTROL,
+      CONSUMER_THREATEN_BY_PRO,
+      REFUND_BLACKMAIL,
+      RGPD_REQUEST,
+      SOLVED_CONTRACTUAL_DISPUTE
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
