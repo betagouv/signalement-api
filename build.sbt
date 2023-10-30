@@ -36,6 +36,7 @@ routesImport ++= Seq(
   "utils.SIRET",
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",
+  "models.report.delete.ReportAdminActionType",
   "models.PublicStat",
   "controllers.IdentificationStatusQueryStringBindable",
   "controllers.WebsiteIdPathBindable",
@@ -44,6 +45,7 @@ routesImport ++= Seq(
   "controllers.SIRETPathBindable",
   "controllers.ReportFileIdPathBindable",
   "controllers.ReportResponseTypeQueryStringBindable",
+  "controllers.ReportAdminActionTypeQueryStringBindable",
   "controllers.PublicStatQueryStringBindable"
 )
 
