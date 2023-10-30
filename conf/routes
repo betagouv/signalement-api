@@ -23,6 +23,7 @@ GET           /api/stats/dgccrf-account                                 controll
 GET           /api/stats/dgccrf-active-account                          controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-subscriptions                           controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
 GET           /api/stats/dgccrf-controls                                controllers.StatisticController.dgccrfControlsCurve(ticks: Option[Int])
+GET           /api/stats/count-by-adminactions                         controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
 GET           /api/reports/count-by-departments                         controllers.StatisticController.countByDepartments()
 GET           /api/reports/count-by-subcategories                       controllers.StatisticController.reportsCountBySubcategories()
 
