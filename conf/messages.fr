@@ -97,7 +97,7 @@ ReportAckEmail.reportNotSentToCompany=Afin de garantir la sécurité de votre em
 ReportAckEmail.fraudInvestigatorsInformed=Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.
 ReportAckEmail.foreignCompanyReported=Vous avez indiqué que l''entreprise est une entreprise étrangère ({0}).
 ReportAckEmail.reportNotTransmittedToCompany=Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
-ReportAckEmail.submitToEuropeanConsumersCenter=Nous vous invitons à faire votre signalement directement auprès du Centre Européen des Consommateurs. Il vous apportera une assistance pour régler votre problème. <a href="{0}">{0}</a>
+ReportAckEmail.submitToEuropeanConsumersCenter=Vous pouvez faire appel au <a href="{0}">Centre Européen des Consommateurs France</a> pour connaître vos droits ou vous faire aider dans vos démarches amiables. <a href="{0}">{0}</a>
 ReportAckEmail.submitToAndorraCommerceAndConsumption=Nous vous invitons à faire votre signalement directement auprès du service du commerce et de la consommation d''Andorre : <a href="{0}">{0}</a>
 ReportAckEmail.fraudInvestigatorsTransferReport=Par contre les enquêteurs de la répression des fraudes vont le transférer aux autorités compétentes de ce pays.
 ReportAckEmail.submitToEconsumerGov=Nous vous invitons à faire votre signalement auprès d''econsumer.gov afin d''aider les autorités internationales à lutter contre la fraude. <a href="{0}">{0}</a>

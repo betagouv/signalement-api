@@ -94,7 +94,7 @@ ReportAckEmail.reportNotSentToCompany=To ensure the security of your employment,
 ReportAckEmail.fraudInvestigatorsInformed=However, the investigators from the fraud repression department will be informed of your report.
 ReportAckEmail.foreignCompanyReported=You have stated that the company is based outside France ({0}).
 ReportAckEmail.reportNotTransmittedToCompany=As indicated on our website, your report will not be forwarded to the company.
-ReportAckEmail.submitToEuropeanConsumersCenter=We recommend submitting your report to the European Consumer Centre, who will be able to assist you in resolving your issue. <a href="{0}">{0}</a>
+ReportAckEmail.submitToEuropeanConsumersCenter=We recommend submitting your report to the <a href="{0}">Centre Européen des Consommateurs France</a>, who will be able to assist you in resolving your issue. <a href="{0}">{0}</a>
 ReportAckEmail.submitToAndorraCommerceAndConsumption=We invite you to submit your report directly to the Andorra Commerce and Consumption Service: <a href="{0}">{0}</a>
 ReportAckEmail.fraudInvestigatorsTransferReport=However, the Fraud Control investigation team will forward your report to the country's relevant authorities.
 ReportAckEmail.submitToEconsumerGov=To help authorities fight fraud internationally, we recommend submitting your report on <a href="{0}">{0}</a>
