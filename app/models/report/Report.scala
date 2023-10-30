@@ -54,7 +54,8 @@ case class Report(
     ccrfCode: List[String] = Nil,
     expirationDate: OffsetDateTime,
     visibleToPro: Boolean,
-    lang: Option[Locale]
+    lang: Option[Locale],
+    reopenDate: Option[OffsetDateTime] = None
 ) {
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))

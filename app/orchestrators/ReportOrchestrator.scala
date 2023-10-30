@@ -11,7 +11,6 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
-import io.scalaland.chimney.dsl.TransformerOps
 import models._
 import models.company.AccessLevel
 import models.company.Address
@@ -20,9 +19,6 @@ import models.event.Event
 import models.event.Event._
 import models.report._
 import models.report.ReportWordOccurrence.StopWords
-import models.report.delete.ReportAdminAction
-import models.report.delete.ReportAdminActionType
-import models.report.delete.ReportAdminCompletionDetails
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
@@ -456,7 +452,7 @@ class ReportOrchestrator(
             .map(Some(_))
         case _ => Future(None)
       }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
     } yield reportWithNewData
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
@@ -558,7 +554,7 @@ class ReportOrchestrator(
             .map(Some(_))
         case _ => Future(None)
       }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
     } yield updatedReport
 
   def updateReportConsumer(
@@ -622,7 +618,7 @@ class ReportOrchestrator(
       Future(report)
     }
 
-  private def removeAccessToken(companyId: UUID) =
+  def removeAccessTokenWhenNoMoreReports(companyId: UUID) =
     for {
       company <- companyRepository.get(companyId)
       reports <- company
@@ -633,130 +629,6 @@ class ReportOrchestrator(
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
       ()
     }
-
-  private def fetchStrict(reportId: UUID): Future[Report] =
-    reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-
-  def reportDeletion(id: UUID, reason: ReportAdminAction, user: User): Future[Report] =
-    fetchStrict(id).flatMap { report =>
-      val reportAdminCompletionDetails =
-        report.into[ReportAdminCompletionDetails].withFieldConst(_.comment, reason.comment).transform
-
-      reason.reportAdminActionType match {
-        case ReportAdminActionType.SolvedContractualDispute =>
-          handleAdminReportCompletion(report, reportAdminCompletionDetails, user)
-        case ReportAdminActionType.ConsumerThreatenByPro =>
-          deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reportAdminCompletionDetails)
-        case ReportAdminActionType.RefundBlackMail =>
-          deleteReport(id, report, user, REFUND_BLACKMAIL, reportAdminCompletionDetails)
-        case ReportAdminActionType.RGPDRequest =>
-          deleteReport(id, report, user, RGPD_REQUEST, reportAdminCompletionDetails)
-      }
-    }
-
-  private def createAdminDeletionReportEvent(
-      maybeCompanyId: Option[UUID],
-      user: User,
-      event: ActionEventValue,
-      reportAdminCompletionDetails: ReportAdminCompletionDetails
-  ) =
-    eventRepository.create(
-      Event(
-        UUID.randomUUID(),
-        None,
-        maybeCompanyId,
-        Some(user.id),
-        OffsetDateTime.now(),
-        Constants.EventType.ADMIN,
-        event,
-        Json.toJson(reportAdminCompletionDetails)
-      )
-    )
-
-  private def createAdminCompletionReportEvent(
-      reportId: UUID,
-      maybeCompanyId: Option[UUID],
-      user: User,
-      event: ActionEventValue,
-      reportAdminCompletionDetails: ReportAdminCompletionDetails
-  ) =
-    eventRepository.create(
-      Event(
-        UUID.randomUUID(),
-        Some(reportId),
-        maybeCompanyId,
-        Some(user.id),
-        OffsetDateTime.now(),
-        Constants.EventType.ADMIN,
-        event,
-        Json.toJson(reportAdminCompletionDetails)
-      )
-    )
-
-  private def deleteReport(
-      id: UUID,
-      report: Report,
-      user: User,
-      event: ActionEventValue,
-      reportAdminCompletionDetails: ReportAdminCompletionDetails
-  ) =
-    for {
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _            <- eventRepository.deleteByReportId(id)
-      _            <- reportFileOrchestrator.removeFromReportId(id)
-      _            <- reportConsumerReviewOrchestrator.remove(id)
-      _            <- reportRepository.delete(id)
-      _            <- report.companyId.map(id => removeAccessToken(id)).getOrElse(Future(()))
-      _            <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
-      _            <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
-    } yield report
-
-  private def handleAdminReportCompletion(
-      report: Report,
-      reportAdminCompletionDetails: ReportAdminCompletionDetails,
-      user: User
-  ): Future[Report] =
-    for {
-      _ <- reportRepository.update(
-        report.id,
-        report.copy(
-          status = ReportStatus.PromesseAction
-        )
-      )
-      _ <- createAdminCompletionReportEvent(
-        report.id,
-        report.companyId,
-        user,
-        SOLVED_CONTRACTUAL_DISPUTE,
-        reportAdminCompletionDetails
-      )
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      users        <- maybeCompany.traverse(c => companiesVisibilityOrchestrator.fetchUsersByCompany(c.id))
-      _            <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, u)))
-      _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          Some(report.id),
-          report.companyId,
-          None,
-          OffsetDateTime.now(),
-          Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-        )
-      )
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          Some(report.id),
-          report.companyId,
-          Some(user.id),
-          OffsetDateTime.now(),
-          Constants.EventType.PRO,
-          Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-        )
-      )
-    } yield report
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {

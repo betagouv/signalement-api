@@ -392,6 +392,18 @@ class SignalConsoComponents(
     messagesApi
   )
 
+  val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
+    mailService,
+    reportConsumerReviewOrchestrator,
+    reportRepository,
+    reportOrchestrator,
+    reportFileOrchestrator,
+    companyRepository,
+    eventRepository,
+    companiesVisibilityOrchestrator,
+    messagesApi
+  )
+
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
       ReportsExtractActor.create(
@@ -592,6 +604,7 @@ class SignalConsoComponents(
 
   val reportController = new ReportController(
     reportOrchestrator,
+    reportAdminActionOrchestrator,
     eventsOrchestrator,
     reportRepository,
     reportFileRepository,

@@ -12,6 +12,7 @@ import models.report.ReportResponse
 import models.report.ReportWithFiles
 import models.report.delete.ReportAdminAction
 import orchestrators.EventsOrchestratorInterface
+import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
 import orchestrators.ReportWithDataOrchestrator
 import play.api.Logger
@@ -41,6 +42,7 @@ import scala.concurrent.Future
 
 class ReportController(
     reportOrchestrator: ReportOrchestrator,
+    reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
     eventsOrchestrator: EventsOrchestratorInterface,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
@@ -192,7 +194,7 @@ class ReportController(
     SecuredAction(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
       for {
         reportDeletionReason <- request.parseBody[ReportAdminAction]()
-        _ <- reportOrchestrator.reportDeletion(
+        _ <- reportAdminActionOrchestrator.reportDeletion(
           uuid,
           reportDeletionReason,
           request.identity

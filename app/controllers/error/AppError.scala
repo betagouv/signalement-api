@@ -471,4 +471,11 @@ object AppError {
     override val details: String      = s"The user role $userRole is forbidden"
     override val titleForLogs: String = "wrong_user_role"
   }
+
+  final case object CannotReopenReport extends BadRequestError {
+    override val `type`: String       = "SC-0050"
+    override val title: String        = "Cannot re open report"
+    override val details: String      = s"Impossible de réouvrir le signalement, il doit être clos et sans réponse."
+    override val titleForLogs: String = "cannot_reopen_report"
+  }
 }

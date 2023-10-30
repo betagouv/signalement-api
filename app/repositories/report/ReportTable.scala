@@ -61,6 +61,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def expirationDate           = column[OffsetDateTime]("expiration_date")
   def visibleToPro             = column[Boolean]("visible_to_pro")
   def lang                     = column[Option[Locale]]("lang")
+  def reopenDate               = column[Option[OffsetDateTime]]("reopen_date")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -107,6 +108,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         expirationDate ::
         visibleToPro ::
         lang ::
+        reopenDate ::
         HNil =>
       report.Report(
         id = id,
@@ -146,6 +148,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         expirationDate = expirationDate,
         visibleToPro = visibleToPro,
         lang = lang,
+        reopenDate = reopenDate,
         influencer = for {
           socialNetwork  <- socialNetwork
           influencerName <- influencerName
@@ -192,6 +195,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.expirationDate ::
       r.visibleToPro ::
       r.lang ::
+      r.reopenDate ::
       HNil
   )
 
@@ -234,6 +238,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       OffsetDateTime ::
       Boolean ::
       Option[Locale] ::
+      Option[OffsetDateTime] ::
       HNil
 
   def * = (
@@ -275,6 +280,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       expirationDate ::
       visibleToPro ::
       lang ::
+      reopenDate ::
       HNil
   ) <> (constructReport, extractReport)
 }
