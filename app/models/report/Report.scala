@@ -110,7 +110,8 @@ object Report {
       "vendor"           -> report.vendor,
       "tags"             -> report.tags,
       "activityCode"     -> report.companyActivityCode,
-      "expirationDate"   -> report.expirationDate
+      "expirationDate"   -> report.expirationDate,
+      "gs1ProductId"     -> report.gs1ProductId
     ) ++ ((userRole, report.contactAgreement) match {
       case (Some(UserRole.Professionnel), false) => Json.obj()
       case (_, _) =>

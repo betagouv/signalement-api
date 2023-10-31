@@ -12,6 +12,7 @@ import play.api.Logger
 import repositories.gs1.GS1ProductRepositoryInterface
 import services.GS1ServiceInterface
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -55,7 +56,7 @@ class GS1Orchestrator(
 
     } yield result
 
-  def get(gtin: String): Future[Option[GS1Product]] =
+  def getByGTIN(gtin: String): Future[Option[GS1Product]] =
     for {
       maybeExistingProductInDB <- gs1Repository.getByGTIN(gtin)
       product <- maybeExistingProductInDB match {
@@ -73,4 +74,7 @@ class GS1Orchestrator(
           } yield createdProduct
       }
     } yield product
+
+  def get(id: UUID): Future[Option[GS1Product]] =
+    gs1Repository.get(id)
 }

@@ -22,8 +22,11 @@ object GS1APIProduct {
   case class ItemOffered(
       gtin: String,
       productDescription: Option[List[GS1ProductDescription]],
-      additionalPartyIdentificationValue: Option[SIREN]
+      additionalPartyIdentificationValue: Option[SIREN],
+      netContent: Option[List[GS1Product.GS1NetContent]]
   )
+
+  implicit val readsNetContentFromGS1API: Reads[GS1Product.GS1NetContent] = Json.reads[GS1Product.GS1NetContent]
 
   implicit val readsItemOfferedFromGS1API: Reads[ItemOffered] = Json.reads[ItemOffered]
 
@@ -46,6 +49,7 @@ object GS1APIProduct {
               .map(_.value)
           }
       )
+      .withFieldComputed(_.netContent, _.itemOffered.netContent)
       .enableDefaultValues
       .transform
 }
