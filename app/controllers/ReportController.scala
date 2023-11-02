@@ -202,9 +202,8 @@ class ReportController(
       } yield NoContent
     }
 
-
   def reopenReport(uuid: UUID) =
-    SecuredAction(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+    SecuredAction(WithPermission(UserPermission.deleteReport)).async(parse.empty) { request =>
       for {
         _ <- reportAdminActionOrchestrator.reportReOpening(
           uuid,
