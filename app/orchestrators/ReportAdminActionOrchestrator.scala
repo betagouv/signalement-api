@@ -53,8 +53,8 @@ class ReportAdminActionOrchestrator(
     for {
       report <- fetchStrict(reportId)
       isReopenable = report.status === ReportStatus.NonConsulte || report.status === ReportStatus.ConsulteIgnore
-      _ <- if (isReopenable) Future(()) else throw CannotReopenReport
-      _ <- reOpenReport(report)
+      _             <- if (isReopenable) Future(()) else throw CannotReopenReport
+      updatedReport <- reOpenReport(report)
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -66,11 +66,11 @@ class ReportAdminActionOrchestrator(
           REPORT_REOPENED_BY_ADMIN
         )
       )
-      (_, users) <- getCompanyWithUsers(report)
-      _          <- users.traverse(u => mailService.send(ProReportReOpeningNotification(u.map(_.email), report)))
+      (_, users) <- getCompanyWithUsers(updatedReport)
+      _          <- users.traverse(u => mailService.send(ProReportReOpeningNotification(u.map(_.email), updatedReport)))
     } yield ()
 
-  private def reOpenReport(report: Report) = {
+  private def reOpenReport(report: Report): Future[Report] = {
     val now = OffsetDateTime.now()
     val reOpenedReport = report.copy(
       expirationDate = now.plusDays(3),
