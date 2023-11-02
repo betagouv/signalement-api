@@ -202,6 +202,17 @@ class ReportController(
       } yield NoContent
     }
 
+
+  def reopenReport(uuid: UUID) =
+    SecuredAction(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+      for {
+        _ <- reportAdminActionOrchestrator.reportReOpening(
+          uuid,
+          request.identity
+        )
+      } yield NoContent
+    }
+
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
       for {
