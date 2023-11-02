@@ -130,6 +130,15 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
   }
 
+  final case class ProReportReOpeningNotification(userList: List[EmailAddress], report: Report)
+      extends ProFilteredEmailSingleReport {
+    override val subject: String                = EmailSubjects.REPORT_REOPENING
+    override val recipients: List[EmailAddress] = userList.toList
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
+  }
+
   final case class ProReportsUnreadReminder(
       recipients: List[EmailAddress],
       reports: List[Report],

@@ -23,7 +23,7 @@ GET           /api/stats/dgccrf-account                                 controll
 GET           /api/stats/dgccrf-active-account                          controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-subscriptions                           controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
 GET           /api/stats/dgccrf-controls                                controllers.StatisticController.dgccrfControlsCurve(ticks: Option[Int])
-GET           /api/stats/count-by-adminactions                         controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
+GET           /api/stats/count-by-adminactions                          controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
 GET           /api/reports/count-by-departments                         controllers.StatisticController.countByDepartments()
 GET           /api/reports/count-by-subcategories                       controllers.StatisticController.reportsCountBySubcategories()
 
@@ -39,6 +39,7 @@ POST          /api/reports/files                                        controll
 
 GET           /api/reports/download                                     controllers.ReportController.reportsAsPDF()
 GET           /api/reports/cloudword/:companyId                         controllers.ReportController.cloudWord(companyId: java.util.UUID)
+POST          /api/reports/:uuid/reopen                                 controllers.ReportController.reopenReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid                                        controllers.ReportController.getReport(uuid: java.util.UUID)
 DELETE        /api/reports/:uuid                                        controllers.ReportController.deleteReport(uuid: java.util.UUID)
 
@@ -136,7 +137,7 @@ GET           /api/companies/to-activate                                controll
 GET           /api/companies/inactive-companies                         controllers.CompanyController.inactiveCompanies()
 GET           /api/companies/hosts/:companyId                           controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 POST          /api/companies/activation-document                        controllers.CompanyController.getActivationDocument()
-POST          /api/companies/follow-up-document                        controllers.CompanyController.getFollowUpDocument()
+POST          /api/companies/follow-up-document                         controllers.CompanyController.getFollowUpDocument()
 POST          /api/companies/companies-posted                           controllers.CompanyController.confirmContactByPostOnCompanyList()
 POST          /api/companies/follow-up-posted                           controllers.CompanyController.confirmFollowUp()
 GET           /api/companies/search-url                                 controllers.CompanyController.searchCompanyByWebsite(url: String)

@@ -119,6 +119,8 @@ object Constants {
     object RGPD_REQUEST               extends ActionEventValue("RGPDRequestReportDeletion")
     object SOLVED_CONTRACTUAL_DISPUTE extends ActionEventValue("SolvedContractualDisputeReportDeletion")
 
+    object REPORT_REOPENED_BY_ADMIN extends ActionEventValue("ReportReOpenedByAdmin")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -151,7 +153,8 @@ object Constants {
       CONSUMER_THREATEN_BY_PRO,
       REFUND_BLACKMAIL,
       RGPD_REQUEST,
-      SOLVED_CONTRACTUAL_DISPUTE
+      SOLVED_CONTRACTUAL_DISPUTE,
+      REPORT_REOPENED_BY_ADMIN
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =

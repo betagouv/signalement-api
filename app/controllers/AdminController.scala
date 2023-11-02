@@ -34,19 +34,20 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import services.Email.AgentAccessLink
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
-import services.Email.AgentAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
 import services.Email.InactiveDgccrfAccount
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
+import services.Email.ProReportReOpeningNotification
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
@@ -251,6 +252,7 @@ class AdminController(
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
+    "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
     "pro.reports_transmitted_reminder" -> (recipient => {
       val report1 = genReport
       val report2 = genReport.copy(companyId = report1.companyId)

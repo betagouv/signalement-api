@@ -63,6 +63,7 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.visibleToPro, false)
         .withFieldConst(_.status, ReportStatus.LanceurAlerte)
         .withFieldConst(_.influencer, None)
+        .withFieldConst(_.reopenDate, None)
         .transform
 
       res shouldEqual expectedReport
