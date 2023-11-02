@@ -14,6 +14,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
+import services.ConsumerEmail
 import services.MailService
 import tasks.getTodayAtStartOfDayParis
 import tasks.scheduleTask
@@ -115,7 +116,8 @@ class ReportClosureTask(
         )
       )
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      _            <- mailService.send(email(report, maybeCompany, messagesApi))
+      consumerEmail = email(report, maybeCompany, messagesApi)
+      _ <- eventuallySendConsumerEmail(report, consumerEmail)
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -128,6 +130,19 @@ class ReportClosureTask(
         )
       )
     } yield ()
+  }
+
+  private def eventuallySendConsumerEmail(report: Report, email: ConsumerEmail) = {
+    val hasReportBeenReOpened = report.reopenDate.isDefined
+    // We don't want the consumer to be notified when a pro is requesting a report reopening.
+    // The consumer will only be notified when the pro will reply.
+    if (!hasReportBeenReOpened) {
+      mailService.send(email)
+    } else {
+      logger.debug("Report has been re-opened, it is not necessary to inform the consumer")
+      Future.successful(())
+    }
+
   }
 
 }

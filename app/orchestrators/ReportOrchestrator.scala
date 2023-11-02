@@ -643,31 +643,39 @@ class ReportOrchestrator(
           Constants.ActionEvent.REPORT_READING_BY_PRO
         )
       )
+      isReportAlreadyClosed = ReportStatus.isFinal(report.status)
       updatedReport <-
-        if (ReportStatus.isFinal(report.status)) {
+        if (isReportAlreadyClosed) {
           Future(report)
         } else {
-          notifyConsumerOfReportTransmission(report)
+          updateReportAndEventuallyNotifyConsumer(report)
         }
     } yield updatedReport
 
-  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
+  private def updateReportAndEventuallyNotifyConsumer(report: Report): Future[Report] =
     for {
-      newReport    <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _            <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
-      _ <- eventRepository.create(
-        Event(
-          id = UUID.randomUUID(),
-          reportId = Some(report.id),
-          companyId = report.companyId,
-          userId = None,
-          creationDate = OffsetDateTime.now(),
-          eventType = Constants.EventType.CONSO,
-          action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
-        )
-      )
+      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
+      hasReportBeenReopened = report.reopenDate.isDefined
+      // We don't want the consumer to be notified when a pro is requesting a report reopening.
+      // The consumer will only be notified when the pro will reply.
+      _ <- if (!hasReportBeenReopened) notifyConsumer(report) else Future.successful(())
     } yield newReport
+
+  private def notifyConsumer(report: Report) = for {
+    maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+    _            <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
+    _ <- eventRepository.create(
+      Event(
+        id = UUID.randomUUID(),
+        reportId = Some(report.id),
+        companyId = report.companyId,
+        userId = None,
+        creationDate = OffsetDateTime.now(),
+        eventType = Constants.EventType.CONSO,
+        action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
+      )
+    )
+  } yield ()
 
   private def sendMailsAfterProAcknowledgment(
       report: Report,
@@ -714,7 +722,7 @@ class ReportOrchestrator(
     } yield {
       newEvent.foreach(event =>
         event.action match {
-          case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get)
+          case REPORT_READING_BY_PRO => updateReportAndEventuallyNotifyConsumer(report.get)
           case _                     => ()
         }
       )

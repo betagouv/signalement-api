@@ -19,11 +19,11 @@
 
 
     <p>
-        <b>Vous avez maintenant jusqu'au @report.expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss")) pour y répondre. Passé ce délai, le signalement sera définitivement clôturé.</b>
+        <b>Vous avez maintenant jusqu'au @report.expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) pour y répondre. Passé ce délai, le signalement sera définitivement clôturé.</b>
     </p>
 
     <p>
-        Pour y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.login">
+        Pour y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.url(s"/suivi-des-signalements/report/${report.id.toString}")">
         Espace Professionnel</a> à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
         Allez dans le détail du signalement et cliquez sur le bouton "Répondre à ce signalement".
     </p>
