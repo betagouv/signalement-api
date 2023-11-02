@@ -1,0 +1,42 @@
+@import models.report._
+@import utils.FrontRoute
+@import models.report.Report
+
+@(report: Report)(implicit frontRoute: FrontRoute)
+
+@views.html.mails.layout(s"Réouverture signalement en attente de réponse") {
+    <p>
+        Bonjour,
+    </p>
+
+    <p>
+        Suite à votre demande, nous avons exceptionnellement réouvert le signalement datant du @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant votre entreprise :
+    </p>
+
+    <p style="text-align: center;">
+    @views.html.fragments.addressFromReport(report, includeSiret = true)
+    </p>
+
+
+    <p>
+        <b>Vous avez maintenant jusqu'au @report.expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss")) pour y répondre. Passé ce délai, le signalement sera définitivement clôturé.</b>
+    </p>
+
+    <p>
+        Pour y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.login">
+        Espace Professionnel</a> à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
+        Allez dans le détail du signalement et cliquez sur le bouton "Répondre à ce signalement".
+    </p>
+
+    <p>
+        Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser directement depuis la page de connexion.
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+
+    @views.html.fragments.linkNotificationsManager()
+}

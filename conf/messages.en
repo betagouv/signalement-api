@@ -24,6 +24,7 @@ ConsumerReportAckProEmail.greeting=Hello {0} {1},
 ConsumerReportAckProEmail.reportDescription=You submitted a report on {0} about a company:
 ConsumerReportAckProEmail.companySiret=SIRET: <b>{0}</b>
 ConsumerReportAckProEmail.responseHeader=The company has responded to your report.
+ConsumerReportAckProEmail.responseHeaderOnReopen=The company did not wish to respond to your report within the allotted time. Exceptionally, we have reopened your report so that the company can respond to you.
 ConsumerReportAckProEmail.responseContent=The response is as follows:
 ConsumerReportAckProEmail.satisfactionQuestion=Are you happy with this response?
 ConsumerReportAckProEmail.clickYourChoice=Click on your choice:

@@ -24,6 +24,7 @@ ConsumerReportAckProEmail.greeting=Bonjour {0} {1},
 ConsumerReportAckProEmail.reportDescription=Vous avez fait un signalement le {0} concernant une entreprise :
 ConsumerReportAckProEmail.companySiret=SIRET : <b>{0}</b>
 ConsumerReportAckProEmail.responseHeader=L''entreprise a répondu à votre signalement.
+ConsumerReportAckProEmail.responseHeaderOnReopen=L'entreprise n'a pas souhaité répondre à votre signalement dans le délai qui lui était imparti. Exceptionnellement, nous avons réouvert votre signalement pour que l’entreprise puisse vous répondre.
 ConsumerReportAckProEmail.responseContent=Voici sa réponse :
 ConsumerReportAckProEmail.satisfactionQuestion=Êtes-vous satisfait de cette réponse ?
 ConsumerReportAckProEmail.clickYourChoice=Cliquez sur votre choix :

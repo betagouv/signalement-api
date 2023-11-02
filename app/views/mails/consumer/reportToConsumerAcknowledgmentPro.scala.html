@@ -24,9 +24,16 @@
     @views.html.fragments.proAddressForConsumer(maybeCompany)
     </p>
 
-    <p>
-        <b>@Messages("ConsumerReportAckProEmail.responseHeader")</b>
-    </p>
+    @if(report.reopenDate.isDefined) {
+        <p >
+            @Messages("ConsumerReportAckProEmail.responseHeader")
+        </p>
+    } else {
+        <p>
+            <b>@Messages("ConsumerReportAckProEmail.responseHeader")</b>
+        </p>
+    }
+
 
     <p>@Messages("ConsumerReportAckProEmail.responseContent")</p>
 
