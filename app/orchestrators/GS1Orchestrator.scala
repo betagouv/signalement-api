@@ -5,10 +5,10 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Scheduler
 import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.util.Timeout
-import models.gs1.GS1APIProduct
 import models.gs1.GS1Product
 import models.gs1.OAuthAccessToken
 import play.api.Logger
+import play.api.libs.json.JsValue
 import repositories.gs1.GS1ProductRepositoryInterface
 import services.GS1ServiceInterface
 
@@ -36,7 +36,7 @@ class GS1Orchestrator(
       case GS1AuthTokenActor.TokenError(error) => Future.failed(error)
     }
 
-  private def getFromAPI(gtin: String): Future[Option[GS1APIProduct]] =
+  private def getFromAPI(gtin: String): Future[Option[JsValue]] =
     for {
       accessToken <- getToken(GS1AuthTokenActor.GetToken.apply)
       firstTry    <- gs1Service.getProductByGTIN(accessToken, gtin)
@@ -68,7 +68,7 @@ class GS1Orchestrator(
           for {
             maybeProductFromAPI <- getFromAPI(gtin)
             createdProduct <- maybeProductFromAPI match {
-              case Some(product) => gs1Repository.create(GS1APIProduct.toDomain(product)).map(Some(_))
+              case Some(product) => gs1Repository.create(GS1Product.fromAPI(gtin, product)).map(Some(_))
               case None          => Future.successful(None)
             }
           } yield createdProduct

@@ -1,9 +1,9 @@
 package services
 
 import config.GS1Configuration
-import models.gs1.GS1APIProduct
 import models.gs1.OAuthAccessToken
 import play.api.Logger
+import play.api.libs.json.JsValue
 import services.GS1Service.GS1Error
 import sttp.capabilities
 import sttp.client3.playJson.asJson
@@ -22,7 +22,7 @@ trait GS1ServiceInterface {
   def getProductByGTIN(
       accessToken: OAuthAccessToken,
       gtin: String
-  ): Future[Either[GS1Service.TokenExpired.type, Option[GS1APIProduct]]]
+  ): Future[Either[GS1Service.TokenExpired.type, Option[JsValue]]]
 }
 
 class GS1Service(gs1Configuration: GS1Configuration)(implicit ec: ExecutionContext) extends GS1ServiceInterface {
@@ -66,7 +66,7 @@ class GS1Service(gs1Configuration: GS1Configuration)(implicit ec: ExecutionConte
   override def getProductByGTIN(
       accessToken: OAuthAccessToken,
       gtin: String
-  ): Future[Either[GS1Service.TokenExpired.type, Option[GS1APIProduct]]] = {
+  ): Future[Either[GS1Service.TokenExpired.type, Option[JsValue]]] = {
     val url = uri"$BaseUrl/products/$gtin?api-version=v2"
 
     val request = basicRequest
@@ -75,7 +75,7 @@ class GS1Service(gs1Configuration: GS1Configuration)(implicit ec: ExecutionConte
         Header("Ocp-Apim-Subscription-Key", gs1Configuration.subscriptionKey)
       )
       .get(url)
-      .response(asJson[GS1APIProduct])
+      .response(asJson[JsValue])
 
     request
       .send(backend)
