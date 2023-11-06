@@ -92,8 +92,8 @@ class ReportAdminActionOrchestrator(
           deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reportAdminCompletionDetails)
         case ReportAdminActionType.RefundBlackMail =>
           deleteReport(id, report, user, REFUND_BLACKMAIL, reportAdminCompletionDetails)
-        case ReportAdminActionType.RGPDRequest =>
-          deleteReport(id, report, user, RGPD_REQUEST, reportAdminCompletionDetails)
+        case ReportAdminActionType.OtherReasonDeleteRequest =>
+          deleteReport(id, report, user, OTHER_REASON_DELETE_REQUEST, reportAdminCompletionDetails)
       }
     }
 
