@@ -114,10 +114,10 @@ object Constants {
 
     object EMAIL_INACTIVE_DGCCRF_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
 
-    object CONSUMER_THREATEN_BY_PRO   extends ActionEventValue("ConsumerThreatenByProReportDeletion")
-    object REFUND_BLACKMAIL           extends ActionEventValue("RefundBlackMailReportDeletion")
-    object RGPD_REQUEST               extends ActionEventValue("RGPDRequestReportDeletion")
-    object SOLVED_CONTRACTUAL_DISPUTE extends ActionEventValue("SolvedContractualDisputeReportDeletion")
+    object CONSUMER_THREATEN_BY_PRO    extends ActionEventValue("ConsumerThreatenByProReportDeletion")
+    object REFUND_BLACKMAIL            extends ActionEventValue("RefundBlackMailReportDeletion")
+    object OTHER_REASON_DELETE_REQUEST extends ActionEventValue("OtherReasonDeleteRequestReportDeletion")
+    object SOLVED_CONTRACTUAL_DISPUTE  extends ActionEventValue("SolvedContractualDisputeReportDeletion")
 
     object REPORT_REOPENED_BY_ADMIN extends ActionEventValue("ReportReOpenedByAdmin")
 
@@ -152,7 +152,7 @@ object Constants {
       CONTROL,
       CONSUMER_THREATEN_BY_PRO,
       REFUND_BLACKMAIL,
-      RGPD_REQUEST,
+      OTHER_REASON_DELETE_REQUEST,
       SOLVED_CONTRACTUAL_DISPUTE,
       REPORT_REOPENED_BY_ADMIN
     )

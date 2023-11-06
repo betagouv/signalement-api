@@ -19,7 +19,7 @@ import models.report.ReportFileOrigin
 import models.report.ReportStatus.PromesseAction
 import models.report.delete.ReportAdminAction
 import models.report.delete.ReportAdminActionType.ConsumerThreatenByPro
-import models.report.delete.ReportAdminActionType.RGPDRequest
+import models.report.delete.ReportAdminActionType.OtherReasonDeleteRequest
 import models.report.delete.ReportAdminActionType.RefundBlackMail
 import models.report.delete.ReportAdminActionType.SolvedContractualDispute
 import models.report.reportfile.ReportFileId
@@ -44,7 +44,7 @@ import services.S3ServiceInterface
 import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REFUND_BLACKMAIL
-import utils.Constants.ActionEvent.RGPD_REQUEST
+import utils.Constants.ActionEvent.OTHER_REASON_DELETE_REQUEST
 import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
 import utils.Constants.EventType
 import utils.EmailAddress
@@ -208,7 +208,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         List(
           (ConsumerThreatenByPro, CONSUMER_THREATEN_BY_PRO),
           (RefundBlackMail, REFUND_BLACKMAIL),
-          (RGPDRequest, RGPD_REQUEST)
+          (OtherReasonDeleteRequest, OTHER_REASON_DELETE_REQUEST)
         )
       ) { case (actionType, expectedActionEvent) =>
         val testEnv = application()

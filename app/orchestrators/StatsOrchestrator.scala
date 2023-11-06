@@ -76,7 +76,7 @@ class StatsOrchestrator(
       case ReportAdminActionType.SolvedContractualDispute => SOLVED_CONTRACTUAL_DISPUTE
       case ReportAdminActionType.ConsumerThreatenByPro    => CONSUMER_THREATEN_BY_PRO
       case ReportAdminActionType.RefundBlackMail          => REFUND_BLACKMAIL
-      case ReportAdminActionType.RGPDRequest              => RGPD_REQUEST
+      case ReportAdminActionType.OtherReasonDeleteRequest => OTHER_REASON_DELETE_REQUEST
     }
     eventRepository.fetchAdminActionEvents(companyId, action)
 
