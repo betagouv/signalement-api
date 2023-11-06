@@ -19,7 +19,7 @@
 
 
     <p>
-        <b>Vous avez maintenant jusqu'au @report.expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) pour y répondre. Passé ce délai, le signalement sera définitivement clôturé.</b>
+        <b>Vous avez maintenant jusqu'au @report.expirationDate.toLocalDateTime.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) pour y répondre. Passé ce délai, le signalement sera définitivement clôturé.</b>
     </p>
 
     <p>

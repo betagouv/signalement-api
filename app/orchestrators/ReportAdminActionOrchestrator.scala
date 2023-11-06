@@ -8,7 +8,7 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models._
 import models.company.Company
 import models.event.Event
-import models.report.ReportStatus.TraitementEnCours
+import models.report.ReportStatus.Transmis
 import models.report._
 import models.report.delete.ReportAdminAction
 import models.report.delete.ReportAdminActionType
@@ -74,7 +74,7 @@ class ReportAdminActionOrchestrator(
     val now = OffsetDateTime.now()
     val reOpenedReport = report.copy(
       expirationDate = now.plusDays(3),
-      status = TraitementEnCours,
+      status = Transmis,
       reopenDate = Some(now)
     )
     reportRepository.update(report.id, reOpenedReport)
