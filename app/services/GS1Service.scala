@@ -1,7 +1,7 @@
 package services
 
 import config.GS1Configuration
-import models.gs1.OAuthAccessToken
+import models.barcode.gs1.OAuthAccessToken
 import play.api.Logger
 import play.api.libs.json.JsValue
 import services.GS1Service.GS1Error

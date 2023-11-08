@@ -18,7 +18,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 import akka.actor.typed.scaladsl.adapter._
-import models.gs1.OAuthAccessToken
+import models.barcode.gs1.OAuthAccessToken
 import play.api.Logger
 
 object GS1AuthTokenActor {

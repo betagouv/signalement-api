@@ -1,4 +1,4 @@
-package models.gs1
+package models.barcode.gs1
 
 import play.api.libs.json.JsValue
 import play.api.libs.json.Reads

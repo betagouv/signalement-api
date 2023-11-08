@@ -201,7 +201,7 @@ POST          /api/extract-siret                                        controll
 
 POST          /api/import/companies                                     controllers.ImportController.importUsers()
 
-GET           /api/gs1/gtin/:gtin                                       controllers.GS1Controller.getProductByGTIN(gtin)
-GET           /api/gs1/:id                                              controllers.GS1Controller.getById(id: java.util.UUID)
+GET           /api/barcode/gtin/:gtin                                   controllers.BarcodeController.getProductByGTIN(gtin)
+GET           /api/barcode/:id                                          controllers.BarcodeController.getById(id: java.util.UUID)
 
 GET           /assets/*file                                             controllers.Assets.versioned(path="/public", file: Asset)

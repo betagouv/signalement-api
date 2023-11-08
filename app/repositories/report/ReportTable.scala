@@ -62,7 +62,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def visibleToPro             = column[Boolean]("visible_to_pro")
   def lang                     = column[Option[Locale]]("lang")
   def reopenDate               = column[Option[OffsetDateTime]]("reopen_date")
-  def gs1ProductId             = column[Option[String]]("gs1_product_id")
+  def barcodeProductId         = column[Option[UUID]]("barcode_product_id")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -110,7 +110,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         visibleToPro ::
         lang ::
         reopenDate ::
-      gs1ProductId ::
+      barcodeProductId ::
         HNil =>
       report.Report(
         id = id,
@@ -151,7 +151,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         visibleToPro = visibleToPro,
         lang = lang,
         reopenDate = reopenDate,
-        gs1ProductId = gs1ProductId,
+        barcodeProductId = barcodeProductId,
         influencer = for {
           socialNetwork  <- socialNetwork
           influencerName <- influencerName
@@ -199,7 +199,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.visibleToPro ::
       r.lang ::
       r.reopenDate ::
-      r.gs1ProductId ::
+      r.barcodeProductId ::
       HNil
   )
 
@@ -243,7 +243,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Boolean ::
       Option[Locale] ::
       Option[OffsetDateTime] ::
-      Option[String] ::
+      Option[UUID] ::
       HNil
 
   def * = (
@@ -286,7 +286,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       visibleToPro ::
       lang ::
       reopenDate ::
-      gs1ProductId ::
+      barcodeProductId ::
       HNil
   ) <> (constructReport, extractReport)
 }

@@ -66,7 +66,7 @@ import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
-import repositories.gs1.GS1ProductRepository
+import repositories.barcode.BarcodeProductRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -685,15 +685,17 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val gs1ProductRepository = new GS1ProductRepository(dbConfig)
-  val gs1Service           = new GS1Service(applicationConfiguration.gs1)
+  val openFoodFactsService     = new OpenFoodFactsService
+  val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
+  val gs1Service               = new GS1Service(applicationConfiguration.gs1)
   val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
     GS1AuthTokenActor(gs1Service),
     "gs1-auth-token-actor"
   )
   implicit val timeout: Timeout = 30.seconds
-  val gs1Orchestrator           = new GS1Orchestrator(gs1AuthTokenActor, gs1Service, gs1ProductRepository)
-  val gs1Controller             = new GS1Controller(gs1Orchestrator, silhouette, controllerComponents)
+  val barcodeOrchestrator =
+    new BarcodeOrchestrator(gs1AuthTokenActor, gs1Service, openFoodFactsService, barcodeProductRepository)
+  val barcodeController = new BarcodeController(barcodeOrchestrator, silhouette, controllerComponents)
 
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
@@ -731,7 +733,7 @@ class SignalConsoComponents(
       signalConsoReviewController,
       siretExtractorController,
       importController,
-      gs1Controller,
+      barcodeController,
       assets
     )
 
