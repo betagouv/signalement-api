@@ -34,6 +34,7 @@ class AuthAttemptRepository(
     .run(
       table
         .filter(_.login === login)
+        .sortBy(_.timestamp.desc)
         .result
     )
 

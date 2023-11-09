@@ -1,11 +1,13 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.UserRole
 import orchestrators.AuthOrchestrator
 import play.api._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
 import models.auth.PasswordChange
 import models.auth.UserCredentials
 import models.auth.UserLogin
@@ -44,6 +46,12 @@ class AuthController(
 
   def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>
     Future.successful(Ok(Json.toJson(request.identity)))
+  }
+
+  def listAuthAttempts(userId: java.util.UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { _ =>
+    authOrchestrator
+      .listAuthenticationAttempts(userId)
+      .map(authAttempts => Ok(Json.toJson(authAttempts)))
   }
 
   def forgotPassword: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>

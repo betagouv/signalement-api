@@ -225,6 +225,12 @@ class AuthOrchestrator(
     _ = logger.debug(s"Auth attempts count check successful")
   } yield ()
 
+  def listAuthenticationAttempts(userId: java.util.UUID): Future[Seq[AuthAttempt]] =
+    userRepository
+      .get(userId)
+      .flatMap(_.liftTo[Future](UserNotFound(userId.toString)))
+      .flatMap(u => authAttemptRepository.listAuthAttempts(u.email.value))
+
 }
 
 object AuthOrchestrator {
