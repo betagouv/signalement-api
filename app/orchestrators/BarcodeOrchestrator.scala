@@ -11,6 +11,7 @@ import play.api.Logger
 import play.api.libs.json.JsValue
 import repositories.barcode.BarcodeProductRepositoryInterface
 import services.GS1ServiceInterface
+import services.OpenBeautyFactsServiceInterface
 import services.OpenFoodFactsServiceInterface
 
 import java.util.UUID
@@ -21,6 +22,7 @@ class BarcodeOrchestrator(
     gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command],
     gs1Service: GS1ServiceInterface,
     openFoodFactsService: OpenFoodFactsServiceInterface,
+    openBeautyFactsService: OpenBeautyFactsServiceInterface,
     barcodeRepository: BarcodeProductRepositoryInterface
 )(implicit
     val executionContext: ExecutionContext,
@@ -70,6 +72,18 @@ class BarcodeOrchestrator(
         Future.successful(None)
     }
 
+  private def getFromOpenBeautyFactsAPI(gtin: String, gs1Product: Option[JsValue]): Future[Option[JsValue]] =
+    gs1Product match {
+      case Some(gs1Product) =>
+        if ((gs1Product \ "itemOffered" \ "productDescription").isDefined) {
+          Future.successful(None)
+        } else {
+          openBeautyFactsService.getProductByBarcode(gtin)
+        }
+      case None =>
+        Future.successful(None)
+    }
+
   def getByGTIN(gtin: String): Future[Option[BarcodeProduct]] =
     for {
       maybeExistingProductInDB <- barcodeRepository.getByGTIN(gtin)
@@ -80,12 +94,20 @@ class BarcodeOrchestrator(
         case None =>
           logger.debug(s"Product with gtin $gtin not in DB, fetching from GS1 API")
           for {
-            maybeProductFromAPI           <- getFromGS1API(gtin)
-            maybeProductFromOpenFoodFacts <- getFromOpenFoodFactsAPI(gtin, maybeProductFromAPI)
+            maybeProductFromAPI             <- getFromGS1API(gtin)
+            maybeProductFromOpenFoodFacts   <- getFromOpenFoodFactsAPI(gtin, maybeProductFromAPI)
+            maybeProductFromOpenBeautyFacts <- getFromOpenBeautyFactsAPI(gtin, maybeProductFromAPI)
             createdProduct <- maybeProductFromAPI match {
               case Some(product) =>
                 barcodeRepository
-                  .create(BarcodeProduct.fromAPI(gtin, product, maybeProductFromOpenFoodFacts))
+                  .create(
+                    BarcodeProduct(
+                      gtin = gtin,
+                      gs1Product = product,
+                      openFoodFactsProduct = maybeProductFromOpenFoodFacts,
+                      openBeautyFactsProduct = maybeProductFromOpenBeautyFacts
+                    )
+                  )
                   .map(Some(_))
               case None => Future.successful(None)
             }

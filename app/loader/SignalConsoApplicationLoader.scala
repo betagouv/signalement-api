@@ -686,6 +686,7 @@ class SignalConsoComponents(
   )
 
   val openFoodFactsService     = new OpenFoodFactsService
+  val openBeautyFactsService   = new OpenBeautyFactsService
   val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
   val gs1Service               = new GS1Service(applicationConfiguration.gs1)
   val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
@@ -694,7 +695,13 @@ class SignalConsoComponents(
   )
   implicit val timeout: Timeout = 30.seconds
   val barcodeOrchestrator =
-    new BarcodeOrchestrator(gs1AuthTokenActor, gs1Service, openFoodFactsService, barcodeProductRepository)
+    new BarcodeOrchestrator(
+      gs1AuthTokenActor,
+      gs1Service,
+      openFoodFactsService,
+      openBeautyFactsService,
+      barcodeProductRepository
+    )
   val barcodeController = new BarcodeController(barcodeOrchestrator, silhouette, controllerComponents)
 
   io.sentry.Sentry.captureException(

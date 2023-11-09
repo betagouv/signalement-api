@@ -12,15 +12,15 @@ import sttp.client3.playJson.asJson
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-trait OpenFoodFactsServiceInterface {
+trait OpenBeautyFactsServiceInterface {
   def getProductByBarcode(barcode: String): Future[Option[JsValue]]
 }
 
-class OpenFoodFactsService(implicit ec: ExecutionContext) extends OpenFoodFactsServiceInterface {
+class OpenBeautyFactsService(implicit ec: ExecutionContext) extends OpenBeautyFactsServiceInterface {
   val logger: Logger                                                = Logger(this.getClass)
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  val BaseUrl = "https://world.openfoodfacts.org/api/v3/product"
+  val BaseUrl = "https://world.openbeautyfacts.org/api/v3/product"
 
   override def getProductByBarcode(barcode: String): Future[Option[JsValue]] = {
     val url = uri"$BaseUrl/$barcode"
@@ -41,7 +41,7 @@ class OpenFoodFactsService(implicit ec: ExecutionContext) extends OpenFoodFactsS
               Future.successful(None)
           }
         } else {
-          logger.warn(s"Error while calling Open Food Facts: ${response.code}")
+          logger.warn(s"Error while calling Open Beauty Facts: ${response.code}")
           Future.successful(None)
         }
       }
