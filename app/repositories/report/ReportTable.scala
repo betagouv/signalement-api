@@ -110,7 +110,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         visibleToPro ::
         lang ::
         reopenDate ::
-      barcodeProductId ::
+        barcodeProductId ::
         HNil =>
       report.Report(
         id = id,
