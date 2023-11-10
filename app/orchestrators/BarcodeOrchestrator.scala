@@ -60,30 +60,6 @@ class BarcodeOrchestrator(
 
     } yield result
 
-  private def getFromOpenFoodFactsAPI(gtin: String, gs1Product: Option[JsValue]): Future[Option[JsValue]] =
-    gs1Product match {
-      case Some(gs1Product) =>
-        if ((gs1Product \ "itemOffered" \ "productDescription").isDefined) {
-          Future.successful(None)
-        } else {
-          openFoodFactsService.getProductByBarcode(gtin)
-        }
-      case None =>
-        Future.successful(None)
-    }
-
-  private def getFromOpenBeautyFactsAPI(gtin: String, gs1Product: Option[JsValue]): Future[Option[JsValue]] =
-    gs1Product match {
-      case Some(gs1Product) =>
-        if ((gs1Product \ "itemOffered" \ "productDescription").isDefined) {
-          Future.successful(None)
-        } else {
-          openBeautyFactsService.getProductByBarcode(gtin)
-        }
-      case None =>
-        Future.successful(None)
-    }
-
   def getByGTIN(gtin: String): Future[Option[BarcodeProduct]] =
     for {
       maybeExistingProductInDB <- barcodeRepository.getByGTIN(gtin)
@@ -95,8 +71,8 @@ class BarcodeOrchestrator(
           logger.debug(s"Product with gtin $gtin not in DB, fetching from GS1 API")
           for {
             maybeProductFromAPI             <- getFromGS1API(gtin)
-            maybeProductFromOpenFoodFacts   <- getFromOpenFoodFactsAPI(gtin, maybeProductFromAPI)
-            maybeProductFromOpenBeautyFacts <- getFromOpenBeautyFactsAPI(gtin, maybeProductFromAPI)
+            maybeProductFromOpenFoodFacts   <- openFoodFactsService.getProductByBarcode(gtin)
+            maybeProductFromOpenBeautyFacts <- openBeautyFactsService.getProductByBarcode(gtin)
             createdProduct <- maybeProductFromAPI match {
               case Some(product) =>
                 barcodeRepository

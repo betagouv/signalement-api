@@ -20,11 +20,13 @@ class BarcodeController(
   def getProductByGTIN(gtin: String) = UnsecuredAction.async { _ =>
     gs11Orchestrator
       .getByGTIN(gtin)
-      .map(_.map(r => Ok(Json.toJson(r)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
+      .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
   }
 
   def getById(id: UUID) = SecuredAction.async { _ =>
-    gs11Orchestrator.get(id).map(_.map(r => Ok(Json.toJson(r)(BarcodeProduct.writesToDashboard))).getOrElse(NotFound))
+    gs11Orchestrator
+      .get(id)
+      .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToDashboard))).getOrElse(NotFound))
   }
 
 }

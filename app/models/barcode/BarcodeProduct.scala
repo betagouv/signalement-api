@@ -32,16 +32,21 @@ object BarcodeProduct {
   private def extractProductNameFromOpenXFacts(product: JsValue): Option[String] =
     (product \ "product" \ "product_name_fr")
       .asOpt[String]
-      .orElse((product \ "product" \ "product_name").asOpt[String])
+      .filter(_.nonEmpty)
+      .orElse((product \ "product" \ "product_name").asOpt[String].filter(_.nonEmpty))
 
   private def extractBrandNameFromOpenXFacts(product: JsValue): Option[String] =
     (product \ "product" \ "brands").asOpt[String]
 
   private def extractPackagingFromOpenXFacts(product: JsValue): Option[String] =
-    (product \ "product" \ "packaging").asOpt[String]
+    (product \ "product" \ "packaging_text_fr")
+      .asOpt[String]
+      .filter(_.nonEmpty)
+      .orElse((product \ "product" \ "packaging_text").asOpt[String].filter(_.nonEmpty))
+      .orElse((product \ "product" \ "packaging").asOpt[String].filter(_.nonEmpty))
 
   private def extractEMBFromOpenXFacts(product: JsValue): Option[String] =
-    (product \ "product" \ "emb_codes").asOpt[String]
+    (product \ "product" \ "emb_codes").asOpt[String].filter(_.nonEmpty)
 
   private def extractProductName(product: BarcodeProduct): Option[String] =
     product.openFoodFactsProduct
