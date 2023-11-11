@@ -6,7 +6,6 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -32,11 +31,11 @@ class AuthAttemptRepository(
         .result
     )
 
-  override def listAuthAttempts(login: Option[EmailAddress]): Future[Seq[AuthAttempt]] = db
+  override def listAuthAttempts(login: Option[String]): Future[Seq[AuthAttempt]] = db
     .run(
       table
         .filterOpt(login) { case (table, login) =>
-          table.login === login.value
+          table.login === login
         }
         .sortBy(_.timestamp.desc)
         .result

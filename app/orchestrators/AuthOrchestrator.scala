@@ -2,7 +2,6 @@ package orchestrators
 import utils.Logs.RichLogger
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
-import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.error.AppError.DGCCRFUserEmailValidationExpired
 import controllers.error.AppError.DeletedAccount
@@ -226,10 +225,9 @@ class AuthOrchestrator(
     _ = logger.debug(s"Auth attempts count check successful")
   } yield ()
 
-  def listAuthenticationAttempts(userId: Option[UUID]): Future[Seq[AuthAttempt]] =
+  def listAuthenticationAttempts(login: Option[String]): Future[Seq[AuthAttempt]] =
     for {
-      maybeUser    <- userId.traverse(userRepository.get(_).flatMap(_.liftTo[Future](UserNotFound(userId.toString))))
-      authAttempts <- authAttemptRepository.listAuthAttempts(maybeUser.map(_.email))
+      authAttempts <- authAttemptRepository.listAuthAttempts(login)
     } yield authAttempts
 
 }
