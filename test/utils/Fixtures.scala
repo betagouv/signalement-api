@@ -1,6 +1,7 @@
 package utils
 
 import models._
+import models.barcode.BarcodeProduct
 import models.company.Address
 import models.company.Company
 import models.event.Event
@@ -11,6 +12,7 @@ import models.website.Website
 import models.website.WebsiteId
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import play.api.libs.json.Json
 import tasks.company.CompanySearchResult
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
@@ -289,5 +291,14 @@ object Fixtures {
   )
 
   def genCountry(): Gen[Country] = Gen.oneOf(Country.countries)
+
+  val genBarcodeProduct = for {
+    gtin <- arbString.arbitrary
+  } yield BarcodeProduct(
+    gtin = gtin,
+    gs1Product = Json.obj(),
+    openFoodFactsProduct = None,
+    openBeautyFactsProduct = None
+  )
 
 }

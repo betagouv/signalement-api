@@ -39,7 +39,7 @@ object Dependencies {
     // Cannot be updated to "7.4" because of the following error when logging as JSON:
     // java.lang.NoSuchMethodError: 'java.time.Instant ch.qos.logback.classic.spi.ILoggingEvent.getInstant()'
     // If we want to upgrade, we MUST check json logs (env var USE_TEXT_LOGS set to false) to see if this error still happen
-    lazy val logstashLogbackEncoder    = "7.3"
+    lazy val logstashLogbackEncoder = "7.3"
 
   }
 
@@ -48,6 +48,7 @@ object Dependencies {
     val specs2MatcherExtra = "org.specs2"     %% "specs2-matcher-extra"    % Versions.specs2MatcherExtraVersion % "test"
     val scalaCheck         = "org.scalacheck" %% "scalacheck"              % Versions.scalaCheckVersion         % "test"
     val playSilhouette     = "com.mohiva"     %% "play-silhouette-testkit" % Versions.playSilhouetteVersion     % "test"
+    val akkaTestKit = "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.21" % "test"
 
   }
 
@@ -131,6 +132,7 @@ object Dependencies {
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,
-    Test.playSilhouette
+    Test.playSilhouette,
+    Test.akkaTestKit
   )
 }
