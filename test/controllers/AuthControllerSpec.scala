@@ -115,7 +115,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(login)
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(OK)
@@ -154,7 +154,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(login)
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
@@ -180,7 +180,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(login)
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)

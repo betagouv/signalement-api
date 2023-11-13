@@ -9,5 +9,5 @@ trait AuthAttemptRepositoryInterface extends CRUDRepositoryInterface[AuthAttempt
 
   def countAuthAttempts(login: String, delay: Duration): Future[Int]
 
-  def listAuthAttempts(login: String): Future[Seq[AuthAttempt]]
+  def listAuthAttempts(login: Option[String]): Future[Seq[AuthAttempt]]
 }
