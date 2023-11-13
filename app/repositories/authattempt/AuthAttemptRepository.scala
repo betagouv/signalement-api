@@ -38,6 +38,7 @@ class AuthAttemptRepository(
           table.login like s"%${login}%"
         }
         .sortBy(_.timestamp.desc)
+        .take(1000)
         .result
     )
 
