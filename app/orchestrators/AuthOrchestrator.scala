@@ -225,6 +225,11 @@ class AuthOrchestrator(
     _ = logger.debug(s"Auth attempts count check successful")
   } yield ()
 
+  def listAuthenticationAttempts(login: Option[String]): Future[Seq[AuthAttempt]] =
+    for {
+      authAttempts <- authAttemptRepository.listAuthAttempts(login)
+    } yield authAttempts
+
 }
 
 object AuthOrchestrator {
