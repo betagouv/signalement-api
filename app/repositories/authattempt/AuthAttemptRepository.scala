@@ -35,7 +35,7 @@ class AuthAttemptRepository(
     .run(
       table
         .filterOpt(login) { case (table, login) =>
-          table.login === login
+          table.login like s"%${login}%"
         }
         .sortBy(_.timestamp.desc)
         .result
