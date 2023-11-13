@@ -6,5 +6,6 @@ case class ApplicationConfiguration(
     task: TaskConfiguration,
     flyway: FlywayConfiguration,
     siretExtractor: SiretExtractorConfiguration,
+    gs1: GS1Configuration,
     amazonBucketName: String
 )

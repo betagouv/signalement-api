@@ -281,7 +281,8 @@ trait GetReportContext extends AppSpec {
     status = ReportStatus.TraitementEnCours,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
     visibleToPro = true,
-    lang = None
+    lang = None,
+    barcodeProductId = None
   )
 
   val neverRequestedFinalReport = Report(
@@ -306,7 +307,8 @@ trait GetReportContext extends AppSpec {
     status = ReportStatus.ConsulteIgnore,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
     visibleToPro = true,
-    lang = None
+    lang = None,
+    barcodeProductId = None
   )
 
   val alreadyRequestedReport = Report(
@@ -331,7 +333,8 @@ trait GetReportContext extends AppSpec {
     status = ReportStatus.Transmis,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
     visibleToPro = true,
-    lang = None
+    lang = None,
+    barcodeProductId = None
   )
 
   val adminUser      = Fixtures.genAdminUser.sample.get

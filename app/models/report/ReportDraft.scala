@@ -49,6 +49,7 @@ case class ReportDraft(
     reponseconsoCode: Option[List[String]] = None,
     ccrfCode: Option[List[String]] = None,
     lang: Option[Locale] = None,
+    barcodeProductId: Option[UUID] = None,
     metadata: Option[ReportMetadataDraft] = None
 ) {
 
@@ -96,7 +97,8 @@ case class ReportDraft(
       ccrfCode = ccrfCode.getOrElse(Nil),
       expirationDate = expirationDate,
       visibleToPro = shouldBeVisibleToPro(),
-      lang = lang
+      lang = lang,
+      barcodeProductId = barcodeProductId
     )
 
   def shouldBeVisibleToPro(): Boolean =
