@@ -561,6 +561,9 @@ object ReportRepository {
       .filterOpt(filter.isForeign) { case (table, isForeign) =>
         if (isForeign) table.lang =!= Locale.FRENCH else table.lang === Locale.FRENCH || table.lang.isEmpty
       }
+      .filterOpt(filter.hasBarcode) { case (table, barcodeRequired) =>
+        table.barcodeProductId.isDefined === barcodeRequired
+      }
       .filterOpt(filter.fullText) { case (table, fullText) =>
         table.contactAgreement &&
         toTsVector(

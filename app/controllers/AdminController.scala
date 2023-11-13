@@ -117,7 +117,8 @@ class AdminController(
     expirationDate = OffsetDateTime.now().plusDays(50),
     influencer = None,
     visibleToPro = true,
-    lang = Some(Locale.FRENCH)
+    lang = Some(Locale.FRENCH),
+    barcodeProductId = None
   )
 
   private def genReportFile = ReportFile(

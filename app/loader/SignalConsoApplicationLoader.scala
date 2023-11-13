@@ -5,6 +5,7 @@ import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
+import akka.util.Timeout
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.SilhouetteProvider
@@ -65,6 +66,7 @@ import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
+import repositories.barcode.BarcodeProductRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -113,6 +115,7 @@ import utils.silhouette.auth.UserService
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import scala.annotation.nowarn
+import scala.concurrent.duration.DurationInt
 
 class SignalConsoApplicationLoader() extends ApplicationLoader {
   var components: SignalConsoComponents = _
@@ -682,6 +685,25 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  val openFoodFactsService     = new OpenFoodFactsService
+  val openBeautyFactsService   = new OpenBeautyFactsService
+  val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
+  val gs1Service               = new GS1Service(applicationConfiguration.gs1)
+  val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
+    GS1AuthTokenActor(gs1Service),
+    "gs1-auth-token-actor"
+  )
+  implicit val timeout: Timeout = 30.seconds
+  val barcodeOrchestrator =
+    new BarcodeOrchestrator(
+      gs1AuthTokenActor,
+      gs1Service,
+      openFoodFactsService,
+      openBeautyFactsService,
+      barcodeProductRepository
+    )
+  val barcodeController = new BarcodeController(barcodeOrchestrator, silhouette, controllerComponents)
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -718,6 +740,7 @@ class SignalConsoComponents(
       signalConsoReviewController,
       siretExtractorController,
       importController,
+      barcodeController,
       assets
     )
 
