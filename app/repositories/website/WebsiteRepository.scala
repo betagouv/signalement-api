@@ -137,12 +137,6 @@ class WebsiteRepository(
         .filterOpt(investigationStatusFilter) { case (websiteTable, statusList) =>
           websiteTable.investigationStatus inSet statusList
         }
-        .filterOpt(start) { case (table, start) =>
-          table.creationDate >= start
-        }
-        .filterOpt(end) { case (table, end) =>
-          table.creationDate <= end
-        }
         .filterOpt(hasAssociation) {
           case (table, true) =>
             table.companyCountry.isDefined || table.companyId.isDefined
@@ -156,6 +150,12 @@ class WebsiteRepository(
         .on { (tupleTable, reportTable) =>
           val (websiteTable, _) = tupleTable
           websiteTable.host === reportTable.host && reportTable.host.isDefined
+        }
+        .filterOpt(start) { case (((websiteTable, _), reportTable), start) =>
+          reportTable.map(_.creationDate >= start).getOrElse(websiteTable.creationDate >= start)
+        }
+        .filterOpt(end) { case (((websiteTable, _), reportTable), end) =>
+          reportTable.map(_.creationDate <= end).getOrElse(websiteTable.creationDate <= end)
         }
 
     val query = baseQuery
