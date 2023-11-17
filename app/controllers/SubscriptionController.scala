@@ -1,16 +1,14 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.Subscription
 import models.SubscriptionCreation
 import models.SubscriptionUpdate
 import models.UserPermission
+import orchestrators.SubscriptionOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import repositories.subscription.SubscriptionRepositoryInterface
-import utils.Country
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
@@ -19,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class SubscriptionController(
-    subscriptionRepository: SubscriptionRepositoryInterface,
+    subscriptionOrchestrator: SubscriptionOrchestrator,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -34,20 +32,8 @@ class SubscriptionController(
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           draftSubscription =>
-            subscriptionRepository
-              .create(
-                Subscription(
-                  userId = Some(request.identity.id),
-                  email = None,
-                  departments = draftSubscription.departments,
-                  categories = draftSubscription.categories,
-                  withTags = draftSubscription.withTags,
-                  withoutTags = draftSubscription.withoutTags,
-                  countries = draftSubscription.countries.map(Country.fromCode),
-                  sirets = draftSubscription.sirets,
-                  frequency = draftSubscription.frequency
-                )
-              )
+            subscriptionOrchestrator
+              .createSubscription(draftSubscription, request.identity)
               .map(subscription => Ok(Json.toJson(subscription)))
         )
   }
@@ -59,57 +45,31 @@ class SubscriptionController(
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           draftSubscription =>
-            for {
-              subscriptions <- subscriptionRepository.list(request.identity.id)
-              updatedSubscription <- subscriptions
-                .find(_.id == uuid)
-                .map(s =>
-                  subscriptionRepository
-                    .update(
-                      s.id,
-                      s.copy(
-                        departments = draftSubscription.departments.getOrElse(s.departments),
-                        categories = draftSubscription.categories.getOrElse(s.categories),
-                        withTags = draftSubscription.withTags.getOrElse(s.withTags),
-                        withoutTags = draftSubscription.withoutTags.getOrElse(s.withoutTags),
-                        countries = draftSubscription.countries
-                          .map(_.map(Country.fromCode))
-                          .getOrElse(s.countries),
-                        sirets = draftSubscription.sirets.getOrElse(s.sirets),
-                        frequency = draftSubscription.frequency.getOrElse(s.frequency)
-                      )
-                    )
-                    .map(Some(_))
-                )
-                .getOrElse(Future(None))
-            } yield if (updatedSubscription.isDefined) Ok(Json.toJson(updatedSubscription)) else NotFound
+            subscriptionOrchestrator
+              .updateSubscription(uuid, draftSubscription, request.identity)
+              .map {
+                case Some(updatedSubscription) => Ok(Json.toJson(updatedSubscription))
+                case None                      => NotFound
+              }
         )
     }
 
   def getSubscriptions = SecuredAction(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
-    subscriptionRepository.list(request.identity.id).map(subscriptions => Ok(Json.toJson(subscriptions)))
+    subscriptionOrchestrator.getSubscriptions(request.identity).map(subscriptions => Ok(Json.toJson(subscriptions)))
   }
 
   def getSubscription(uuid: UUID) = SecuredAction(WithPermission(UserPermission.subscribeReports)).async {
     implicit request =>
-      subscriptionRepository
-        .get(uuid)
-        .map(subscription =>
-          subscription
-            .filter(_.userId.contains(request.identity.id))
-            .map(s => Ok(Json.toJson(s)))
-            .getOrElse(NotFound)
-        )
+      subscriptionOrchestrator
+        .getSubscription(uuid, request.identity)
+        .map(_.map(s => Ok(Json.toJson(s))).getOrElse(NotFound))
   }
 
   def removeSubscription(uuid: UUID) = SecuredAction(WithPermission(UserPermission.subscribeReports)).async {
     implicit request =>
-      for {
-        subscriptions <- subscriptionRepository.list(request.identity.id)
-        deletedCount <- subscriptions
-          .find(_.id == uuid)
-          .map(subscription => subscriptionRepository.delete(subscription.id))
-          .getOrElse(Future(0))
-      } yield if (deletedCount > 0) Ok else NotFound
+      subscriptionOrchestrator
+        .removeSubscription(uuid, request.identity)
+        .map(deletedCount => if (deletedCount > 0) Ok else NotFound)
+
   }
 }

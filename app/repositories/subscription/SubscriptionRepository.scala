@@ -1,6 +1,7 @@
 package repositories.subscription
 
 import models.Subscription
+import models.User
 import repositories.CRUDRepository
 import repositories.PostgresProfile
 import repositories.user.UserTable
@@ -56,4 +57,17 @@ class SubscriptionRepository(override val dbConfig: DatabaseConfig[JdbcProfile])
         .filter(x => x.email.map(_.asColumnOf[String]) like s"dd%")
         .result
     ).map(_.map(_.email.get).distinct)
+
+  override def findFor(user: User, id: UUID): Future[Option[Subscription]] = db
+    .run(
+      SubscriptionTable.table
+        .filter(_.id === id)
+        .filter(_.userId === user.id)
+        .result
+        .headOption
+    )
+
+  override def deleteFor(user: User, id: UUID): Future[Int] = db.run(
+    table.filter(_.id === id).filter(_.userId === user.id).delete
+  )
 }
