@@ -18,6 +18,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 import java.time.OffsetDateTime
+import java.time.Period
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.util.Random
@@ -301,4 +302,8 @@ object Fixtures {
     openBeautyFactsProduct = None
   )
 
+  def genSubscriptionFor(userId: Option[UUID]) = for {
+    email <- Gen.option(genEmailAddress)
+    days  <- Gen.choose(0, 31)
+  } yield Subscription(userId = userId, email = email, frequency = Period.of(0, 0, days))
 }
