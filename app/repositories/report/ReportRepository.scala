@@ -547,10 +547,13 @@ object ReportRepository {
           .exists
       }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
-        filter.departments
+        val departmentsFilter: Rep[Boolean] = filter.departments
           .flatMap(toPostalCode)
           .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
           .reduceLeft(_ || _)
+        // Avoid searching departments in foreign countries
+        departmentsFilter && table.companyCountry.isEmpty
+
       }
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
