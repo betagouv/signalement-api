@@ -653,7 +653,8 @@ class SignalConsoComponents(
 
   val statisticController = new StatisticController(statsOrchestrator, silhouette, controllerComponents)
 
-  val subscriptionController = new SubscriptionController(subscriptionRepository, silhouette, controllerComponents)
+  val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
+  val subscriptionController   = new SubscriptionController(subscriptionOrchestrator, silhouette, controllerComponents)
   val websiteController = new WebsiteController(
     websitesOrchestrator,
     companyRepository,
