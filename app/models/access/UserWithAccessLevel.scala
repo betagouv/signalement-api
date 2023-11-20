@@ -1,6 +1,6 @@
 package models.access
 
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.User
 import models.company.AccessLevel
 import play.api.libs.json.Json

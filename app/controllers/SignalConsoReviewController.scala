@@ -1,7 +1,7 @@
 package controllers
 
 import authentication.Authenticator
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.User
 import models.report.signalconsoreview.SignalConsoReview
 import models.report.signalconsoreview.SignalConsoReviewCreate
