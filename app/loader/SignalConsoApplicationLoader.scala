@@ -541,6 +541,7 @@ class SignalConsoComponents(
     emailConfiguration,
     reportFileOrchestrator,
     companyRepository,
+    subscriptionRepository,
     frontRoute,
     controllerComponents
   )

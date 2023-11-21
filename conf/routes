@@ -72,6 +72,7 @@ POST          /api/admin/test-pdf                                       controll
 POST          /api/admin/emails/reportAckToConsumer                     controllers.AdminController.sendReportAckToConsumer()
 POST          /api/admin/emails/proAckToConsumer                        controllers.AdminController.sendProAckToConsumer()
 POST          /api/admin/emails/newReportToPro                          controllers.AdminController.sendNewReportToPro()
+ POST         /api/admin/emails/resend                                  controllers.AdminController.resend(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
 
 # Async files API
 GET           /api/async-files                                          controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
@@ -92,7 +93,7 @@ GET           /api/current-user                                         controll
 POST          /api/authenticate/password/forgot                         controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                          controllers.AuthController.resetPassword(token: java.util.UUID)
 POST          /api/account/password                                     controllers.AuthController.changePassword()
-GET          /api/auth-attempts                                        controllers.AuthController.listAuthAttempts(login: Option[String])
+GET           /api/auth-attempts                                        controllers.AuthController.listAuthAttempts(login: Option[String])
 
 # Accesses API
 GET           /api/accesses/connected-user                              controllers.CompanyAccessController.myCompanies()
