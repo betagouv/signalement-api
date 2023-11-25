@@ -133,7 +133,7 @@ class CompanyController(
                 case Some(pdfSource) =>
                   Ok.chunked(
                     content = pdfSource,
-                    inline = true,
+                    inline = false,
                     fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
                   )
                 case None =>
@@ -156,7 +156,7 @@ class CompanyController(
                 case Some(pdfSource) =>
                   Ok.chunked(
                     content = pdfSource,
-                    inline = true,
+                    inline = false,
                     fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
                   )
                 case None =>

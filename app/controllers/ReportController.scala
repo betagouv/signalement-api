@@ -178,7 +178,7 @@ class ReportController(
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
-          inline = true,
+          inline = false,
           fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
         )
       )
@@ -241,7 +241,7 @@ class ReportController(
         case Some(pdfSource) =>
           Ok.chunked(
             content = pdfSource,
-            inline = true,
+            inline = false,
             fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
           )
         case None => NotFound

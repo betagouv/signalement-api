@@ -540,7 +540,7 @@ class AdminController(
         val pdfSource = pdfService.createPdfSource(Seq(html))
         Ok.chunked(
           content = pdfSource,
-          inline = true,
+          inline = false,
           fileName = Some(s"${templateRef}_${OffsetDateTime.now().toString}.pdf")
         )
       }
