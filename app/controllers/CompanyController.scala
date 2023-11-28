@@ -1,7 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
-import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyAddressUpdate
@@ -14,14 +12,11 @@ import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
-import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepositoryInterface
 import utils.SIRET
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
-import utils.silhouette.auth.WithRole
+import utils.auth.Authenticator
+import utils.auth.UserAction.WithPermission
+import utils.auth.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -29,38 +24,34 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyController(
-    val companyOrchestrator: CompanyOrchestrator,
-    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    val companyRepository: CompanyRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepositoryInterface,
-    val eventRepository: EventRepositoryInterface,
-    val reportRepository: ReportRepositoryInterface,
-    val silhouette: Silhouette[AuthEnv],
+    companyOrchestrator: CompanyOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val taskConfiguration: TaskConfiguration,
+    val companyRepository: CompanyRepositoryInterface,
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseCompanyController(controllerComponents) {
+    extends BaseCompanyController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
-  def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
+  def fetchHosts(companyId: UUID) = SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def create() = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
-    request.body
-      .validate[CompanyCreation]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        companyCreation =>
-          companyOrchestrator
-            .create(companyCreation)
-            .map(company => Ok(Json.toJson(company)))
-      )
-  }
+  def create() =
+    SecuredAction.andThen(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
+      request.body
+        .validate[CompanyCreation]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          companyCreation =>
+            companyOrchestrator
+              .create(companyCreation)
+              .map(company => Ok(Json.toJson(company)))
+        )
+    }
 
-  def searchRegistered() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
+  def searchRegistered() = SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
     CompanyRegisteredSearch
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
@@ -83,13 +74,13 @@ class CompanyController(
 
   }
 
-  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { _ =>
+  def searchCompanyByWebsite(url: String) = Action.async { _ =>
     companyOrchestrator
       .searchCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def searchCompanyOrSimilarWebsite(url: String) = UnsecuredAction.async { _ =>
+  def searchCompanyOrSimilarWebsite(url: String) = Action.async { _ =>
     companyOrchestrator
       .searchSimilarCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
@@ -101,7 +92,7 @@ class CompanyController(
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def companiesToActivate() = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def companiesToActivate() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     companyOrchestrator
       .companiesToActivate()
       .map(result => Ok(Json.toJson(result)))
@@ -113,14 +104,14 @@ class CompanyController(
       .map(result => Ok(Json.toJson(result)))
   }
 
-  def visibleCompanies() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
-    companiesVisibilityOrchestrator
+  def visibleCompanies() = SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+    companyVisibilityOrch
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))
   }
 
-  def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) {
-    implicit request =>
+  def getActivationDocument() =
+    SecuredAction.andThen(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
       import CompanyObjects.CompanyList
       request.body
         .validate[CompanyList](Json.reads[CompanyList])
@@ -140,10 +131,10 @@ class CompanyController(
                   NotFound
               }
         )
-  }
+    }
 
-  def getFollowUpDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) {
-    implicit request =>
+  def getFollowUpDocument() =
+    SecuredAction.andThen(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
       import CompanyObjects.CompanyList
       request.body
         .validate[CompanyList](Json.reads[CompanyList])
@@ -163,10 +154,10 @@ class CompanyController(
                   NotFound
               }
         )
-  }
+    }
 
-  def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
-    implicit request =>
+  def confirmContactByPostOnCompanyList() =
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
       import CompanyObjects.CompanyList
       request.body
         .validate[CompanyList](Json.reads[CompanyList])
@@ -177,9 +168,9 @@ class CompanyController(
               .confirmContactByPostOnCompanyList(companyList, request.identity.id)
               .map(_ => Ok)
         )
-  }
+    }
 
-  def confirmFollowUp() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def confirmFollowUp() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     import CompanyObjects.CompanyList
     request.body
       .validate[CompanyList](Json.reads[CompanyList])
@@ -192,8 +183,8 @@ class CompanyController(
       )
   }
 
-  def updateCompanyAddress(id: UUID) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) {
-    implicit request =>
+  def updateCompanyAddress(id: UUID) =
+    SecuredAction.andThen(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
       request.body
         .validate[CompanyAddressUpdate]
         .fold(
@@ -206,10 +197,10 @@ class CompanyController(
                   .getOrElse(NotFound)
               }
         )
-  }
+    }
 
-  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
-    implicit request =>
+  def handleUndeliveredDocument(siret: String) =
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
       request.body
         .validate[UndeliveredDocument]
         .fold(
@@ -222,7 +213,7 @@ class CompanyController(
                   .getOrElse(NotFound)
               )
         )
-  }
+    }
 }
 
 object CompanyObjects {

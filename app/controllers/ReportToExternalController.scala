@@ -1,6 +1,6 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import models.Consumer
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFileOrigin
@@ -14,7 +14,6 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import utils.QueryStringMapper
-import utils.silhouette.api.APIKeyEnv
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -27,15 +26,16 @@ import models.report.ReportTag
 import play.api.mvc.ControllerComponents
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import utils.auth.Authenticator
 
 class ReportToExternalController(
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
-    val silhouette: Silhouette[APIKeyEnv],
+    authenticator: Authenticator[Consumer],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends ApiKeyBaseController(controllerComponents) {
+    extends ApiKeyBaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

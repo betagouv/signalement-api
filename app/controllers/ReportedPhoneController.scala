@@ -4,7 +4,6 @@ import actors.ReportedPhonesExtractActor
 import actors.ReportedPhonesExtractActor.RawFilters
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import akka.actor.typed
-import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -13,8 +12,8 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import utils.auth.Authenticator
+import utils.auth.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -24,16 +23,16 @@ class ReportedPhoneController(
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
     reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand],
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger                      = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       reportRepository
         .getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(reports =>
@@ -60,7 +59,7 @@ class ReportedPhoneController(
     }
 
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       asyncFileRepository
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))

@@ -1,14 +1,5 @@
 package utils.silhouette.auth
 
-import com.mohiva.play.silhouette.api.Authorization
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import models.User
-import models.UserPermission
-import models.UserRole
-import play.api.mvc.Request
-
-import scala.concurrent.Future
-
 //case class WithPermission(anyOfPermissions: UserPermission.Value*) extends Authorization[User, CookieAuthenticator] {
 //  override def isAuthorized[A](user: User, authenticator: CookieAuthenticator)(implicit r: Request[A]) =
 //    Future.successful {

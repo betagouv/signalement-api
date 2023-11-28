@@ -1,13 +1,13 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import models.Rating
+import models.User
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.rating.RatingRepositoryInterface
-import utils.silhouette.auth.AuthEnv
+import utils.auth.Authenticator
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -16,15 +16,15 @@ import scala.concurrent.Future
 
 class RatingController(
     ratingRepository: RatingRepositoryInterface,
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit
     val ec: ExecutionContext
-) extends BaseController(controllerComponents) {
+) extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
-  def rate = UserAwareAction.async(parse.json) { implicit request =>
+  def rate = Action.async(parse.json) { implicit request =>
     request.body
       .validate[Rating]
       .fold(

@@ -2,19 +2,14 @@ package orchestrators
 import utils.Logs.RichLogger
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.error.AppError.DGCCRFUserEmailValidationExpired
 import controllers.error.AppError.DeletedAccount
-import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
 import controllers.error.AppError.SamePasswordError
-import controllers.error.AppError.ServerError
 import controllers.error.AppError.TooMuchAuthAttempts
 import controllers.error.AppError.UserNotFound
 import models.User
 import models.UserRole
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.UserService
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -23,11 +18,6 @@ import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 import cats.syntax.option._
 import cats.instances.future.catsStdInstancesForFuture
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
-import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthAttempt
@@ -40,7 +30,6 @@ import models.auth.UserSession
 import orchestrators.AuthOrchestrator.AuthAttemptPeriod
 import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
-import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Cookie
 import play.api.mvc.Request
@@ -49,7 +38,10 @@ import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
 import services.MailService
+import utils.EmailAddress
 import utils.PasswordComplexityHelper
+import utils.auth.CookieAuthenticator
+import utils.auth.CredentialsProvider
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -58,16 +50,14 @@ import scala.util.Failure
 import scala.util.Success
 
 class AuthOrchestrator(
-    userService: UserService,
     authAttemptRepository: AuthAttemptRepositoryInterface,
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
     credentialsProvider: CredentialsProvider,
-    credentialsProviderForDeletedUsers: CredentialsProvider,
     mailService: MailService,
-    val silhouette: Silhouette[AuthEnv]
+    authenticator: CookieAuthenticator
 )(implicit
     ec: ExecutionContext
 ) {
@@ -77,8 +67,8 @@ class AuthOrchestrator(
 
   private def handleDeletedUser(user: User, userLogin: UserCredentials): Future[Unit] =
     if (user.deletionDate.isDefined)
-      credentialsProviderForDeletedUsers
-        .authenticate(Credentials(userLogin.login, userLogin.password))
+      credentialsProvider
+        .authenticateIncludingDeleted(userLogin.login, userLogin.password)
         .transformWith {
           case Success(_) =>
             logger.debug(s"Found a deleted user with right credentials, returning 'deleted account'")
@@ -96,7 +86,7 @@ class AuthOrchestrator(
     logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
       _         <- validateAuthenticationAttempts(userLogin.login)
-      maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
+      maybeUser <- userRepository.findByEmailIncludingDeleted(userLogin.login)
       user      <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
@@ -135,7 +125,7 @@ class AuthOrchestrator(
   }
 
   def forgotPassword(resetPasswordLogin: UserLogin): Future[Unit] =
-    userService.retrieve(toLoginInfo(resetPasswordLogin.login)).flatMap {
+    userRepository.findByEmail(resetPasswordLogin.login).flatMap {
       case Some(user) =>
         for {
           _ <- authTokenRepository.deleteForUserId(user.id)
@@ -173,7 +163,7 @@ class AuthOrchestrator(
       } else {
         Future.unit
       }
-    _ <- authenticate(user.email.value, passwordChange.oldPassword)
+    _ <- credentialsProvider.authenticate(user.email.value, passwordChange.oldPassword)
     _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(passwordChange.newPassword))
     _ = logger.debug(s"Successfully checking old password  user id ${user.id}, updating password")
     _ <- userRepository.updatePassword(user.id, passwordChange.newPassword)
@@ -182,21 +172,9 @@ class AuthOrchestrator(
 
   private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
-      loginInfo     <- authenticate(userLogin.login, userLogin.password)
-      authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-      cookie        <- silhouette.env.authenticatorService.init(authenticator)
+      _      <- credentialsProvider.authenticate(userLogin.login, userLogin.password)
+      cookie <- authenticator.init(EmailAddress(userLogin.login))
     } yield cookie
-
-  private def authenticate(login: String, password: String) =
-    credentialsProvider
-      .authenticate(Credentials(login, password))
-      .recoverWith {
-        case e: InvalidPasswordException =>
-          logger.warnWithTitle("invalid_password", "Invalid password ", e)
-          Future.failed(InvalidPassword(login))
-        case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
-        case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
-      }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>
@@ -233,8 +211,7 @@ class AuthOrchestrator(
 }
 
 object AuthOrchestrator {
-  val AuthAttemptPeriod: Duration           = 30 minutes
-  val MaxAllowedAuthAttempts: Int           = 20
-  def authTokenExpiration: OffsetDateTime   = OffsetDateTime.now().plusDays(1)
-  def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
+  val AuthAttemptPeriod: Duration         = 30 minutes
+  val MaxAllowedAuthAttempts: Int         = 20
+  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now().plusDays(1)
 }

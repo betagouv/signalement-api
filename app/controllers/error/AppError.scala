@@ -111,9 +111,9 @@ object AppError {
   }
 
   final case class AuthError(message: String) extends UnauthorizedError {
-    override val `type`: String = "SC-0051"
-    override val title: String = "Auth Error"
-    override val details: String = message
+    override val `type`: String       = "SC-0051"
+    override val title: String        = "Auth Error"
+    override val details: String      = message
     override val titleForLogs: String = "auth_error"
   }
 

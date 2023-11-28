@@ -2,7 +2,6 @@ package controllers
 
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
-import com.mohiva.play.silhouette.api.Silhouette
 import config.EmailConfiguration
 import models.report.DetailInputValue.toDetailInputValue
 import models._
@@ -63,8 +62,8 @@ import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import utils.auth.Authenticator
+import utils.auth.UserAction.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -75,7 +74,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 class AdminController(
-    val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -86,9 +84,10 @@ class AdminController(
     companyRepository: CompanyRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
     implicit val frontRoute: FrontRoute,
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger                        = Logger(this.getClass)
   implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
@@ -517,10 +516,10 @@ class AdminController(
     )
   )
 
-  def getEmailCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availableEmails.keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     Future(
       availableEmails
         .get(templateRef)
@@ -530,10 +529,10 @@ class AdminController(
     )
   }
 
-  def getPdfCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availablePdfs.map(_._1))))
   }
-  def sendTestPdf(templateRef: String) = SecuredAction(WithRole(UserRole.Admin)) { _ =>
+  def sendTestPdf(templateRef: String) = SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
     availablePdfs.toMap
       .get(templateRef)
       .map { html =>
@@ -571,7 +570,7 @@ class AdminController(
       }.sequence
     } yield ()
 
-  def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def sendProAckToConsumer = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     request.body
       .validate[ReportInputList](Json.reads[ReportInputList])
       .fold(
@@ -603,7 +602,7 @@ class AdminController(
     } yield ()
   }
 
-  def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def sendNewReportToPro = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
       reportInputList <- request.parseBody[ReportInputList]()
       reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
@@ -642,7 +641,7 @@ class AdminController(
     } yield ()
   }
 
-  def sendReportAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def sendReportAckToConsumer = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
     for {
       reportInputList <- request.parseBody[ReportInputList]()
@@ -669,7 +668,7 @@ class AdminController(
   } yield ()
 
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
-    SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(
           Some(request.identity.userRole),

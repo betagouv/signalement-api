@@ -9,14 +9,14 @@ import utils.auth.JcaSigner.BadSignature
 import utils.auth.JcaSigner.InvalidMessageFormat
 import utils.auth.JcaSigner.UnknownVersion
 
-/**
- * Signer implementation based on JCA (Java Cryptography Architecture).
- *
- * This signer signs the data with the specified key. If the signature verification fails, the signer
- * does not try to decode the data in any way in order to prevent various types of attacks.
- *
- * @param settings The settings instance.
- */
+/** Signer implementation based on JCA (Java Cryptography Architecture).
+  *
+  * This signer signs the data with the specified key. If the signature verification fails, the signer does not try to
+  * decode the data in any way in order to prevent various types of attacks.
+  *
+  * @param settings
+  *   The settings instance.
+  */
 class JcaSigner(settings: JcaSignerSettings) {
 
   /** Signs (MAC) the given data using the given secret key.
@@ -46,7 +46,7 @@ class JcaSigner(settings: JcaSignerSettings) {
     for {
       tuple1 <- fragment(message)
       (_, actualSignature, actualData) = tuple1
-      tuple2        <- fragment(sign(actualData))
+      tuple2 <- fragment(sign(actualData))
       (_, expectedSignature, _) = tuple2
       res <-
         if (constantTimeEquals(expectedSignature, actualSignature)) {
@@ -93,11 +93,12 @@ object JcaSigner {
   val InvalidMessageFormat = "[JcaSigner] Invalid message format; Expected [VERSION]-[SIGNATURE]-[DATA]"
 }
 
-/**
- * The settings for the JCA signer.
- *
- * @param key    Key for signing.
- * @param pepper Constant prepended and appended to the data before signing. When using one key for multiple purposes,
- *               using a specific pepper reduces some risks arising from this.
- */
+/** The settings for the JCA signer.
+  *
+  * @param key
+  *   Key for signing.
+  * @param pepper
+  *   Constant prepended and appended to the data before signing. When using one key for multiple purposes, using a
+  *   specific pepper reduces some risks arising from this.
+  */
 case class JcaSignerSettings(key: String, pepper: String = "-pepper-signer-")

@@ -1,9 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Authorization
-import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import com.mohiva.play.silhouette.api.actions.UserAwareRequest
 import controllers.error.AppErrorTransformer.handleError
 import models._
 import models.company.AccessLevel
@@ -12,9 +8,13 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
-import utils.auth.{Authenticator, CookieAuthenticator, JcaSigner, UserAction, UserRequest}
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
+import utils.auth.ConsumerAction.ConsumerRequest
+import utils.auth.MaybeUserAction.MaybeUserRequest
+import utils.auth.UserAction.UserRequest
+import utils.auth.Authenticator
+import utils.auth.ConsumerAction
+import utils.auth.MaybeUserAction
+import utils.auth.UserAction
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -48,21 +48,30 @@ class ErrorHandlerActionFunction[R[_] <: play.api.mvc.Request[_]](
   override protected def executionContext: ExecutionContext = ec
 }
 
-abstract class ApiKeyBaseController(override val controllerComponents: ControllerComponents)
-    extends AbstractController(controllerComponents) {
+abstract class ApiKeyBaseController(
+    authenticator: Authenticator[Consumer],
+    override val controllerComponents: ControllerComponents
+) extends AbstractController(controllerComponents) {
 
-  def silhouette: Silhouette[APIKeyEnv]
-  type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
+//  def silhouette: Silhouette[APIKeyEnv]
+//  type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
   implicit val ec: ExecutionContext
 
-  def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] =
-    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredApiRequestWrapper](request =>
-      Some(request.identity.id)
-    )
+//  def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] =
+//    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredApiRequestWrapper](request =>
+//      Some(request.identity.id)
+//    )
+
+  def SecuredAction = new ConsumerAction(
+    new BodyParsers.Default(controllerComponents.parsers),
+    authenticator
+  ) andThen new ErrorHandlerActionFunction[ConsumerRequest]()
 }
 
-abstract class BaseController(authenticator: Authenticator, override val controllerComponents: ControllerComponents)
-    extends AbstractController(controllerComponents) {
+abstract class BaseController(
+    authenticator: Authenticator[User],
+    override val controllerComponents: ControllerComponents
+) extends AbstractController(controllerComponents) {
 
 //  type SecuredRequestWrapper[A]   = SecuredRequest[AuthEnv, A]
 //  type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
@@ -106,24 +115,33 @@ abstract class BaseController(authenticator: Authenticator, override val control
 //
 //  implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]): Option[User] = req.identity
 
-  def SecuredAction: ActionBuilder[UserRequest, AnyContent] = new UserAction(new BodyParsers.Default(controllerComponents.parsers), authenticator) andThen new ErrorHandlerActionFunction[UserRequest]()
+  def SecuredAction: ActionBuilder[UserRequest, AnyContent] = new UserAction(
+    new BodyParsers.Default(controllerComponents.parsers),
+    authenticator
+  ) andThen new ErrorHandlerActionFunction[UserRequest]()
 
+  def UserAwareAction = new MaybeUserAction(
+    new BodyParsers.Default(controllerComponents.parsers),
+    authenticator
+  ) andThen new ErrorHandlerActionFunction[MaybeUserRequest]()
 }
 
-abstract class BaseCompanyController(override val controllerComponents: ControllerComponents)
-    extends BaseController(controllerComponents) {
+abstract class BaseCompanyController(
+    authenticator: Authenticator[User],
+    override val controllerComponents: ControllerComponents
+) extends BaseController(authenticator, controllerComponents) {
   def companyRepository: CompanyRepositoryInterface
   def companyVisibilityOrch: CompaniesVisibilityOrchestrator
 
-  class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: SecuredRequestWrapper[A])
+  class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: UserRequest[A])
       extends WrappedRequest[A](request) {
     def identity = request.identity
   }
 
   def withCompany(siret: String, authorizedLevels: Seq[AccessLevel]) =
-    SecuredAction andThen new ActionRefiner[SecuredRequestWrapper, CompanyRequest] {
+    SecuredAction andThen new ActionRefiner[UserRequest, CompanyRequest] {
       def executionContext = ec
-      def refine[A](request: SecuredRequestWrapper[A]) =
+      def refine[A](request: UserRequest[A]) =
         for {
           company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
           accessLevel <-

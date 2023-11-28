@@ -2,11 +2,11 @@ package controllers
 
 import akka.Done
 import cats.implicits.catsSyntaxOption
-import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
 import controllers.error.AppError.FileTooLarge
 import controllers.error.AppError.InvalidFileExtension
 import controllers.error.AppError.MalformedFileKey
+import models.User
 import models.report._
 import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator
@@ -17,7 +17,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
-import utils.silhouette.auth.AuthEnv
+import utils.auth.Authenticator
 
 import java.io.File
 import java.nio.file.Paths
@@ -27,11 +27,11 @@ import scala.concurrent.Future
 
 class ReportFileController(
     reportFileOrchestrator: ReportFileOrchestrator,
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     signalConsoConfiguration: SignalConsoConfiguration,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

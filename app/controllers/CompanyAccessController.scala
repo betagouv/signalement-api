@@ -1,6 +1,6 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import models.User
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -16,26 +16,26 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.SIRET
-import utils.silhouette.auth.AuthEnv
+import utils.auth.Authenticator
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyAccessController(
-    val userRepository: UserRepositoryInterface,
+    userRepository: UserRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
-    val companyAccessRepository: CompanyAccessRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepositoryInterface,
-    val accessesOrchestrator: ProAccessTokenOrchestrator,
+    companyAccessRepository: CompanyAccessRepositoryInterface,
+    accessTokenRepository: AccessTokenRepositoryInterface,
+    accessesOrchestrator: ProAccessTokenOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val companyAccessOrchestrator: CompanyAccessOrchestrator,
-    val silhouette: Silhouette[AuthEnv],
+    companyAccessOrchestrator: CompanyAccessOrchestrator,
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseCompanyController(controllerComponents) {
+    extends BaseCompanyController(authenticator, controllerComponents) {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger = Logger(this.getClass)
 
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     companyAccessOrchestrator
@@ -114,13 +114,13 @@ class CompanyAccessController(
       } yield if (token.isDefined) Ok else NotFound
   }
 
-  def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { _ =>
+  def fetchTokenInfo(siret: String, token: String) = Action.async { _ =>
     accessesOrchestrator
       .fetchCompanyUserActivationToken(SIRET.fromUnsafe(siret), token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
+  def sendActivationLink(siret: String) = Action.async(parse.json) { implicit request =>
     for {
       activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
       _ <- companyAccessOrchestrator.sendActivationLink(SIRET.fromUnsafe(siret), activationLinkRequest)

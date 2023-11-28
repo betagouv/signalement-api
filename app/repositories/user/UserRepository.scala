@@ -1,6 +1,5 @@
 package repositories.user
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.error.AppError.EmailAlreadyExist
 import models.UserRole.DGCCRF
 import models._
@@ -13,6 +12,7 @@ import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress
+import utils.auth.PasswordHasherRegistry
 
 import java.time.OffsetDateTime
 import java.util.UUID

@@ -1,10 +1,10 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import models.email.ValidateEmail
 import models.email.ValidateEmailCode
 import models.EmailValidationFilter
 import models.PaginatedSearch
+import models.User
 import models.UserRole
 import orchestrators.EmailValidationOrchestrator
 import play.api._
@@ -13,23 +13,23 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
 import models.PaginatedResult.paginatedResultWrites
+import utils.auth.Authenticator
+import utils.auth.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class EmailValidationController(
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     emailValidationOrchestrator: EmailValidationOrchestrator,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
-  def check(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+  def check(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     logger.debug("Calling checking email API")
     for {
       validateEmail <- request.parseBody[ValidateEmail]()
@@ -40,7 +40,7 @@ class EmailValidationController(
     } yield Ok(Json.toJson(validationResult))
   }
 
-  def checkAndValidate(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+  def checkAndValidate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()
@@ -48,15 +48,16 @@ class EmailValidationController(
     } yield Ok(Json.toJson(validationResult))
   }
 
-  def validate(): Action[JsValue] = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    logger.debug("Calling validate email API")
-    for {
-      body             <- request.parseBody[ValidateEmail]()
-      validationResult <- emailValidationOrchestrator.validateEmail(body.email)
-    } yield Ok(Json.toJson(validationResult))
-  }
+  def validate(): Action[JsValue] =
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+      logger.debug("Calling validate email API")
+      for {
+        body             <- request.parseBody[ValidateEmail]()
+        validationResult <- emailValidationOrchestrator.validateEmail(body.email)
+      } yield Ok(Json.toJson(validationResult))
+    }
 
-  def search() = SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+  def search() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
     EmailValidationFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))

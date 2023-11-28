@@ -6,17 +6,6 @@ import actors._
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.util.Timeout
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.SilhouetteProvider
-import com.mohiva.play.silhouette.api.actions._
-import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticatorService
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
-import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
@@ -30,7 +19,6 @@ import play.api.libs.json.JsArray
 import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.BodyParsers
 import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
@@ -104,13 +92,14 @@ import tasks.report.ReportRemindersTask
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.api.APIKeyRequestProvider
-import utils.silhouette.api.ApiKeyService
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.PasswordInfoDAO
-import utils.silhouette.auth.PasswordInfoIncludingDeletedDAO
-import utils.silhouette.auth.UserService
+import utils.auth
+import utils.auth.APIKeyAuthenticator
+import utils.auth.BCryptPasswordHasher
+import utils.auth.CredentialsProvider
+import utils.auth.FingerprintGenerator
+import utils.auth.JcaCrypter
+import utils.auth.JcaSigner
+import utils.auth.PasswordHasherRegistry
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -137,11 +126,6 @@ class SignalConsoComponents(
     with AssetsComponents
     with AhcWSComponents
     with SlickComponents
-    with SecuredActionComponents
-    with SecuredErrorHandlerComponents
-    with UnsecuredActionComponents
-    with UnsecuredErrorHandlerComponents
-    with UserAwareActionComponents
     with MailerComponents {
 
   val logger: Logger = Logger(this.getClass)
@@ -217,42 +201,15 @@ class SignalConsoComponents(
 
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
-  val userService    = new UserService(userRepository)
-  val apiUserService = new ApiKeyService(consumerRepository)
+  val crypter              = new JcaCrypter(applicationConfiguration.crypter)
+  val signer               = new JcaSigner(applicationConfiguration.signer)
+  val fingerprintGenerator = new FingerprintGenerator()
 
-  val authenticatorService: AuthenticatorService[CookieAuthenticator] =
-    SilhouetteEnv.getCookieAuthenticatorService(configuration)
+  val cookieAuthenticator =
+    new auth.CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
+  val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
 
-  def authEnv: Environment[AuthEnv] = SilhouetteEnv.getEnv[AuthEnv](userService, authenticatorService)
-
-  val silhouette: Silhouette[AuthEnv] =
-    new SilhouetteProvider[AuthEnv](authEnv, securedAction, unsecuredAction, userAwareAction)
-
-  def authApiEnv: Environment[APIKeyEnv] =
-    SilhouetteEnv.getEnv[APIKeyEnv](
-      apiUserService,
-      new DummyAuthenticatorService(),
-      Seq(new APIKeyRequestProvider(passwordHasherRegistry, consumerRepository))
-    )
-
-  val silhouetteApi: Silhouette[APIKeyEnv] =
-    new SilhouetteProvider[APIKeyEnv](authApiEnv, securedAction, unsecuredAction, userAwareAction)
-
-  val authInfoRepository = new DelegableAuthInfoRepository(
-    new PasswordInfoDAO(
-      userRepository
-    )
-  )
-
-  val authInfoIncludingDeletedUsersRepository = new DelegableAuthInfoRepository(
-    new PasswordInfoIncludingDeletedDAO(
-      userRepository
-    )
-  )
-
-  val credentialsProvider = new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
-  val credentialsProviderIncludingDeletedUsers =
-    new CredentialsProvider(authInfoIncludingDeletedUsersRepository, passwordHasherRegistry)
+  val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
   implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
     keyId = configuration.get[String]("alpakka.s3.aws.credentials.access-key-id"),
@@ -319,16 +276,14 @@ class SignalConsoComponents(
   )
 
   val authOrchestrator = new AuthOrchestrator(
-    userService,
     authAttemptRepository,
     userRepository,
     accessesOrchestrator,
     authTokenRepository,
     tokenConfiguration,
     credentialsProvider,
-    credentialsProviderIncludingDeletedUsers,
     mailService,
-    silhouette
+    cookieAuthenticator
   )
 
   def companiesVisibilityOrchestrator =
@@ -519,20 +474,19 @@ class SignalConsoComponents(
   // Controller
 
   val blacklistedEmailsController =
-    new BlacklistedEmailsController(blacklistedEmailsRepository, silhouette, controllerComponents)
+    new BlacklistedEmailsController(blacklistedEmailsRepository, cookieAuthenticator, controllerComponents)
 
   val accountController = new AccountController(
-    silhouette,
     userOrchestrator,
     userRepository,
     accessesOrchestrator,
     proAccessTokenOrchestrator,
     emailConfiguration,
+    cookieAuthenticator,
     controllerComponents
   )
 
   val adminController = new AdminController(
-    silhouette,
     reportRepository,
     companyAccessRepository,
     eventRepository,
@@ -543,12 +497,14 @@ class SignalConsoComponents(
     companyRepository,
     subscriptionRepository,
     frontRoute,
+    cookieAuthenticator,
     controllerComponents
   )
 
-  val asyncFileController = new AsyncFileController(asyncFileRepository, silhouette, s3Service, controllerComponents)
+  val asyncFileController =
+    new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
-  val authController = new AuthController(silhouette, authOrchestrator, controllerComponents)
+  val authController = new AuthController(authOrchestrator, cookieAuthenticator, controllerComponents)
 
   val companyAccessController =
     new CompanyAccessController(
@@ -559,7 +515,7 @@ class SignalConsoComponents(
       proAccessTokenOrchestrator,
       companiesVisibilityOrchestrator,
       companyAccessOrchestrator,
-      silhouette,
+      cookieAuthenticator,
       controllerComponents
     )
 
@@ -567,35 +523,35 @@ class SignalConsoComponents(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
     companyRepository,
-    accessTokenRepository,
-    eventRepository,
-    reportRepository,
-    silhouette,
-    companiesVisibilityOrchestrator,
-    taskConfiguration,
+    cookieAuthenticator,
     controllerComponents
   )
 
-  val constantController     = new ConstantController(silhouette, controllerComponents)
-  val mobileAppController    = new MobileAppController(signalConsoConfiguration, silhouette, controllerComponents)
-  val dataEconomieController = new DataEconomieController(dataEconomieOrchestrator, silhouetteApi, controllerComponents)
+  val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
+  val mobileAppController = new MobileAppController(signalConsoConfiguration, cookieAuthenticator, controllerComponents)
+  val dataEconomieController =
+    new DataEconomieController(dataEconomieOrchestrator, apiKeyAuthenticator, controllerComponents)
   val emailValidationController =
-    new EmailValidationController(silhouette, emailValidationOrchestrator, controllerComponents)
+    new EmailValidationController(cookieAuthenticator, emailValidationOrchestrator, controllerComponents)
 
-  val eventsController = new EventsController(eventsOrchestrator, silhouette, controllerComponents)
-  val ratingController = new RatingController(ratingRepository, silhouette, controllerComponents)
+  val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
+  val ratingController = new RatingController(ratingRepository, cookieAuthenticator, controllerComponents)
   val reportBlockedNotificationController =
     new ReportBlockedNotificationController(
-      silhouette,
-      silhouetteApi,
+      cookieAuthenticator,
       reportBlockedNotificationOrchestrator,
       controllerComponents
     )
   val reportConsumerReviewController =
-    new ReportConsumerReviewController(reportConsumerReviewOrchestrator, silhouette, controllerComponents)
+    new ReportConsumerReviewController(reportConsumerReviewOrchestrator, cookieAuthenticator, controllerComponents)
 
   val reportFileController =
-    new ReportFileController(reportFileOrchestrator, silhouette, signalConsoConfiguration, controllerComponents)
+    new ReportFileController(
+      reportFileOrchestrator,
+      cookieAuthenticator,
+      signalConsoConfiguration,
+      controllerComponents
+    )
 
   val reportWithDataOrchestrator =
     new ReportWithDataOrchestrator(
@@ -615,7 +571,7 @@ class SignalConsoComponents(
     companyRepository,
     pdfService,
     frontRoute,
-    silhouette,
+    cookieAuthenticator,
     controllerComponents,
     reportWithDataOrchestrator
   )
@@ -624,7 +580,7 @@ class SignalConsoComponents(
     companyRepository,
     asyncFileRepository,
     reportedPhonesExtractActor,
-    silhouette,
+    cookieAuthenticator,
     controllerComponents
   )
 
@@ -633,34 +589,34 @@ class SignalConsoComponents(
       reportOrchestrator,
       asyncFileRepository,
       reportsExtractActor,
-      silhouette,
-      silhouetteApi,
+      cookieAuthenticator,
       controllerComponents
     )
 
   val signalConsoReviewController =
-    new SignalConsoReviewController(signalConsoReviewRepository, silhouette, controllerComponents)
+    new SignalConsoReviewController(signalConsoReviewRepository, cookieAuthenticator, controllerComponents)
 
   val reportToExternalController =
     new ReportToExternalController(
       reportRepository,
       reportFileRepository,
       reportOrchestrator,
-      silhouetteApi,
+      apiKeyAuthenticator,
       controllerComponents
     )
 
-  val staticController = new StaticController(silhouette, controllerComponents)
+  val staticController = new StaticController(cookieAuthenticator, controllerComponents)
 
-  val statisticController = new StatisticController(statsOrchestrator, silhouette, controllerComponents)
+  val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
 
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
-  val subscriptionController   = new SubscriptionController(subscriptionOrchestrator, silhouette, controllerComponents)
+  val subscriptionController =
+    new SubscriptionController(subscriptionOrchestrator, cookieAuthenticator, controllerComponents)
   val websiteController = new WebsiteController(
     websitesOrchestrator,
     companyRepository,
     websitesExtractActor,
-    silhouette,
+    cookieAuthenticator,
     controllerComponents
   )
 
@@ -668,12 +624,13 @@ class SignalConsoComponents(
   val userReportsFiltersOrchestrator = new UserReportsFiltersOrchestrator(userReportsFiltersRepository)
   val userReportsFiltersController = new UserReportsFiltersController(
     userReportsFiltersOrchestrator,
-    silhouette,
+    cookieAuthenticator,
     controllerComponents
   )
 
-  val siretExtractorService    = new SiretExtractorService(applicationConfiguration.siretExtractor)
-  val siretExtractorController = new SiretExtractorController(siretExtractorService, silhouette, controllerComponents)
+  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
+  val siretExtractorController =
+    new SiretExtractorController(siretExtractorService, cookieAuthenticator, controllerComponents)
 
   val importOrchestrator = new ImportOrchestrator(
     companyRepository,
@@ -683,7 +640,7 @@ class SignalConsoComponents(
   )
   val importController = new ImportController(
     importOrchestrator,
-    silhouette,
+    cookieAuthenticator,
     controllerComponents
   )
 
@@ -704,7 +661,7 @@ class SignalConsoComponents(
       openBeautyFactsService,
       barcodeProductRepository
     )
-  val barcodeController = new BarcodeController(barcodeOrchestrator, silhouette, controllerComponents)
+  val barcodeController = new BarcodeController(barcodeOrchestrator, cookieAuthenticator, controllerComponents)
 
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
@@ -745,12 +702,6 @@ class SignalConsoComponents(
       barcodeController,
       assets
     )
-
-  override def securedBodyParser: BodyParsers.Default = new BodyParsers.Default(controllerComponents.parsers)
-
-  override def unsecuredBodyParser: BodyParsers.Default = new BodyParsers.Default(controllerComponents.parsers)
-
-  override def userAwareBodyParser: BodyParsers.Default = new BodyParsers.Default(controllerComponents.parsers)
 
   override def config: Config = ConfigFactory.load()
 
