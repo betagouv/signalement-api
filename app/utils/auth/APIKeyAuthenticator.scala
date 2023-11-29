@@ -3,7 +3,6 @@ import models.Consumer
 import play.api.Logger
 import play.api.mvc.Request
 import repositories.consumer.ConsumerRepositoryInterface
-import utils.silhouette.Credentials
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

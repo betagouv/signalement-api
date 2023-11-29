@@ -1,9 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test._
 import models._
 import models.report.ReportStatus
 import org.specs2.concurrent.ExecutionEnv
@@ -16,7 +12,7 @@ import play.api.test._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
 import java.time.LocalDate
@@ -42,7 +38,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
 
   def getReportCount = {
     val request = FakeRequest(GET, routes.StatisticController.getReportsCount().toString)
-      .withAuthenticator[AuthEnv](loginInfo(adminUser))
+      .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -51,7 +47,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
 
   def getReportsCurve = {
     val request = FakeRequest(GET, routes.StatisticController.getReportsCountCurve().toString)
-      .withAuthenticator[AuthEnv](loginInfo(adminUser))
+      .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content   = contentAsJson(result).toString
@@ -71,7 +67,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
           .getReportsCountCurve()
           .toString + "?status=PromesseAction&status=Infonde&status=MalAttribue"
       )
-        .withAuthenticator[AuthEnv](loginInfo(adminUser))
+        .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content   = contentAsJson(result).toString
@@ -227,14 +223,6 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
       Await.result(reportRepository.create(report), Duration.Inf)
   }
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] =
-    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 }

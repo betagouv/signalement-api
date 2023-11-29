@@ -1,7 +1,4 @@
-package utils.silhouette
-
-import utils.auth.BCryptPasswordHasher
-import utils.auth.PasswordInfo
+package utils.auth
 
 object Credentials {
   def toPasswordInfo(pwd: String): PasswordInfo =

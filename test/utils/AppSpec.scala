@@ -1,7 +1,6 @@
 package utils
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.Environment
 import config.ApplicationConfiguration
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
@@ -26,8 +25,6 @@ import pureconfig.generic.semiauto.deriveReader
 import services.MailRetriesService
 import services.MailRetriesService.EmailRequest
 import tasks.company.CompanySyncServiceInterface
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
 
 import java.io.File
 import java.time.LocalTime
@@ -87,8 +84,6 @@ trait AppSpec extends BeforeAfterAll with Mockito {
 object TestApp {
 
   def buildApp(
-      maybeAuthEnv: Option[Environment[AuthEnv]] = None,
-      maybeApiKeyEnv: Option[Environment[APIKeyEnv]] = None,
       maybeConfiguration: Option[Configuration] = None
   ): (
       Application,
@@ -96,7 +91,7 @@ object TestApp {
   ) = {
     val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
     val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
-    val loader = new DefaultApplicationLoader(maybeAuthEnv, maybeApiKeyEnv, maybeConfiguration)
+    val loader                             = new DefaultApplicationLoader(maybeConfiguration)
     (loader.load(context), loader.components)
   }
 
@@ -109,8 +104,6 @@ object TestApp {
 }
 
 class DefaultApplicationLoader(
-    maybeAuthEnv: Option[Environment[AuthEnv]] = None,
-    maybeApiKeyEnv: Option[Environment[APIKeyEnv]] = None,
     maybeConfiguration: Option[Configuration] = None
 ) extends ApplicationLoader
     with Mockito {
@@ -123,13 +116,10 @@ class DefaultApplicationLoader(
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
-      override def authEnv: Environment[AuthEnv] =
-        maybeAuthEnv.getOrElse(super.authEnv)
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
-      override def authApiEnv: Environment[APIKeyEnv] =
-        maybeApiKeyEnv.getOrElse(super.authApiEnv)
+
       override def configuration: Configuration = maybeConfiguration.getOrElse(super.configuration)
 
     }

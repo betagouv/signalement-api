@@ -76,26 +76,21 @@ class CookieAuthenticator(
     )
   }
 
-  def init(userEmail: EmailAddress)(implicit request: RequestHeader): Future[Cookie] = {
+  def init(userEmail: EmailAddress)(implicit request: RequestHeader): Either[AuthError, Cookie] = {
     val cookieInfos = create(userEmail)
-    serialize(cookieInfos) match {
-      case Right(value) =>
-        Future.successful(
-          Cookie(
-            name = settings.cookieName,
-            value = value,
-            // The maxAge` must be used from the authenticator, because it might be changed by the user
-            // to implement "Remember Me" functionality
-            maxAge = cookieInfos.cookieMaxAge.map(_.toSeconds.toInt),
-            path = settings.cookiePath,
-            domain = settings.cookieDomain,
-            secure = settings.secureCookie,
-            httpOnly = settings.httpOnlyCookie,
-            sameSite = settings.sameSite
-          )
-        )
-      case Left(error) =>
-        Future.failed(error)
+    serialize(cookieInfos).map { value =>
+      Cookie(
+        name = settings.cookieName,
+        value = value,
+        // The maxAge` must be used from the authenticator, because it might be changed by the user
+        // to implement "Remember Me" functionality
+        maxAge = cookieInfos.cookieMaxAge.map(_.toSeconds.toInt),
+        path = settings.cookiePath,
+        domain = settings.cookieDomain,
+        secure = settings.secureCookie,
+        httpOnly = settings.httpOnlyCookie,
+        sameSite = settings.sameSite
+      )
     }
   }
 

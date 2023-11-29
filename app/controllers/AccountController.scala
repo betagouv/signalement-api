@@ -127,9 +127,12 @@ class AccountController(
 
   def validateEmail() = Action.async(parse.json) { implicit request =>
     for {
-      token  <- request.parseBody[String](JsPath \ "token")
-      user   <- accessesOrchestrator.validateDGCCRFEmail(token)
-      cookie <- authenticator.init(user.email)
+      token <- request.parseBody[String](JsPath \ "token")
+      user  <- accessesOrchestrator.validateDGCCRFEmail(token)
+      cookie <- authenticator.init(user.email) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
     } yield authenticator.embed(cookie, Ok(Json.toJson(user)))
   }
 

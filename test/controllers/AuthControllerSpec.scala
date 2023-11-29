@@ -1,11 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import com.mohiva.play.silhouette.api.util.PasswordInfo
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import controllers.error.AppError._
 import controllers.error.ErrorPayload
 import controllers.error.ErrorPayload.AuthenticationErrorPayload
@@ -26,8 +20,10 @@ import play.api.test._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import utils.silhouette.Credentials.toLoginInfo
-import utils.silhouette.auth.AuthEnv
+import utils.auth.BCryptPasswordHasher
+import utils.auth.PasswordInfo
+import utils.AuthHelpers._
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -42,27 +38,16 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
   val validPassword = "testtesttestA1!"
 
-  private val hasher: PasswordHasherRegistry = PasswordHasherRegistry(
-    new BCryptPasswordHasher()
-  )
-
   val identity = Fixtures.genAdminUser.sample.get.copy(
     id = UUID.randomUUID(),
-    password = PasswordInfo(BCryptPasswordHasher.ID, password = validPassword, salt = Some("SignalConso")).password
+    password = validPassword
   )
-
-  val identLoginInfo = toLoginInfo(identity.email.value)
-
-  val env = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
 
     override def load(context: ApplicationLoader.Context): Application = {
-      components = new SignalConsoComponents(context) {
-        override def passwordHasherRegistry        = hasher
-        override def authEnv: Environment[AuthEnv] = env
-      }
+      components = new SignalConsoComponents(context) {}
       components.application
     }
 
@@ -76,8 +61,6 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     app.stop()
     ()
   }
-  implicit val authEnv: Environment[AuthEnv] = env
-
   lazy val userRepository = components.userRepository
 
   lazy val passwordHasherRegistry = components.passwordHasherRegistry
@@ -263,7 +246,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
       val request = FakeRequest(POST, routes.AuthController.changePassword().toString)
-        .withAuthenticator[AuthEnv](identLoginInfo)
+        .withAuthCookie(identity.email, components.cookieAuthenticator)
         .withJsonBody(jsonBody)
 
       val result = route(app, request).get

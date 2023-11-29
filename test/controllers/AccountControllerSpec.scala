@@ -1,10 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.EmailAlreadyExist
 import controllers.error.ErrorPayload
@@ -19,7 +14,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import utils._
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -30,21 +25,14 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val identity       = Fixtures.genAdminUser.sample.get
-  val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
+  val identity = Fixtures.genAdminUser.sample.get
 
-  val (app, components) = TestApp.buildApp(
-    Some(
-      new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
-    )
-  )
+  val (app, components) = TestApp.buildApp()
 
   val userRepository          = components.userRepository
   val companyRepository       = components.companyRepository
   val companyAccessRepository = components.companyAccessRepository
   val accessTokenRepository   = components.accessTokenRepository
-
-  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
@@ -52,6 +40,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
   override def setupData() =
     Await.result(
       for {
+        _ <- userRepository.create(identity)
         _ <- userRepository.create(proUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
@@ -163,8 +152,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
       "send an invalid DGCCRF invitation" in {
         val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGCCRF).toString)
-          .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@example.com"))
+          .withAuthCookie(identity.email, components.cookieAuthenticator)
 
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(403)
@@ -172,7 +161,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
       "send a DGCCRF invitation" in {
         val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGCCRF).toString)
-          .withAuthenticator[AuthEnv](identLoginInfo)
+          .withAuthCookie(identity.email, components.cookieAuthenticator)
           .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
 
         val result = route(app, request).get
@@ -181,7 +170,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
       "send an invalid DGAL invitation" in {
         val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGAL).toString)
-          .withAuthenticator[AuthEnv](identLoginInfo)
+          .withAuthCookie(identity.email, components.cookieAuthenticator)
           .withJsonBody(Json.obj("email" -> "user@example.com"))
 
         val result = route(app, request).get
@@ -190,7 +179,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
       "send a DGAL invitation" in {
         val request = FakeRequest(POST, routes.AccountController.sendAgentInvitation(UserRole.DGAL).toString)
-          .withAuthenticator[AuthEnv](identLoginInfo)
+          .withAuthCookie(identity.email, components.cookieAuthenticator)
           .withJsonBody(Json.obj("email" -> "user@dgal.gouv.fr"))
 
         val result = route(app, request).get

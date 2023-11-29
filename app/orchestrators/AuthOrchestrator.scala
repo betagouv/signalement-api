@@ -172,8 +172,11 @@ class AuthOrchestrator(
 
   private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
-      _      <- credentialsProvider.authenticate(userLogin.login, userLogin.password)
-      cookie <- authenticator.init(EmailAddress(userLogin.login))
+      _ <- credentialsProvider.authenticate(userLogin.login, userLogin.password)
+      cookie <- authenticator.init(EmailAddress(userLogin.login)) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
     } yield cookie
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
