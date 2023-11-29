@@ -2,7 +2,6 @@ package controllers
 
 import models._
 import models.report.ReportStatus
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
@@ -20,7 +19,7 @@ import java.time.OffsetDateTime
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticControllerSpec {
+class ReportStatisticSpec extends StatisticControllerSpec {
   override def is =
     s2"""it should
        return reports count                               ${getReportCount}
@@ -92,13 +91,10 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 }
 
-abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
-    extends Specification
-    with AppSpec
-    with FutureMatchers
-    with JsonMatchers {
+abstract class StatisticControllerSpec extends Specification with AppSpec with FutureMatchers with JsonMatchers {
 
   lazy val companyRepository = components.companyRepository
+  lazy val userRepository    = components.userRepository
   lazy val reportRepository  = components.reportRepository
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -218,6 +214,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports
 
   override def setupData() = {
+    Await.result(userRepository.create(adminUser), Duration.Inf)
     Await.result(companyRepository.getOrCreate(company.siret, company), Duration.Inf)
     for (report <- allReports)
       Await.result(reportRepository.create(report), Duration.Inf)

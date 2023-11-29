@@ -34,6 +34,7 @@ class ReportListController(
   val logger: Logger                      = Logger(this.getClass)
 
   def getReports() = SecuredAction.async { implicit request =>
+    implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     ReportFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))

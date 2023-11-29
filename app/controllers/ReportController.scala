@@ -57,6 +57,7 @@ class ReportController(
   val logger: Logger = Logger(this.getClass)
 
   def createReport: Action[JsValue] = Action.async(parse.json) { implicit request =>
+    implicit val userRole: Option[UserRole] = None
     for {
       draftReport <- request.parseBody[ReportDraft]()
       createdReport <- reportOrchestrator.validateAndCreateReport(draftReport).recover {
@@ -71,6 +72,7 @@ class ReportController(
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =
     SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         reportCompany <- request.parseBody[ReportCompany]()
         result <- reportOrchestrator
@@ -84,6 +86,7 @@ class ReportController(
 
   def updateReportCountry(uuid: UUID, countryCode: String) =
     SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       reportOrchestrator
         .updateReportCountry(uuid, countryCode, request.identity.id)
         .map {
@@ -94,6 +97,7 @@ class ReportController(
 
   def updateReportConsumer(uuid: UUID): Action[JsValue] =
     SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         reportConsumer <- request.parseBody[ReportConsumerUpdate]()
         result <- reportOrchestrator
@@ -107,6 +111,7 @@ class ReportController(
 
   def reportResponse(uuid: UUID): Action[JsValue] =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
       for {
         reportResponse <- request.parseBody[ReportResponse]()
@@ -137,6 +142,7 @@ class ReportController(
     }
   def getReport(uuid: UUID) =
     SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         visibleReport <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         viewedReport <- visibleReport
