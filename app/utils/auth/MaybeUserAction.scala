@@ -1,6 +1,5 @@
 package utils.auth
 
-import controllers.error.AppError.AuthError
 import models.User
 import play.api.mvc.ActionBuilder
 import play.api.mvc.ActionTransformer
@@ -19,11 +18,9 @@ class MaybeUserAction(val parser: BodyParsers.Default, authenticator: Authentica
   override protected def transform[A](request: Request[A]): Future[MaybeUserRequest[A]] =
     authenticator
       .authenticate(request)
-      .map { maybeUser =>
-        IdentifiedRequest(maybeUser, request)
-      }
-      .recover { case AuthError(_) =>
-        IdentifiedRequest(None, request)
+      .map {
+        case Right(maybeUser) => IdentifiedRequest(maybeUser, request)
+        case Left(_)          => IdentifiedRequest(None, request)
       }
 }
 

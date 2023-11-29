@@ -27,6 +27,7 @@ import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.MailRetriesService
 import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
@@ -44,6 +45,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import java.time.temporal.ChronoUnit
+
 object GetReportByUnauthenticatedUser extends GetReportSpec {
   override def is =
     s2"""
@@ -355,6 +357,7 @@ trait GetReportContext extends AppSpec {
   val mockEventRepository                 = mock[EventRepositoryInterface]
   val mockMailRetriesService              = mock[MailRetriesService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
+  val mockUserRepository                  = mock[UserRepositoryInterface]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(
@@ -382,6 +385,16 @@ trait GetReportContext extends AppSpec {
     )
   )
 
+  mockUserRepository.findByEmail(adminUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(adminUser))
+  )
+  mockUserRepository.findByEmail(concernedProUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(concernedProUser))
+  )
+  mockUserRepository.findByEmail(notConcernedProUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(notConcernedProUser))
+  )
+
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
 
@@ -395,6 +408,7 @@ trait GetReportContext extends AppSpec {
         override def eventRepository: EventRepositoryInterface           = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
+        override def userRepository: UserRepositoryInterface = mockUserRepository
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",

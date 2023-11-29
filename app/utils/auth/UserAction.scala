@@ -1,13 +1,14 @@
 package utils.auth
 
 import controllers.error.AppError.AuthError
+import controllers.error.AppErrorTransformer
 import models.User
 import models.UserPermission
 import models.UserRole
 import play.api.mvc.Results.Forbidden
 import play.api.mvc.ActionBuilder
 import play.api.mvc.ActionFilter
-import play.api.mvc.ActionTransformer
+import play.api.mvc.ActionRefiner
 import play.api.mvc.AnyContent
 import play.api.mvc.BodyParsers
 import play.api.mvc.Request
@@ -20,11 +21,16 @@ import scala.concurrent.Future
 class UserAction(val parser: BodyParsers.Default, authenticator: Authenticator[User])(implicit
     val executionContext: ExecutionContext
 ) extends ActionBuilder[UserRequest, AnyContent]
-    with ActionTransformer[Request, UserRequest] {
-  override protected def transform[A](request: Request[A]): Future[UserRequest[A]] =
+    with ActionRefiner[Request, UserRequest] {
+  override protected def refine[A](request: Request[A]): Future[Either[Result, UserRequest[A]]] =
     authenticator.authenticate(request).flatMap {
-      case Some(user) => Future.successful(IdentifiedRequest(user, request))
-      case None       => Future.failed(AuthError("User not found in DB"))
+      case Right(Some(user)) => Future.successful(Right(IdentifiedRequest(user, request)))
+      case Right(None) =>
+        val result = AppErrorTransformer.handleError(request, AuthError("User not found in DB"))
+        Future.successful(Left(result))
+      case Left(error) =>
+        val result = AppErrorTransformer.handleError(request, error)
+        Future.successful(Left(result))
     }
 }
 

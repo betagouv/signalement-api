@@ -53,14 +53,7 @@ abstract class ApiKeyBaseController(
     override val controllerComponents: ControllerComponents
 ) extends AbstractController(controllerComponents) {
 
-//  def silhouette: Silhouette[APIKeyEnv]
-//  type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
   implicit val ec: ExecutionContext
-
-//  def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] =
-//    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredApiRequestWrapper](request =>
-//      Some(request.identity.id)
-//    )
 
   def SecuredAction = new ConsumerAction(
     new BodyParsers.Default(controllerComponents.parsers),
@@ -72,48 +65,13 @@ abstract class BaseController(
     authenticator: Authenticator[User],
     override val controllerComponents: ControllerComponents
 ) extends AbstractController(controllerComponents) {
-
-//  type SecuredRequestWrapper[A]   = SecuredRequest[AuthEnv, A]
-//  type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
-
-//  def silhouette: Silhouette[AuthEnv]
-
   implicit val ec: ExecutionContext
 
-//  def SecuredAction: ActionBuilder[SecuredRequestWrapper, AnyContent] =
-//    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredRequestWrapper](request =>
-//      Some(request.identity.id)
-//    )
-//
-//  def SecuredAction(
-//      authorization: Authorization[AuthEnv#I, AuthEnv#A]
-//  ): ActionBuilder[SecuredRequestWrapper, AnyContent] =
-//    silhouette.SecuredAction(authorization) andThen new ErrorHandlerActionFunction[SecuredRequestWrapper](request =>
-//      Some(request.identity.id)
-//    )
-//
-//  // We should always use our wrappers, to get our error handling
-//  // We must NOT bind Action to UnsecuredAction as it was before
-//  // It has not the same bahaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
+  // We should always use our wrappers, to get our error handling
+  // We must NOT bind Action to UnsecuredAction as it was before
+  // It has not the same bahaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
   override val Action: ActionBuilder[Request, AnyContent] =
     super.Action andThen new ErrorHandlerActionFunction[Request]()
-//
-//  def UnsecuredAction: ActionBuilder[Request, AnyContent] =
-//    silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]()
-//
-//  def UserAwareAction: ActionBuilder[UserAwareRequestWrapper, AnyContent] =
-//    silhouette.UserAwareAction andThen
-//      new ErrorHandlerActionFunction[UserAwareRequestWrapper](request => request.identity.map(_.id))
-//
-//  implicit def securedRequest2User[A](implicit req: SecuredRequest[AuthEnv, A]): User = req.identity
-//
-//  implicit def securedRequest2UserRoleOpt[A](implicit req: SecuredRequest[AuthEnv, A]): Option[UserRole] = Some(
-//    req.identity.userRole
-//  )
-//
-//  implicit def securedRequest2UserOpt[A](implicit req: SecuredRequest[AuthEnv, A]): Option[User] = Some(req.identity)
-//
-//  implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]): Option[User] = req.identity
 
   def SecuredAction: ActionBuilder[UserRequest, AnyContent] = new UserAction(
     new BodyParsers.Default(controllerComponents.parsers),

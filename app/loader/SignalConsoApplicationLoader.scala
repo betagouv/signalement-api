@@ -195,7 +195,7 @@ class SignalConsoComponents(
     new ResponseConsumerReviewRepository(dbConfig)
   def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
-  val userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
+  def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 

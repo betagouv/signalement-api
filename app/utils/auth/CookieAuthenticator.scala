@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CookieAuthenticator(
@@ -25,7 +26,8 @@ class CookieAuthenticator(
     fingerprintGenerator: FingerprintGenerator,
     settings: CookieAuthenticatorSettings,
     userRepository: UserRepositoryInterface
-) extends Authenticator[User] {
+)(implicit ec: ExecutionContext)
+    extends Authenticator[User] {
 
   private def unserialize(str: String): Either[AuthError, CookieInfos] =
     for {
@@ -41,22 +43,22 @@ class CookieAuthenticator(
 
   def extract[B](request: Request[B]): Either[AuthError, CookieInfos] = {
     val maybeFingerprint = if (settings.useFingerprinting) Some(fingerprintGenerator.generate(request)) else None
-    val test = request.cookies.get(settings.cookieName) match {
+    val maybeCookiesInfos = request.cookies.get(settings.cookieName) match {
       case Some(cookie) => unserialize(cookie.value)
       case None         => Left(AuthError("Cookie not found"))
     }
 
-    test match {
+    maybeCookiesInfos match {
       case Right(a) if maybeFingerprint.isDefined && a.fingerprint != maybeFingerprint =>
         Left(AuthError("Fingerprint does not match"))
       case v => v
     }
   }
 
-  def authenticate[B](request: Request[B]): Future[Option[User]] =
+  def authenticate[B](request: Request[B]): Future[Either[AuthError, Option[User]]] =
     extract(request) match {
-      case Right(cookieInfos) => userRepository.findByEmail(cookieInfos.userEmail.value)
-      case Left(authError)    => Future.failed(authError)
+      case Right(cookieInfos) => userRepository.findByEmail(cookieInfos.userEmail.value).map(Right(_))
+      case Left(authError)    => Future.successful(Left(authError))
     }
 
   private def serialize(cookieInfos: CookieInfos): Either[AuthError, String] = for {
