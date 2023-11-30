@@ -152,7 +152,7 @@ class ReportOrchestrator(
     val maybeWebsite: Option[Website] = for {
       websiteUrl <- websiteURLOpt
       host       <- websiteUrl.getHost
-    } yield Website(host = host, companyCountry = companyCountry.map(_.code), companyId = companyOpt.map(_.id))
+    } yield Website(host = host, companyCountry = companyCountry.map(_.code.value), companyId = companyOpt.map(_.id))
 
     maybeWebsite.map { website =>
       logger.debug("Creating website entry")

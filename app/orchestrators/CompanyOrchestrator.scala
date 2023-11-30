@@ -37,6 +37,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.PDFService
 import tasks.company.CompanySearchResult
+import tasks.company.CompanySearchResultApi
 import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -52,7 +53,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
 import scala.util.chaining.scalaUtilChainingOps
-
 import cats.syntax.traverse._
 
 class CompanyOrchestrator(
@@ -172,7 +172,7 @@ class CompanyOrchestrator(
       exactMatch = companiesByUrl
         .filter(x => URL(url).getHost.contains(x._1.host))
         .map { case (website, company) =>
-          fromCompany(company, website)
+          CompanySearchResultApi.fromCompany(company, website)
         }
       _ = logger.debug(s"Found exactMatch: $exactMatch, similarHosts: ${similarHosts}")
     } yield WebsiteCompanySearchResult(exactMatch, similarHosts)
