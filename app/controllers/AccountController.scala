@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.CookieAuthenticator
 import cats.implicits.catsSyntaxOption
 import config.EmailConfiguration
 import models._
@@ -11,8 +12,7 @@ import play.api.mvc.ControllerComponents
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import error.AppError.MalformedFileKey
-import utils.auth.CookieAuthenticator
-import utils.auth.UserAction.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

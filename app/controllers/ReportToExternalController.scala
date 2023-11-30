@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.Consumer
 import models.report.Report
 import models.report.ReportFile
@@ -26,7 +27,6 @@ import models.report.ReportTag
 import play.api.mvc.ControllerComponents
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
-import utils.auth.Authenticator
 
 class ReportToExternalController(
     reportRepository: ReportRepositoryInterface,

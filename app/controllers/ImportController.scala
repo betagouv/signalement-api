@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import controllers.error.AppError.EmptyEmails
 import models.User
 import models.UserRole
@@ -10,8 +11,7 @@ import play.api.mvc.ControllerComponents
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

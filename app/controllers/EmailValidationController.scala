@@ -9,13 +9,13 @@ import models.UserRole
 import orchestrators.EmailValidationOrchestrator
 import play.api._
 import _root_.controllers.error.AppError.MalformedQueryParams
+import authentication.Authenticator
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import models.PaginatedResult.paginatedResultWrites
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

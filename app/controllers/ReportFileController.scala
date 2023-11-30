@@ -1,6 +1,7 @@
 package controllers
 
 import akka.Done
+import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import config.SignalConsoConfiguration
 import controllers.error.AppError.FileTooLarge
@@ -17,7 +18,6 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
-import utils.auth.Authenticator
 
 import java.io.File
 import java.nio.file.Paths

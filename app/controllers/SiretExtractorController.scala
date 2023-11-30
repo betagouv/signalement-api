@@ -1,11 +1,11 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.UserRole
 import play.api.mvc.ControllerComponents
 import services.SiretExtractorService
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 

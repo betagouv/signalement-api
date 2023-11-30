@@ -1,13 +1,13 @@
-package utils.auth
+package authentication
 
+import authentication.JcaSigner.BadSignature
+import authentication.JcaSigner.InvalidMessageFormat
+import authentication.JcaSigner.UnknownVersion
 import controllers.error.AppError.AuthError
+import org.apache.commons.codec.binary.Hex
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import org.apache.commons.codec.binary.Hex
-import utils.auth.JcaSigner.BadSignature
-import utils.auth.JcaSigner.InvalidMessageFormat
-import utils.auth.JcaSigner.UnknownVersion
 
 /** Signer implementation based on JCA (Java Cryptography Architecture).
   *

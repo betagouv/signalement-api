@@ -1,5 +1,9 @@
 package controllers
 
+import authentication.actions.ConsumerAction
+import authentication.actions.MaybeUserAction
+import authentication.actions.UserAction
+import authentication.Authenticator
 import controllers.error.AppErrorTransformer.handleError
 import models._
 import models.company.AccessLevel
@@ -8,13 +12,9 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
-import utils.auth.ConsumerAction.ConsumerRequest
-import utils.auth.MaybeUserAction.MaybeUserRequest
-import utils.auth.UserAction.UserRequest
-import utils.auth.Authenticator
-import utils.auth.ConsumerAction
-import utils.auth.MaybeUserAction
-import utils.auth.UserAction
+import ConsumerAction.ConsumerRequest
+import MaybeUserAction.MaybeUserRequest
+import UserAction.UserRequest
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

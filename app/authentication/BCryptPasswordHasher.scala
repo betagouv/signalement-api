@@ -1,7 +1,7 @@
-package utils.auth
+package authentication
 
+import authentication.BCryptPasswordHasher._
 import org.mindrot.jbcrypt.BCrypt
-import BCryptPasswordHasher._
 
 /** Implementation of the password hasher based on BCrypt.
   *

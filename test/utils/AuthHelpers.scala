@@ -1,9 +1,9 @@
 package utils
 
+import authentication.BCryptPasswordHasher
+import authentication.CookieAuthenticator
 import models.User
 import play.api.test.FakeRequest
-import utils.auth.BCryptPasswordHasher
-import utils.auth.CookieAuthenticator
 
 object AuthHelpers {
   implicit class FakeRequestOps[A](request: FakeRequest[A]) {

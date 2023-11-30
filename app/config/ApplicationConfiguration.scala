@@ -1,8 +1,8 @@
 package config
 
-import utils.auth.CookieAuthenticator.CookieAuthenticatorSettings
-import utils.auth.JcaCrypterSettings
-import utils.auth.JcaSignerSettings
+import authentication.CookieAuthenticator.CookieAuthenticatorSettings
+import authentication.JcaCrypterSettings
+import authentication.JcaSignerSettings
 
 case class ApplicationConfiguration(
     app: SignalConsoConfiguration,

@@ -6,6 +6,14 @@ import actors._
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.util.Timeout
+import authentication.APIKeyAuthenticator
+import authentication.BCryptPasswordHasher
+import authentication.CookieAuthenticator
+import authentication.CredentialsProvider
+import authentication.FingerprintGenerator
+import authentication.JcaCrypter
+import authentication.JcaSigner
+import authentication.PasswordHasherRegistry
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
@@ -92,14 +100,6 @@ import tasks.report.ReportRemindersTask
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
-import utils.auth
-import utils.auth.APIKeyAuthenticator
-import utils.auth.BCryptPasswordHasher
-import utils.auth.CredentialsProvider
-import utils.auth.FingerprintGenerator
-import utils.auth.JcaCrypter
-import utils.auth.JcaSigner
-import utils.auth.PasswordHasherRegistry
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -207,7 +207,7 @@ class SignalConsoComponents(
   val fingerprintGenerator = new FingerprintGenerator()
 
   val cookieAuthenticator =
-    new auth.CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
+    new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
   val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)

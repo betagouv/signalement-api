@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.UserPermission
 import models.report.ReportFilter
@@ -11,8 +12,7 @@ import play.api.libs.json.Reads
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyAddressUpdate
@@ -14,9 +15,8 @@ import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithPermission
+import authentication.actions.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import java.util.UUID

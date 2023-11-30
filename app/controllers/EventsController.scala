@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.UserPermission
 import orchestrators.EventsOrchestratorInterface
@@ -8,8 +9,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import utils.SIRET
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

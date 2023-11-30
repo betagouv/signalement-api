@@ -1,5 +1,7 @@
 package controllers
 
+import authentication.BCryptPasswordHasher
+import authentication.PasswordInfo
 import controllers.error.AppError._
 import controllers.error.ErrorPayload
 import controllers.error.ErrorPayload.AuthenticationErrorPayload
@@ -20,8 +22,6 @@ import play.api.test._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import utils.auth.BCryptPasswordHasher
-import utils.auth.PasswordInfo
 import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit

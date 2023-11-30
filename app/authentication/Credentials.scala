@@ -1,4 +1,4 @@
-package utils.auth
+package authentication
 
 object Credentials {
   def toPasswordInfo(pwd: String): PasswordInfo =

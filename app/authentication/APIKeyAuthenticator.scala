@@ -1,4 +1,5 @@
-package utils.auth
+package authentication
+
 import controllers.error.AppError.AuthError
 import models.Consumer
 import play.api.Logger

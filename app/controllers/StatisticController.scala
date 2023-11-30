@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter.transmittedReportsFilter
@@ -14,8 +15,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import utils.QueryStringMapper
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

@@ -1,16 +1,12 @@
-package utils.auth
+package authentication
 
-import play.api.libs.json.Format
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.Reads._
+import play.api.libs.json.Writes._
+import play.api.libs.json._
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import scala.concurrent.duration.FiniteDuration
-import play.api.libs.json.Reads._
-import play.api.libs.json.Writes._
 import scala.concurrent.duration._
 
 case class CookieInfos(

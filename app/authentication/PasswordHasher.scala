@@ -1,4 +1,4 @@
-package utils.auth
+package authentication
 
 /** The password details.
   *

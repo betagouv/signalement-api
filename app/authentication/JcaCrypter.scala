@@ -1,9 +1,9 @@
-package utils.auth
+package authentication
 
+import authentication.JcaCrypter.UnderlyingIVBug
+import authentication.JcaCrypter.UnexpectedFormat
+import authentication.JcaCrypter.UnknownVersion
 import controllers.error.AppError.AuthError
-import utils.auth.JcaCrypter.UnderlyingIVBug
-import utils.auth.JcaCrypter.UnexpectedFormat
-import utils.auth.JcaCrypter.UnknownVersion
 
 import java.security.MessageDigest
 import java.util.Base64

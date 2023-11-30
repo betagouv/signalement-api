@@ -1,19 +1,14 @@
-package utils.auth
+package authentication.actions
 
+import authentication.Authenticator
+import authentication.actions.UserAction.UserRequest
 import controllers.error.AppError.AuthError
 import controllers.error.AppErrorTransformer
 import models.User
 import models.UserPermission
 import models.UserRole
 import play.api.mvc.Results.Forbidden
-import play.api.mvc.ActionBuilder
-import play.api.mvc.ActionFilter
-import play.api.mvc.ActionRefiner
-import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
-import play.api.mvc.Request
-import play.api.mvc.Result
-import utils.auth.UserAction.UserRequest
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

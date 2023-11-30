@@ -1,12 +1,9 @@
-package utils.auth
+package authentication.actions
 
+import authentication.Authenticator
+import authentication.actions.MaybeUserAction.MaybeUserRequest
 import models.User
-import play.api.mvc.ActionBuilder
-import play.api.mvc.ActionTransformer
-import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
-import play.api.mvc.Request
-import utils.auth.MaybeUserAction.MaybeUserRequest
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

@@ -5,12 +5,12 @@ import akka.stream.alpakka.file.ArchiveMetadata
 import akka.stream.alpakka.file.scaladsl.Archive
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import authentication.Authenticator
 import models.Consumer
 import orchestrators.DataEconomieOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

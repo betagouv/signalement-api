@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import io.scalaland.chimney.dsl.TransformerOps
 import models.User
 import models.report.signalconsoreview.SignalConsoReview
@@ -7,7 +8,6 @@ import models.report.signalconsoreview.SignalConsoReviewCreate
 import models.report.signalconsoreview.SignalConsoReviewId
 import play.api.mvc.ControllerComponents
 import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
-import utils.auth.Authenticator
 
 import scala.concurrent.ExecutionContext
 

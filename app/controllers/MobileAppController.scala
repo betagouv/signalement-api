@@ -1,12 +1,12 @@
 package controllers
 
+import authentication.Authenticator
 import config.SignalConsoConfiguration
 import models.User
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

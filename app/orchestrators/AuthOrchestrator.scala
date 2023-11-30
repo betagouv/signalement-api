@@ -1,4 +1,7 @@
 package orchestrators
+
+import authentication.CookieAuthenticator
+import authentication.CredentialsProvider
 import utils.Logs.RichLogger
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
@@ -40,8 +43,6 @@ import services.Email.ResetPassword
 import services.MailService
 import utils.EmailAddress
 import utils.PasswordComplexityHelper
-import utils.auth.CookieAuthenticator
-import utils.auth.CredentialsProvider
 
 import java.time.OffsetDateTime
 import java.time.Period

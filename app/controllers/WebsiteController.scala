@@ -2,6 +2,7 @@ package controllers
 
 import actors.WebsiteExtractActor
 import akka.actor.typed
+import authentication.Authenticator
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyCreation
@@ -16,8 +17,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext

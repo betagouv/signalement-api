@@ -2,6 +2,7 @@ package controllers
 
 import actors.ReportsExtractActor
 import akka.actor.typed
+import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
@@ -16,8 +17,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.QueryStringMapper
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import java.time.ZoneId
 

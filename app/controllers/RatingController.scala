@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.Rating
 import models.User
 import play.api.Logger
@@ -7,7 +8,6 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.rating.RatingRepositoryInterface
-import utils.auth.Authenticator
 
 import java.time.OffsetDateTime
 import java.util.UUID

@@ -1,15 +1,11 @@
-package utils.auth
+package authentication.actions
 
+import authentication.Authenticator
+import authentication.actions.ConsumerAction.ConsumerRequest
 import controllers.error.AppError.AuthError
 import controllers.error.AppErrorTransformer
 import models.Consumer
-import play.api.mvc.ActionBuilder
-import play.api.mvc.ActionRefiner
-import play.api.mvc.AnyContent
-import play.api.mvc.BodyParsers
-import play.api.mvc.Request
-import play.api.mvc.Result
-import utils.auth.ConsumerAction.ConsumerRequest
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

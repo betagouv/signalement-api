@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.SubscriptionCreation
 import models.SubscriptionUpdate
 import models.User
@@ -9,8 +10,7 @@ import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

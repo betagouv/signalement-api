@@ -1,4 +1,4 @@
-package utils.auth
+package authentication
 
 import play.api.http.HeaderNames.ACCEPT_CHARSET
 import play.api.http.HeaderNames.ACCEPT_LANGUAGE

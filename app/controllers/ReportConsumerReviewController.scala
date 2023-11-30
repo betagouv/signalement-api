@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import io.scalaland.chimney.dsl.TransformerOps
 import models.User
 import models.report.review.ConsumerReviewExistApi
@@ -11,7 +12,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

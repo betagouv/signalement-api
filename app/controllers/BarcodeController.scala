@@ -1,11 +1,11 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.barcode.BarcodeProduct
 import orchestrators.BarcodeOrchestrator
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import utils.auth.Authenticator
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

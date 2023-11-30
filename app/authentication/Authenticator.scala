@@ -1,4 +1,4 @@
-package utils.auth
+package authentication
 
 import controllers.error.AppError.AuthError
 import play.api.mvc.Request

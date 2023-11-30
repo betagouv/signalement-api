@@ -1,4 +1,4 @@
-package utils.auth
+package authentication.actions
 
 import play.api.mvc.Request
 import play.api.mvc.WrappedRequest

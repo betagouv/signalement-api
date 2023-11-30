@@ -1,16 +1,12 @@
-package utils.auth
+package authentication
 
+import authentication.CookieAuthenticator.CookieAuthenticatorSettings
 import controllers.error.AppError.AuthError
 import models.User
 import play.api.libs.json.Json
-import play.api.mvc.Cookie
-import play.api.mvc.DiscardingCookie
-import play.api.mvc.Request
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
+import play.api.mvc._
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
-import utils.auth.CookieAuthenticator.CookieAuthenticatorSettings
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit

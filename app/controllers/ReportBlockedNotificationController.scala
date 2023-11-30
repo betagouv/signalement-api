@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.UserRole
 import models.report.ReportBlockedNotificationBody
@@ -7,8 +8,7 @@ import orchestrators.ReportBlockedNotificationOrchestrator
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import utils.auth.UserAction.WithRole
-import utils.auth.Authenticator
+import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

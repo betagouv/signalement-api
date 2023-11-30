@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import models.User
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
@@ -16,7 +17,6 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.SIRET
-import utils.auth.Authenticator
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

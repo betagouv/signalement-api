@@ -1,4 +1,4 @@
-package utils.auth
+package authentication
 
 import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.ServerError

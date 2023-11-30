@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import cats.implicits.toTraverseOps
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
@@ -29,9 +30,8 @@ import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.FrontRoute
 import utils.QueryStringMapper
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithPermission
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithPermission
+import authentication.actions.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import java.util.Locale

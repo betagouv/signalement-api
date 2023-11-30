@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.Authenticator
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
@@ -62,8 +63,7 @@ import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
-import utils.auth.Authenticator
-import utils.auth.UserAction.WithRole
+import authentication.actions.UserAction.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime

@@ -1,11 +1,11 @@
 package controllers
 
+import authentication.Authenticator
 import models._
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import services.S3ServiceInterface
-import utils.auth.Authenticator
 
 import scala.concurrent.ExecutionContext
 

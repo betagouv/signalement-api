@@ -1,5 +1,6 @@
 package controllers
 
+import authentication.CookieAuthenticator
 import models.UserRole
 import orchestrators.AuthOrchestrator
 import play.api._
@@ -12,8 +13,7 @@ import models.auth.UserPassword
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import utils.auth.UserAction.WithRole
-import utils.auth.CookieAuthenticator
+import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
