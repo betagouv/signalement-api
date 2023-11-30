@@ -16,6 +16,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
+import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import config.BucketConfiguration
 
 import scala.concurrent.ExecutionContext
@@ -61,11 +62,15 @@ class S3Service(implicit
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
   override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
+    val headerOverrides = new ResponseHeaderOverrides()
+    // Force attachment to be download by browser
+    headerOverrides.setContentDisposition("attachment;")
     // See https://docs.aws.amazon.com/AmazonS3/latest/dev/ShareObjectPreSignedURLJavaSDK.html
     val expiration = new java.util.Date
     expiration.setTime(expiration.getTime + 1000 * 60 * 60)
     val generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, bucketKey)
       .withMethod(method)
+      .withResponseHeaders(headerOverrides)
       .withExpiration(expiration)
     awsS3Client.generatePresignedUrl(generatePresignedUrlRequest).toString
   }

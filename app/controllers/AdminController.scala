@@ -16,6 +16,7 @@ import models.report.reportfile.ReportFileId
 import models.report.Gender
 import models.report.Report
 import models.report.ReportFile
+import models.report.ReportFilter
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
@@ -34,6 +35,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email.AgentAccessLink
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
@@ -82,6 +84,7 @@ class AdminController(
     emailConfiguration: EmailConfiguration,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
+    subscriptionRepository: SubscriptionRepositoryInterface,
     implicit val frontRoute: FrontRoute,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -537,12 +540,36 @@ class AdminController(
         val pdfSource = pdfService.createPdfSource(Seq(html))
         Ok.chunked(
           content = pdfSource,
-          inline = true,
+          inline = false,
           fileName = Some(s"${templateRef}_${OffsetDateTime.now().toString}.pdf")
         )
       }
       .getOrElse(NotFound)
   }
+
+  private def _sendProAckToConsumer(reports: List[Report]) =
+    for {
+      eventsMap <- eventRepository.fetchEventsOfReports(reports)
+      companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
+      filteredEvents = reports.flatMap { report =>
+        eventsMap
+          .get(report.id)
+          .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
+          .map(evt => (report, evt))
+      }
+
+      _ <- filteredEvents.map { case (report, responseEvent) =>
+        val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
+        mailService.send(
+          ConsumerProResponseNotification(
+            report,
+            responseEvent.details.as[ReportResponse],
+            maybeCompany,
+            controllerComponents.messagesApi
+          )
+        )
+      }.sequence
+    } yield ()
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     request.body
@@ -551,41 +578,20 @@ class AdminController(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         results =>
           for {
-            reports   <- reportRepository.getReportsByIds(results.reportIds)
-            eventsMap <- eventRepository.fetchEventsOfReports(reports)
-            companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
-            filteredEvents = reports.flatMap { report =>
-              eventsMap
-                .get(report.id)
-                .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
-                .map(evt => (report, evt))
-            }
-            _ <- filteredEvents.map { case (report, responseEvent) =>
-              val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
-              mailService.send(
-                ConsumerProResponseNotification(
-                  report,
-                  responseEvent.details.as[ReportResponse],
-                  maybeCompany,
-                  controllerComponents.messagesApi
-                )
-              )
-            }.sequence
+            reports <- reportRepository.getReportsByIds(results.reportIds)
+            _       <- _sendProAckToConsumer(reports)
           } yield Ok
       )
   }
 
-  def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  private def _sendNewReportToPro(reports: List[Report]) = {
+    val reportAndCompanyIdList = reports.flatMap(report => report.companyId.map(c => (report, c)))
     for {
-      reportInputList <- request.parseBody[ReportInputList]()
-      reportIds       <- reportRepository.getReportsByIds(reportInputList.reportIds)
-      reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
       reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
         companyAccessRepository
           .fetchAdmins(companyId)
           .map(_.map(_.email).distinct)
           .map(emails => (report, NonEmptyList.fromList(emails)))
-
       }.sequence
       _ <- reportAndEmailList.map {
         case (report, Some(adminsEmails)) =>
@@ -594,24 +600,27 @@ class AdminController(
           logger.debug(s"Not sending email for report ${report.id}, no admin found")
           Future.unit
       }.sequence
-    } yield Ok
-
+    } yield ()
   }
 
-  def sendReportAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
+  def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
       reportInputList <- request.parseBody[ReportInputList]()
       reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
-      reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reportInputList.reportIds)
-      events          <- eventRepository.fetchEventsOfReports(reports)
-      companies       <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
+      _               <- _sendNewReportToPro(reports)
+    } yield Ok
+  }
 
-      emailsToSend = reports.flatMap { report =>
+  private def _sendReportAckToConsumer(reportsMap: Map[Report, List[ReportFile]]) = {
+    val reports = reportsMap.keys.toList
+    for {
+      events    <- eventRepository.fetchEventsOfReports(reports)
+      companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
+
+      emailsToSend = reportsMap.flatMap { case (report, reportAttachements) =>
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
         val event =
           events.get(report.id).flatMap(_.find(_.action == Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT))
-        val reportAttachements = reportFiles.getOrElse(report.id, List.empty)
 
         event match {
           case Some(evt) =>
@@ -629,8 +638,49 @@ class AdminController(
             None
         }
       }
-      _ <- emailsToSend.map(mailService.send).sequence
+      _ <- emailsToSend.toList.map(mailService.send).sequence
+    } yield ()
+  }
+
+  def sendReportAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
+    for {
+      reportInputList <- request.parseBody[ReportInputList]()
+      reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reports.map(_.id))
+      _ <- _sendReportAckToConsumer(reports.map(report => (report, reportFiles.getOrElse(report.id, List.empty))).toMap)
     } yield Ok
 
   }
+
+  private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
+    ddEmails <-
+      if (report.tags.contains(ReportTag.ProduitDangereux)) {
+        report.companyAddress.postalCode
+          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+          .getOrElse(Future(Seq()))
+      } else Future(Seq())
+    _ <-
+      if (ddEmails.nonEmpty) {
+        mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+      } else {
+        Future.unit
+      }
+  } yield ()
+
+  def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
+    SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+      for {
+        reports <- reportRepository.getReportsWithFiles(
+          Some(request.identity.userRole),
+          ReportFilter(start = Some(start), end = Some(end))
+        )
+        _ <- emailType match {
+          case ResendEmailType.NewReportAckToConsumer => _sendReportAckToConsumer(reports.toMap)
+          case ResendEmailType.NewReportAckToPro      => _sendNewReportToPro(reports.keys.toList)
+          case ResendEmailType.NotifyDGCCRF           => Future.sequence(reports.keys.map(notifyDgccrfIfNeeded))
+          case ResendEmailType.ReportProResponse      => _sendProAckToConsumer(reports.keys.toList)
+        }
+      } yield NoContent
+    }
 }
