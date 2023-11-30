@@ -164,7 +164,8 @@ class SignalConsoComponents(
   def mobileAppConfiguration = signalConsoConfiguration.mobileApp
 
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-    new BCryptPasswordHasher()
+    current = new BCryptPasswordHasher(),
+    deprecated = Seq.empty
   )
 
   //  Repositories

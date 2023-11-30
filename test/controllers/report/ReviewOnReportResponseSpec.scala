@@ -95,6 +95,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   val (app, components) = TestApp.buildApp(
   )
 
+  lazy val userRepository                   = components.userRepository
   lazy val reportRepository                 = components.reportRepository
   lazy val eventRepository                  = components.eventRepository
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
@@ -141,6 +142,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   override def setupData() =
     Await.result(
       for {
+        _ <- userRepository.create(adminUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- reportRepository.create(reportWithoutResponse)
         _ <- reportRepository.create(reportWithResponse)
