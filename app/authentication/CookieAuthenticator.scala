@@ -109,14 +109,14 @@ class CookieAuthenticator(
 
 object CookieAuthenticator {
   case class CookieAuthenticatorSettings(
-      cookieName: String = "id",
+      cookieName: String,
       cookiePath: String = "/",
-      cookieDomain: Option[String] = None,
-      secureCookie: Boolean = true,
+      cookieDomain: Option[String],
+      secureCookie: Boolean,
       httpOnlyCookie: Boolean = true,
-      sameSite: Option[Cookie.SameSite] = Some(Cookie.SameSite.Lax),
+      sameSite: Option[Cookie.SameSite],
       useFingerprinting: Boolean = true,
-      cookieMaxAge: Option[FiniteDuration] = None,
+      cookieMaxAge: Option[FiniteDuration],
       authenticatorIdleTimeout: Option[FiniteDuration] = None,
       authenticatorExpiry: FiniteDuration = 12.hours
   )

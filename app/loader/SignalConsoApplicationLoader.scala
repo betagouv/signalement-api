@@ -27,6 +27,7 @@ import play.api.libs.json.JsArray
 import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
+import play.api.mvc.Cookie
 import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
@@ -137,6 +138,12 @@ class SignalConsoComponents(
   // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
   // scalafix:on
+
+  implicit val sameSiteReader: ConfigReader[Cookie.SameSite] = ConfigReader[String].map {
+    case "strict" => Cookie.SameSite.Strict
+    case "none"   => Cookie.SameSite.None
+    case _        => Cookie.SameSite.Lax
+  }
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 

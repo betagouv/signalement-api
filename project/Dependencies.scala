@@ -27,7 +27,6 @@ object Dependencies {
     lazy val jacksonModuleScalaVersion = "2.15.2"
     lazy val postgresqlVersion         = "42.5.4"
     lazy val refinedVersion            = "0.11.0"
-    lazy val ficusVersion              = "1.5.2"
     lazy val spoiwoVersion             = "2.2.1"
     lazy val itext7CoreVersion         = "8.0.1"
     lazy val html2pdfVersion           = "5.0.1"
@@ -80,7 +79,6 @@ object Dependencies {
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql" % "postgresql"  % Versions.postgresqlVersion
     val refinded   = "eu.timepit"    %% "refined"     % Versions.refinedVersion
-    val ficus      = "com.iheart"    %% "ficus"       % Versions.ficusVersion
     val spoiwo     = "com.norbitltd" %% "spoiwo"      % Versions.spoiwoVersion
     val itext7Core = "com.itextpdf"   % "itext7-core" % Versions.itext7CoreVersion
     val html2pdf   = "com.itextpdf"   % "html2pdf"    % Versions.html2pdfVersion
@@ -115,7 +113,6 @@ object Dependencies {
     Compile.jacksonModuleScala,
     Compile.postgresql,
     Compile.refinded,
-    Compile.ficus,
     Compile.spoiwo,
     Compile.itext7Core,
     Compile.html2pdf,
