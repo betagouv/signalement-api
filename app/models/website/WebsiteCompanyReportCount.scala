@@ -2,9 +2,7 @@ package models.website
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.company.Company
-
 import models.investigation.InvestigationStatus
-
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import utils.Country
@@ -38,7 +36,7 @@ object WebsiteCompanyReportCount {
       .into[WebsiteCompanyReportCount]
       .withFieldComputed(_.id, _.id)
       .withFieldConst(_.company, maybeCompany)
-      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromCode))
+      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromCode(_)))
       .withFieldConst(_.count, count)
       .withFieldConst(_.kind, IdentificationStatus.toKind(website.identificationStatus))
       .transform
