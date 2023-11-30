@@ -87,7 +87,7 @@ class ProAccessTokenOrchestrator(
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit] = for {
-    _     <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _     <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     token <- fetchCompanyToken(token, siret)
     user  <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
     _     <- bindPendingTokens(user)

@@ -75,7 +75,7 @@ class AccessesOrchestrator(
     }
 
   def activateAdminOrAgentUser(draftUser: DraftUser, token: String) = for {
-    _                <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _                <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {
