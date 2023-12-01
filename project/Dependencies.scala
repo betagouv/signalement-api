@@ -17,13 +17,13 @@ object Dependencies {
     // Cannot be updated to "1.8.0" (it's based on play 3.0.0 / Pekko)
     lazy val enumeratumVersion         = "1.7.3"
     lazy val sentryVersion             = "6.34.0"
-    lazy val jbcrypt           = "0.4"
+    lazy val jbcrypt                   = "0.4"
     lazy val specs2MatcherExtraVersion = "4.20.3"
     lazy val scalaCheckVersion         = "1.17.0"
     lazy val catsCoreVersion           = "2.10.0"
     lazy val pureConfigVersion         = "0.17.4"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version       = "1.12.592"
+    lazy val awsJavaSdkS3Version       = "1.12.603"
     lazy val jacksonModuleScalaVersion = "2.16.0"
     lazy val postgresqlVersion         = "42.5.4"
     lazy val refinedVersion            = "0.11.0"
@@ -34,7 +34,7 @@ object Dependencies {
     lazy val sttp                      = "3.9.1"
     lazy val sttpPlayJson              = "3.9.1"
     lazy val flyWayVersion             = "10.0.1"
-    lazy val janino                    = "3.1.10"
+    lazy val janino                    = "3.1.11"
     // Cannot be updated to "7.4" because of the following error when logging as JSON:
     // java.lang.NoSuchMethodError: 'java.time.Instant ch.qos.logback.classic.spi.ILoggingEvent.getInstant()'
     // If we want to upgrade, we MUST check json logs (env var USE_TEXT_LOGS set to false) to see if this error still happen
