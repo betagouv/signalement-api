@@ -1,11 +1,6 @@
 package services
 
 import cats.data.NonEmptyList
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test._
-import models._
 import models.company.AccessLevel
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -15,7 +10,6 @@ import play.api.Logger
 import services.Email.ProNewReportNotification
 import services.MailRetriesService.EmailRequest
 import utils._
-import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
 import scala.concurrent.Await
@@ -83,16 +77,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(proWithAccessToHeadOffice, proWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
-  )
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =

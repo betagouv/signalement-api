@@ -1,10 +1,6 @@
 package controllers.report
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
+import models.User
 import models.company.AccessLevel
 import models.event.Event
 import models.report._
@@ -24,7 +20,7 @@ import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils._
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
 import java.net.URI
@@ -36,7 +32,7 @@ import scala.concurrent.duration.Duration
 class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         Given an unauthenticated user                                ${step { someUser = None }}
          When post a response                                         ${step {
         someResult = Some(postReportResponse(reportResponseAccepted))
       }}
@@ -48,7 +44,7 @@ class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends Rep
   override def is =
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step {
-        someLoginInfo = Some(notConcernedProLoginInfo)
+        someUser = Some(notConcernedProUser)
       }}
          When post a response                                                   ${step {
         someResult = Some(postReportResponse(reportResponseAccepted))
@@ -64,7 +60,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
         When post a response with type "ACCEPTED"                                ${step {
         someResult = Some(postReportResponse(reportResponseAccepted))
@@ -111,7 +107,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
   override def is =
     s2"""
         Given an authenticated pro user which have rights on head office         ${step {
-        someLoginInfo = Some(concernedHeadOfficeProLoginInfo)
+        someUser = Some(concernedHeadOfficeProUser)
       }}
         When post a response with type "ACCEPTED"                                ${step {
         someResult = Some(postReportResponse(reportResponseAccepted))
@@ -159,7 +155,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
         When post a response with type "REJECTED"                                ${step {
         someResult = Some(postReportResponse(reportResponseRejected))
@@ -204,7 +200,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
         When post a response with type "NOT_CONCERNED"                           ${step {
         someResult = Some(postReportResponse(reportResponseNotConcerned))
@@ -271,17 +267,14 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var reviewUrl = new URI("")
   var report    = reportFixture
 
-  val concernedProUser      = Fixtures.genProUser.sample.get
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
+  val concernedProUser = Fixtures.genProUser.sample.get
 
-  val concernedHeadOfficeProUser      = Fixtures.genProUser.sample.get
-  val concernedHeadOfficeProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedHeadOfficeProUser.email.value)
+  val concernedHeadOfficeProUser = Fixtures.genProUser.sample.get
 
-  val notConcernedProUser      = Fixtures.genProUser.sample.get
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
+  val notConcernedProUser = Fixtures.genProUser.sample.get
 
-  var someLoginInfo: Option[LoginInfo] = None
-  var someResult: Option[Result]       = None
+  var someUser: Option[User]     = None
+  var someResult: Option[Result] = None
 
   val reportResponseFile = ReportFile(
     ReportFileId.generateId(),
@@ -331,18 +324,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     )
   }
 
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(
-      concernedProLoginInfo           -> concernedProUser,
-      concernedHeadOfficeProLoginInfo -> concernedHeadOfficeProUser,
-      notConcernedProLoginInfo        -> notConcernedProUser
-    )
-  )
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
   def postReportResponse(reportResponse: ReportResponse) =
@@ -350,8 +332,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       components.reportController
         .reportResponse(reportFixture.id)
         .apply(
-          someLoginInfo
-            .map(FakeRequest().withAuthenticator[AuthEnv](_))
+          someUser
+            .map(user => FakeRequest().withAuthCookie(user.email, components.cookieAuthenticator))
             .getOrElse(FakeRequest("POST", s"/api/reports/${reportFixture.id}/response"))
             .withBody(Json.toJson(reportResponse))
         ),

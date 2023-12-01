@@ -1,10 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import config.EmailConfiguration
 import config.MobileAppConfiguration
 import config.SignalConsoConfiguration
@@ -39,7 +34,6 @@ import play.api.mvc.Results
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.event.EventFilter
-import services.MailRetriesService
 import services.S3ServiceInterface
 import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
@@ -51,7 +45,7 @@ import utils.EmailAddress
 import utils.Fixtures
 import utils.S3ServiceMock
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
 import java.net.URI
@@ -180,7 +174,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request =
           FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
-            .withAuthenticator[AuthEnv](adminLoginInfo)
+            .withAuthCookie(adminIdentity.email, components.cookieAuthenticator)
             .withJsonBody(jsonBody)
 
         val result = route(app, request).get
@@ -254,7 +248,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
           val request =
             FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
-              .withAuthenticator[AuthEnv](adminLoginInfo)
+              .withAuthCookie(adminIdentity.email, components.cookieAuthenticator)
               .withJsonBody(jsonBody)
 
           val result = route(app, request).get
@@ -289,16 +283,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     def application(skipValidation: Boolean = false) = new {
 
-      val adminIdentity  = Fixtures.genAdminUser.sample.get
-      val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
-      val proIdentity    = Fixtures.genProUser.sample.get
-      val proLoginInfo   = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
+      val adminIdentity = Fixtures.genAdminUser.sample.get
 
-      implicit val env: Environment[AuthEnv] =
-        new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
-
-      val mailRetriesService = mock[MailRetriesService]
-      val mockS3Service      = new S3ServiceMock()
+      val mockS3Service = new S3ServiceMock()
 
       class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
@@ -306,7 +293,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         override def load(context: ApplicationLoader.Context): Application = {
           components = new SignalConsoComponents(context) {
 
-            override def authEnv: Environment[AuthEnv] = env
             override def configuration: Configuration = Configuration(
               "slick.dbs.default.db.connectionPool" -> "disabled",
               "play.mailer.mock"                    -> true,
@@ -364,6 +350,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       lazy val companyRepository                = loader.components.companyRepository
       lazy val userRepository                   = loader.components.userRepository
       lazy val blacklistedEmailsRepository      = loader.components.blacklistedEmailsRepository
+      lazy val components                       = loader.components
 
     }
 

@@ -1,6 +1,5 @@
 package models
 
-import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.QueryStringMapper
@@ -17,7 +16,7 @@ final case class EmailValidation(
     attempts: Int = 0,
     lastAttempt: Option[OffsetDateTime] = None,
     lastValidationDate: Option[OffsetDateTime] = None
-) extends Identity {}
+)
 
 object EmailValidation {
   implicit val emailValidationformat: OFormat[EmailValidation] = Json.format[EmailValidation]

@@ -1,6 +1,6 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter.transmittedReportsFilter
@@ -15,8 +15,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import utils.QueryStringMapper
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -26,10 +25,10 @@ import scala.util.Success
 
 class StatisticController(
     statsOrchestrator: StatsOrchestrator,
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -72,7 +71,7 @@ class StatisticController(
       )
   }
 
-  def getPublicStatCount(publicStat: PublicStat) = UnsecuredAction.async {
+  def getPublicStatCount(publicStat: PublicStat) = Action.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
         statsOrchestrator.getReportCountPercentageWithinReliableDates(None, filter, percentageBaseFilter)
@@ -81,7 +80,7 @@ class StatisticController(
     }).map(curve => Ok(Json.toJson(curve)))
   }
 
-  def getPublicStatCurve(publicStat: PublicStat) = UnsecuredAction.async {
+  def getPublicStatCurve(publicStat: PublicStat) = Action.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
         statsOrchestrator.getReportsCountPercentageCurve(None, filter, percentageBaseFilter)
@@ -90,13 +89,15 @@ class StatisticController(
     }).map(curve => Ok(Json.toJson(curve)))
   }
 
-  def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
-    statsOrchestrator
-      .getReadAvgDelay(companyId)
-      .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
-  }
+  def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction
+    .andThen(
+      WithRole(UserRole.Admin, UserRole.DGCCRF)
+    )
+    .async {
+      statsOrchestrator
+        .getReadAvgDelay(companyId)
+        .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
+    }
 
   def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction.async { request =>
     statsOrchestrator
@@ -162,15 +163,16 @@ class StatisticController(
     statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
-  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
-    val mapper = new QueryStringMapper(request.queryString)
-    val start  = mapper.localDate("start")
-    val end    = mapper.localDate("end")
-    statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
-  }
+  def countByDepartments() =
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+      val mapper = new QueryStringMapper(request.queryString)
+      val start  = mapper.localDate("start")
+      val end    = mapper.localDate("end")
+      statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
+    }
 
-  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async {
-    implicit request =>
+  def reportsCountBySubcategories() =
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async { implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
@@ -180,7 +182,7 @@ class StatisticController(
             .reportsCountBySubcategories(request.identity.userRole, filters)
             .map(res => Ok(Json.toJson(res)))
       }
-  }
+    }
 
   def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = SecuredAction.async { _ =>
     statsOrchestrator

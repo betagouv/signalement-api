@@ -1,10 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test._
-import models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -16,7 +11,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.SIRET
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -53,15 +48,7 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] =
-    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
 }
@@ -75,7 +62,7 @@ The fetch phone group  SIRET endpoint should
 
   def e1 = {
     val request = FakeRequest(GET, routes.ReportedPhoneController.fetchGrouped(None, None, None).toString)
-      .withAuthenticator[AuthEnv](loginInfo(adminUser))
+      .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString

@@ -1,7 +1,6 @@
 package utils
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.Environment
 import config.ApplicationConfiguration
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
@@ -17,6 +16,7 @@ import play.api.db.slick.DefaultSlickApi
 import play.api.db.slick.SlickApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.libs.concurrent.ActorSystemProvider
+import play.api.mvc.Cookie
 import pureconfig.ConfigConvert
 import pureconfig.ConfigReader
 import pureconfig.ConfigSource
@@ -26,8 +26,6 @@ import pureconfig.generic.semiauto.deriveReader
 import services.MailRetriesService
 import services.MailRetriesService.EmailRequest
 import tasks.company.CompanySyncServiceInterface
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
 
 import java.io.File
 import java.time.LocalTime
@@ -47,6 +45,12 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
   // scalafix:on
+
+  implicit val sameSiteReader: ConfigReader[Cookie.SameSite] = ConfigReader[String].map {
+    case "strict" => Cookie.SameSite.Strict
+    case "none"   => Cookie.SameSite.None
+    case _        => Cookie.SameSite.Lax
+  }
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
@@ -87,8 +91,6 @@ trait AppSpec extends BeforeAfterAll with Mockito {
 object TestApp {
 
   def buildApp(
-      maybeAuthEnv: Option[Environment[AuthEnv]] = None,
-      maybeApiKeyEnv: Option[Environment[APIKeyEnv]] = None,
       maybeConfiguration: Option[Configuration] = None
   ): (
       Application,
@@ -96,7 +98,7 @@ object TestApp {
   ) = {
     val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
     val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
-    val loader = new DefaultApplicationLoader(maybeAuthEnv, maybeApiKeyEnv, maybeConfiguration)
+    val loader                             = new DefaultApplicationLoader(maybeConfiguration)
     (loader.load(context), loader.components)
   }
 
@@ -109,8 +111,6 @@ object TestApp {
 }
 
 class DefaultApplicationLoader(
-    maybeAuthEnv: Option[Environment[AuthEnv]] = None,
-    maybeApiKeyEnv: Option[Environment[APIKeyEnv]] = None,
     maybeConfiguration: Option[Configuration] = None
 ) extends ApplicationLoader
     with Mockito {
@@ -123,13 +123,10 @@ class DefaultApplicationLoader(
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
-      override def authEnv: Environment[AuthEnv] =
-        maybeAuthEnv.getOrElse(super.authEnv)
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
-      override def authApiEnv: Environment[APIKeyEnv] =
-        maybeApiKeyEnv.getOrElse(super.authApiEnv)
+
       override def configuration: Configuration = maybeConfiguration.getOrElse(super.configuration)
 
     }

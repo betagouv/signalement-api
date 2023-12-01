@@ -1,26 +1,26 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
+import models.User
 import models.report.ReportCategory
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import utils.Country
-import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ConstantController(val silhouette: Silhouette[AuthEnv], controllerComponents: ControllerComponents)(implicit
+class ConstantController(authenticator: Authenticator[User], controllerComponents: ControllerComponents)(implicit
     val ec: ExecutionContext
-) extends BaseController(controllerComponents) {
+) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getCountries = UnsecuredAction.async {
+  def getCountries = Action.async {
     Future(Ok(Json.toJson(Country.countries)))
   }
 
-  def getCategories = UnsecuredAction.async {
+  def getCategories = Action.async {
     Future(Ok(Json.toJson(ReportCategory.values.filterNot(_.legacy))))
   }
 

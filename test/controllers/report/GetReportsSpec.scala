@@ -1,11 +1,6 @@
 package controllers.report
 
 import akka.util.Timeout
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
 import models.report.Report
@@ -24,7 +19,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -34,7 +29,7 @@ import scala.concurrent.duration._
 class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         Given an unauthenticated user                                ${step { someUser = None }}
          When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then user is not authorized                                  ${userMustBeUnauthorized()}
     """
@@ -44,7 +39,7 @@ class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
          Given an authenticated admin user                            ${step {
-        someLoginInfo = Some(loginInfo(adminUser))
+        someUser = Some(adminUser)
       }}
          When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUser(adminUser)}
@@ -55,7 +50,7 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
          Given an authenticated dgccrf user                           ${step {
-        someLoginInfo = Some(loginInfo(dgccrfUser))
+        someUser = Some(dgccrfUser)
       }}
          When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUser(dgccrfUser)}
@@ -66,7 +61,7 @@ class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) exten
   override def is =
     s2"""
          Given an authenticated pro user who access to the headOffice               ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+        someUser = Some(proUserWithAccessToHeadOffice)
       }}
          When retrieving reports                                                    ${step {
         someResult = Some(getReports())
@@ -81,7 +76,7 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
   override def is =
     s2"""
          Given an authenticated pro user                                            ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+        someUser = Some(proUserWithAccessToHeadOffice)
       }}
          When retrieving reports                                                    ${step {
         someResult = Some(getReports(Some("badvalue")))
@@ -94,7 +89,7 @@ class GetReportsByProWithoutAccessNone(implicit ee: ExecutionEnv) extends GetRep
   override def is =
     s2"""
          Given an authenticated pro user who only access to the subsidiary      ${step {
-        someLoginInfo = Some(loginInfo(noAccessUser))
+        someUser = Some(noAccessUser)
       }}
          When retrieving reports                                                ${step {
         someResult = Some(getReports())
@@ -169,8 +164,8 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     reportNAOnHeadOfficeButVisible
   )
 
-  var someResult: Option[Result]       = None
-  var someLoginInfo: Option[LoginInfo] = None
+  var someResult: Option[Result] = None
+  var someUser: Option[User]     = None
 
   override def setupData() =
     Await.result(
@@ -211,18 +206,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(adminUser, dgccrfUser, proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary, noAccessUser).map(user =>
-      loginInfo(user) -> user
-    )
-  )
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
   def getReports(status: Option[String] = None) = {
@@ -230,8 +214,9 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       play.api.http.HttpVerbs.GET,
       controllers.routes.ReportListController.getReports().toString + status.map(x => s"?status=$x").getOrElse("")
     )
-    val loggedRequest = someLoginInfo.map(request.withAuthenticator[AuthEnv](_)).getOrElse(request)
-    val result        = route(app, loggedRequest).get
+    val loggedRequest =
+      someUser.map(user => request.withAuthCookie(user.email, components.cookieAuthenticator)).getOrElse(request)
+    val result = route(app, loggedRequest).get
 
     Await.result(
       result,

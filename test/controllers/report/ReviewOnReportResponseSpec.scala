@@ -1,12 +1,6 @@
 package controllers.report
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import controllers.routes
-import models.User
 import models.report.Report
 import models.report.ReportStatus
 import models.report.review.ResponseConsumerReview
@@ -28,7 +22,7 @@ import utils.Constants.EventType
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
@@ -81,7 +75,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
     val result = route(
       app,
       FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id).toString)
-        .withAuthenticator[AuthEnv](loginInfo(adminUser))
+        .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     ).get
 
     status(result) must beEqualTo(OK)
@@ -96,18 +90,12 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  val adminUser             = Fixtures.genAdminUser.sample.get
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] =
-    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
+  val adminUser = Fixtures.genAdminUser.sample.get
 
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
+  lazy val userRepository                   = components.userRepository
   lazy val reportRepository                 = components.reportRepository
   lazy val eventRepository                  = components.eventRepository
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
@@ -154,6 +142,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   override def setupData() =
     Await.result(
       for {
+        _ <- userRepository.create(adminUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- reportRepository.create(reportWithoutResponse)
         _ <- reportRepository.create(reportWithResponse)

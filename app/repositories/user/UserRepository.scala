@@ -1,6 +1,6 @@
 package repositories.user
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import authentication.PasswordHasherRegistry
 import controllers.error.AppError.EmailAlreadyExist
 import models.UserRole.DGCCRF
 import models._

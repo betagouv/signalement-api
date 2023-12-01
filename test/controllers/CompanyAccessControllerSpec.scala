@@ -1,9 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
 import models.company.Company
@@ -21,7 +17,6 @@ import play.api.test._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
 
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
@@ -30,24 +25,19 @@ import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import utils.AuthHelpers._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  val proAdminUser          = Fixtures.genProUser.sample.get
-  val proMemberUser         = Fixtures.genProUser.sample.get
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
+  val proAdminUser  = Fixtures.genProUser.sample.get
+  val proMemberUser = Fixtures.genProUser.sample.get
 
   val (app, components) = TestApp.buildApp(
-    Some(
-      new FakeEnvironment[AuthEnv](Seq(proAdminUser, proMemberUser).map(user => loginInfo(user) -> user))
-    )
   )
   override def afterAll(): Unit = {
     app.stop()
     ()
   }
-
-  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   lazy val userRepository                     = components.userRepository
   lazy val companyRepository                  = components.companyRepository
@@ -80,7 +70,7 @@ The listAccesses endpoint should
                                                     """
   def e1 = {
     val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
-      .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
+      .withAuthCookie(proAdminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(
@@ -111,7 +101,7 @@ The listAccesses endpoint should
   }
   def e2 = {
     val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
-      .withAuthenticator[AuthEnv](loginInfo(proMemberUser))
+      .withAuthCookie(proMemberUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(NOT_FOUND)
   }
@@ -127,7 +117,7 @@ The myCompanies endpoint should
                                                     """
   def checkAccess(user: User, level: AccessLevel) = {
     val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
-      .withAuthenticator[AuthEnv](loginInfo(user))
+      .withAuthCookie(user.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(Json.toJson(Seq(CompanyWithAccess(company, level))))
@@ -155,7 +145,7 @@ The invitation workflow should
 
   def e1 = {
     val request = FakeRequest(POST, routes.CompanyAccessController.sendInvitation(company.siret.value).toString)
-      .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
+      .withAuthCookie(proAdminUser.email, components.cookieAuthenticator)
       .withBody(Json.obj("email" -> invitedEmail, "level" -> "member"))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
@@ -169,7 +159,7 @@ The invitation workflow should
 
   def e3 = {
     val request = FakeRequest(GET, routes.CompanyAccessController.listPendingTokens(company.siret.value).toString)
-      .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
+      .withAuthCookie(proAdminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(
@@ -589,7 +579,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
 
   def e3 = {
     val request = FakeRequest(POST, routes.CompanyAccessController.acceptToken(newCompany.siret.value).toString)
-      .withAuthenticator[AuthEnv](loginInfo(proMemberUser))
+      .withAuthCookie(proMemberUser.email, components.cookieAuthenticator)
       .withBody(Json.obj("token" -> "123456"))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)

@@ -90,7 +90,7 @@ object Report {
   private[this] val jsonFormatX           = Jsonx.formatCaseClass[Report]
   implicit val reportReads: Reads[Report] = jsonFormatX
 
-  implicit def writer(implicit userRole: Option[UserRole] = None): Writes[Report] = (report: Report) =>
+  implicit def writer(implicit userRole: Option[UserRole]): Writes[Report] = (report: Report) =>
     Json.obj(
       "id"               -> report.id,
       "category"         -> report.category,
@@ -148,7 +148,7 @@ case class ReportWithFiles(
 )
 
 object ReportWithFiles {
-  implicit def writer(implicit userRole: Option[UserRole] = None): OWrites[ReportWithFiles] =
+  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFiles] =
     Json.writes[ReportWithFiles]
 }
 
@@ -160,7 +160,8 @@ case class ReportWithFilesAndResponses(
 )
 
 object ReportWithFilesAndResponses {
-  implicit val writer: OWrites[ReportWithFilesAndResponses] = Json.writes[ReportWithFilesAndResponses]
+  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndResponses] =
+    Json.writes[ReportWithFilesAndResponses]
 }
 
 case class DetailInputValue(

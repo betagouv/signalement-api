@@ -1,10 +1,7 @@
 package controllers
 
+import authentication.CookieAuthenticator
 import cats.implicits.catsSyntaxOption
-import com.mohiva.play.silhouette.api.LoginEvent
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import config.EmailConfiguration
 import models._
 import orchestrators._
@@ -14,9 +11,8 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
 import error.AppError.MalformedFileKey
+import authentication.actions.UserAction.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -24,15 +20,15 @@ import scala.concurrent.Future
 import scala.io.Source
 
 class AccountController(
-    val silhouette: Silhouette[AuthEnv],
     userOrchestrator: UserOrchestrator,
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     emailConfiguration: EmailConfiguration,
+    authenticator: CookieAuthenticator,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -48,7 +44,7 @@ class AccountController(
       .getOrElse(NotFound)
   }
 
-  def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
+  def activateAccount = Action.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()
       _ <- activationRequest.companySiret match {
@@ -62,22 +58,23 @@ class AccountController(
   }
 
   def sendAgentInvitation(role: UserRole) =
-    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) { implicit request =>
-      role match {
-        case UserRole.DGCCRF =>
-          request
-            .parseBody[EmailAddress](JsPath \ "email")
-            .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
-        case UserRole.DGAL =>
-          request
-            .parseBody[EmailAddress](JsPath \ "email")
-            .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
-        case _ => Future.failed(error.AppError.WrongUserRole(role))
-      }
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
+      implicit request =>
+        role match {
+          case UserRole.DGCCRF =>
+            request
+              .parseBody[EmailAddress](JsPath \ "email")
+              .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
+          case UserRole.DGAL =>
+            request
+              .parseBody[EmailAddress](JsPath \ "email")
+              .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
+          case _ => Future.failed(error.AppError.WrongUserRole(role))
+        }
     }
 
   def sendAgentsInvitations(role: UserRole) =
-    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.multipartFormData) {
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.multipartFormData) {
       implicit request =>
         for {
           filePart <- request.body.file("emails").liftTo[Future](MalformedFileKey("emails"))
@@ -88,15 +85,16 @@ class AccountController(
         } yield Ok
     }
 
-  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
-    implicit request =>
-      request
-        .parseBody[EmailAddress](JsPath \ "email")
-        .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
-  }
+  def sendAdminInvitation =
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
+      implicit request =>
+        request
+          .parseBody[EmailAddress](JsPath \ "email")
+          .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
+    }
 
   def fetchPendingAgent(role: Option[UserRole]) =
-    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { request =>
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { request =>
       role match {
         case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | None =>
           accessesOrchestrator
@@ -106,40 +104,40 @@ class AccountController(
       }
     }
 
-  def fetchAdminOrAgentUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
-    for {
-      users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin))
-    } yield Ok(Json.toJson(users))
-  }
+  def fetchAdminOrAgentUsers =
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
+      for {
+        users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin))
+      } yield Ok(Json.toJson(users))
+    }
 
   // This data is not displayed anywhere
   // The endpoint might be useful to debug without accessing the prod DB
-  def fetchAllSoftDeletedUsers = SecuredAction(WithPermission(UserPermission.viewDeletedUsers)).async { _ =>
+  def fetchAllSoftDeletedUsers = SecuredAction.andThen(WithPermission(UserPermission.viewDeletedUsers)).async { _ =>
     for {
       users <- userRepository.listDeleted()
     } yield Ok(Json.toJson(users))
   }
 
-  def fetchTokenInfo(token: String) = UnsecuredAction.async { _ =>
+  def fetchTokenInfo(token: String) = Action.async { _ =>
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
+  def validateEmail() = Action.async(parse.json) { implicit request =>
     for {
       token <- request.parseBody[String](JsPath \ "token")
       user  <- accessesOrchestrator.validateDGCCRFEmail(token)
-      authenticator <- silhouette.env.authenticatorService
-        .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
-      _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
-      cookie <- silhouette.env.authenticatorService.init(authenticator)
-      result <- silhouette.env.authenticatorService.embed(cookie, Ok(Json.toJson(user)))
-    } yield result
+      cookie <- authenticator.init(user.email) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
+    } yield authenticator.embed(cookie, Ok(Json.toJson(user)))
   }
 
   def forceValidateEmail(email: String) =
-    SecuredAction(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
+    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
@@ -154,7 +152,7 @@ class AccountController(
   }
 
   def softDelete(id: UUID) =
-    SecuredAction(WithPermission(UserPermission.softDeleteUsers)).async { request =>
+    SecuredAction.andThen(WithPermission(UserPermission.softDeleteUsers)).async { request =>
       userOrchestrator.softDelete(targetUserId = id, currentUserId = request.identity.id).map(_ => NoContent)
     }
 
