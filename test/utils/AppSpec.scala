@@ -16,6 +16,7 @@ import play.api.db.slick.DefaultSlickApi
 import play.api.db.slick.SlickApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.libs.concurrent.ActorSystemProvider
+import play.api.mvc.Cookie
 import pureconfig.ConfigConvert
 import pureconfig.ConfigReader
 import pureconfig.ConfigSource
@@ -44,6 +45,12 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
   // scalafix:on
+
+  implicit val sameSiteReader: ConfigReader[Cookie.SameSite] = ConfigReader[String].map {
+    case "strict" => Cookie.SameSite.Strict
+    case "none"   => Cookie.SameSite.None
+    case _        => Cookie.SameSite.Lax
+  }
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
