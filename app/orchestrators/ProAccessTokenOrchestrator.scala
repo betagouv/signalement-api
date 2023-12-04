@@ -3,7 +3,7 @@ package orchestrators
 import cats.implicits.catsSyntaxOption
 import config.TokenConfiguration
 import controllers.error.AppError._
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models._
 import models.company.AccessLevel
 import models.company.Company

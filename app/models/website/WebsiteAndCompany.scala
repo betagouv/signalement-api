@@ -1,6 +1,6 @@
 package models.website
 
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.company.Company
 
 import models.investigation.InvestigationStatus

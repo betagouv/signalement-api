@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.TokenConfiguration
 import controllers.error.AppError._
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models._
 import models.token.AdminOrDgccrfTokenKind
 import models.token.AgentAccessToken

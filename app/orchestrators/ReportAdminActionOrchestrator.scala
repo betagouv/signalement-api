@@ -4,7 +4,7 @@ import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import controllers.error.AppError
 import controllers.error.AppError.CannotReopenReport
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models._
 import models.company.Company
 import models.event.Event

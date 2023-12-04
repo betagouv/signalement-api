@@ -3,7 +3,7 @@ import cats.implicits.catsSyntaxOption
 
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.ReportNotFound
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.User
 import models.UserRole
 import models.event.Event

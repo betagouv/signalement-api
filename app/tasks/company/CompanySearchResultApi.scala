@@ -1,6 +1,6 @@
 package tasks.company
 
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.company.AddressApi
 import models.company.Company
 import models.website.Website
@@ -27,12 +27,12 @@ case class CompanySearchResultApi(
 object CompanySearchResultApi {
   implicit val format: OFormat[CompanySearchResultApi] = Json.format[CompanySearchResultApi]
 
-  def fromCompany(company: Company, website: Website) =
+  def fromCompany(company: Company, website: Website): CompanySearchResultApi =
     company
       .into[CompanySearchResultApi]
       .withFieldConst(_.isMarketPlace, website.isMarketplace)
       .withFieldConst(_.activityLabel, None)
-      .withFieldComputed(_.address, c => AddressApi.fromAdress(c.address.toFilteredAddress(c.isPublic)))
+      .withFieldComputed(_.address, c => AddressApi.fromAddress(c.address.toFilteredAddress(c.isPublic)))
       .enableDefaultValues
       .transform
 }

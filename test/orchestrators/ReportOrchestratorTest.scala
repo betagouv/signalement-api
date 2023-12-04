@@ -3,7 +3,7 @@ package orchestrators
 import akka.Done
 import controllers.error.AppError.CannotReportPublicAdministration
 import controllers.error.AppError.DuplicateReportCreation
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.report.DetailInputValue
 import models.report.Report
 import models.report.ReportDraft
