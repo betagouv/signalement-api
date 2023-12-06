@@ -1,5 +1,3 @@
-import akka.actor.ActorSystem
-
 import play.api.Logger
 import tasks.model.TaskType
 
@@ -16,13 +14,9 @@ import scala.concurrent.duration.FiniteDuration
 import cats.data.Validated._
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import config.TaskConfiguration
 import controllers.error.AppError
 
 import java.util.UUID
-import scala.util.Failure
-import scala.util.Success
-import utils.Logs.RichLogger
 
 package object tasks {
 
@@ -53,31 +47,6 @@ package object tasks {
       else LocalDate.now().atTime(startTime)
 
     (LocalDateTime.now().until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
-  }
-
-  def scheduleTask(
-      actorSystem: ActorSystem,
-      taskConfiguration: TaskConfiguration,
-      startTime: LocalTime,
-      interval: FiniteDuration,
-      taskName: String
-  )(execution: => Future[Unit])(implicit e: ExecutionContext): Unit = {
-    val initialDelay = computeStartingTime(startTime)
-    actorSystem.scheduler.scheduleAtFixedRate(
-      initialDelay,
-      interval
-    ) { () =>
-      if (taskConfiguration.active) {
-        logger.infoWithTitle("task_launch", s"$taskName launched")
-        execution.onComplete {
-          case Success(_) =>
-            logger.info(s"$taskName finished")
-          case Failure(err) =>
-            logger.errorWithTitle("task_failed", s"$taskName failed", err)
-        }
-      } else logger.info(s"$taskName not launched, tasks are disabled")
-    }: Unit
-    logger.info(s"$taskName scheduled for $startTime (in $initialDelay)")
   }
 
   def getTodayAtStartOfDayParis() =

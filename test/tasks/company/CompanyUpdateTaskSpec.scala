@@ -7,6 +7,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import org.specs2.mutable
+import repositories.tasklock.TaskLockRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
@@ -25,6 +26,12 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
   val (app, components)          = TestApp.buildApp()
   implicit val mat: Materializer = app.materializer
 
+  val taskLockRepositoryMock = new TaskLockRepositoryInterface {
+    override def acquire(id: Int): Future[Boolean] = Future.successful(true)
+
+    override def release(id: Int): Future[Boolean] = Future.successful(true)
+  }
+
   "CompanyUpdateTask" should {
     sequential
     "correctly update a company" in {
@@ -33,7 +40,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         app.actorSystem,
         components.companyRepository,
         serviceMock,
-        components.companySyncRepository
+        components.companySyncRepository,
+        components.applicationConfiguration.task,
+        taskLockRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
@@ -82,7 +91,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         app.actorSystem,
         components.companyRepository,
         serviceMock,
-        components.companySyncRepository
+        components.companySyncRepository,
+        components.applicationConfiguration.task,
+        taskLockRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
@@ -126,7 +137,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         app.actorSystem,
         components.companyRepository,
         serviceMock,
-        components.companySyncRepository
+        components.companySyncRepository,
+        components.applicationConfiguration.task,
+        taskLockRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos
@@ -174,7 +187,9 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         app.actorSystem,
         components.companyRepository,
         serviceMock,
-        components.companySyncRepository
+        components.companySyncRepository,
+        components.applicationConfiguration.task,
+        taskLockRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos

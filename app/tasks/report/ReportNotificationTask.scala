@@ -13,11 +13,12 @@ import models.report.ReportFilter
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.tasklock.TaskLockRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
-import tasks.scheduleTask
+import tasks.ScheduledTask
 import utils.Constants.Departments
 
 import java.time._
@@ -36,21 +37,16 @@ class ReportNotificationTask(
     subscriptionRepository: SubscriptionRepositoryInterface,
     userRepository: UserRepositoryInterface,
     mailService: MailService,
-    taskConfiguration: TaskConfiguration
-)(implicit executionContext: ExecutionContext) {
+    taskConfiguration: TaskConfiguration,
+    taskLockRepository: TaskLockRepositoryInterface
+)(implicit executionContext: ExecutionContext)
+    extends ScheduledTask(3, "report_notification_task", taskLockRepository, actorSystem, taskConfiguration) {
 
-  val logger: Logger                      = Logger(this.getClass)
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  override val logger: Logger           = Logger(this.getClass)
+  override val startTime: LocalTime     = taskConfiguration.subscription.startTime
+  override val interval: FiniteDuration = 1.day
 
-  val departments = Departments.ALL
-
-  scheduleTask(
-    actorSystem,
-    taskConfiguration,
-    startTime = taskConfiguration.subscription.startTime,
-    interval = 1.day,
-    taskName = "report_notification_task"
-  ) {
+  override def runTask(): Future[Unit] = {
     val now                      = OffsetDateTime.now()
     val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
@@ -60,8 +56,9 @@ class ReportNotificationTask(
         else Future.successful(())
       _ <- runPeriodicNotificationTask(now, Period.ofDays(1))
     } yield ()
-
   }
+
+  val departments = Departments.ALL
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
     val end   = now
