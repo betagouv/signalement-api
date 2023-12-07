@@ -3,12 +3,15 @@ package utils
 import controllers.error.AppError.PasswordNotComplexEnoughError
 
 import java.text.Normalizer
+import scala.concurrent.Future
 
 object PasswordComplexityHelper {
 
-  def validatePasswordComplexity(password: String): Unit =
+  def validatePasswordComplexity(password: String): Future[Unit] =
     if (!isPasswordComplexEnough(password)) {
-      throw PasswordNotComplexEnoughError
+      Future.failed(PasswordNotComplexEnoughError)
+    } else {
+      Future.unit
     }
 
   // /!\ this logic is duplicated in the frontend

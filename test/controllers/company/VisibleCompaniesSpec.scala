@@ -1,11 +1,6 @@
 package controllers.company
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test._
 import controllers.routes
-import models._
 import models.company.AccessLevel
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -17,7 +12,7 @@ import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
 import utils._
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -92,14 +87,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
-  )
-
   val (app, components) = TestApp.buildApp(
-    Some(env)
   )
 
 }
@@ -117,7 +105,7 @@ The get visible companies endpoint should
 
   def e1 = {
     val request = FakeRequest(GET, routes.CompanyController.visibleCompanies().toString)
-      .withAuthenticator[AuthEnv](loginInfo(proUserWithAccessToHeadOffice))
+      .withAuthCookie(proUserWithAccessToHeadOffice.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -129,7 +117,7 @@ The get visible companies endpoint should
 
   def e2 = {
     val request = FakeRequest(GET, routes.CompanyController.visibleCompanies().toString)
-      .withAuthenticator[AuthEnv](loginInfo(proUserWithAccessToSubsidiary))
+      .withAuthCookie(proUserWithAccessToSubsidiary.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString

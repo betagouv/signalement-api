@@ -1,16 +1,16 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
 import models.BlacklistedEmail
 import models.BlacklistedEmailInput
+import models.User
 import models.UserPermission
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
+import authentication.actions.UserAction.WithPermission
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -18,20 +18,20 @@ import scala.concurrent.Future
 
 class BlacklistedEmailsController(
     blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface,
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit
     val ec: ExecutionContext
-) extends BaseController(controllerComponents) {
+) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def list = SecuredAction(WithPermission(UserPermission.manageBlacklistedEmails)).async {
+  def list = SecuredAction.andThen(WithPermission(UserPermission.manageBlacklistedEmails)).async {
     for {
       res <- blacklistedEmailsRepository.list()
     } yield Ok(Json.toJson(res))
   }
 
-  def add() = SecuredAction(WithPermission(UserPermission.manageBlacklistedEmails)).async(parse.json) {
+  def add() = SecuredAction.andThen(WithPermission(UserPermission.manageBlacklistedEmails)).async(parse.json) {
     implicit request =>
       request.body
         .validate[BlacklistedEmailInput]
@@ -52,7 +52,7 @@ class BlacklistedEmailsController(
 
   }
 
-  def delete(uuid: UUID) = SecuredAction(WithPermission(UserPermission.manageBlacklistedEmails)).async {
+  def delete(uuid: UUID) = SecuredAction.andThen(WithPermission(UserPermission.manageBlacklistedEmails)).async {
     for {
       item <- blacklistedEmailsRepository.get(uuid)
       _    <- blacklistedEmailsRepository.delete(uuid)

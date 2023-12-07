@@ -1,6 +1,6 @@
 package models.company
 
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.CountryCode
@@ -17,6 +17,6 @@ case class AddressApi(
 object AddressApi {
   implicit val addressFormat: OFormat[AddressApi] = Json.format[AddressApi]
 
-  def fromAdress(address: Address) =
+  def fromAddress(address: Address): AddressApi =
     address.into[AddressApi].withFieldConst(_.country, address.country.map(_.code)).transform
 }

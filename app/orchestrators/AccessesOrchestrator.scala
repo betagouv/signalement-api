@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.TokenConfiguration
 import controllers.error.AppError._
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models._
 import models.token.AdminOrDgccrfTokenKind
 import models.token.AgentAccessToken
@@ -75,7 +75,7 @@ class AccessesOrchestrator(
     }
 
   def activateAdminOrAgentUser(draftUser: DraftUser, token: String) = for {
-    _                <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _                <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {

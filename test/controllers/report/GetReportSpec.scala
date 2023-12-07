@@ -1,11 +1,6 @@
 package controllers.report
 
 import akka.util.Timeout
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
 import loader.SignalConsoComponents
 import models._
 import models.company.AccessLevel
@@ -32,13 +27,14 @@ import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.MailRetriesService
 import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -49,10 +45,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import java.time.temporal.ChronoUnit
+
 object GetReportByUnauthenticatedUser extends GetReportSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         Given an unauthenticated user                                ${step { someUser = None }}
          When retrieving the report                                   ${step {
         someResult = Some(getReport(neverRequestedReport.id))
       }}
@@ -63,7 +60,7 @@ object GetReportByUnauthenticatedUser extends GetReportSpec {
 object GetReportByAdminUser extends GetReportSpec {
   override def is =
     s2"""
-         Given an authenticated admin user                            ${step { someLoginInfo = Some(adminLoginInfo) }}
+         Given an authenticated admin user                            ${step { someUser = Some(adminUser) }}
          When retrieving the report                                   ${step {
         someResult = Some(getReport(neverRequestedReport.id))
       }}
@@ -78,7 +75,7 @@ object GetReportByNotConcernedProUser extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step {
-        someLoginInfo = Some(notConcernedProLoginInfo)
+        someUser = Some(notConcernedProUser)
       }}
          When getting the report                                                ${step {
         someResult = Some(getReport(neverRequestedReport.id))
@@ -94,7 +91,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
          When retrieving the report for the first time                          ${step {
         someResult = Some(getReport(neverRequestedReport.id))
@@ -125,7 +122,7 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
          When retrieving a final report for the first time                      ${step {
         someResult = Some(getReport(neverRequestedFinalReport.id))
@@ -149,7 +146,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
+        someUser = Some(concernedProUser)
       }}
          When retrieving the report not for the first time                      ${step {
         someResult = Some(getReport(alreadyRequestedReport.id))
@@ -178,14 +175,18 @@ trait GetReportSpec extends Spec with GetReportContext {
 
   lazy val messagesApi = components.messagesApi
 
-  var someLoginInfo: Option[LoginInfo] = None
-  var someResult: Option[Result]       = None
+  var someUser: Option[User]     = None
+  var someResult: Option[Result] = None
 
   def getReport(reportUUID: UUID) =
     Await.result(
       components.reportController
         .getReport(reportUUID)
-        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
+        .apply(
+          someUser
+            .map(user => FakeRequest().withAuthCookie(user.email, components.cookieAuthenticator))
+            .getOrElse(FakeRequest())
+        ),
       Duration.Inf
     )
 
@@ -337,22 +338,11 @@ trait GetReportContext extends AppSpec {
     barcodeProductId = None
   )
 
-  val adminUser      = Fixtures.genAdminUser.sample.get
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
+  val adminUser = Fixtures.genAdminUser.sample.get
 
-  val concernedProUser      = Fixtures.genProUser.sample.get
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
+  val concernedProUser = Fixtures.genProUser.sample.get
 
-  val notConcernedProUser      = Fixtures.genProUser.sample.get
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(
-      adminLoginInfo           -> adminUser,
-      concernedProLoginInfo    -> concernedProUser,
-      notConcernedProLoginInfo -> notConcernedProUser
-    )
-  )
+  val notConcernedProUser = Fixtures.genProUser.sample.get
 
   val mockReportRepository = new ReportRepositoryMock()
 
@@ -367,6 +357,7 @@ trait GetReportContext extends AppSpec {
   val mockEventRepository                 = mock[EventRepositoryInterface]
   val mockMailRetriesService              = mock[MailRetriesService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
+  val mockUserRepository                  = mock[UserRepositoryInterface]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(
@@ -394,13 +385,22 @@ trait GetReportContext extends AppSpec {
     )
   )
 
+  mockUserRepository.findByEmail(adminUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(adminUser))
+  )
+  mockUserRepository.findByEmail(concernedProUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(concernedProUser))
+  )
+  mockUserRepository.findByEmail(notConcernedProUser.email.value) returns Future.successful(
+    Some(AuthHelpers.encryptUser(notConcernedProUser))
+  )
+
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
 
     override def load(context: ApplicationLoader.Context): Application = {
       components = new SignalConsoComponents(context) {
 
-        override def authEnv: Environment[AuthEnv]                       = env
         override def reportRepository: ReportRepositoryInterface         = mockReportRepository
         override def companyRepository: CompanyRepositoryInterface       = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
@@ -408,6 +408,7 @@ trait GetReportContext extends AppSpec {
         override def eventRepository: EventRepositoryInterface           = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
+        override def userRepository: UserRepositoryInterface = mockUserRepository
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",

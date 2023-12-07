@@ -1,6 +1,5 @@
 package models
 
-import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.EnumUtils
@@ -28,7 +27,7 @@ case class User(
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime],
     deletionDate: Option[OffsetDateTime] = None
-) extends Identity {
+) {
   def fullName: String = s"${firstName} ${lastName}"
   def isAdmin: Boolean = this.userRole == UserRole.Admin
 }

@@ -1,10 +1,5 @@
 package controllers.report
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
 import models.company.Address
@@ -27,7 +22,7 @@ import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
-import utils.silhouette.auth.AuthEnv
+import utils.AuthHelpers._
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -275,8 +270,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   var report      = Fixtures.genReportFromDraft(draftReport)
   val proUser     = Fixtures.genProUser.sample.get
 
-  val concernedAdminUser      = Fixtures.genAdminUser.sample.get
-  val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
+  val concernedAdminUser = Fixtures.genAdminUser.sample.get
 
   val reportConsumerUpdate   = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
@@ -310,16 +304,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       Duration.Inf
     )
 
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
-    Seq(
-      concernedAdminLoginInfo -> concernedAdminUser
-    )
-  )
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      env
-    )
   )
 
   def createReport() =
@@ -334,7 +319,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         .updateReportCompany(reportId)
         .apply(
           FakeRequest()
-            .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
+            .withAuthCookie(concernedAdminUser.email, components.cookieAuthenticator)
             .withBody(Json.toJson(reportCompany))
         ),
       Duration.Inf
@@ -346,7 +331,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         .updateReportConsumer(reportId)
         .apply(
           FakeRequest()
-            .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
+            .withAuthCookie(concernedAdminUser.email, components.cookieAuthenticator)
             .withBody(Json.toJson(reportConsumer))
         ),
       Duration.Inf

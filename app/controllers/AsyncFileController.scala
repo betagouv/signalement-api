@@ -1,27 +1,26 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
 import models._
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import services.S3ServiceInterface
-import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.ExecutionContext
 
 class AsyncFileController(
-    val asyncFileRepository: AsyncFileRepositoryInterface,
-    val silhouette: Silhouette[AuthEnv],
-    val s3Service: S3ServiceInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface,
+    s3Service: S3ServiceInterface,
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>
     for {
       asyncFiles <- asyncFileRepository.list(request.identity, kind.map(AsyncFileKind.withName))
-    } yield Ok(Json.toJson(asyncFiles.map { case asyncFile: AsyncFile =>
+    } yield Ok(Json.toJson(asyncFiles.map { asyncFile: AsyncFile =>
       Map(
         "id"           -> asyncFile.id.toString,
         "creationDate" -> asyncFile.creationDate.toString,

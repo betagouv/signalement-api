@@ -3,7 +3,7 @@ package orchestrators
 import cats.implicits.catsSyntaxOption
 import config.TokenConfiguration
 import controllers.error.AppError._
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models._
 import models.company.AccessLevel
 import models.company.Company
@@ -87,7 +87,7 @@ class ProAccessTokenOrchestrator(
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit] = for {
-    _     <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
+    _     <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     token <- fetchCompanyToken(token, siret)
     user  <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
     _     <- bindPendingTokens(user)

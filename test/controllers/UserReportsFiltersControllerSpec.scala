@@ -1,11 +1,5 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
-import models.User
 import models.UserReportsFilters
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -15,10 +9,10 @@ import play.api.libs.json.Json
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
+import utils.AuthHelpers._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -32,12 +26,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
   val user  = Fixtures.genDgccrfUser.sample.get
   val user2 = Fixtures.genDgccrfUser.sample.get
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
   val (app, components) = TestApp.buildApp(
-    Some(
-      new FakeEnvironment[AuthEnv](Seq(user).map(user => loginInfo(user) -> user))
-    )
   )
 
   override def afterAll(): Unit = {
@@ -45,9 +34,8 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  implicit val authEnv: Environment[AuthEnv] = components.authEnv
-  lazy val userRepository                    = components.userRepository
-  lazy val userReportsFiltersRepository      = components.userReportsFiltersRepository
+  lazy val userRepository               = components.userRepository
+  lazy val userReportsFiltersRepository = components.userReportsFiltersRepository
 
   override def setupData() =
     Await.result(
@@ -62,7 +50,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     sequential
     "list only filters of the user" in {
       val request = FakeRequest(GET, routes.UserReportsFiltersController.list().toString)
-        .withAuthenticator[AuthEnv](loginInfo(user))
+        .withAuthCookie(user.email, components.cookieAuthenticator)
 
       val result = for {
         _   <- userReportsFiltersRepository.createOrUpdate(UserReportsFilters(user.id, "test_list", Json.obj()))
@@ -81,7 +69,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
 
       val request = FakeRequest(POST, routes.UserReportsFiltersController.save().toString)
         .withJsonBody(jsonBody)
-        .withAuthenticator[AuthEnv](loginInfo(user))
+        .withAuthCookie(user.email, components.cookieAuthenticator)
 
       val result = for {
         res          <- route(app, request).get
@@ -138,7 +126,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
 
       val request = FakeRequest(POST, routes.UserReportsFiltersController.save().toString)
         .withJsonBody(jsonBody)
-        .withAuthenticator[AuthEnv](loginInfo(user))
+        .withAuthCookie(user.email, components.cookieAuthenticator)
 
       val result = for {
         res          <- route(app, request).get

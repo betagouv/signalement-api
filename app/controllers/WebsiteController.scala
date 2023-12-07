@@ -2,7 +2,7 @@ package controllers
 
 import actors.WebsiteExtractActor
 import akka.actor.typed
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyCreation
@@ -17,8 +17,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import authentication.actions.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -29,10 +28,10 @@ class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
     val companyRepository: CompanyRepositoryInterface,
     websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand],
-    val silhouette: Silhouette[AuthEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger                      = Logger(this.getClass)
@@ -47,7 +46,7 @@ class WebsiteController(
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean]
   ) =
-    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -65,14 +64,14 @@ class WebsiteController(
     }
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       websitesOrchestrator
         .fetchUnregisteredHost(host, start, end)
         .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)))
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
       websitesExtractActor ! WebsiteExtractActor.ExtractRequest(
         request.identity,
@@ -81,21 +80,21 @@ class WebsiteController(
       Future.successful(Ok)
     }
 
-  def searchByHost(url: String) = UnsecuredAction.async {
+  def searchByHost(url: String) = Action.async {
     websitesOrchestrator
       .searchByHost(url)
       .map(countries => Ok(Json.toJson(countries)))
   }
 
   def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
-    SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
       websitesOrchestrator
         .updateWebsiteIdentificationStatus(websiteId, identificationStatus, request.identity)
         .map(website => Ok(Json.toJson(website)))
     }
 
-  def updateCompany(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
-    implicit request =>
+  def updateCompany(websiteId: WebsiteId) =
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
       request.body
         .validate[CompanyCreation]
         .fold(
@@ -105,23 +104,23 @@ class WebsiteController(
               .updateCompany(websiteId, company, request.identity)
               .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
         )
-  }
+    }
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
-    SecuredAction(WithRole(UserRole.Admin)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.Admin)).async { request =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry, request.identity)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
     }
 
-  def remove(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def remove(websiteId: WebsiteId) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     websitesOrchestrator
       .delete(websiteId)
       .map(_ => Ok)
   }
 
-  def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def updateInvestigation() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     for {
       websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
       updated                 <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
@@ -130,7 +129,7 @@ class WebsiteController(
   }
 
   def listInvestigationStatus(): Action[AnyContent] =
-    SecuredAction(WithRole(UserRole.Admin)) { _ =>
+    SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
       Ok(Json.toJson(websitesOrchestrator.listInvestigationStatus()))
     }
 

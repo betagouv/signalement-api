@@ -2,7 +2,7 @@ package controllers
 
 import actors.ReportsExtractActor
 import akka.actor.typed
-import com.mohiva.play.silhouette.api.Silhouette
+import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
@@ -11,15 +11,13 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
 import cats.implicits.catsSyntaxOption
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.QueryStringMapper
+import authentication.actions.UserAction.WithPermission
 
 import java.time.ZoneId
 
@@ -27,16 +25,16 @@ class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
     reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand],
-    val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv],
+    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(controllerComponents) {
+    extends BaseController(authenticator, controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger                      = Logger(this.getClass)
 
   def getReports() = SecuredAction.async { implicit request =>
+    implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     ReportFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
@@ -57,7 +55,7 @@ class ReportListController(
       )
   }
 
-  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def extractReports = SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
     for {
       reportFilter <- ReportFilter
         .fromQueryString(request.queryString)

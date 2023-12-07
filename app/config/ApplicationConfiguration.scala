@@ -1,5 +1,9 @@
 package config
 
+import authentication.CookieAuthenticator.CookieAuthenticatorSettings
+import authentication.JcaCrypterSettings
+import authentication.JcaSignerSettings
+
 case class ApplicationConfiguration(
     app: SignalConsoConfiguration,
     mail: EmailConfiguration,
@@ -7,5 +11,8 @@ case class ApplicationConfiguration(
     flyway: FlywayConfiguration,
     siretExtractor: SiretExtractorConfiguration,
     gs1: GS1Configuration,
-    amazonBucketName: String
+    amazonBucketName: String,
+    crypter: JcaCrypterSettings,
+    signer: JcaSignerSettings,
+    cookie: CookieAuthenticatorSettings
 )

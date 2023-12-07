@@ -28,6 +28,8 @@ object PaginatedResult {
   ): OWrites[PaginatedResult[ReportWithFiles]] =
     Json.writes[PaginatedResult[ReportWithFiles]]
 
-  implicit val paginatedReportWithFilesAndResponsesWriter: OWrites[PaginatedResult[ReportWithFilesAndResponses]] =
+  implicit def paginatedReportWithFilesAndResponsesWriter(implicit
+      userRole: Option[UserRole]
+  ): OWrites[PaginatedResult[ReportWithFilesAndResponses]] =
     Json.writes[PaginatedResult[ReportWithFilesAndResponses]]
 }

@@ -1,6 +1,6 @@
 package models.report
 
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.company.Address
 import models.company.Company
 import models.report.ReportStatus.NA

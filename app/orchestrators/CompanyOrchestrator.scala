@@ -7,7 +7,7 @@ import config.TaskConfiguration
 import config.TokenConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
-import io.scalaland.chimney.dsl.TransformerOps
+import io.scalaland.chimney.dsl._
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
