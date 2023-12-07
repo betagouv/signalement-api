@@ -9,6 +9,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
+import repositories.tasklock.TaskLockRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
@@ -20,6 +21,7 @@ import java.time.Period
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
@@ -30,6 +32,12 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
   val (app, components) = TestApp.buildApp(
   )
+
+  val lockRepositoryMock: TaskLockRepositoryInterface = new TaskLockRepositoryInterface {
+    override def acquire(id: Int): Future[Boolean] = Future.successful(true)
+
+    override def release(id: Int): Future[Boolean] = Future.successful(true)
+  }
 
   lazy val userRepository                    = components.userRepository
   lazy val asyncFileRepository               = components.asyncFileRepository
@@ -114,7 +122,8 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
                 this.app.actorSystem,
                 inactiveDgccrfAccountRemoveTask,
                 inactiveDgccrfAccountReminderTask,
-                conf
+                conf,
+                lockRepositoryMock
               )
                 .runTask(now.atOffset(ZoneOffset.UTC))
               userList                 <- userRepository.list()

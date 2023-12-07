@@ -12,12 +12,13 @@ import play.api.i18n.MessagesApi
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.tasklock.TaskLockRepositoryInterface
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.ConsumerEmail
 import services.MailService
+import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
-import tasks.scheduleTask
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
@@ -41,18 +42,16 @@ class ReportClosureTask(
     companyRepository: CompanyRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration,
+    taskLockRepository: TaskLockRepositoryInterface,
     messagesApi: MessagesApi
-)(implicit val executionContext: ExecutionContext) {
+)(implicit val executionContext: ExecutionContext)
+    extends ScheduledTask(2, "report_closure_task", taskLockRepository, actorSystem, taskConfiguration) {
 
-  val logger: Logger = Logger(this.getClass)
+  override val logger: Logger           = Logger(this.getClass)
+  override val startTime: LocalTime     = taskConfiguration.reportClosure.startTime
+  override val interval: FiniteDuration = 1.day
 
-  scheduleTask(
-    actorSystem,
-    taskConfiguration,
-    startTime = taskConfiguration.reportClosure.startTime,
-    interval = 1.day,
-    taskName = "report_closure_task"
-  )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
+  override def runTask(): Future[Unit] = runTask(taskRunDate = getTodayAtStartOfDayParis())
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
@@ -144,5 +143,4 @@ class ReportClosureTask(
     }
 
   }
-
 }
