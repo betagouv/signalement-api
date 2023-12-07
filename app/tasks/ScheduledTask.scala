@@ -31,8 +31,10 @@ abstract class ScheduledTask(
     (for {
       lockAcquired <- taskLockRepository.acquire(taskId)
       _ <-
-        if (lockAcquired) runTask()
-        else {
+        if (lockAcquired) {
+          logger.info(s"Lock acquired for $taskName.")
+          runTask()
+        } else {
           logger.info(s"Lock for $taskName is already taken by another instance. Nothing to do here.")
           Future.unit
         }
