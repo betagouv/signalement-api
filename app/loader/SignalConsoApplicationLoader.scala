@@ -82,6 +82,7 @@ import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.tasklock.TaskLockRepository
 import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import repositories.usersettings.UserReportsFiltersRepository
@@ -179,6 +180,7 @@ class SignalConsoComponents(
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
+  val taskLockRepository                                                = new TaskLockRepository(dbConfig)
   val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
@@ -428,15 +430,21 @@ class SignalConsoComponents(
     companyRepository,
     mailService,
     taskConfiguration,
+    taskLockRepository,
     messagesApi
   )
+  reportClosureTask.schedule()
+
   val reportReminderTask = new ReportRemindersTask(
+    actorSystem,
     reportRepository,
     eventRepository,
     mailService,
-    companiesVisibilityOrchestrator
+    companiesVisibilityOrchestrator,
+    taskConfiguration,
+    taskLockRepository
   )
-  reportReminderTask.schedule(actorSystem, taskConfiguration)
+  reportReminderTask.schedule()
 
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
@@ -447,9 +455,11 @@ class SignalConsoComponents(
     actorSystem,
     companyRepository,
     companySyncService,
-    companySyncRepository
+    companySyncRepository,
+    taskConfiguration,
+    taskLockRepository
   )
-  companyUpdateTask.schedule(): Unit
+  companyUpdateTask.schedule()
 
   logger.debug("Starting App and sending sentry alert")
 
@@ -460,8 +470,10 @@ class SignalConsoComponents(
       subscriptionRepository,
       userRepository,
       mailService,
-      taskConfiguration
+      taskConfiguration,
+      taskLockRepository
     )
+  reportNotificationTask.schedule()
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
@@ -476,8 +488,10 @@ class SignalConsoComponents(
     actorSystem,
     inactiveDgccrfAccountRemoveTask,
     inactiveDgccrfAccountReminderTask,
-    applicationConfiguration.task
+    applicationConfiguration.task,
+    taskLockRepository
   )
+  inactiveAccountTask.schedule()
 
   // Controller
 

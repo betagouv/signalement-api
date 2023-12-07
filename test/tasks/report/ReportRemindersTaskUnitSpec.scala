@@ -1,5 +1,8 @@
 package tasks.report
 
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import config.ReportRemindersTaskConfiguration
+import config.TaskConfiguration
 import models.company.AccessLevel
 import models.event.Event
 import models.report.ReportStatus
@@ -15,6 +18,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.tasklock.TaskLockRepositoryInterface
 import services.Email
 import services.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -23,6 +27,7 @@ import utils.Constants.EventType
 import utils.Fixtures
 import utils.SIREN
 
+import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.Period
 import scala.concurrent.Await
@@ -31,6 +36,27 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 
 class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
+
+  val taskLockRepositoryMock = new TaskLockRepositoryInterface {
+    override def acquire(id: Int): Future[Boolean] = Future.successful(true)
+
+    override def release(id: Int): Future[Boolean] = Future.successful(true)
+  }
+
+  val taskConf = TaskConfiguration(
+    active = true,
+    subscription = null,
+    reportClosure = null,
+    reportReminders = ReportRemindersTaskConfiguration(
+      startTime = LocalTime.of(2, 0),
+      intervalInHours = 1.day,
+      mailReminderDelay = Period.ofDays(7)
+    ),
+    inactiveAccounts = null,
+    companyUpdate = null
+  )
+
+  val testKit = ActorTestKit()
 
   def argMatching[T](pf: PartialFunction[Any, Unit]) = argThat[T](pf.isDefinedAt(_))
 
@@ -45,7 +71,15 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
         new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
 
       val reportRemindersTask =
-        new ReportRemindersTask(reportRepository, eventRepository, mailService, companiesVisibilityOrchestrator)
+        new ReportRemindersTask(
+          testKit.system.classicSystem,
+          reportRepository,
+          eventRepository,
+          mailService,
+          companiesVisibilityOrchestrator,
+          taskConf,
+          taskLockRepositoryMock
+        )
 
       val company1 = Fixtures.genCompany.sample.get
       val company2 = Fixtures.genCompany.sample.get

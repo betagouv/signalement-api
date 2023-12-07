@@ -11,12 +11,13 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.tasklock.TaskLockRepositoryInterface
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email
 import services.MailServiceInterface
+import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
-import tasks.scheduleTask
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.SYSTEM
 import utils.EmailAddress
@@ -28,14 +29,22 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import utils.Logs.RichLogger
+
+import scala.concurrent.duration.FiniteDuration
 class ReportRemindersTask(
+    actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailServiceInterface,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator
-)(implicit val executionContext: ExecutionContext) {
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    taskConfiguration: TaskConfiguration,
+    taskLockRepository: TaskLockRepositoryInterface
+)(implicit val executionContext: ExecutionContext)
+    extends ScheduledTask(4, "report_reminders_task", taskLockRepository, actorSystem, taskConfiguration) {
 
-  val logger: Logger = Logger(this.getClass)
+  override val logger: Logger           = Logger(this.getClass)
+  override val startTime: LocalTime     = taskConfiguration.reportReminders.startTime
+  override val interval: FiniteDuration = taskConfiguration.reportReminders.intervalInHours
 
   // In practice, since we require 7 full days between the previous email and the next one,
   // the email will fire at J+8
@@ -47,23 +56,14 @@ class ReportRemindersTask(
   val delayBetweenReminderEmails: Period = Period.ofDays(7)
   val maxReminderCount                   = 2
 
-  def schedule(actorSystem: ActorSystem, taskConfiguration: TaskConfiguration): Unit = {
-    val conf = taskConfiguration.reportReminders
-
-    scheduleTask(
-      actorSystem,
-      taskConfiguration,
-      startTime = conf.startTime,
-      interval = conf.intervalInHours,
-      taskName = "report_reminders_task"
-    )(runTask(taskRunDate = getTodayAtStartOfDayParis()).map { case (failures, successes) =>
+  override def runTask(): Future[Unit] =
+    runTask(taskRunDate = getTodayAtStartOfDayParis()).map { case (failures, successes) =>
       logger.info(
         s"Successfully sent ${successes.length} reminder emails sent for ${successes.map(_.length).sum} reports"
       )
       if (failures.nonEmpty)
         logger.error(s"Failed to send ${failures.length} reminder emails for ${failures.map(_.length).sum} reports")
-    })
-  }
+    }
 
   def runTask(taskRunDate: OffsetDateTime): Future[(List[List[UUID]], List[List[UUID]])] = {
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
@@ -194,5 +194,4 @@ class ReportRemindersTask(
       )
       usersByCompanyId <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(companiesSiretsAndIds.distinct)
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, usersByCompanyId.getOrElse(companyId, Nil))))
-
 }
