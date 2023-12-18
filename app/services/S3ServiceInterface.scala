@@ -18,5 +18,5 @@ trait S3ServiceInterface {
 
   def delete(bucketKey: String): Future[Done]
 
-  def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String
+  def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET, inline: Boolean): String
 }

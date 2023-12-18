@@ -236,7 +236,7 @@ object ReportsExtractActor {
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportFileController
-                  .downloadReportFile(file.id, file.filename)
+                  .downloadReportFile(file.id, file.filename, inline = true)
                   .url}"
             )
             .mkString("\n"),

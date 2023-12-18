@@ -33,7 +33,7 @@ GET           /api/reports                                              controll
 POST          /api/reports/extract                                      controllers.ReportListController.extractReports()
 
 # Report API
-GET           /api/reports/files/:uuid/:filename                        controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
+GET           /api/reports/files/:uuid/:filename                        controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename: String, inline : Boolean)
 DELETE        /api/reports/files/:uuid/:filename                        controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 POST          /api/reports/files                                        controllers.ReportFileController.uploadReportFile()
 

@@ -7,6 +7,7 @@ import akka.stream.scaladsl.FileIO
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import com.amazonaws.HttpMethod
 import controllers.error.AppError._
 import models._
 import models.report._
@@ -14,6 +15,7 @@ import models.report.reportfile.ReportFileId
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -87,7 +89,7 @@ class ReportFileOrchestrator(
     _   <- s3Service.delete(filename)
   } yield res
 
-  def downloadReportAttachment(reportFileId: ReportFileId, filename: String): Future[String] = {
+  def downloadReportAttachment(reportFileId: ReportFileId, filename: String, inline: Boolean): Future[String] = {
     logger.info(s"Downloading file with id $reportFileId")
     reportFileRepository
       .get(reportFileId)
@@ -97,7 +99,7 @@ class ReportFileOrchestrator(
           antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
           Future.failed(AttachmentNotReady(reportFileId))
         case Some(file) if file.filename == filename && file.avOutput.isDefined =>
-          Future.successful(s3Service.getSignedUrl(file.storageFilename))
+          Future.successful(s3Service.getSignedUrl(file.storageFilename, HttpMethod.GET, inline))
         case _ => Future.failed(AttachmentNotFound(reportFileId, filename))
       }
   }

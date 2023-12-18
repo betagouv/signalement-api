@@ -61,10 +61,11 @@ class S3Service(implicit
   override def delete(bucketKey: String): Future[Done] =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
-  override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
+  override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET, inline: Boolean): String = {
     val headerOverrides = new ResponseHeaderOverrides()
     // Force attachment to be download by browser
-    headerOverrides.setContentDisposition("attachment;")
+    if (inline) headerOverrides.setContentDisposition("inline;")
+    else headerOverrides.setContentDisposition("attachment;")
     // See https://docs.aws.amazon.com/AmazonS3/latest/dev/ShareObjectPreSignedURLJavaSDK.html
     val expiration = new java.util.Date
     expiration.setTime(expiration.getTime + 1000 * 60 * 60)

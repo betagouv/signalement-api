@@ -37,11 +37,11 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
-  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = Action.async { _ =>
-    reportFileOrchestrator
-      .downloadReportAttachment(uuid, filename)
-      .map(signedUrl => Redirect(signedUrl))
-
+  def downloadReportFile(uuid: ReportFileId, filename: String, inline: Boolean): Action[AnyContent] = Action.async {
+    _ =>
+      reportFileOrchestrator
+        .downloadReportAttachment(uuid, filename, inline)
+        .map(signedUrl => Redirect(signedUrl))
   }
 
   def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UserAwareAction.async {
