@@ -282,7 +282,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     "fichier.jpg",
     "123_fichier.jpg",
-    ReportFileOrigin.PROFESSIONAL,
+    ReportFileOrigin.Professional,
     None
   )
 

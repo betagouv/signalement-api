@@ -41,7 +41,16 @@ class ReportFileController(
     reportFileOrchestrator
       .downloadReportAttachment(uuid, filename)
       .map(signedUrl => Redirect(signedUrl))
+  }
 
+  def downloadZip(reportId: UUID, origin: ReportFileOrigin) = Action.async { _ =>
+    reportFileOrchestrator.downloadReportFilesArchive(reportId, origin).map { source =>
+      Ok.chunked(source)
+        .as("application/zip")
+        .withHeaders(
+          "Content-Disposition" -> s"attachment; filename=all.zip"
+        )
+    }
   }
 
   def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UserAwareAction.async {
@@ -57,8 +66,8 @@ class ReportFileController(
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
         dataPart = request.body.dataParts
           .get("reportFileOrigin")
-          .map(o => ReportFileOrigin(o.head))
-          .getOrElse(ReportFileOrigin.CONSUMER)
+          .flatMap(o => ReportFileOrigin.withNameInsensitiveOption(o.head))
+          .getOrElse(ReportFileOrigin.Consumer)
         fileExtension = filePart.filename.toLowerCase.split("\\.").last
         _ <- validateFileExtension(fileExtension)
         tmpFile = pathFromFilePart(filePart)

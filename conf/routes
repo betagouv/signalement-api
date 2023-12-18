@@ -33,6 +33,7 @@ GET           /api/reports                                              controll
 POST          /api/reports/extract                                      controllers.ReportListController.extractReports()
 
 # Report API
+GET           /api/reports/files                                        controllers.ReportFileController.downloadZip(reportId: java.util.UUID, fileOrigin :  ReportFileOrigin)
 GET           /api/reports/files/:uuid/:filename                        controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 DELETE        /api/reports/files/:uuid/:filename                        controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 POST          /api/reports/files                                        controllers.ReportFileController.uploadReportFile()
@@ -76,6 +77,7 @@ POST          /api/admin/emails/newReportToPro                          controll
 
 # Async files API
 GET           /api/async-files                                          controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
+
 
 # Events API
 

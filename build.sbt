@@ -30,6 +30,7 @@ scalacOptions ++= Seq(
 routesImport ++= Seq(
   "models.UserRole",
   "models.website.IdentificationStatus",
+  "models.report.ReportFileOrigin",
   "java.time.OffsetDateTime",
   "models.investigation.InvestigationStatus",
   "models.website.WebsiteId",
@@ -46,6 +47,7 @@ routesImport ++= Seq(
   "controllers.ReportFileIdPathBindable",
   "controllers.ReportResponseTypeQueryStringBindable",
   "controllers.ReportAdminActionTypeQueryStringBindable",
+  "controllers.ReportFileOriginQueryStringBindable",
   "controllers.PublicStatQueryStringBindable"
 )
 
