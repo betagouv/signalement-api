@@ -47,9 +47,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .filterIf(report.companyAddress.flatMap(_.addressSupplement).isEmpty)(_.companyAddressSupplement.isEmpty)
       .filterOpt(report.companyAddress.flatMap(_.city))(_.companyCity === _)
       .filterIf(report.companyAddress.flatMap(_.city).isEmpty)(_.companyCity.isEmpty)
-      .filter(_.firstName === report.firstName)
-      .filter(_.lastName === report.lastName)
       .filter(_.creationDate >= after)
+      .filter(_.category === report.category)
 
     db.run(similarReportQuery.result).map(_.toList)
   }
