@@ -43,12 +43,12 @@ class ReportFileController(
       .map(signedUrl => Redirect(signedUrl))
   }
 
-  def downloadZip(reportId: UUID, origin: ReportFileOrigin) = Action.async { _ =>
+  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Action.async { _ =>
     reportFileOrchestrator.downloadReportFilesArchive(reportId, origin).map { source =>
       Ok.chunked(source)
         .as("application/zip")
         .withHeaders(
-          "Content-Disposition" -> s"attachment; filename=all.zip"
+          "Content-Disposition" -> s"attachment; filename=$reportId-$origin-pj.zip"
         )
     }
   }
