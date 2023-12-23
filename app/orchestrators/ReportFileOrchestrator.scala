@@ -2,8 +2,11 @@ package orchestrators
 
 import actors.AntivirusScanActor
 import akka.actor.typed.ActorRef
+import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -14,6 +17,7 @@ import models.report.reportfile.ReportFileId
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -101,4 +105,18 @@ class ReportFileOrchestrator(
         case _ => Future.failed(AttachmentNotFound(reportFileId, filename))
       }
   }
+
+  def downloadReportFilesArchive(
+      reportId: UUID,
+      origin: Option[ReportFileOrigin]
+  ): Future[Source[ByteString, Future[IOResult]]] =
+    for {
+      reportFiles <- reportFileRepository
+        .retrieveReportFiles(reportId)
+        .map(_.filter { f =>
+          origin.contains(f.origin)
+        })
+      storageFileNames = reportFiles.map(_.storageFilename)
+    } yield s3Service.downloadAndZip(storageFileNames)
+
 }

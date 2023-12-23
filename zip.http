@@ -1,0 +1,7 @@
+###
+
+# curl localhost:9000/api/zip
+GET localhost:9000/api/reports/files?reportId=d894fe80-935b-45f8-bfab-ea1c8933f5ed&fileOrigin=consumer
+
+###
+

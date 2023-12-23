@@ -146,7 +146,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           "fileName",
           "storageName",
-          ReportFileOrigin(""),
+          ReportFileOrigin.Consumer,
           None
         )
         val review =
@@ -220,7 +220,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
             "fileName",
             "storageName",
-            ReportFileOrigin(""),
+            ReportFileOrigin.Consumer,
             None
           )
           val review =

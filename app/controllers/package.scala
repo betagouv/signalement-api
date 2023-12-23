@@ -12,6 +12,7 @@ import play.api.mvc.Request
 import cats.syntax.either._
 import models.PublicStat
 import models.extractUUID
+import models.report.ReportFileOrigin
 import models.report.ReportResponseType
 import models.report.delete.ReportAdminActionType
 import models.report.reportfile.ReportFileId
@@ -74,6 +75,13 @@ package object controllers {
       .transform[ReportResponseType](
         reportResponseType => ReportResponseType.withName(reportResponseType),
         reportResponseType => reportResponseType.entryName
+      )
+
+  implicit val ReportFileOriginQueryStringBindable: QueryStringBindable[ReportFileOrigin] =
+    QueryStringBindable.bindableString
+      .transform[ReportFileOrigin](
+        reportFileOrigin => ReportFileOrigin.withName(reportFileOrigin),
+        reportFileOrigin => reportFileOrigin.entryName
       )
 
   implicit val ReportAdminActionTypeQueryStringBindable: QueryStringBindable[ReportAdminActionType] =

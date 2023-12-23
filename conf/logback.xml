@@ -49,7 +49,7 @@
         <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
     </appender>
 
-    <logger name="play" level="INFO"/>
+    <logger name="play" level="DEBUG"/>
     <logger name="application" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="loader" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="actors" level="${LOG_LEVEL:-DEBUG}"/>

@@ -43,6 +43,9 @@ object DateUtils {
   def frenchFormatDate(d: OffsetDateTime, zone: ZoneId) =
     d.atZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
 
+  def frenchFileFormatDate(d: OffsetDateTime) =
+    d.atZoneSameInstant(ZoneId.of("Europe/Paris")).format(DateTimeFormatter.ofPattern(DATE_FORMAT))
+
   def frenchFormatDateAndTime(d: OffsetDateTime, zone: ZoneId) =
     d.atZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
 
