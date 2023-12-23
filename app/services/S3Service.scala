@@ -11,6 +11,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
 import utils.Logs.RichLogger
+
 import java.nio.file.Path
 import com.amazonaws.HttpMethod
 import com.amazonaws.auth.AWSStaticCredentialsProvider
@@ -108,8 +109,8 @@ class S3Service(implicit
             logger.errorWithTitle("mass_report_files_download", "Error closing zip file", e)
         } finally
           pipedOut.close()
-        ()
-      }
+
+      }: Unit
 
     source
   }
