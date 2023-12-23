@@ -4,6 +4,7 @@ import akka.Done
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import config.SignalConsoConfiguration
+import controllers.error.AppError
 import controllers.error.AppError.FileTooLarge
 import controllers.error.AppError.InvalidFileExtension
 import controllers.error.AppError.MalformedFileKey
@@ -18,6 +19,8 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
+import repositories.report.ReportRepositoryInterface
+import utils.DateUtils.frenchFileFormatDate
 
 import java.io.File
 import java.nio.file.Paths
@@ -29,7 +32,8 @@ class ReportFileController(
     reportFileOrchestrator: ReportFileOrchestrator,
     authenticator: Authenticator[User],
     signalConsoConfiguration: SignalConsoConfiguration,
-    controllerComponents: ControllerComponents
+    controllerComponents: ControllerComponents,
+    reportRepository: ReportRepositoryInterface
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -44,13 +48,16 @@ class ReportFileController(
   }
 
   def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Action.async { _ =>
-    reportFileOrchestrator.downloadReportFilesArchive(reportId, origin).map { source =>
-      Ok.chunked(source)
-        .as("application/zip")
-        .withHeaders(
-          "Content-Disposition" -> s"attachment; filename=$reportId-$origin-pj.zip"
-        )
-    }
+    for {
+      report <- reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
+      stream <- reportFileOrchestrator.downloadReportFilesArchive(reportId, origin)
+    } yield Ok
+      .chunked(stream)
+      .as("application/zip")
+      .withHeaders(
+        "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
+      )
+
   }
 
   def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UserAwareAction.async {

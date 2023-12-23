@@ -108,12 +108,14 @@ class ReportFileOrchestrator(
 
   def downloadReportFilesArchive(
       reportId: UUID,
-      origin: ReportFileOrigin
+      origin: Option[ReportFileOrigin]
   ): Future[Source[ByteString, Future[IOResult]]] =
     for {
-      reportFiles <- reportFileRepository.retrieveReportFiles(reportId) map (_.filter(
-        _.origin == origin
-      ))
+      reportFiles <- reportFileRepository
+        .retrieveReportFiles(reportId)
+        .map(_.filter { f =>
+          origin.contains(f.origin)
+        })
       storageFileNames = reportFiles.map(_.storageFilename)
     } yield s3Service.downloadAndZip(storageFileNames)
 

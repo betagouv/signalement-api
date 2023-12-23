@@ -25,7 +25,6 @@ import play.api.Logger
 import java.io.BufferedOutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.util.UUID
 import java.util.zip.ZipOutputStream
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -71,15 +70,22 @@ class S3Service(implicit
   override def delete(bucketKey: String): Future[Done] =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
+  private def getFileExtension(fileName: String): String =
+    fileName.lastIndexOf(".") match {
+      case -1 => "" // No extension found
+      case i  => fileName.substring(i + 1)
+    }
+
   override def downloadAndZip(files: Seq[String]): Source[ByteString, Future[IOResult]] = {
     val pipedOut = new PipedOutputStream()
     val zipOut   = new ZipOutputStream(new BufferedOutputStream(pipedOut))
     val source   = StreamConverters.fromInputStream(() => new PipedInputStream(pipedOut))
 
-    val fileSourcesFutures: Seq[Future[Unit]] = files.map { fileName =>
+    val fileSourcesFutures: Seq[Future[Unit]] = files.zipWithIndex.map { case (fileName, index) =>
       S3.getObject(bucketName, fileName).runWith(Sink.fold(ByteString.empty)(_ ++ _)).map { byteString =>
+        val entryFileName = s"PJ-${index + 1}.${getFileExtension(fileName)}"
         zipOut.synchronized {
-          zipOut.putNextEntry(new java.util.zip.ZipEntry(UUID.randomUUID().toString ++ fileName))
+          zipOut.putNextEntry(new java.util.zip.ZipEntry(entryFileName))
           zipOut.write(byteString.toArray)
           zipOut.closeEntry()
         }
