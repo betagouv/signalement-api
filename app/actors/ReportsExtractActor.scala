@@ -233,7 +233,7 @@ object ReportsExtractActor {
         leftAlignmentColumn,
         (_, files, _, _, _) =>
           files
-            .filter(file => file.origin == ReportFileOrigin.CONSUMER)
+            .filter(file => file.origin == ReportFileOrigin.Consumer)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportFileController
                   .downloadReportFile(file.id, file.filename)

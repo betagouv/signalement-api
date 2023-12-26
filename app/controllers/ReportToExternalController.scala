@@ -48,7 +48,7 @@ class ReportToExternalController(
           report      <- reportRepository.get(id)
           reportFiles <- report.map(r => reportFileRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield report
-          .map(report => ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))
+          .map(report => ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.Consumer)))
           .map(ReportWithFilesToExternal.fromReportWithFiles)
           .map(report => Ok(Json.toJson(report)))
           .getOrElse(NotFound)

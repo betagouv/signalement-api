@@ -572,7 +572,8 @@ class SignalConsoComponents(
       reportFileOrchestrator,
       cookieAuthenticator,
       signalConsoConfiguration,
-      controllerComponents
+      controllerComponents,
+      reportRepository
     )
 
   val reportWithDataOrchestrator =

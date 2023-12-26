@@ -4,6 +4,7 @@ import akka.Done
 import akka.stream.IOResult
 import akka.stream.alpakka.s3.MultipartUploadResult
 import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.amazonaws.HttpMethod
 import services.S3ServiceInterface
@@ -21,4 +22,6 @@ class S3ServiceMock extends S3ServiceInterface {
   override def delete(bucketKey: String): Future[Done] = Future.successful(Done)
 
   override def getSignedUrl(bucketKey: String, method: HttpMethod): String = ???
+
+  override def downloadAndZip(files: Seq[String]): Source[ByteString, Future[IOResult]] = ???
 }

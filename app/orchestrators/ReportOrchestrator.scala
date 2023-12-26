@@ -212,6 +212,8 @@ class ReportOrchestrator(
           reportList
             .filter(r => r.creationDate.isAfter(startOfDay) || r.creationDate.isEqual(startOfDay))
             .filter(_.details.containsSlice(draftReport.details))
+            .filter(_.firstName == draftReport.firstName)
+            .filter(_.lastName == draftReport.lastName)
 
         val reportsWithSameUserAndCompanyTodayList =
           reportList.filter(r => r.creationDate.isAfter(startOfDay) || r.creationDate.isEqual(startOfDay))

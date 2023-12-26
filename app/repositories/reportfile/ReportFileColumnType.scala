@@ -11,7 +11,7 @@ import java.util.UUID
 object ReportFileColumnType {
 
   implicit val ReportFileOriginColumnType: JdbcType[ReportFileOrigin] with BaseTypedType[ReportFileOrigin] =
-    MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
+    MappedColumnType.base[ReportFileOrigin, String](_.entryName, ReportFileOrigin.withNameInsensitive)
 
   implicit val ReportFileIdColumnType: JdbcType[ReportFileId] with BaseTypedType[ReportFileId] =
     MappedColumnType.base[ReportFileId, UUID](

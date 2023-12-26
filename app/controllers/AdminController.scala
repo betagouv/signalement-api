@@ -11,7 +11,7 @@ import models.auth.AuthToken
 import models.company.Address
 import models.company.Company
 import models.event.Event
-import models.report.ReportFileOrigin.CONSUMER
+import models.report.ReportFileOrigin.Consumer
 import models.report.reportfile.ReportFileId
 import models.report.Gender
 import models.report.Report
@@ -129,7 +129,7 @@ class AdminController(
     creationDate = OffsetDateTime.now(),
     filename = s"${UUID.randomUUID.toString}.png",
     storageFilename = "String",
-    origin = CONSUMER,
+    origin = Consumer,
     avOutput = None
   )
 
