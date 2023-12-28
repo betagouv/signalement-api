@@ -37,7 +37,9 @@ class ReportConsumerReviewController(
     for {
       maybeResponseConsumerReview <- reportConsumerReviewOrchestrator.find(reportUUID)
       maybeResponseConsumerReviewApi = maybeResponseConsumerReview.map(_.into[ResponseConsumerReviewApi].transform)
-    } yield Ok(Json.toJson(maybeResponseConsumerReviewApi))
+    } yield maybeResponseConsumerReviewApi
+      .map(responseConsumerReviewApi => Ok(Json.toJson(responseConsumerReviewApi)))
+      .getOrElse(NotFound)
 
   }
 

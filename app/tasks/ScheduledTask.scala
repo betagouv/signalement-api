@@ -50,7 +50,7 @@ abstract class ScheduledTask(
         case Success(_) =>
           logger.debug(s"Lock released for $taskName with id $taskId")
         case Failure(err) =>
-          logger.debug(s"Fail to release lock for $taskName with id $taskId", err)
+          logger.error(s"Fail to release lock for $taskName with id $taskId", err)
       }
     }: Unit
 
