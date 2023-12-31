@@ -43,7 +43,8 @@ object ZipBuilder {
         case Failure(e) =>
           logger.errorWithTitle("zip_builder", "Error in processing files", e)
           safelyCloseResources(zipOut, pipedOut)
-      }
+      }: Unit
+
     source
   }
 
