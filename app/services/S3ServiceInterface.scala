@@ -2,6 +2,7 @@ package services
 import akka.Done
 import akka.stream.IOResult
 import akka.stream.alpakka.s3.MultipartUploadResult
+import akka.stream.alpakka.s3.ObjectMetadata
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -20,6 +21,5 @@ trait S3ServiceInterface {
   def delete(bucketKey: String): Future[Done]
 
   def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String
-
-  def downloadAndZip(files: Seq[String]): Source[ByteString, Future[IOResult]]
+  def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]]
 }

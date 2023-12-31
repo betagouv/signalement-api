@@ -336,7 +336,12 @@ class SignalConsoComponents(
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
 
-  val reportFileOrchestrator = new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service)
+  val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
+
+  val reportZipExportService = new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)
+
+  val reportFileOrchestrator =
+    new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service, reportZipExportService)
 
   val reportOrchestrator = new ReportOrchestrator(
     mailService,
@@ -359,6 +364,14 @@ class SignalConsoComponents(
     companySyncService,
     messagesApi
   )
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(
+      reportOrchestrator,
+      companyRepository,
+      eventRepository,
+      reportFileRepository,
+      responseConsumerReviewRepository
+    )
 
   val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
     mailService,
@@ -576,15 +589,6 @@ class SignalConsoComponents(
       reportRepository
     )
 
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
-      reportOrchestrator,
-      companyRepository,
-      eventRepository,
-      reportFileRepository,
-      responseConsumerReviewRepository
-    )
-
   val reportController = new ReportController(
     reportOrchestrator,
     reportAdminActionOrchestrator,
@@ -596,8 +600,10 @@ class SignalConsoComponents(
     frontRoute,
     cookieAuthenticator,
     controllerComponents,
-    reportWithDataOrchestrator
+    reportWithDataOrchestrator,
+    reportZipExportService
   )
+
   val reportedPhoneController = new ReportedPhoneController(
     reportRepository,
     companyRepository,

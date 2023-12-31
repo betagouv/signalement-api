@@ -485,4 +485,12 @@ object AppError {
     override val details: String      = s"Impossible de réouvrir le signalement, il doit être clos et sans réponse."
     override val titleForLogs: String = "cannot_reopen_report"
   }
+
+  final case object NoReportFiles extends BadRequestError {
+    override val `type`: String       = "SC-0051"
+    override val title: String        = "No report files"
+    override val details: String      = s"Il n'y a aucune de pièces jointe à télécharger."
+    override val titleForLogs: String = "no_report_files"
+  }
+
 }

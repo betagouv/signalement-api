@@ -10,6 +10,7 @@ import akka.util.ByteString
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import controllers.error.AppError
 import controllers.error.AppError._
 import models._
 import models.report._
@@ -26,7 +27,8 @@ import scala.concurrent.Future
 class ReportFileOrchestrator(
     reportFileRepository: ReportFileRepositoryInterface,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
-    s3Service: S3ServiceInterface
+    s3Service: S3ServiceInterface,
+    reportZipExportService: ReportZipExportService
 )(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
@@ -113,10 +115,11 @@ class ReportFileOrchestrator(
     for {
       reportFiles <- reportFileRepository
         .retrieveReportFiles(reportId)
-        .map(_.filter { f =>
-          origin.contains(f.origin)
-        })
-      storageFileNames = reportFiles.map(_.storageFilename)
-    } yield s3Service.downloadAndZip(storageFileNames)
+
+      filteredFilesByOrigin = reportFiles.filter { f =>
+        origin.contains(f.origin) || origin.isEmpty
+      }
+      _ <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
+    } yield reportZipExportService.reportAttachmentsZip(filteredFilesByOrigin)
 
 }
