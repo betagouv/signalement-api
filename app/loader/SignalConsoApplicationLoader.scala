@@ -338,7 +338,8 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
-  val reportZipExportService = new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)
+  val reportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
 
   val reportFileOrchestrator =
     new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service, reportZipExportService)
