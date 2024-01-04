@@ -1,5 +1,6 @@
 package orchestrators
 
+import akka.actor.ActorSystem
 import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -22,9 +23,14 @@ class ReportZipExportService(
     s3Service: S3ServiceInterface
 )(implicit
     materializer: Materializer,
-    executionContext: ExecutionContext
+    system: ActorSystem
 ) {
   val logger: Logger = Logger(this.getClass)
+
+  implicit val ec: ExecutionContext =
+    system.dispatchers.lookup("io-dispatcher")
+
+  println(s"------------------ ec = ${ec} ------------------")
 
   private def getFileExtension(fileName: String): String =
     fileName.lastIndexOf(".") match {
