@@ -3,6 +3,7 @@ package utils
 import akka.Done
 import akka.stream.IOResult
 import akka.stream.alpakka.s3.MultipartUploadResult
+import akka.stream.alpakka.s3.ObjectMetadata
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -23,5 +24,5 @@ class S3ServiceMock extends S3ServiceInterface {
 
   override def getSignedUrl(bucketKey: String, method: HttpMethod): String = ???
 
-  override def downloadAndZip(files: Seq[String]): Source[ByteString, Future[IOResult]] = ???
+  override def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] = ???
 }

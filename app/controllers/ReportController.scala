@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
@@ -12,6 +13,7 @@ import models.report.ReportResponse
 import models.report.ReportWithFiles
 import models.report.delete.ReportAdminAction
 import orchestrators.EventsOrchestratorInterface
+import orchestrators.ReportZipExportService
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
 import orchestrators.ReportWithDataOrchestrator
@@ -32,6 +34,7 @@ import utils.FrontRoute
 import utils.QueryStringMapper
 import authentication.actions.UserAction.WithPermission
 import authentication.actions.UserAction.WithRole
+import controllers.error.AppError
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -50,7 +53,8 @@ class ReportController(
     frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents,
-    reportWithDataOrchestrator: ReportWithDataOrchestrator
+    reportWithDataOrchestrator: ReportWithDataOrchestrator,
+    massImportService: ReportZipExportService
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -189,6 +193,21 @@ class ReportController(
         )
       )
   }
+
+  def reportAsZip(reportId: UUID) =
+    SecuredAction.andThen(WithPermission(UserPermission.listReports)).async(parse.empty) { implicit request =>
+      reportWithDataOrchestrator
+        .getReportFull(reportId, request.identity)
+        .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
+        .map(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData))
+        .map(pdfSource =>
+          Ok.chunked(
+            content = pdfSource,
+            inline = false,
+            fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip")
+          )
+        )
+    }
 
   def cloudWord(companyId: UUID) = Action.async(parse.empty) { _ =>
     reportOrchestrator
