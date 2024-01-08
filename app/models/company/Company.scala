@@ -8,7 +8,8 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
-sealed case class AccessLevel(value: String)
+
+case class AccessLevel(value: String) extends AnyVal
 
 object AccessLevel {
   val NONE   = AccessLevel("none")
@@ -17,8 +18,8 @@ object AccessLevel {
 
   def fromValue(v: String) =
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
-  implicit val reads: Reads[AccessLevel]   = (json: JsValue) => json.validate[String].map(fromValue)
-  implicit val writes: Writes[AccessLevel] = (level: AccessLevel) => Json.toJson(level.value)
+  implicit val reads: Reads[AccessLevel]   = Json.valueReads[AccessLevel]
+  implicit val writes: Writes[AccessLevel] = Json.valueWrites[AccessLevel]
 }
 
 case class UserAccess(

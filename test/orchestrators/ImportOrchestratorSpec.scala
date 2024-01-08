@@ -46,7 +46,7 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
 
         when(companyRepository.findBySirets(List.empty)).thenReturn(Future.successful(List.empty))
         when(companySyncService.companiesBySirets(List.empty)).thenReturn(Future.successful(List.empty))
-        when(companySyncService.companyBySiren(siren)).thenReturn(Future.successful(companySearchResults))
+        when(companySyncService.companyBySiren(siren, false)).thenReturn(Future.successful(companySearchResults))
         when(companyRepository.findBySirets(companySearchResults.map(_.siret)))
           .thenReturn(Future.successful(List(existingCompany1, existingCompany2)))
         when(
@@ -80,7 +80,9 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
           )
         ).thenReturn(Future.unit)
 
-        importOrchestrator.importUsers(Some(siren), List.empty, users.map(_.email)).map(res => res shouldEqual ())
+        importOrchestrator
+          .importUsers(Some(siren), List.empty, users.map(_.email), false, AccessLevel.ADMIN)
+          .map(res => res shouldEqual ())
       }
     }
   }
