@@ -22,7 +22,7 @@ import scala.concurrent.Future
 trait CompanySyncServiceInterface {
   def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
   def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]]
-  def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]]
+  def companyBySiren(siren: SIREN, onlyHeadOffice: Boolean): Future[List[CompanySearchResult]]
   def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]]
 }
 
@@ -106,13 +106,13 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
       }
   }
 
-  override def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]] = {
+  override def companyBySiren(siren: SIREN, onlyHeadOffice: Boolean): Future[List[CompanySearchResult]] = {
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
       .post(
         uri"${companyUpdateConfiguration.etablissementApiUrl}"
           .withWholePath(SirenSearchEndpoint)
-          .addParam("onlyHeadOffice", Some("false"))
+          .addParam("onlyHeadOffice", Some(s"$onlyHeadOffice"))
       )
       .body(List(siren))
       .response(asJson[List[CompanySearchResult]])
