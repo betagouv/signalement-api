@@ -50,7 +50,7 @@ class ReportFileController(
   def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Action.async { _ =>
     for {
       report <- reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-      stream <- reportFileOrchestrator.downloadReportFilesArchive(reportId, origin)
+      stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
     } yield Ok
       .chunked(stream)
       .as("application/zip")

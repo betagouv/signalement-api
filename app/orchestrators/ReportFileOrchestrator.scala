@@ -109,17 +109,17 @@ class ReportFileOrchestrator(
   }
 
   def downloadReportFilesArchive(
-      reportId: UUID,
+      report: Report,
       origin: Option[ReportFileOrigin]
   ): Future[Source[ByteString, Future[IOResult]]] =
     for {
       reportFiles <- reportFileRepository
-        .retrieveReportFiles(reportId)
+        .retrieveReportFiles(report.id)
 
       filteredFilesByOrigin = reportFiles.filter { f =>
         origin.contains(f.origin) || origin.isEmpty
       }
       _ <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
-    } yield reportZipExportService.reportAttachmentsZip(filteredFilesByOrigin)
+    } yield reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
 
 }

@@ -13,6 +13,7 @@ import services.PDFService
 import services.S3ServiceInterface
 import services.ZipBuilder
 
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,8 +31,6 @@ class ReportZipExportService(
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("io-dispatcher")
 
-  println(s"------------------ ec = ${ec} ------------------")
-
   private def getFileExtension(fileName: String): String =
     fileName.lastIndexOf(".") match {
       case -1 => "" // No extension found
@@ -43,7 +42,7 @@ class ReportZipExportService(
   ): Source[ByteString, Future[IOResult]] = {
 
     val reportAttachmentSources = reportWithData.files.zipWithIndex.map { case (file, i) =>
-      buildReportAttachmentSource(file, i)
+      buildReportAttachmentSource(reportWithData.report.creationDate, file, i)
     }
     val reportPdfSummarySource = buildReportPdfSummarySource(reportWithData)
 
@@ -53,11 +52,12 @@ class ReportZipExportService(
   }
 
   def reportAttachmentsZip(
+      creationDate: OffsetDateTime,
       reports: Seq[ReportFile]
   ): Source[ByteString, Future[IOResult]] = {
 
     val reportAttachmentSources = reports.zipWithIndex.map { case (file, i) =>
-      buildReportAttachmentSource(file, i + 1)
+      buildReportAttachmentSource(creationDate, file, i + 1)
     }
 
     ZipBuilder.buildZip(reportAttachmentSources)
@@ -76,11 +76,17 @@ class ReportZipExportService(
   }
 
   private def buildReportAttachmentSource(
+      creationDate: OffsetDateTime,
       reportFile: ReportFile,
       index: Int
   ): (ReportZipEntryName, Source[ByteString, Unit]) = {
     val source = s3Service.downloadFromBucket(reportFile.storageFilename).mapMaterializedValue(_ => ())
-    (ReportZipEntryName(s"PJ-$index.${getFileExtension(reportFile.filename)}"), source)
+    (
+      ReportZipEntryName(
+        s"${creationDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))}-PJ-$index.${getFileExtension(reportFile.filename)}"
+      ),
+      source
+    )
   }
 
 }
