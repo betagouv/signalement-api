@@ -34,7 +34,7 @@ abstract class ScheduledTask(
   private def createOrUpdateTaskDetails(taskModel: TaskDetails) =
     taskRepository
       .createOrUpdate(taskModel)
-      .map(_ => logger.info(s"$taskName updated in DB"))
+      .map(_ => logger.debug(s"$taskName updated in DB"))
       .recover(err => logger.errorWithTitle("task_failed", s"$taskName failed", err))
 
   def runTask(): Future[Unit]

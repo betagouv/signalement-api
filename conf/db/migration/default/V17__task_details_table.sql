@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS task_details (
-                                               id UUID NOT NULL PRIMARY KEY,
+                                               id INTEGER NOT NULL PRIMARY KEY,
                                                name VARCHAR NOT NULL,
-                                               start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-                                               interval BIGINT NOT NULL,
+                                               start_time TIME WITHOUT TIME ZONE NOT NULL,
+                                               interval INTERVAL NOT NULL,
                                                last_run_date TIMESTAMP WITH TIME ZONE NOT NULL,
                                                last_run_status VARCHAR NOT NULL
 );
