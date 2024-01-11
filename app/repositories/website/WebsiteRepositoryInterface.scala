@@ -38,7 +38,8 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       investigationStatus: Option[Seq[InvestigationStatus]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
-      hasAssociation: Option[Boolean]
+      hasAssociation: Option[Boolean],
+      isOpen: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]]
 
   def searchValidAssociationByHost(host: String): Future[Seq[Website]]
