@@ -7,9 +7,9 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import org.specs2.mutable
-import repositories.tasklock.TaskLockRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
+import utils.TaskRepositoryMock
 import utils.TestApp
 
 import java.time.OffsetDateTime
@@ -26,11 +26,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
   val (app, components)          = TestApp.buildApp()
   implicit val mat: Materializer = app.materializer
 
-  val taskLockRepositoryMock = new TaskLockRepositoryInterface {
-    override def acquire(id: Int): Future[Boolean] = Future.successful(true)
-
-    override def release(id: Int): Future[Boolean] = Future.successful(true)
-  }
+  val taskLockRepositoryMock = new TaskRepositoryMock()
 
   "CompanyUpdateTask" should {
     sequential

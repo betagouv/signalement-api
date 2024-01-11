@@ -3,10 +3,12 @@ package tasks
 import akka.actor.ActorSystem
 import config.TaskConfiguration
 import play.api.Logger
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
+import repositories.tasklock.TaskDetails
 import utils.Logs.RichLogger
 
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
@@ -17,7 +19,7 @@ import scala.util.Success
 abstract class ScheduledTask(
     taskId: Int,
     taskName: String,
-    taskLockRepository: TaskLockRepositoryInterface,
+    taskRepository: TaskRepositoryInterface,
     actorSystem: ActorSystem,
     taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
@@ -26,17 +28,32 @@ abstract class ScheduledTask(
   val startTime: LocalTime
   val interval: FiniteDuration
 
+  private def createTaskModel(status: String) =
+    TaskDetails(taskId, taskName, startTime, interval, lastRunDate = OffsetDateTime.now(), status)
+
+  private def createOrUpdateTaskDetails(taskModel: TaskDetails) =
+    taskRepository
+      .createOrUpdate(taskModel)
+      .map(_ => logger.info(s"$taskName updated in DB"))
+      .recover(err => logger.errorWithTitle("task_failed", s"$taskName failed", err))
+
   def runTask(): Future[Unit]
 
   private def runTaskWithLock(): Unit =
     (for {
-      lockAcquired <- taskLockRepository.acquire(taskId)
+      lockAcquired <- taskRepository.acquireLock(taskId)
       _ <-
         if (lockAcquired) {
           logger.info(s"Lock acquired for $taskName.")
           runTask()
-            .map(_ => logger.info(s"$taskName finished"))
-            .recover(err => logger.errorWithTitle("task_failed", s"$taskName failed", err))
+            .flatMap { _ =>
+              logger.info(s"$taskName finished")
+              createOrUpdateTaskDetails(createTaskModel("success"))
+            }
+            .recoverWith { err =>
+              logger.errorWithTitle("task_failed", s"$taskName failed", err)
+              createOrUpdateTaskDetails(createTaskModel("failure"))
+            }
         } else {
           logger.info(s"Lock for $taskName is already taken by another instance. Nothing to do here.")
           Future.unit
@@ -46,7 +63,7 @@ abstract class ScheduledTask(
   private def release(): Unit =
     actorSystem.scheduler.scheduleOnce(1.minute) {
       logger.debug(s"Releasing lock for $taskName with id $taskId")
-      taskLockRepository.release(taskId).onComplete {
+      taskRepository.releaseLock(taskId).onComplete {
         case Success(_) =>
           logger.debug(s"Lock released for $taskName with id $taskId")
         case Failure(err) =>

@@ -92,16 +92,18 @@ class WebsiteRepository(
     )
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
-    URL(host).getHost.map { h =>
-      db.run(
-        table
-          .filter(_.host === h)
-          .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
-          .join(CompanyTable.table)
-          .on(_.companyId === _.id)
-          .result
-      )
-    } getOrElse (Future(Nil))
+    URL(host).getHost
+      .map { h =>
+        db.run(
+          table
+            .filter(_.host === h)
+            .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+            .join(CompanyTable.table)
+            .on(_.companyId === _.id)
+            .result
+        )
+      }
+      .getOrElse(Future(Nil))
 
   override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
@@ -115,7 +117,7 @@ class WebsiteRepository(
   override def searchCompaniesByUrl(
       url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost(_)).getOrElse(Future(Nil))
+    URL(url).getHost.map(searchCompaniesByHost).getOrElse(Future(Nil))
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],

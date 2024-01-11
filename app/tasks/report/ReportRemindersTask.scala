@@ -11,7 +11,7 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email
@@ -38,7 +38,7 @@ class ReportRemindersTask(
     mailService: MailServiceInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface
+    taskLockRepository: TaskRepositoryInterface
 )(implicit val executionContext: ExecutionContext)
     extends ScheduledTask(4, "report_reminders_task", taskLockRepository, actorSystem, taskConfiguration) {
 

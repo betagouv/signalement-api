@@ -12,7 +12,7 @@ import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepositoryInterface
 import repositories.company.CompanyTable
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 
 import java.time.LocalTime
@@ -29,7 +29,7 @@ class CompanyUpdateTask(
     companySyncService: CompanySyncServiceInterface,
     companySyncRepository: CompanySyncRepositoryInterface,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface
+    taskLockRepository: TaskRepositoryInterface
 )(implicit
     executionContext: ExecutionContext,
     materializer: Materializer

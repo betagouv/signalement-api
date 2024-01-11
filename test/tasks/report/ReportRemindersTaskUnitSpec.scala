@@ -18,7 +18,6 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.tasklock.TaskLockRepositoryInterface
 import services.Email
 import services.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -26,6 +25,7 @@ import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType
 import utils.Fixtures
 import utils.SIREN
+import utils.TaskRepositoryMock
 
 import java.time.LocalTime
 import java.time.OffsetDateTime
@@ -37,11 +37,7 @@ import scala.concurrent.duration.DurationInt
 
 class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
 
-  val taskLockRepositoryMock = new TaskLockRepositoryInterface {
-    override def acquire(id: Int): Future[Boolean] = Future.successful(true)
-
-    override def release(id: Int): Future[Boolean] = Future.successful(true)
-  }
+  val taskLockRepositoryMock = new TaskRepositoryMock()
 
   val taskConf = TaskConfiguration(
     active = true,
