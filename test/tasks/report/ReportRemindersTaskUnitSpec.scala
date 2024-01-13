@@ -37,7 +37,7 @@ import scala.concurrent.duration.DurationInt
 
 class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
 
-  val taskLockRepositoryMock = new TaskRepositoryMock()
+  val taskRepositoryMock = new TaskRepositoryMock()
 
   val taskConf = TaskConfiguration(
     active = true,
@@ -74,7 +74,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
           mailService,
           companiesVisibilityOrchestrator,
           taskConf,
-          taskLockRepositoryMock
+          taskRepositoryMock
         )
 
       val company1 = Fixtures.genCompany.sample.get

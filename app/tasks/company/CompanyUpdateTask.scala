@@ -29,11 +29,11 @@ class CompanyUpdateTask(
     companySyncService: CompanySyncServiceInterface,
     companySyncRepository: CompanySyncRepositoryInterface,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit
     executionContext: ExecutionContext,
     materializer: Materializer
-) extends ScheduledTask(5, "company_update_task", taskLockRepository, actorSystem, taskConfiguration) {
+) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
   implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
 

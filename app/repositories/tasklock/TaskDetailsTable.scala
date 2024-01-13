@@ -11,26 +11,26 @@ import scala.jdk.DurationConverters._
 
 class TaskDetailsTable(tag: Tag) extends TypedDatabaseTable[TaskDetails, Int](tag, "task_details") {
 
-  def name          = column[String]("name")
-  def startTime     = column[LocalTime]("start_time")
-  def interval      = column[Duration]("interval")
-  def lastRunDate   = column[OffsetDateTime]("last_run_date")
-  def lastRunStatus = column[String]("last_run_status")
+  def name         = column[String]("name")
+  def startTime    = column[LocalTime]("start_time")
+  def interval     = column[Duration]("interval")
+  def lastRunDate  = column[OffsetDateTime]("last_run_date")
+  def lastRunError = column[Option[String]]("last_run_error")
 
-  type TaskData = (Int, String, LocalTime, Duration, OffsetDateTime, String)
+  type TaskData = (Int, String, LocalTime, Duration, OffsetDateTime, Option[String])
 
   def constructTaskDetails: TaskData => TaskDetails = {
-    case (id, name, startTime, interval, lastRunDate, lastRunStatus) =>
-      TaskDetails(id, name, startTime, interval.toScala, lastRunDate, lastRunStatus)
+    case (id, name, startTime, interval, lastRunDate, lastRunError) =>
+      TaskDetails(id, name, startTime, interval.toScala, lastRunDate, lastRunError)
   }
 
   def extractTaskDetails: PartialFunction[TaskDetails, TaskData] = {
-    case TaskDetails(id, name, startTime, interval, lastRunDate, lastRunStatus) =>
-      (id, name, startTime, interval.toJava, lastRunDate, lastRunStatus)
+    case TaskDetails(id, name, startTime, interval, lastRunDate, lastRunError) =>
+      (id, name, startTime, interval.toJava, lastRunDate, lastRunError)
   }
 
   override def * : ProvenShape[TaskDetails] =
-    (id, name, startTime, interval, lastRunDate, lastRunStatus) <> (constructTaskDetails, extractTaskDetails.lift)
+    (id, name, startTime, interval, lastRunDate, lastRunError) <> (constructTaskDetails, extractTaskDetails.lift)
 
 }
 

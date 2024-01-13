@@ -17,7 +17,7 @@ case class TaskDetails(
     startTime: LocalTime,
     interval: FiniteDuration,
     lastRunDate: OffsetDateTime,
-    lastRunStatus: String
+    lastRunError: Option[String]
 )
 
 object TaskDetails {

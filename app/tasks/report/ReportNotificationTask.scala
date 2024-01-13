@@ -38,9 +38,9 @@ class ReportNotificationTask(
     userRepository: UserRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(3, "report_notification_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(3, "report_notification_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.subscription.startTime

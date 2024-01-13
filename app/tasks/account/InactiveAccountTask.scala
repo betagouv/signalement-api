@@ -19,9 +19,9 @@ class InactiveAccountTask(
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
     inactiveDgccrfAccountSendReminderTask: InactiveDgccrfAccountReminderTask,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(1, "inactive_account_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(1, "inactive_account_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.inactiveAccounts.startTime

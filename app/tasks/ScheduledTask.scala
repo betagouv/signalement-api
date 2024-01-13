@@ -28,12 +28,12 @@ abstract class ScheduledTask(
   val startTime: LocalTime
   val interval: FiniteDuration
 
-  private def createTaskModel(status: String) =
-    TaskDetails(taskId, taskName, startTime, interval, lastRunDate = OffsetDateTime.now(), status)
+  private def createTaskDetails(error: Option[String]) =
+    TaskDetails(taskId, taskName, startTime, interval, lastRunDate = OffsetDateTime.now(), error)
 
-  private def createOrUpdateTaskDetails(taskModel: TaskDetails) =
+  private def createOrUpdateTaskDetails(taskDetails: TaskDetails) =
     taskRepository
-      .createOrUpdate(taskModel)
+      .createOrUpdate(taskDetails)
       .map(_ => logger.debug(s"$taskName updated in DB"))
       .recover(err => logger.errorWithTitle("task_failed", s"$taskName failed", err))
 
@@ -48,11 +48,11 @@ abstract class ScheduledTask(
           runTask()
             .flatMap { _ =>
               logger.info(s"$taskName finished")
-              createOrUpdateTaskDetails(createTaskModel("success"))
+              createOrUpdateTaskDetails(createTaskDetails(None))
             }
             .recoverWith { err =>
               logger.errorWithTitle("task_failed", s"$taskName failed", err)
-              createOrUpdateTaskDetails(createTaskModel("failure"))
+              createOrUpdateTaskDetails(createTaskDetails(Some(err.getMessage)))
             }
         } else {
           logger.info(s"Lock for $taskName is already taken by another instance. Nothing to do here.")

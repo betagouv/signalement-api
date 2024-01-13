@@ -26,7 +26,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
   val (app, components)          = TestApp.buildApp()
   implicit val mat: Materializer = app.materializer
 
-  val taskLockRepositoryMock = new TaskRepositoryMock()
+  val taskRepositoryMock = new TaskRepositoryMock()
 
   "CompanyUpdateTask" should {
     sequential
@@ -38,7 +38,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         serviceMock,
         components.companySyncRepository,
         components.applicationConfiguration.task,
-        taskLockRepositoryMock
+        taskRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
@@ -89,7 +89,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         serviceMock,
         components.companySyncRepository,
         components.applicationConfiguration.task,
-        taskLockRepositoryMock
+        taskRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       val newName = Gen.alphaNumStr.sample.get
@@ -135,7 +135,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         serviceMock,
         components.companySyncRepository,
         components.applicationConfiguration.task,
-        taskLockRepositoryMock
+        taskRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos
@@ -185,7 +185,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
         serviceMock,
         components.companySyncRepository,
         components.applicationConfiguration.task,
-        taskLockRepositoryMock
+        taskRepositoryMock
       )
       val company = Fixtures.genCompany.sample.get
       // Truncated to MILLIS because PG does not handle nanos

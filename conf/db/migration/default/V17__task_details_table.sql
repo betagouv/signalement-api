@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS task_details (
                                                start_time TIME WITHOUT TIME ZONE NOT NULL,
                                                interval INTERVAL NOT NULL,
                                                last_run_date TIMESTAMP WITH TIME ZONE NOT NULL,
-                                               last_run_status VARCHAR NOT NULL
+                                               last_run_error VARCHAR
 );

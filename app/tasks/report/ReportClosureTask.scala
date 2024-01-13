@@ -42,10 +42,10 @@ class ReportClosureTask(
     companyRepository: CompanyRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskRepositoryInterface,
+    taskRepository: TaskRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext)
-    extends ScheduledTask(2, "report_closure_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(2, "report_closure_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.reportClosure.startTime
