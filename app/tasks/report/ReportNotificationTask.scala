@@ -13,7 +13,7 @@ import models.report.ReportFilter
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
@@ -38,9 +38,9 @@ class ReportNotificationTask(
     userRepository: UserRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(3, "report_notification_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(3, "report_notification_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.subscription.startTime

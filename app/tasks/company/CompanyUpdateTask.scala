@@ -12,7 +12,7 @@ import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepositoryInterface
 import repositories.company.CompanyTable
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 
 import java.time.LocalTime
@@ -29,11 +29,11 @@ class CompanyUpdateTask(
     companySyncService: CompanySyncServiceInterface,
     companySyncRepository: CompanySyncRepositoryInterface,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit
     executionContext: ExecutionContext,
     materializer: Materializer
-) extends ScheduledTask(5, "company_update_task", taskLockRepository, actorSystem, taskConfiguration) {
+) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
   implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
 
