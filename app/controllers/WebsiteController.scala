@@ -44,7 +44,8 @@ class WebsiteController(
       investigationStatus: Option[Seq[InvestigationStatus]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
-      hasAssociation: Option[Boolean]
+      hasAssociation: Option[Boolean],
+      isOpen: Option[Boolean]
   ) =
     SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
       for {
@@ -57,7 +58,8 @@ class WebsiteController(
             investigationStatus.filter(_.nonEmpty),
             start,
             end,
-            hasAssociation
+            hasAssociation,
+            isOpen
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)

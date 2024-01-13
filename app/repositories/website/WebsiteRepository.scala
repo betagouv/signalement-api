@@ -127,7 +127,8 @@ class WebsiteRepository(
       investigationStatusFilter: Option[Seq[InvestigationStatus]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
-      hasAssociation: Option[Boolean]
+      hasAssociation: Option[Boolean],
+      isOpen: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
 
     val baseQuery =
@@ -152,6 +153,9 @@ class WebsiteRepository(
         .on { (tupleTable, reportTable) =>
           val (websiteTable, _) = tupleTable
           websiteTable.host === reportTable.host && reportTable.host.isDefined
+        }
+        .filterOpt(isOpen) { case (((_, companyTable), _), isOpenFilter) =>
+          companyTable.map(_.isOpen === isOpenFilter)
         }
         .filterOpt(start) { case (((websiteTable, _), reportTable), start) =>
           reportTable.map(_.creationDate >= start).getOrElse(websiteTable.creationDate >= start)
