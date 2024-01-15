@@ -58,7 +58,8 @@ class WebsitesOrchestrator(
       investigationStatusFilter: Option[Seq[InvestigationStatus]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
-      hasAssociation: Option[Boolean]
+      hasAssociation: Option[Boolean],
+      isOpen: Option[Boolean]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
       websites <- repository.listWebsitesCompaniesByReportCount(
@@ -69,7 +70,8 @@ class WebsitesOrchestrator(
         investigationStatusFilter,
         start,
         end,
-        hasAssociation
+        hasAssociation,
+        isOpen
       )
       _                 = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))

@@ -12,7 +12,7 @@ import play.api.i18n.MessagesApi
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.ConsumerEmail
@@ -42,10 +42,10 @@ class ReportClosureTask(
     companyRepository: CompanyRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface,
+    taskRepository: TaskRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext)
-    extends ScheduledTask(2, "report_closure_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(2, "report_closure_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.reportClosure.startTime

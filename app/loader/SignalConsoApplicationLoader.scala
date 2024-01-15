@@ -82,7 +82,7 @@ import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.tasklock.TaskLockRepository
+import repositories.tasklock.TaskRepository
 import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import repositories.usersettings.UserReportsFiltersRepository
@@ -180,7 +180,7 @@ class SignalConsoComponents(
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
-  val taskLockRepository                                                = new TaskLockRepository(dbConfig)
+  val taskRepository                                                    = new TaskRepository(dbConfig)
   val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
@@ -444,7 +444,7 @@ class SignalConsoComponents(
     companyRepository,
     mailService,
     taskConfiguration,
-    taskLockRepository,
+    taskRepository,
     messagesApi
   )
   reportClosureTask.schedule()
@@ -456,7 +456,7 @@ class SignalConsoComponents(
     mailService,
     companiesVisibilityOrchestrator,
     taskConfiguration,
-    taskLockRepository
+    taskRepository
   )
   reportReminderTask.schedule()
 
@@ -471,7 +471,7 @@ class SignalConsoComponents(
     companySyncService,
     companySyncRepository,
     taskConfiguration,
-    taskLockRepository
+    taskRepository
   )
   companyUpdateTask.schedule()
 
@@ -485,7 +485,7 @@ class SignalConsoComponents(
       userRepository,
       mailService,
       taskConfiguration,
-      taskLockRepository
+      taskRepository
     )
   reportNotificationTask.schedule()
 
@@ -503,7 +503,7 @@ class SignalConsoComponents(
     inactiveDgccrfAccountRemoveTask,
     inactiveDgccrfAccountReminderTask,
     applicationConfiguration.task,
-    taskLockRepository
+    taskRepository
   )
   inactiveAccountTask.schedule()
 

@@ -92,16 +92,18 @@ class WebsiteRepository(
     )
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
-    URL(host).getHost.map { h =>
-      db.run(
-        table
-          .filter(_.host === h)
-          .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
-          .join(CompanyTable.table)
-          .on(_.companyId === _.id)
-          .result
-      )
-    } getOrElse (Future(Nil))
+    URL(host).getHost
+      .map { h =>
+        db.run(
+          table
+            .filter(_.host === h)
+            .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+            .join(CompanyTable.table)
+            .on(_.companyId === _.id)
+            .result
+        )
+      }
+      .getOrElse(Future(Nil))
 
   override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
@@ -115,7 +117,7 @@ class WebsiteRepository(
   override def searchCompaniesByUrl(
       url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost(_)).getOrElse(Future(Nil))
+    URL(url).getHost.map(searchCompaniesByHost).getOrElse(Future(Nil))
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
@@ -125,7 +127,8 @@ class WebsiteRepository(
       investigationStatusFilter: Option[Seq[InvestigationStatus]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
-      hasAssociation: Option[Boolean]
+      hasAssociation: Option[Boolean],
+      isOpen: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
 
     val baseQuery =
@@ -150,6 +153,9 @@ class WebsiteRepository(
         .on { (tupleTable, reportTable) =>
           val (websiteTable, _) = tupleTable
           websiteTable.host === reportTable.host && reportTable.host.isDefined
+        }
+        .filterOpt(isOpen) { case (((_, companyTable), _), isOpenFilter) =>
+          companyTable.map(_.isOpen === isOpenFilter)
         }
         .filterOpt(start) { case (((websiteTable, _), reportTable), start) =>
           reportTable.map(_.creationDate >= start).getOrElse(websiteTable.creationDate >= start)

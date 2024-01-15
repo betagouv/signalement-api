@@ -3,7 +3,7 @@ package tasks.account
 import akka.actor.ActorSystem
 import config.TaskConfiguration
 import play.api.Logger
-import repositories.tasklock.TaskLockRepositoryInterface
+import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 
 import java.time.LocalTime
@@ -19,9 +19,9 @@ class InactiveAccountTask(
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
     inactiveDgccrfAccountSendReminderTask: InactiveDgccrfAccountReminderTask,
     taskConfiguration: TaskConfiguration,
-    taskLockRepository: TaskLockRepositoryInterface
+    taskRepository: TaskRepositoryInterface
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(1, "inactive_account_task", taskLockRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(1, "inactive_account_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = taskConfiguration.inactiveAccounts.startTime
