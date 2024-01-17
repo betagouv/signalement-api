@@ -64,6 +64,7 @@ import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.barcode.BarcodeProductRepository
+import repositories.probe.ProbeRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -96,6 +97,8 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
+import tasks.probe.LowRateLanceurDAlerteTask
+import tasks.probe.LowRateReponseConsoTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
@@ -696,6 +699,25 @@ class SignalConsoComponents(
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
+
+  // Probes
+  val probeRepository = new ProbeRepository(dbConfig)
+  new LowRateReponseConsoTask(
+    actorSystem,
+    applicationConfiguration.task,
+    taskRepository,
+    probeRepository,
+    userRepository,
+    mailService
+  ).schedule()
+  new LowRateLanceurDAlerteTask(
+    actorSystem,
+    applicationConfiguration.task,
+    taskRepository,
+    probeRepository,
+    userRepository,
+    mailService
+  ).schedule()
 
   // Routes
   lazy val router: Router =
