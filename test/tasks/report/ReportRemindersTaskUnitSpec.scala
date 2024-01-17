@@ -1,6 +1,7 @@
 package tasks.report
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import config.ProbeConfiguration
 import config.ReportRemindersTaskConfiguration
 import config.TaskConfiguration
 import models.company.AccessLevel
@@ -49,7 +50,8 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
       mailReminderDelay = Period.ofDays(7)
     ),
     inactiveAccounts = null,
-    companyUpdate = null
+    companyUpdate = null,
+    probe = ProbeConfiguration(false)
   )
 
   val testKit = ActorTestKit()

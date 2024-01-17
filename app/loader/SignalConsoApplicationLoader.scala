@@ -701,23 +701,28 @@ class SignalConsoComponents(
   )
 
   // Probes
-  val probeRepository = new ProbeRepository(dbConfig)
-  new LowRateReponseConsoTask(
-    actorSystem,
-    applicationConfiguration.task,
-    taskRepository,
-    probeRepository,
-    userRepository,
-    mailService
-  ).schedule()
-  new LowRateLanceurDAlerteTask(
-    actorSystem,
-    applicationConfiguration.task,
-    taskRepository,
-    probeRepository,
-    userRepository,
-    mailService
-  ).schedule()
+  if (applicationConfiguration.task.probe.active) {
+    logger.debug("Probes are enabled")
+    val probeRepository = new ProbeRepository(dbConfig)
+    new LowRateReponseConsoTask(
+      actorSystem,
+      applicationConfiguration.task,
+      taskRepository,
+      probeRepository,
+      userRepository,
+      mailService
+    ).schedule()
+    new LowRateLanceurDAlerteTask(
+      actorSystem,
+      applicationConfiguration.task,
+      taskRepository,
+      probeRepository,
+      userRepository,
+      mailService
+    ).schedule()
+  } else {
+    logger.debug("Probes are disabled")
+  }
 
   // Routes
   lazy val router: Router =

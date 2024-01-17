@@ -26,7 +26,7 @@ class LowRateReponseConsoTask(
     userRepository: UserRepositoryInterface,
     mailService: MailService
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(10, "low_rate_reponse_conso", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(100, "low_rate_reponse_conso", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = LocalTime.of(2, 0)
