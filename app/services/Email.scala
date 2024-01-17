@@ -228,6 +228,15 @@ object Email {
     override val recipients: List[EmailAddress] = List(recipient)
   }
 
+  final case class ProbeTriggered(recipients: Seq[EmailAddress], probeName: String, rate: Double, issue: String)
+      extends AdminEmail {
+
+    override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.admin.probetriggered(probeName, rate, issue).toString()
+  }
+
   final case class ReportDeletionConfirmation(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
       extends ConsumerEmail {
     private val lang                                        = Lang(getLocaleOrDefault(report.lang))
