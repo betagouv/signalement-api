@@ -11,7 +11,8 @@ case class TaskConfiguration(
     reportClosure: ReportClosureTaskConfiguration,
     reportReminders: ReportRemindersTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration,
-    companyUpdate: CompanyUpdateTaskConfiguration
+    companyUpdate: CompanyUpdateTaskConfiguration,
+    probe: ProbeConfiguration
 )
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
@@ -38,3 +39,5 @@ case class ReportRemindersTaskConfiguration(
     mailReminderDelay: Period // 7days.
 
 )
+
+case class ProbeConfiguration(active: Boolean)

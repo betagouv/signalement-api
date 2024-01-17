@@ -1,0 +1,15 @@
+@import java.net.URI
+@import utils.FrontRoute
+
+@(probeName: String, rate: Double, issue: String)
+
+@views.html.mails.layout("Sonde déclenchée") {
+  <p>
+      Cet email a été envoyée car la sonde @probeName a été déclenchée.
+  </p>
+
+  <p>Le taux détecté (@rate %) est anormalement @issue.
+  </p>
+
+  <p>Contactez un développeur pour investiguer.</p>
+}
