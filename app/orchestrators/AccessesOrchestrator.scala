@@ -12,6 +12,7 @@ import models.token.AgentAccessToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
 import models.token.TokenKind.AdminAccount
+import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
@@ -19,6 +20,7 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.Email.AdminAccessLink
 import services.Email.AgentAccessLink
+import services.Email.UpdateEmailAddress
 import services.Email
 import services.EmailAddressService
 import services.MailServiceInterface
@@ -47,6 +49,68 @@ class AccessesOrchestrator(
     case TokenKind.DGALAccount   => Some(UserRole.DGAL)
     case TokenKind.DGCCRFAccount => Some(UserRole.DGCCRF)
     case _                       => None
+  }
+
+  def updateEmailAddress(user: User, token: String): Future[User] =
+    for {
+      accessToken      <- accessTokenRepository.findToken(token)
+      updateEmailToken <- accessToken.filter(_.kind == UpdateEmail).liftTo[Future](UpdateEmailTokenNotFound(token))
+      isSameUser = updateEmailToken.userId.contains(user.id)
+      emailedTo <- updateEmailToken.emailedTo.liftTo[Future](
+        ServerError(s"Email should be defined for access token $token")
+      )
+      updatedUser <-
+        if (isSameUser) userOrchestrator.updateEmail(user, emailedTo)
+        else Future.failed(DifferentUserFromRequest(user.id, updateEmailToken.userId))
+    } yield updatedUser
+
+  def sendEmailAddressUpdateValidation(user: User, newEmail: EmailAddress): Future[Unit] = {
+    val emailValidationFunction = user.userRole match {
+      case UserRole.Admin =>
+        EmailAddressService.isEmailAcceptableForAdminAccount _
+      case UserRole.DGCCRF =>
+        EmailAddressService.isEmailAcceptableForDgccrfAccount _
+      case UserRole.DGAL =>
+        EmailAddressService.isEmailAcceptableForDgalAccount _
+      case UserRole.Professionnel => (_: String) => true
+    }
+
+    for {
+      _ <-
+        if (emailValidationFunction(newEmail.value)) Future.unit
+        else Future.failed(InvalidDGCCRFOrAdminEmail(List(newEmail)))
+      existingTokens <- accessTokenRepository.fetchPendingTokens(newEmail)
+      existingToken = existingTokens.find(_.kind == UpdateEmail)
+      token <-
+        existingToken match {
+          case Some(token) =>
+            logger.debug("reseting token validity")
+            accessTokenRepository.update(
+              token.id,
+              AccessToken.resetExpirationDate(token, tokenConfiguration.updateEmailAddress)
+            )
+          case None =>
+            logger.debug("creating token")
+            accessTokenRepository.create(
+              AccessToken.build(
+                kind = UpdateEmail,
+                token = UUID.randomUUID.toString,
+                validity = Some(tokenConfiguration.updateEmailAddress),
+                companyId = None,
+                level = None,
+                emailedTo = Some(newEmail),
+                userId = Some(user.id)
+              )
+            )
+        }
+      _ <- mailService.send(
+        UpdateEmailAddress(
+          newEmail,
+          frontRoute.dashboard.updateEmail(token.token),
+          tokenConfiguration.updateEmailAddress.getDays
+        )
+      )
+    } yield ()
   }
 
   def listAgentPendingTokens(user: User, maybeRequestedRole: Option[UserRole]): Future[List[AgentAccessToken]] =

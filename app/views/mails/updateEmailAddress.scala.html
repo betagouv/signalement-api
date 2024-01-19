@@ -1,0 +1,22 @@
+@import java.net.URI
+@(validationUrl: URI, daysBeforeExpiry: Int)
+
+@views.html.mails.layout("Validez votre nouvelle adresse email SignalConso") {
+    <p>
+        Bonjour,
+    </p>
+  <p>
+      Pour valider votre nouvelle adresse email sur SignalConso veuillez cliquer sur lien suivant :
+
+    <p style="text-align: center;">
+        <a href="@validationUrl">Validez votre nouvelle adresse email</a>
+    </p>
+  </p>
+    <p>
+        ATTENTION : Ce lien n'est valable que @daysBeforeExpiry jours après l'envoi de cet e-mail
+    </p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

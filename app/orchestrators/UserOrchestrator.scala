@@ -35,6 +35,8 @@ trait UserOrchestratorInterface {
   def edit(userId: UUID, update: UserUpdate): Future[Option[User]]
 
   def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit]
+
+  def updateEmail(user: User, newEmail: EmailAddress): Future[User]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository: EventRepositoryInterface)(implicit
@@ -49,6 +51,9 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
         .map(user => userRepository.update(user.id, update.mergeToUser(user)).map(Some(_)))
         .getOrElse(Future(None))
     } yield updatedUser
+
+  def updateEmail(user: User, newEmail: EmailAddress): Future[User] =
+    userRepository.update(user.id, user.copy(email = newEmail))
 
   override def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
     val email: EmailAddress = accessToken.emailedTo.getOrElse(draftUser.email)

@@ -21,6 +21,7 @@ class AccessTokenTable(tag: Tag) extends DatabaseTable[AccessToken](tag, "access
   def level          = column[Option[AccessLevel]]("level")
   def emailedTo      = column[Option[EmailAddress]]("emailed_to")
   def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
+  def userId         = column[Option[UUID]]("user_id")
   def * = (
     id,
     creationDate,
@@ -30,7 +31,8 @@ class AccessTokenTable(tag: Tag) extends DatabaseTable[AccessToken](tag, "access
     companyId,
     level,
     emailedTo,
-    expirationDate
+    expirationDate,
+    userId
   ) <> ((AccessToken.apply _).tupled, AccessToken.unapply)
 }
 

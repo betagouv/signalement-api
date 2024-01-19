@@ -493,4 +493,19 @@ object AppError {
     override val titleForLogs: String = "no_report_files"
   }
 
+  final case class UpdateEmailTokenNotFound(token: String) extends NotFoundError {
+    override val `type`: String = "SC-0052"
+    override val title: String  = s"Update email token $token not found"
+    override val details: String =
+      s"Le lien de modification d'email n'est pas valide ($token). Merci de contacter le support"
+    override val titleForLogs: String = "update_email_token_not_found"
+  }
+
+  final case class DifferentUserFromRequest(userId: UUID, initialUserId: Option[UUID]) extends BadRequestError {
+    override val `type`: String  = "SC-0053"
+    override val title: String   = s"The user that initiated the update request is different"
+    override val details: String = s"The user that initiated ($initialUserId) the update request is different ($userId)"
+    override val titleForLogs: String = "different_user_from_request"
+  }
+
 }
