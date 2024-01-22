@@ -94,7 +94,7 @@ class AccessesOrchestrator(
             accessTokenRepository.update(
               token.id,
               AccessToken
-                .resetExpirationDate(token, tokenConfiguration.updateEmailAddress)
+                .resetExpirationDate(token, tokenConfiguration.updateEmailAddressDuration)
                 .copy(emailedTo = Some(newEmail))
             )
           case None =>
@@ -103,7 +103,7 @@ class AccessesOrchestrator(
               AccessToken.build(
                 kind = UpdateEmail,
                 token = UUID.randomUUID.toString,
-                validity = Some(tokenConfiguration.updateEmailAddress),
+                validity = Some(tokenConfiguration.updateEmailAddressDuration),
                 companyId = None,
                 level = None,
                 emailedTo = Some(newEmail),
@@ -115,7 +115,7 @@ class AccessesOrchestrator(
         UpdateEmailAddress(
           newEmail,
           frontRoute.dashboard.updateEmail(token.token),
-          tokenConfiguration.updateEmailAddress.getDays
+          tokenConfiguration.updateEmailAddressDuration.getDays
         )
       )
     } yield ()
