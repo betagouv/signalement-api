@@ -158,10 +158,14 @@ class AccountController(
     } yield NoContent
   }
 
-  def updateEmailAddress(token: String) = SecuredAction.async(parse.json) { implicit request =>
+  def updateEmailAddress(token: String) = SecuredAction.async { implicit request =>
     for {
       updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
-    } yield Ok(Json.toJson(updatedUser))
+      cookie <- authenticator.init(updatedUser.email) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
+    } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
   }
 
   def softDelete(id: UUID) =

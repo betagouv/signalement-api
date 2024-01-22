@@ -59,6 +59,12 @@ class AccessesOrchestrator(
       emailedTo <- updateEmailToken.emailedTo.liftTo[Future](
         ServerError(s"Email should be defined for access token $token")
       )
+      _ <- user.userRole match {
+        case UserRole.DGAL | UserRole.DGCCRF =>
+          accessTokenRepository.validateEmail(updateEmailToken, user)
+        case UserRole.Admin | UserRole.Professionnel =>
+          accessTokenRepository.invalidateToken(updateEmailToken)
+      }
       updatedUser <-
         if (isSameUser) userOrchestrator.updateEmail(user, emailedTo)
         else Future.failed(DifferentUserFromRequest(user.id, updateEmailToken.userId))
@@ -79,15 +85,17 @@ class AccessesOrchestrator(
       _ <-
         if (emailValidationFunction(newEmail.value)) Future.unit
         else Future.failed(InvalidDGCCRFOrAdminEmail(List(newEmail)))
-      existingTokens <- accessTokenRepository.fetchPendingTokens(newEmail)
-      existingToken = existingTokens.find(_.kind == UpdateEmail)
+      existingTokens <- accessTokenRepository.fetchPendingTokens(user)
+      existingToken = existingTokens.headOption
       token <-
         existingToken match {
           case Some(token) =>
-            logger.debug("reseting token validity")
+            logger.debug("reseting token validity and email")
             accessTokenRepository.update(
               token.id,
-              AccessToken.resetExpirationDate(token, tokenConfiguration.updateEmailAddress)
+              AccessToken
+                .resetExpirationDate(token, tokenConfiguration.updateEmailAddress)
+                .copy(emailedTo = Some(newEmail))
             )
           case None =>
             logger.debug("creating token")
