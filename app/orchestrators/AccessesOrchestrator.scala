@@ -89,14 +89,28 @@ class AccessesOrchestrator(
       existingToken = existingTokens.headOption
       token <-
         existingToken match {
-          case Some(token) =>
+          case Some(token) if token.emailedTo.contains(newEmail) =>
             logger.debug("reseting token validity and email")
             accessTokenRepository.update(
               token.id,
-              AccessToken
-                .resetExpirationDate(token, tokenConfiguration.updateEmailAddressDuration)
-                .copy(emailedTo = Some(newEmail))
+              AccessToken.resetExpirationDate(token, tokenConfiguration.updateEmailAddressDuration)
             )
+          case Some(token) =>
+            logger.debug("invalidating old token and create new one")
+            for {
+              _ <- accessTokenRepository.invalidateToken(token)
+              createdToken <- accessTokenRepository.create(
+                AccessToken.build(
+                  kind = UpdateEmail,
+                  token = UUID.randomUUID.toString,
+                  validity = Some(tokenConfiguration.updateEmailAddressDuration),
+                  companyId = None,
+                  level = None,
+                  emailedTo = Some(newEmail),
+                  userId = Some(user.id)
+                )
+              )
+            } yield createdToken
           case None =>
             logger.debug("creating token")
             accessTokenRepository.create(
