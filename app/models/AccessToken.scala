@@ -18,7 +18,8 @@ case class AccessToken(
     companyId: Option[UUID],
     companyLevel: Option[AccessLevel],
     emailedTo: Option[EmailAddress],
-    expirationDate: Option[OffsetDateTime]
+    expirationDate: Option[OffsetDateTime],
+    userId: Option[UUID]
 )
 
 object AccessToken {
@@ -30,7 +31,8 @@ object AccessToken {
       companyId: Option[UUID],
       level: Option[AccessLevel],
       emailedTo: Option[EmailAddress] = None,
-      creationDate: OffsetDateTime = OffsetDateTime.now()
+      creationDate: OffsetDateTime = OffsetDateTime.now(),
+      userId: Option[UUID] = None
   ): AccessToken = AccessToken(
     creationDate = creationDate,
     kind = kind,
@@ -39,7 +41,8 @@ object AccessToken {
     companyId = companyId,
     companyLevel = level,
     emailedTo = emailedTo,
-    expirationDate = validity.map(OffsetDateTime.now().plus(_))
+    expirationDate = validity.map(OffsetDateTime.now().plus(_)),
+    userId = userId
   )
 
   def resetExpirationDate(accessToken: AccessToken, validity: java.time.temporal.TemporalAmount) =

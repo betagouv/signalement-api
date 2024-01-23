@@ -304,7 +304,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
             override def s3Service: S3ServiceInterface = mockS3Service
             override def tokenConfiguration =
-              TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None)
+              TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
             override def mobileAppConfiguration = MobileAppConfiguration(
               minimumAppVersionIos = "1.0.0",

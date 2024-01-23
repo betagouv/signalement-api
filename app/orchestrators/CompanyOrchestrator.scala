@@ -235,7 +235,7 @@ class CompanyOrchestrator(
     for {
       companies      <- companyRepository.fetchCompanies(companyIds)
       followUpTokens <- companies.traverse(getFollowUpToken(_, userId))
-      tokenMap = followUpTokens.collect { case token @ AccessToken(_, _, _, _, _, Some(companyId), _, _, _) =>
+      tokenMap = followUpTokens.collect { case token @ AccessToken(_, _, _, _, _, Some(companyId), _, _, _, _) =>
         (companyId, token)
       }.toMap
       htmlDocuments = companies.flatMap(company =>

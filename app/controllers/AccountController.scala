@@ -151,6 +151,23 @@ class AccountController(
     }
   }
 
+  def sendEmailAddressUpdateValidation() = SecuredAction.async(parse.json) { implicit request =>
+    for {
+      emailAddress <- request.parseBody[EmailAddress](JsPath \ "email")
+      _            <- accessesOrchestrator.sendEmailAddressUpdateValidation(request.identity, emailAddress)
+    } yield NoContent
+  }
+
+  def updateEmailAddress(token: String) = SecuredAction.async { implicit request =>
+    for {
+      updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
+      cookie <- authenticator.init(updatedUser.email) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
+    } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
+  }
+
   def softDelete(id: UUID) =
     SecuredAction.andThen(WithPermission(UserPermission.softDeleteUsers)).async { request =>
       userOrchestrator.softDelete(targetUserId = id, currentUserId = request.identity.id).map(_ => NoContent)

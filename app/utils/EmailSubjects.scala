@@ -21,4 +21,5 @@ object EmailSubjects {
   val INACTIVE_DGCCRF_ACCOUNT_REMINDER = "Votre compte SignalConso est inactif"
   val PRO_NEW_COMPANIES_ACCESSES = (siren: SIREN) => s"Vous avez maintenant accès à l'entreprise $siren sur SignalConso"
   val PRO_COMPANIES_ACCESSES_INVITATIONS = (siren: SIREN) => s"Rejoignez l'entreprise $siren sur SignalConso"
+  val UPDATE_EMAIL_ADDRESS               = "Validez votre nouvelle adresse email SignalConso"
 }
