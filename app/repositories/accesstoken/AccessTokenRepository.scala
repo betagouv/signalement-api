@@ -9,6 +9,7 @@ import models.token.TokenKind.CompanyFollowUp
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.UpdateEmail
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
@@ -121,6 +122,14 @@ class AccessTokenRepository(
 
   override def removePendingTokens(company: Company): Future[Int] = db.run(
     fetchCompanyValidTokens(company).delete
+  )
+
+  override def fetchPendingTokens(user: User): Future[List[AccessToken]] = db.run(
+    fetchValidTokens
+      .filter(_.userId === user.id)
+      .filter(_.kind === (UpdateEmail: TokenKind))
+      .to[List]
+      .result
   )
 
   override def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =

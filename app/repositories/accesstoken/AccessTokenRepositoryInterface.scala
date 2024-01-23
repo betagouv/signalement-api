@@ -28,6 +28,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def findValidToken(company: Company, token: String): Future[Option[AccessToken]]
 
+  def fetchPendingTokens(user: User): Future[List[AccessToken]]
+
   def fetchPendingTokens(company: Company): Future[List[AccessToken]]
 
   def removePendingTokens(company: Company): Future[Int]

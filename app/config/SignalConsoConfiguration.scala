@@ -25,7 +25,8 @@ case class TokenConfiguration(
     adminJoinDuration: FiniteDuration,
     dgccrfJoinDuration: Period,
     dgccrfDelayBeforeRevalidation: Period,
-    dgccrfRevalidationTokenDuration: Option[Period]
+    dgccrfRevalidationTokenDuration: Option[Period],
+    updateEmailAddressDuration: Period
 )
 
 case class MobileAppConfiguration(

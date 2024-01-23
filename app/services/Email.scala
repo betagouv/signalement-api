@@ -395,5 +395,15 @@ object Email {
       _.attachmentSeqForWorkflowStepN(3, report.lang.getOrElse(Locale.FRENCH))
   }
 
+  final case class UpdateEmailAddress(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int)
+      extends Email {
+
+    override val recipients: Seq[EmailAddress] = List(recipient)
+    override val subject: String               = EmailSubjects.UPDATE_EMAIL_ADDRESS
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.updateEmailAddress(invitationUrl, daysBeforeExpiry).toString()
+  }
+
   private def getLocaleOrDefault(locale: Option[Locale]): Locale = locale.getOrElse(Locale.FRENCH)
 }

@@ -125,6 +125,8 @@ POST          /api/account/validate-email                               controll
 POST          /api/account/validate-email/:email                        controllers.AccountController.forceValidateEmail(email : String)
 PUT           /api/account                                              controllers.AccountController.edit()
 DELETE        /api/account/:id                                          controllers.AccountController.softDelete(id: java.util.UUID)
+POST          /api/account/send-email-update-validation                 controllers.AccountController.sendEmailAddressUpdateValidation()
+PUT           /api/account/update-email/:token                          controllers.AccountController.updateEmailAddress(token: String)
 
 # EmailValidation API
 POST          /api/email-validation/check                               controllers.EmailValidationController.check()
