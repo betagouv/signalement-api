@@ -16,7 +16,7 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
           SELECT (CAST(SUM(CASE
                                                           WHEN forward_to_reponseconso = true THEN 1
                                                           ELSE 0
-    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '${interval
+    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '#${interval
         .toString()}');
         """.as[Double].headOption
   )
@@ -26,7 +26,7 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
           SELECT (CAST(SUM(CASE
                      WHEN status = 'LanceurAlerte' THEN 1
                      ELSE 0
-    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '${interval
+    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '#${interval
         .toString()}');
        """.as[Double].headOption
   )
