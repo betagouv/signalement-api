@@ -92,7 +92,7 @@ class AuthOrchestrator(
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
-      _ <- validateDGCCRFAccountLastEmailValidation(user)
+      _ <- validateAgentAccountLastEmailValidation(user)
       _ = logger.debug(s"Successful login for user")
       cookie <- getCookie(userLogin)(request)
       _ = logger.debug(s"Successful generated token for user")
@@ -180,8 +180,8 @@ class AuthOrchestrator(
       }
     } yield cookie
 
-  private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
-    case UserRole.DGCCRF if needsEmailRevalidation(user) =>
+  private def validateAgentAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
+    case UserRole.DGCCRF | UserRole.DGAL if needsEmailRevalidation(user) =>
       accessesOrchestrator
         .sendEmailValidation(user)
         .flatMap(_ => throw DGCCRFUserEmailValidationExpired(user.email.value))

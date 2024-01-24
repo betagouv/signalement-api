@@ -12,6 +12,7 @@ class UserRoleTest extends Specification {
     "get value from string name" in {
 
       UserRole.withName("DGCCRF") shouldEqual UserRole.DGCCRF
+      UserRole.withName("DGAL") shouldEqual UserRole.DGAL
       UserRole.withName("Admin") shouldEqual UserRole.Admin
       UserRole.withName("Professionnel") shouldEqual UserRole.Professionnel
       Try(UserRole.withName("XXXXXXXXXX")).isFailure shouldEqual true
