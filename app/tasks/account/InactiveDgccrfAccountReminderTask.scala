@@ -1,6 +1,7 @@
 package tasks.account
 
 import models.User
+import models.UserRole
 import models.event.Event
 import play.api.Logger
 import play.api.libs.json.Json
@@ -35,11 +36,11 @@ class InactiveDgccrfAccountReminderTask(
       inactivePeriod: Period
   ): Future[Unit] =
     for {
-      firstReminderEvents <- userRepository.listInactiveDGCCRFWithSentEmailCount(
+      firstReminderEvents <- userRepository.listInactiveAgentsWithSentEmailCount(
         firstReminderThreshold,
         expirationDateThreshold
       )
-      secondReminderEvents <- userRepository.listInactiveDGCCRFWithSentEmailCount(
+      secondReminderEvents <- userRepository.listInactiveAgentsWithSentEmailCount(
         secondReminderThreshold,
         expirationDateThreshold
       )
@@ -64,8 +65,8 @@ class InactiveDgccrfAccountReminderTask(
           None,
           Some(user.id),
           now,
-          EventType.DGCCRF,
-          ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT,
+          if (user.userRole == UserRole.DGAL) EventType.DGAL else EventType.DGCCRF,
+          ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT,
           Json.obj(
             "lastEmailValidation" -> user.lastEmailValidation,
             "expirationDate"      -> expirationDate

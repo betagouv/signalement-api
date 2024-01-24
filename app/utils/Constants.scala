@@ -112,7 +112,7 @@ object Constants {
 
     object USER_DELETION extends ActionEventValue("Suppression d'un utilisateur")
 
-    object EMAIL_INACTIVE_DGCCRF_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
+    object EMAIL_INACTIVE_AGENT_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
 
     object CONSUMER_THREATEN_BY_PRO    extends ActionEventValue("ConsumerThreatenByProReportDeletion")
     object REFUND_BLACKMAIL            extends ActionEventValue("RefundBlackMailReportDeletion")

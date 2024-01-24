@@ -11,9 +11,9 @@ import scala.concurrent.Future
 
 trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
-  def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]]
+  def listExpiredAgents(expirationDate: OffsetDateTime): Future[List[User]]
 
-  def listInactiveDGCCRFWithSentEmailCount(
+  def listInactiveAgentsWithSentEmailCount(
       reminderDate: OffsetDateTime,
       expirationDate: OffsetDateTime
   ): Future[List[(User, Option[Int])]]

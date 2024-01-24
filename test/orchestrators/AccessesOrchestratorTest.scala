@@ -95,7 +95,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
       "email validation should fail when token not found" >> {
         val unknownToken = ""
         components.accessesOrchestrator
-          .validateDGCCRFEmail(unknownToken) must throwA[DGCCRFActivationTokenNotFound].await
+          .validateAgentEmail(unknownToken) must throwA[AgentActivationTokenNotFound].await
       }
 
       "email validation should fail when no validation email token  found" >> {
@@ -109,11 +109,11 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         )
         val result = for {
           _   <- components.accessTokenRepository.create(nonRelevantToken)
-          res <- components.accessesOrchestrator.validateDGCCRFEmail(nonRelevantToken.token)
+          res <- components.accessesOrchestrator.validateAgentEmail(nonRelevantToken.token)
 
         } yield res
 
-        result must throwA[DGCCRFActivationTokenNotFound].await
+        result must throwA[AgentActivationTokenNotFound].await
       }
 
       "email validation should fail when validation email token found not link to any email" >> {
@@ -128,7 +128,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
 
         val result = for {
           _   <- components.accessTokenRepository.create(invalidValidationEmailToken)
-          res <- components.accessesOrchestrator.validateDGCCRFEmail(invalidValidationEmailToken.token)
+          res <- components.accessesOrchestrator.validateAgentEmail(invalidValidationEmailToken.token)
 
         } yield res
 
@@ -147,7 +147,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
 
         val result = for {
           _   <- components.accessTokenRepository.create(validationEmailToken)
-          res <- components.accessesOrchestrator.validateDGCCRFEmail(validationEmailToken.token)
+          res <- components.accessesOrchestrator.validateAgentEmail(validationEmailToken.token)
 
         } yield res
 
@@ -170,7 +170,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         val result = for {
           _   <- components.accessTokenRepository.create(validationEmailToken)
           _   <- components.userRepository.create(dgccrfUser)
-          res <- components.accessesOrchestrator.validateDGCCRFEmail(validationEmailToken.token)
+          res <- components.accessesOrchestrator.validateAgentEmail(validationEmailToken.token)
 
         } yield res
 

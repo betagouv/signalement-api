@@ -82,21 +82,21 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
         Some(firstMailToSendUser.id),
         OffsetDateTime.now(),
         EventType.DGCCRF,
-        ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT,
+        ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT,
         Json.obj()
       )
 
-      when(mockUserRepository.listInactiveDGCCRFWithSentEmailCount(firstReminder, expiration))
+      when(mockUserRepository.listInactiveAgentsWithSentEmailCount(firstReminder, expiration))
         .thenReturn(Future.successful(List(firstMailToSendUser -> None)))
-      when(mockUserRepository.listInactiveDGCCRFWithSentEmailCount(secondReminder, expiration))
+      when(mockUserRepository.listInactiveAgentsWithSentEmailCount(secondReminder, expiration))
         .thenReturn(Future.successful(List.empty))
       when(mockEventRepository.create(any[Event]())).thenReturn(Future.successful(event))
 
       val test = new InactiveDgccrfAccountReminderTask(mockUserRepository, mockEventRepository, mailService)
 
       test.sendReminderEmail(firstReminder, secondReminder, expiration, Period.ofYears(1)) must beEqualTo(()).await
-      there was one(mockUserRepository).listInactiveDGCCRFWithSentEmailCount(firstReminder, expiration)
-      there was one(mockUserRepository).listInactiveDGCCRFWithSentEmailCount(secondReminder, expiration)
+      there was one(mockUserRepository).listInactiveAgentsWithSentEmailCount(firstReminder, expiration)
+      there was one(mockUserRepository).listInactiveAgentsWithSentEmailCount(secondReminder, expiration)
       there was one(mockEventRepository).create(any[Event]())
       there was one(mockMailRetriesService).sendEmailWithRetries(any[EmailRequest]())
     }
