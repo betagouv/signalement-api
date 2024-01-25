@@ -115,11 +115,11 @@ class ReportFileOrchestrator(
     for {
       reportFiles <- reportFileRepository
         .retrieveReportFiles(report.id)
-
       filteredFilesByOrigin = reportFiles.filter { f =>
         origin.contains(f.origin) || origin.isEmpty
       }
-      _ <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
-    } yield reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
+      _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
+      res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
+    } yield res
 
 }
