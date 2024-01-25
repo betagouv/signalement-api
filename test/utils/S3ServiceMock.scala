@@ -25,4 +25,6 @@ class S3ServiceMock extends S3ServiceInterface {
   override def getSignedUrl(bucketKey: String, method: HttpMethod): String = ???
 
   override def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] = ???
+
+  override def exists(bucketKey: String): Future[Boolean] = ???
 }

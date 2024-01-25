@@ -64,7 +64,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
           userId = Some(inactiveDgccrfUserWithEmails.id),
           creationDate = now,
           eventType = EventType.DGCCRF,
-          action = ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT,
+          action = ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT,
           details = Json.obj()
         )
       ),
@@ -79,7 +79,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
           userId = Some(inactiveDgccrfUserWithEmails.id),
           creationDate = now,
           eventType = EventType.DGCCRF,
-          action = ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT,
+          action = ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT,
           details = Json.obj()
         )
       ),
@@ -113,12 +113,12 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
   def e4 = userRepository.get(userToto.id).map(_.isDefined) must beFalse.await
 
   def e6 = userRepository
-    .listInactiveDGCCRFWithSentEmailCount(now.minusMonths(1), now.minusYears(1))
+    .listInactiveAgentsWithSentEmailCount(now.minusMonths(1), now.minusYears(1))
     .map(_.map { case (user, count) => (user.id, count) }) must beEqualTo(
     List(inactiveDgccrfUser.id -> None, inactiveDgccrfUserWithEmails.id -> Some(2))
   ).await
   def e7 = userRepository
-    .listInactiveDGCCRFWithSentEmailCount(now.minusMonths(1), now.minusMonths(2)) must beEmpty[List[
+    .listInactiveAgentsWithSentEmailCount(now.minusMonths(1), now.minusMonths(2)) must beEmpty[List[
     (User, Option[Int])
   ]].await
 

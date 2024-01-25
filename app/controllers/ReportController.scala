@@ -199,7 +199,7 @@ class ReportController(
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
         .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-        .map(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData))
+        .flatMap(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData))
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,

@@ -182,7 +182,7 @@ class AccessesOrchestrator(
       .findToken(token)
     accessToken <- maybeAccessToken
       .map(Future.successful(_))
-      .getOrElse(Future.failed[AccessToken](DGCCRFActivationTokenNotFound(token)))
+      .getOrElse(Future.failed[AccessToken](AgentActivationTokenNotFound(token)))
     _ = logger.debug("Validating email")
     emailTo <-
       accessToken.emailedTo
@@ -325,12 +325,12 @@ class AccessesOrchestrator(
       )
     } yield logger.debug(s"Sent email validation to ${user.email}")
 
-  def validateDGCCRFEmail(token: String): Future[User] =
+  def validateAgentEmail(token: String): Future[User] =
     for {
       accessToken <- accessTokenRepository.findToken(token)
       emailValidationToken <- accessToken
         .filter(_.kind == ValidateEmail)
-        .liftTo[Future](DGCCRFActivationTokenNotFound(token))
+        .liftTo[Future](AgentActivationTokenNotFound(token))
 
       emailTo <- emailValidationToken.emailedTo.liftTo[Future](
         ServerError("ValidateEmailToken should have valid email associated")
@@ -350,10 +350,10 @@ class AccessesOrchestrator(
     user <- userOrchestrator
       .findOrError(email)
       .ensure {
-        logger.error("Cannot revalidate user with role different from DGCCRF")
+        logger.error("Cannot revalidate user with role different from DGCCRF or DGAL")
         CantPerformAction
-      }(_.userRole == UserRole.DGCCRF)
-    _ = logger.debug(s"Validating DGCCRF user email")
+      }(user => user.userRole == UserRole.DGCCRF || user.userRole == UserRole.DGAL)
+    _ = logger.debug(s"Validating agent user email")
     _ <-
       if (emailValidationToken.nonEmpty) {
         emailValidationToken.map(accessTokenRepository.validateEmail(_, user)).sequence

@@ -36,11 +36,11 @@ object AppError {
     override val titleForLogs: String = "server_error"
   }
 
-  final case class DGCCRFActivationTokenNotFound(token: String) extends NotFoundError {
+  final case class AgentActivationTokenNotFound(token: String) extends NotFoundError {
     override val `type`: String       = "SC-0002"
-    override val title: String        = s"DGCCRF user token $token not found"
+    override val title: String        = s"Agent user token $token not found"
     override val details: String      = s"Le lien d'activation n'est pas valide ($token). Merci de contacter le support"
-    override val titleForLogs: String = "dgccrf_activation_token_not_found"
+    override val titleForLogs: String = "agent_activation_token_not_found"
   }
 
   final case class CompanyActivationTokenNotFound(token: String, siret: SIRET) extends NotFoundError {

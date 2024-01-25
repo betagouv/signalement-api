@@ -22,4 +22,5 @@ trait S3ServiceInterface {
 
   def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String
   def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]]
+  def exists(bucketKey: String): Future[Boolean]
 }

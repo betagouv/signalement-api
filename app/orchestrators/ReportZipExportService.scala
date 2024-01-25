@@ -5,6 +5,7 @@ import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.report.ReportFile
 import play.api.Logger
@@ -39,29 +40,39 @@ class ReportZipExportService(
 
   def reportSummaryWithAttachmentsZip(
       reportWithData: ReportWithData
-  ): Source[ByteString, Future[IOResult]] = {
+  ): Future[Source[ByteString, Future[IOResult]]] = for {
+    reportAttachmentSources <- buildReportAttachmentsSources(reportWithData.report.creationDate, reportWithData.files)
+    reportPdfSummarySource = buildReportPdfSummarySource(reportWithData)
+    fileSourcesFutures     = reportAttachmentSources :+ reportPdfSummarySource
+  } yield ZipBuilder.buildZip(fileSourcesFutures)
 
-    val reportAttachmentSources = reportWithData.files.zipWithIndex.map { case (file, i) =>
-      buildReportAttachmentSource(reportWithData.report.creationDate, file, i)
+  private def buildReportAttachmentsSources(
+      creationDate: OffsetDateTime,
+      reportFiles: Seq[ReportFile]
+  ) = for {
+    existingFiles <- reportFiles.traverse(f =>
+      s3Service.exists(f.storageFilename).map(exists => (f, exists))
+    ) map (_.collect { case (file, true) =>
+      file
+    })
+    reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
+      buildReportAttachmentSource(creationDate, file, i + 1)
     }
-    val reportPdfSummarySource = buildReportPdfSummarySource(reportWithData)
-
-    val fileSourcesFutures = reportAttachmentSources :+ reportPdfSummarySource
-
-    ZipBuilder.buildZip(fileSourcesFutures)
-  }
+  } yield reportAttachmentSources
 
   def reportAttachmentsZip(
       creationDate: OffsetDateTime,
-      reports: Seq[ReportFile]
-  ): Source[ByteString, Future[IOResult]] = {
-
-    val reportAttachmentSources = reports.zipWithIndex.map { case (file, i) =>
+      reportFiles: Seq[ReportFile]
+  ): Future[Source[ByteString, Future[IOResult]]] = for {
+    existingFiles <- reportFiles.traverse(f =>
+      s3Service.exists(f.storageFilename).map(exists => (f, exists))
+    ) map (_.collect { case (file, true) =>
+      file
+    })
+    reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
       buildReportAttachmentSource(creationDate, file, i + 1)
     }
-
-    ZipBuilder.buildZip(reportAttachmentSources)
-  }
+  } yield ZipBuilder.buildZip(reportAttachmentSources)
 
   private def buildReportPdfSummarySource(
       reportWithData: ReportWithData

@@ -2,6 +2,7 @@ package repositories.user
 
 import authentication.PasswordHasherRegistry
 import controllers.error.AppError.EmailAlreadyExist
+import models.UserRole.DGAL
 import models.UserRole.DGCCRF
 import models._
 import play.api.Logger
@@ -36,29 +37,29 @@ class UserRepository(
 
   import dbConfig._
 
-  override def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
+  override def listExpiredAgents(expirationDate: OffsetDateTime): Future[List[User]] =
     db
       .run(
         table
-          .filter(_.role === DGCCRF.entryName)
+          .filter(user => user.role === DGCCRF.entryName || user.role === DGAL.entryName)
           .filter(_.lastEmailValidation <= expirationDate)
           .to[List]
           .result
       )
 
-  override def listInactiveDGCCRFWithSentEmailCount(
+  override def listInactiveAgentsWithSentEmailCount(
       reminderDate: OffsetDateTime,
       expirationDate: OffsetDateTime
   ): Future[List[(User, Option[Int])]] =
     db.run(
       UserTable.table
-        .filter(_.role === DGCCRF.entryName)
+        .filter(user => user.role === DGCCRF.entryName || user.role === DGAL.entryName)
         .filter(_.lastEmailValidation <= reminderDate)
         .filter(_.lastEmailValidation > expirationDate)
         .joinLeft(
           EventTable.table
-            .filter(_.action === ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT.value)
-            .filter(_.eventType === EventType.DGCCRF.value)
+            .filter(_.action === ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT.value)
+            .filter(user => user.eventType === EventType.DGCCRF.value || user.eventType === EventType.DGAL.value)
             .filter(_.userId.isDefined)
             .groupBy(_.userId)
             .map { case (userId, results) => userId -> results.length }
