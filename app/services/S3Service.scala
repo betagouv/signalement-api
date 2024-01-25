@@ -62,6 +62,9 @@ class S3Service(implicit
     alpakkaS3Client
       .getObject(bucketName, bucketKey)
 
+  def exists(bucketKey: String): Future[Boolean] =
+    S3.getObjectMetadata(bucketName, bucketKey).runWith(Sink.headOption).map(_.isDefined)
+
   override def delete(bucketKey: String): Future[Done] =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
