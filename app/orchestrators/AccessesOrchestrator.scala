@@ -59,6 +59,7 @@ class AccessesOrchestrator(
       emailedTo <- updateEmailToken.emailedTo.liftTo[Future](
         ServerError(s"Email should be defined for access token $token")
       )
+      _ <- userOrchestrator.find(emailedTo).ensure(EmailAlreadyExist)(user => user.isEmpty)
       _ <- user.userRole match {
         case UserRole.DGAL | UserRole.DGCCRF =>
           accessTokenRepository.validateEmail(updateEmailToken, user)
@@ -82,6 +83,7 @@ class AccessesOrchestrator(
     }
 
     for {
+      _ <- userOrchestrator.find(newEmail).ensure(EmailAlreadyExist)(user => user.isEmpty)
       _ <-
         if (emailValidationFunction(newEmail.value)) Future.unit
         else Future.failed(InvalidDGCCRFOrAdminEmail(List(newEmail)))
