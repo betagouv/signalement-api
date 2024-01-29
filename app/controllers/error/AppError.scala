@@ -507,4 +507,9 @@ object AppError {
     override val titleForLogs: String = "different_user_from_request"
   }
 
+  final case class CreateWebsiteError(override val details: String) extends BadRequestError {
+    override val `type`: String       = "SC-0054"
+    override val title: String        = "Can't create website"
+    override val titleForLogs: String = "cant_create_website"
+  }
 }
