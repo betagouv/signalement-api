@@ -1,1 +1,0 @@
-ALTER TABLE websites DROP CONSTRAINT company_host
