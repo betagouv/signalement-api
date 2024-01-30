@@ -18,6 +18,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import authentication.actions.UserAction.WithRole
+import utils.URL
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -35,6 +36,18 @@ class WebsiteController(
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger                      = Logger(this.getClass)
+
+  def create() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { request =>
+    request.body
+      .validate[WebsiteCreation]
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        websiteCreation =>
+          websitesOrchestrator
+            .create(URL(websiteCreation.host), websiteCreation.company.toCompany())
+            .map(website => Ok(Json.toJson(website)))
+      )
+  }
 
   def fetchWithCompanies(
       maybeHost: Option[String],
