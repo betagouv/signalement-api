@@ -202,4 +202,23 @@ class WebsiteRepository(
         .result
     )
 
+  def listNotAssociatedToCompany(host: String): Future[Seq[Website]] =
+    db.run(
+      table
+        .filter(_.host === host)
+        .filter(website =>
+          website.companyCountry.isDefined || (website.identificationStatus inSet List(
+            IdentificationStatus.NotIdentified
+          ))
+        )
+        .result
+    )
+
+  def listIdentified(host: String): Future[Seq[Website]] =
+    db.run(
+      table
+        .filter(_.host === host)
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .result
+    )
 }

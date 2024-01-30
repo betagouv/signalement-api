@@ -3,6 +3,7 @@ package orchestrators
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.CannotDeleteWebsite
+import controllers.error.AppError.CreateWebsiteError
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
@@ -41,6 +42,26 @@ class WebsitesOrchestrator(
 ) {
 
   val logger: Logger = Logger(this.getClass)
+
+  def create(url: URL, company: Company): Future[Website] =
+    for {
+      host                   <- url.getHost.liftTo[Future](MalformedHost(url.value))
+      createdCompany         <- companyRepository.getOrCreate(company.siret, company)
+      identified             <- repository.listIdentified(host)
+      notAssociatedToCompany <- repository.listNotAssociatedToCompany(host)
+      _ <-
+        if (notAssociatedToCompany.nonEmpty || identified.flatMap(_.companyId).contains(createdCompany.id))
+          Future.failed(CreateWebsiteError("Impossible de créer un site web s'il est déjà associé mais pas identifié"))
+        else
+          Future.unit
+      website = Website(
+        host = host,
+        companyCountry = None,
+        companyId = Some(createdCompany.id),
+        identificationStatus = IdentificationStatus.Identified
+      )
+      createdWebsite <- repository.create(website)
+    } yield createdWebsite
 
   def searchByHost(host: String): Future[Seq[Country]] =
     for {
@@ -82,7 +103,14 @@ class WebsitesOrchestrator(
       newIdentificationStatus: IdentificationStatus,
       user: User
   ): Future[Website] = for {
-    website <- findWebsite(websiteId)
+    website    <- findWebsite(websiteId)
+    identified <- repository.listIdentified(website.host)
+    _ <-
+      if (identified.length > 1)
+        Future.failed(
+          CreateWebsiteError("Le status ne peut pas être modifié si plus d'un siret est associé au site web")
+        )
+      else Future.unit
     _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
       throw WebsiteNotIdentified(website.host)
     }
@@ -102,7 +130,7 @@ class WebsitesOrchestrator(
           _ = logger.debug(s"Company Siret is ${maybeCompany.map(_.siret)}")
           _ <- maybeCompany
             .map(company => updatePreviousReportsAssociatedToWebsite(website.host, company, user.id))
-            .getOrElse(Future.successful(()))
+            .getOrElse(Future.unit)
         } yield ()
       } else Future.unit
   } yield updatedWebsite
@@ -122,9 +150,16 @@ class WebsitesOrchestrator(
     for {
       company <- {
         logger.debug(s"Updating website (id ${websiteId}) with company siret : ${companyToAssign.siret}")
-        getOrCreateCompay(companyToAssign)
+        getOrCreateCompany(companyToAssign)
       }
-      website <- findWebsite(websiteId)
+      website    <- findWebsite(websiteId)
+      identified <- repository.listIdentified(website.host)
+      _ <-
+        if (identified.length > 1 && identified.flatMap(_.companyId).contains(company.id)) {
+          Future.failed(
+            CreateWebsiteError("L'entreprise ne peut pas être modifiée si plus d'un siret est associé au site web")
+          )
+        } else Future.unit
       websiteToUpdate = website.copy(
         companyCountry = None,
         companyId = Some(company.id)
@@ -135,9 +170,14 @@ class WebsitesOrchestrator(
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String, user: User): Future[WebsiteAndCompany] = for {
     website <- {
-      logger.debug(s"Updating website (id ${websiteId.value}) with company country : ${companyCountry}")
+      logger.debug(s"Updating website (id ${websiteId.value}) with company country : $companyCountry")
       findWebsite(websiteId)
     }
+    identified <- repository.listIdentified(website.host)
+    _ <-
+      if (identified.length > 1)
+        Future.failed(CreateWebsiteError("Le pays ne peut pas être modifié si plus d'un siret est associé au site web"))
+      else Future.unit
     websiteToUpdate = website.copy(
       companyCountry = Some(companyCountry),
       companyId = None
@@ -162,10 +202,11 @@ class WebsitesOrchestrator(
     for {
       maybeWebsite <- repository.get(websiteId)
       website      <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
+      identified   <- repository.listIdentified(website.host)
       isWebsiteUnderInvestigation = website.investigationStatus != NotProcessed
       isWebsiteIdentified         = website.identificationStatus == Identified
       _ <-
-        if (isWebsiteIdentified || isWebsiteUnderInvestigation) {
+        if (identified.length < 2 && (isWebsiteIdentified || isWebsiteUnderInvestigation)) {
           logger.debug(s"Cannot delete identified / under investigation website")
           Future.failed(CannotDeleteWebsite(website.host))
         } else {
@@ -184,7 +225,7 @@ class WebsitesOrchestrator(
 
   def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
 
-  private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
+  private[this] def getOrCreateCompany(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(
       companyCreate.siret,
       companyCreate.toCompany()

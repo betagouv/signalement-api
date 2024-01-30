@@ -49,4 +49,8 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       start: Option[LocalDate] = None,
       end: Option[LocalDate] = None
   ): Future[List[(String, Int)]]
+
+  def listNotAssociatedToCompany(host: String): Future[Seq[Website]]
+
+  def listIdentified(host: String): Future[Seq[Website]]
 }
