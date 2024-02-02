@@ -133,7 +133,7 @@ object Fixtures {
   val genInfluencer = for {
     socialNetwork <- Gen.oneOf(SocialNetworkSlug.values)
     name          <- arbString.arbitrary
-  } yield Influencer(socialNetwork, name)
+  } yield Influencer(Some(socialNetwork), None, name)
 
   val genWebsiteURL = for {
     randInt <- Gen.choose(0, 1000000)
