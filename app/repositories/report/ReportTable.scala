@@ -29,7 +29,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def subcategories            = column[List[String]]("subcategories")
   def details                  = column[List[String]]("details")
   def socialNetwork            = column[Option[SocialNetworkSlug]]("social_network")
-  def otherSocialNetwork       = column[Option[String]]("social_network_other")
+  def otherSocialNetwork       = column[Option[String]]("other_social_network")
   def influencerName           = column[Option[String]]("influencer_name")
   def companyId                = column[Option[UUID]]("company_id")
   def companyName              = column[Option[String]]("company_name")
