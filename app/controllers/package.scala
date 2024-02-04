@@ -14,6 +14,7 @@ import models.PublicStat
 import models.extractUUID
 import models.report.ReportFileOrigin
 import models.report.ReportResponseType
+import models.report.SocialNetworkSlug
 import models.report.delete.ReportAdminActionType
 import models.report.reportfile.ReportFileId
 import utils.DateUtils
@@ -33,6 +34,13 @@ package object controllers {
       .transform[IdentificationStatus](
         identificationStatus => IdentificationStatus.withName(identificationStatus),
         identificationStatus => identificationStatus.entryName
+      )
+
+  implicit val SocialNetworkSlugQueryStringBindable: QueryStringBindable[SocialNetworkSlug] =
+    QueryStringBindable.bindableString
+      .transform[SocialNetworkSlug](
+        socialNetwork => SocialNetworkSlug.withName(socialNetwork),
+        socialNetwork => socialNetwork.entryName
       )
 
   implicit val UUIDPathBindable: PathBindable[UUID] =

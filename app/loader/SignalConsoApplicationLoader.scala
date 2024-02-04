@@ -19,6 +19,8 @@ import com.typesafe.config.ConfigFactory
 import config._
 import models.report.ArborescenceNode
 import orchestrators._
+import orchestrators.socialmedia.InfluencerOrchestrator
+import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -64,6 +66,8 @@ import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.barcode.BarcodeProductRepository
+import repositories.influencer.InfluencerRepository
+import repositories.influencer.InfluencerRepositoryInterface
 import repositories.probe.ProbeRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
@@ -200,6 +204,7 @@ class SignalConsoComponents(
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
   val ratingRepository: RatingRepositoryInterface                 = new RatingRepository(dbConfig)
+  val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
@@ -389,6 +394,8 @@ class SignalConsoComponents(
     messagesApi
   )
 
+  val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository)
+
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
       ReportsExtractActor.create(
@@ -540,6 +547,8 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  val socialNetworkController =
+    new SocialNetworkController(influencerOrchestrator, cookieAuthenticator, controllerComponents)
   val asyncFileController =
     new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
@@ -741,6 +750,7 @@ class SignalConsoComponents(
       adminController,
       asyncFileController,
       constantController,
+      socialNetworkController,
       mobileAppController,
       authController,
       accountController,

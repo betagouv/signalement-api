@@ -85,6 +85,8 @@ GET           /api/async-files                                          controll
 # Constants API
 GET           /api/constants/countries                                  controllers.ConstantController.getCountries()
 GET           /api/constants/categories                                 controllers.ConstantController.getCategories()
+#GET           /api/social-blade                                         controllers.ConstantController.getSocialBlade()
+GET           /api/certified-influencer                                 controllers.SocialNetworkController.get(name:String,socialNetwork: SocialNetworkSlug)
 GET           /api/constants/categoriesByStatus                         controllers.ConstantController.getCategoriesByStatus()
 
 # Mobile app specific API
