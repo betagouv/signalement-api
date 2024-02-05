@@ -1,0 +1,1 @@
+ALTER TABLE reports ADD other_social_network text;
