@@ -381,9 +381,9 @@ class ReportOrchestrator(
         Future(None)
     }
 
-  private def searchCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
+  private def searchCompanyOfSocialNetwork(socialNetworkSlug: SocialNetworkSlug): Future[Option[Company]] =
     (for {
-      socialNetwork   <- OptionT(socialNetworkRepository.get(influencer.socialNetwork))
+      socialNetwork   <- OptionT(socialNetworkRepository.get(socialNetworkSlug))
       companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
       c = Company(
         siret = companyToCreate.siret,
@@ -399,11 +399,16 @@ class ReportOrchestrator(
     } yield company).value
 
   private def extractCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
-    for {
-      maybeCompany <- socialNetworkRepository.findCompanyBySocialNetworkSlug(influencer.socialNetwork)
-      resultingCompany <-
-        if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(influencer)
-    } yield resultingCompany
+    influencer.socialNetwork match {
+      case Some(socialNetwork) =>
+        for {
+          maybeCompany <- socialNetworkRepository.findCompanyBySocialNetworkSlug(socialNetwork)
+          resultingCompany <-
+            if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(socialNetwork)
+        } yield resultingCompany
+      case None =>
+        Future.successful(None)
+    }
 
   def updateReportCountry(reportId: UUID, countryCode: String, userId: UUID): Future[Option[Report]] =
     for {

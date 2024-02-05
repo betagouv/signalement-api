@@ -29,6 +29,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def subcategories            = column[List[String]]("subcategories")
   def details                  = column[List[String]]("details")
   def socialNetwork            = column[Option[SocialNetworkSlug]]("social_network")
+  def otherSocialNetwork       = column[Option[String]]("other_social_network")
   def influencerName           = column[Option[String]]("influencer_name")
   def companyId                = column[Option[UUID]]("company_id")
   def companyName              = column[Option[String]]("company_name")
@@ -77,6 +78,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         subcategories ::
         details ::
         socialNetwork ::
+        otherSocialNetwork ::
         influencerName ::
         companyId ::
         companyName ::
@@ -152,10 +154,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         lang = lang,
         reopenDate = reopenDate,
         barcodeProductId = barcodeProductId,
-        influencer = for {
-          socialNetwork  <- socialNetwork
-          influencerName <- influencerName
-        } yield Influencer(socialNetwork, influencerName)
+        influencer = influencerName.map(influencerName => Influencer(socialNetwork, otherSocialNetwork, influencerName))
       )
   }
 
@@ -165,7 +164,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.category ::
       r.subcategories ::
       r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}") ::
-      r.influencer.map(_.socialNetwork) ::
+      r.influencer.flatMap(_.socialNetwork) ::
+      r.influencer.flatMap(_.otherSocialNetwork) ::
       r.influencer.map(_.name) ::
       r.companyId ::
       r.companyName ::
@@ -211,6 +211,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       List[String] ::
       Option[SocialNetworkSlug] ::
       Option[String] ::
+      Option[String] ::
       Option[UUID] ::
       Option[String] ::
       Option[String] ::
@@ -253,6 +254,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       subcategories ::
       details ::
       socialNetwork ::
+      otherSocialNetwork ::
       influencerName ::
       companyId ::
       companyName ::

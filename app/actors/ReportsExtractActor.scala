@@ -251,7 +251,12 @@ object ReportsExtractActor {
       ReportColumn(
         "Plateforme (réseau social)",
         leftAlignmentColumn,
-        (report, _, _, _, _) => report.influencer.map(_.socialNetwork.entryName).getOrElse(""),
+        (report, _, _, _, _) =>
+          report.influencer
+            .flatMap(_.socialNetwork)
+            .map(_.entryName)
+            .orElse(report.influencer.flatMap(_.otherSocialNetwork))
+            .getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
