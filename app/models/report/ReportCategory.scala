@@ -6,16 +6,15 @@ import enumeratum.PlayEnum
 
 sealed trait ReportCategoryStatus
 object ReportCategoryStatus {
-  case object Legacy
-      extends ReportCategoryStatus // it has been modified / splitted / migrated and should never come back
-  case object Closed extends ReportCategoryStatus // Old category, not available and no investigation
-  case object Inactive
-      extends ReportCategoryStatus // Category not available in the website, but an investigation could still happen
-  case object Active extends ReportCategoryStatus
+  // Modified / splitted / migrated, should never come back
+  case object Legacy extends ReportCategoryStatus
+  // Old category, not available and no investigation, but still 'valid'
+  case object Closed extends ReportCategoryStatus
+  // Category not available in the website, but an investigation could still happen (still searchable)
+  case object Inactive extends ReportCategoryStatus
+  case object Active   extends ReportCategoryStatus
 }
 
-// Legacy means
-// Active means it's an old category not up to date anymore but could come back (COVID is a good example)
 sealed abstract class ReportCategory(val label: String, val status: ReportCategoryStatus = ReportCategoryStatus.Active)
     extends EnumEntry
 
