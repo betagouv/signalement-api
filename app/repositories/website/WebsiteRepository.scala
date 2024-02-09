@@ -31,7 +31,7 @@ class WebsiteRepository(
 ) extends TypedCRUDRepository[WebsiteTable, Website, WebsiteId]
     with WebsiteRepositoryInterface {
 
-  val logger: Logger                           = Logger(this.getClass())
+  val logger: Logger                           = Logger(this.getClass)
   override val table: TableQuery[WebsiteTable] = WebsiteTable.table
 
   import dbConfig._
@@ -63,7 +63,7 @@ class WebsiteRepository(
       table
         .filter(_.host === host)
         .filter(x => x.companyId.nonEmpty || x.companyCountry.nonEmpty)
-        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
         .result
     )
 
@@ -73,7 +73,7 @@ class WebsiteRepository(
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
-        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
         .result
     )
 
@@ -83,7 +83,7 @@ class WebsiteRepository(
         .filter { result =>
           (result.host <-> (host: String)).<(0.55)
         }
-        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
         .join(CompanyTable.table)
         .on { (websiteTable, companyTable) =>
           websiteTable.companyId === companyTable.id && companyTable.isOpen
@@ -97,7 +97,7 @@ class WebsiteRepository(
         db.run(
           table
             .filter(_.host === h)
-            .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+            .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
             .join(CompanyTable.table)
             .on(_.companyId === _.id)
             .result
@@ -110,7 +110,7 @@ class WebsiteRepository(
       table
         .filter(_.host === website.host)
         .filterNot(_.id === website.id)
-        .filterNot(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .filterNot(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
         .delete
     )
 
