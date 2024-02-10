@@ -14,7 +14,6 @@ import models.PublicStat
 import models.extractUUID
 import models.report.ReportFileOrigin
 import models.report.ReportResponseType
-import models.report.SocialNetworkSlug
 import models.report.delete.ReportAdminActionType
 import models.report.reportfile.ReportFileId
 import utils.DateUtils
