@@ -24,7 +24,7 @@ class InfluencerRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
       .filter { result =>
         (result.name <-> (name: String)).<(0.55)
       }
-      .filter(_.socialNetwork === socialNetwork)
+      .filter(_.socialNetwork === (socialNetwork: SocialNetworkSlug))
       .result
   )
 

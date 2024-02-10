@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import cats.implicits.toTraverseOps
 import models.User
 import models.report.SocialNetworkSlug
 import orchestrators.socialmedia.InfluencerOrchestrator
@@ -19,10 +20,16 @@ class SocialNetworkController(
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def get(name: String, socialNetwork: SocialNetworkSlug) = Action.async { _ =>
-    influencerOrchestrator
-      .get(name, socialNetwork)
-      .map(product => Ok(Json.toJson(product)))
+  def get(name: String, socialNetwork: String) = Action.async { _ =>
+    SocialNetworkSlug
+      .withNameInsensitiveOption(socialNetwork)
+      .traverse(socialNetworkSlug =>
+        influencerOrchestrator
+          .get(name, socialNetworkSlug)
+      )
+      .map(_.getOrElse(Seq.empty))
+      .map(result => Ok(Json.toJson(result)))
+
   }
 
 }

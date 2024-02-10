@@ -7,60 +7,100 @@ import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.util.Timeout
 import authentication._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import config._
 import models.report.ArborescenceNode
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
 import org.flywaydb.core.Flyway
 import play.api._
-import play.api.db.slick.{DbName, SlickComponents}
-import play.api.libs.json.{JsArray, Json}
+import play.api.db.slick.DbName
+import play.api.db.slick.SlickComponents
+import play.api.libs.json.JsArray
+import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{Cookie, EssentialFilter}
+import play.api.mvc.Cookie
+import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
-import pureconfig.{ConfigConvert, ConfigReader, ConfigSource}
+import pureconfig.ConfigConvert
+import pureconfig.ConfigReader
+import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
-import repositories.accesstoken.{AccessTokenRepository, AccessTokenRepositoryInterface}
-import repositories.asyncfiles.{AsyncFileRepository, AsyncFileRepositoryInterface}
-import repositories.authattempt.{AuthAttemptRepository, AuthAttemptRepositoryInterface}
-import repositories.authtoken.{AuthTokenRepository, AuthTokenRepositoryInterface}
+import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.authattempt.AuthAttemptRepository
+import repositories.authattempt.AuthAttemptRepositoryInterface
+import repositories.authtoken.AuthTokenRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.barcode.BarcodeProductRepository
-import repositories.blacklistedemails.{BlacklistedEmailsRepository, BlacklistedEmailsRepositoryInterface}
-import repositories.company.{CompanyRepository, CompanyRepositoryInterface, CompanySyncRepository, CompanySyncRepositoryInterface}
-import repositories.companyaccess.{CompanyAccessRepository, CompanyAccessRepositoryInterface}
-import repositories.companyactivationattempt.{CompanyActivationAttemptRepository, CompanyActivationAttemptRepositoryInterface}
-import repositories.consumer.{ConsumerRepository, ConsumerRepositoryInterface}
-import repositories.dataeconomie.{DataEconomieRepository, DataEconomieRepositoryInterface}
-import repositories.emailvalidation.{EmailValidationRepository, EmailValidationRepositoryInterface}
-import repositories.event.{EventRepository, EventRepositoryInterface}
-import repositories.influencer.{InfluencerRepository, InfluencerRepositoryInterface}
+import repositories.blacklistedemails.BlacklistedEmailsRepository
+import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
+import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.company.CompanySyncRepository
+import repositories.company.CompanySyncRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companyactivationattempt.CompanyActivationAttemptRepository
+import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
+import repositories.consumer.ConsumerRepository
+import repositories.consumer.ConsumerRepositoryInterface
+import repositories.dataeconomie.DataEconomieRepository
+import repositories.dataeconomie.DataEconomieRepositoryInterface
+import repositories.emailvalidation.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepositoryInterface
+import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
+import repositories.influencer.InfluencerRepository
+import repositories.influencer.InfluencerRepositoryInterface
 import repositories.probe.ProbeRepository
-import repositories.rating.{RatingRepository, RatingRepositoryInterface}
-import repositories.report.{ReportRepository, ReportRepositoryInterface}
-import repositories.reportblockednotification.{ReportNotificationBlockedRepository, ReportNotificationBlockedRepositoryInterface}
-import repositories.reportconsumerreview.{ResponseConsumerReviewRepository, ResponseConsumerReviewRepositoryInterface}
-import repositories.reportfile.{ReportFileRepository, ReportFileRepositoryInterface}
-import repositories.reportmetadata.{ReportMetadataRepository, ReportMetadataRepositoryInterface}
-import repositories.signalconsoreview.{SignalConsoReviewRepository, SignalConsoReviewRepositoryInterface}
-import repositories.socialnetwork.{SocialNetworkRepository, SocialNetworkRepositoryInterface}
-import repositories.subscription.{SubscriptionRepository, SubscriptionRepositoryInterface}
+import repositories.rating.RatingRepository
+import repositories.rating.RatingRepositoryInterface
+import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.reportmetadata.ReportMetadataRepository
+import repositories.reportmetadata.ReportMetadataRepositoryInterface
+import repositories.signalconsoreview.SignalConsoReviewRepository
+import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
+import repositories.socialnetwork.SocialNetworkRepository
+import repositories.socialnetwork.SocialNetworkRepositoryInterface
+import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
-import repositories.user.{UserRepository, UserRepositoryInterface}
-import repositories.usersettings.{UserReportsFiltersRepository, UserReportsFiltersRepositoryInterface}
-import repositories.website.{WebsiteRepository, WebsiteRepositoryInterface}
+import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
+import repositories.usersettings.UserReportsFiltersRepository
+import repositories.usersettings.UserReportsFiltersRepositoryInterface
+import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import tasks.account.{InactiveAccountTask, InactiveDgccrfAccountReminderTask, InactiveDgccrfAccountRemoveTask}
+import tasks.account.InactiveAccountTask
+import tasks.account.InactiveDgccrfAccountReminderTask
+import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.{LowRateLanceurDAlerteTask, LowRateReponseConsoTask}
-import tasks.report.{ReportClosureTask, ReportNotificationTask, ReportRemindersTask}
-import utils.{EmailAddress, FrontRoute, LoggingFilter}
+import tasks.probe.LowRateLanceurDAlerteTask
+import tasks.probe.LowRateReponseConsoTask
+import tasks.report.ReportClosureTask
+import tasks.report.ReportNotificationTask
+import tasks.report.ReportRemindersTask
+import utils.EmailAddress
+import utils.FrontRoute
+import utils.LoggingFilter
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
