@@ -22,7 +22,7 @@ class InfluencerRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
   override def get(name: String, socialNetwork: SocialNetworkSlug) = db.run(
     table
       .filter { result =>
-        (result.name <-> (name: String)).<(0.55)
+        result.name.toLowerCase === (name.toLowerCase: String)
       }
       .filter(_.socialNetwork === (socialNetwork: SocialNetworkSlug))
       .result

@@ -27,7 +27,7 @@ class SocialNetworkController(
         influencerOrchestrator
           .get(name, socialNetworkSlug)
       )
-      .map(_.getOrElse(Seq.empty))
+      .map(_.getOrElse(false))
       .map(result => Ok(Json.toJson(result)))
 
   }

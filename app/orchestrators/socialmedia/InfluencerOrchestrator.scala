@@ -1,7 +1,6 @@
 package orchestrators.socialmedia
 
 import models.report.SocialNetworkSlug
-import models.report.socialnetwork.CertifiedInfluencer
 import repositories.influencer.InfluencerRepositoryInterface
 
 import scala.concurrent.ExecutionContext
@@ -13,6 +12,6 @@ class InfluencerOrchestrator(
     val executionContext: ExecutionContext
 ) {
 
-  def get(name: String, socialNetwork: SocialNetworkSlug): Future[Seq[CertifiedInfluencer]] =
-    influencerRepository.get(name, socialNetwork)
+  def get(name: String, socialNetwork: SocialNetworkSlug): Future[Boolean] =
+    influencerRepository.get(name, socialNetwork).map(_.nonEmpty)
 }
