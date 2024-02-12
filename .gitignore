@@ -21,3 +21,7 @@ conf/local.application.conf
 /.bsp
 javaOptions.sbt
 *.sc
+!/test.http
+!/zip.http
+!/generatesql.sh
+!/app/orchestrators/socialmedia/SocialBladeClient.scala

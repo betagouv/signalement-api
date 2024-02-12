@@ -31,7 +31,7 @@ package object controllers {
   implicit val IdentificationStatusQueryStringBindable: QueryStringBindable[IdentificationStatus] =
     QueryStringBindable.bindableString
       .transform[IdentificationStatus](
-        identificationStatus => IdentificationStatus.withName(identificationStatus),
+        identificationStatus => IdentificationStatus.withNameInsensitive(identificationStatus),
         identificationStatus => identificationStatus.entryName
       )
 
@@ -73,28 +73,28 @@ package object controllers {
   implicit val ReportResponseTypeQueryStringBindable: QueryStringBindable[ReportResponseType] =
     QueryStringBindable.bindableString
       .transform[ReportResponseType](
-        reportResponseType => ReportResponseType.withName(reportResponseType),
+        reportResponseType => ReportResponseType.withNameInsensitive(reportResponseType),
         reportResponseType => reportResponseType.entryName
       )
 
   implicit val ReportFileOriginQueryStringBindable: QueryStringBindable[ReportFileOrigin] =
     QueryStringBindable.bindableString
       .transform[ReportFileOrigin](
-        reportFileOrigin => ReportFileOrigin.withName(reportFileOrigin),
+        reportFileOrigin => ReportFileOrigin.withNameInsensitive(reportFileOrigin),
         reportFileOrigin => reportFileOrigin.entryName
       )
 
   implicit val ReportAdminActionTypeQueryStringBindable: QueryStringBindable[ReportAdminActionType] =
     QueryStringBindable.bindableString
       .transform[ReportAdminActionType](
-        reportAdminActionType => ReportAdminActionType.withName(reportAdminActionType),
+        reportAdminActionType => ReportAdminActionType.withNameInsensitive(reportAdminActionType),
         reportAdminActionType => reportAdminActionType.entryName
       )
 
   implicit val PublicStatQueryStringBindable: QueryStringBindable[PublicStat] =
     QueryStringBindable.bindableString
       .transform[PublicStat](
-        publicStat => PublicStat.withName(publicStat),
+        publicStat => PublicStat.withNameInsensitive(publicStat),
         publicStat => publicStat.entryName
       )
 

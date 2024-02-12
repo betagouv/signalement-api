@@ -56,26 +56,27 @@ object Dependencies {
     val janino = "org.codehaus.janino" % "janino" % Versions.janino // Needed for the <if> in logback conf
     val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % Versions.janino // Needed for janino
     val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logstashLogbackEncoder
-    val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json"      % Versions.sttpPlayJson
-    val sttp         = "com.softwaremill.sttp.client3" %% "core"           % Versions.sttp
-    val sentry       = "io.sentry"                      % "sentry-logback" % Versions.sentryVersion
-    val catsCore     = "org.typelevel"                 %% "cats-core"      % Versions.catsCoreVersion
-    val pureConfig   = "com.github.pureconfig"         %% "pureconfig"     % Versions.pureConfigVersion
-    val playJsonExtensions = "ai.x"                %% "play-json-extensions"      % Versions.playJsonExtensionsVersion
-    val playSlick          = "com.typesafe.play"   %% "play-slick"                % Versions.playSlickVersion
-    val slickPg            = "com.github.tminglei" %% "slick-pg"                  % Versions.slickPgVersion
-    val slickPgPlayJson    = "com.github.tminglei" %% "slick-pg_play-json"        % Versions.slickPgVersion
-    val alpakkaSlick       = "com.lightbend.akka"  %% "akka-stream-alpakka-slick" % Versions.alpakkaVersion
-    val playMailer         = "org.playframework"   %% "play-mailer"               % Versions.playMailerVersion
-    val alpakkaS3          = "com.lightbend.akka"  %% "akka-stream-alpakka-s3"    % Versions.alpakkaVersion
-    val alpakkaCSV         = "com.lightbend.akka"  %% "akka-stream-alpakka-csv"   % Versions.alpakkaVersion
-    val alpakkaFile        = "com.lightbend.akka"  %% "akka-stream-alpakka-file"  % Versions.alpakkaVersion
-    val akkaHttp           = "com.typesafe.akka"   %% "akka-http"                 % Versions.akkaHttpVersion
-    val akkaHttpXml        = "com.typesafe.akka"   %% "akka-http-xml"             % Versions.akkaHttpVersion
-    val jbcrypt            = "org.mindrot"          % "jbcrypt"                   % "0.4"
-    val enumeratum         = "com.beachape"        %% "enumeratum"                % Versions.enumeratumVersion
-    val enumeratumPlay     = "com.beachape"        %% "enumeratum-play"           % Versions.enumeratumVersion
-    val awsJavaSdkS3       = "com.amazonaws"        % "aws-java-sdk-s3"           % Versions.awsJavaSdkS3Version
+    val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json"                        % Versions.sttpPlayJson
+    val sttp         = "com.softwaremill.sttp.client3" %% "core"                             % Versions.sttp
+    val asyncSttp         = "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % Versions.sttp
+    val sentry       = "io.sentry"                      % "sentry-logback"                   % Versions.sentryVersion
+    val catsCore     = "org.typelevel"                 %% "cats-core"                        % Versions.catsCoreVersion
+    val pureConfig         = "com.github.pureconfig" %% "pureconfig"                % Versions.pureConfigVersion
+    val playJsonExtensions = "ai.x"                  %% "play-json-extensions"      % Versions.playJsonExtensionsVersion
+    val playSlick          = "com.typesafe.play"     %% "play-slick"                % Versions.playSlickVersion
+    val slickPg            = "com.github.tminglei"   %% "slick-pg"                  % Versions.slickPgVersion
+    val slickPgPlayJson    = "com.github.tminglei"   %% "slick-pg_play-json"        % Versions.slickPgVersion
+    val alpakkaSlick       = "com.lightbend.akka"    %% "akka-stream-alpakka-slick" % Versions.alpakkaVersion
+    val playMailer         = "org.playframework"     %% "play-mailer"               % Versions.playMailerVersion
+    val alpakkaS3          = "com.lightbend.akka"    %% "akka-stream-alpakka-s3"    % Versions.alpakkaVersion
+    val alpakkaCSV         = "com.lightbend.akka"    %% "akka-stream-alpakka-csv"   % Versions.alpakkaVersion
+    val alpakkaFile        = "com.lightbend.akka"    %% "akka-stream-alpakka-file"  % Versions.alpakkaVersion
+    val akkaHttp           = "com.typesafe.akka"     %% "akka-http"                 % Versions.akkaHttpVersion
+    val akkaHttpXml        = "com.typesafe.akka"     %% "akka-http-xml"             % Versions.akkaHttpVersion
+    val jbcrypt            = "org.mindrot"            % "jbcrypt"                   % "0.4"
+    val enumeratum         = "com.beachape"          %% "enumeratum"                % Versions.enumeratumVersion
+    val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"           % Versions.enumeratumVersion
+    val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"           % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql" % "postgresql"  % Versions.postgresqlVersion
@@ -92,6 +93,7 @@ object Dependencies {
     Compile.commonsCompiler,
     Compile.logstashLogBackEncoder,
     Compile.sttp,
+    Compile.asyncSttp,
     Compile.sttpPlayJson,
     Compile.sentry,
     Compile.catsCore,
