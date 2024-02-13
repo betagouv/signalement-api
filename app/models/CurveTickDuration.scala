@@ -3,7 +3,7 @@ package models
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed abstract trait CurveTickDuration extends EnumEntry
+sealed trait CurveTickDuration extends EnumEntry
 
 object CurveTickDuration extends PlayEnum[CurveTickDuration] {
 

@@ -1,27 +1,25 @@
 package models.report
 
+import enumeratum.EnumEntry.Uppercase
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import models.company.Address
 import models.company.Company
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.SIRET
+
 import java.time.OffsetDateTime
 import java.util.UUID
 
-sealed case class ReportedPhoneStatus(value: String)
+sealed trait ReportedPhoneStatus extends EnumEntry with Uppercase
 
-object ReportedPhoneStatus {
-  val VALIDATED = ReportedPhoneStatus("VALIDATED")
-  val PENDING   = ReportedPhoneStatus("PENDING")
+object ReportedPhoneStatus extends PlayEnum[ReportedPhoneStatus] {
 
-  val values = List(VALIDATED, PENDING)
+  case object Validated extends ReportedPhoneStatus
+  case object Pending   extends ReportedPhoneStatus
 
-  def fromValue(v: String) =
-    values.find(_.value == v).head
-
-  implicit val reads: Reads[ReportedPhoneStatus] = (json: JsValue) => json.validate[String].map(fromValue)
-
-  implicit val writes: Writes[ReportedPhoneStatus] = (status: ReportedPhoneStatus) => Json.toJson(status.value)
+  override def values: IndexedSeq[ReportedPhoneStatus] = findValues
 }
 
 case class ReportedPhoneUpdateCompany(
@@ -69,7 +67,7 @@ case class ReportedPhone(
     creationDate: OffsetDateTime = OffsetDateTime.now(),
     phone: String,
     companyId: UUID,
-    status: ReportedPhoneStatus = ReportedPhoneStatus.PENDING
+    status: ReportedPhoneStatus = ReportedPhoneStatus.Pending
 )
 
 object ReportedPhone {
