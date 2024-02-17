@@ -23,10 +23,7 @@ class SocialNetworkController(
   def get(name: String, socialNetwork: String) = Action.async { _ =>
     SocialNetworkSlug
       .withNameInsensitiveOption(socialNetwork)
-      .traverse(socialNetworkSlug =>
-        influencerOrchestrator
-          .get(name, socialNetworkSlug)
-      )
+      .traverse(socialNetworkSlug => influencerOrchestrator.exist(name, socialNetworkSlug))
       .map(_.getOrElse(false))
       .map(result => Ok(Json.toJson(result)))
 
