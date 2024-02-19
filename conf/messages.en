@@ -139,6 +139,8 @@ ReportAckEmail.yes=yes
 ReportAckEmail.no=no
 ReportAckEmail.understandSignalConso=Understanding SignalConso
 ReportAckEmail.yourReport=Your report
+ReportAckEmail.influencerName=Influencer: {0}
+ReportAckEmail.socialNetwork=Social network: {0}
 
 reportPDF.page.title=Report Details {0}
 reportPDF.references.uniqueId=Unique Identifier: {0}

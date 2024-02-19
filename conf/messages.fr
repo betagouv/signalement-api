@@ -142,6 +142,8 @@ ReportAckEmail.yes=oui
 ReportAckEmail.no=non
 ReportAckEmail.understandSignalConso=Comprendre SignalConso
 ReportAckEmail.yourReport=Votre signalement
+ReportAckEmail.influencerName=Influenceur: {0}
+ReportAckEmail.socialNetwork=Plateforme: {0}
 
 reportPDF.page.title=Détail du signalement {0}
 reportPDF.references.uniqueId=Identifiant unique : {0}
