@@ -216,6 +216,7 @@
         }
         @if(report.influencer.isDefined) {
             @Messages("ReportAckEmail.influencerName", report.influencer.map(_.name).getOrElse(""))
+            <br/>
             @Messages("ReportAckEmail.socialNetwork", report.influencer.flatMap(_.socialNetwork.map(_.entryName))
             .orElse(report.influencer.flatMap(_.otherSocialNetwork)).getOrElse(""))
             <br/>
