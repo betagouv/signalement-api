@@ -500,8 +500,6 @@ class ReportOrchestrator(
       // Update the status if needed
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        // not sure why we require this condition ?
-        .filter(_.creationDate.isAfter(OffsetDateTime.now().minusDays(7)))
         .map(report =>
           reportRepository
             .update(

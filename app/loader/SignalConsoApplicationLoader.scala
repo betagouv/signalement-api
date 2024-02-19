@@ -13,6 +13,7 @@ import config._
 import models.report.ArborescenceNode
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
+import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -385,8 +386,8 @@ class SignalConsoComponents(
     companiesVisibilityOrchestrator,
     messagesApi
   )
-
-  val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository)
+  val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
+  val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
 
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
