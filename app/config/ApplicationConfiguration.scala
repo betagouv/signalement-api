@@ -14,5 +14,6 @@ case class ApplicationConfiguration(
     amazonBucketName: String,
     crypter: JcaCrypterSettings,
     signer: JcaSignerSettings,
-    cookie: CookieAuthenticatorSettings
+    cookie: CookieAuthenticatorSettings,
+    socialBlade: SocialBladeClientConfiguration
 )
