@@ -30,16 +30,17 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
   ): Future[Boolean] = {
 
     val request: RequestT[Identity, Either[String, String], Any] = basicRequest
-      .get(uri"${config.url}/b/${platform.entryName.toLowerCase}/statistics")
-      .header("query", username.toLowerCase)
+      .get(uri"${config.url}/b/${platform.entryName.toLowerCase}/statistics?query=${username}")
       .header("clientid", config.clientId)
       .header("token", config.token)
       .header("history", "default")
       .response(asString)
 
+    logger.infoWithTitle("socialblade_client", request.toCurl(Set("clientid", "token")))
+
     request.send(backend).map {
       case Response(Right(body), statusCode, _, _, _, _) if statusCode.isSuccess =>
-        handleSuccessResponse(body, username)
+        handleSuccessResponse(body, username, platform)
 
       case Response(Right(body), statusCode, _, _, _, _) =>
         logger.errorWithTitle(
@@ -50,19 +51,29 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
         false
 
       case Response(Left(error), statusCode, _, _, _, _) =>
-        logger.errorWithTitle("socialblade_client_error", s"Error $statusCode calling Social blade : $error")
+        if (statusCode.code == 404) {
+          logger.infoWithTitle("socialblade_client_notfound", s"${username} not found for ${platform.entryName}")
+        } else {
+          logger.errorWithTitle("socialblade_client_error", s"Error $statusCode calling Social blade : $error")
+        }
         // Act as the username does not exist in social blade
         false
     }
 
   }
 
-  private def handleSuccessResponse(body: String, username: String): Boolean =
+  private def handleSuccessResponse(body: String, username: String, platform: SocialNetworkSlug): Boolean =
     Try(Json.parse(body))
       .map { jsonBody =>
         jsonBody.validate[SocialBladeResponse] match {
           case JsSuccess(response, _) =>
-            response.data.id.username.equalsIgnoreCase(username)
+            val found = response.data.id.username.equalsIgnoreCase(username)
+            if (found) {
+              logger.infoWithTitle("socialblade_client_found", s"${username} found for ${platform.entryName}")
+            } else {
+              logger.infoWithTitle("socialblade_client_notfound", s"${username} not found for ${platform.entryName}")
+            }
+            found
           case JsError(errors) =>
             logger.errorWithTitle(
               "socialblade_client_error",

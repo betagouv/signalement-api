@@ -15,19 +15,21 @@ class InfluencerOrchestrator(
     val executionContext: ExecutionContext
 ) {
 
-  def exist(name: String, socialNetwork: SocialNetworkSlug): Future[Boolean] =
-    influencerRepository.get(name, socialNetwork).flatMap { signalConsoCertifiedInfluencers =>
+  def exist(name: String, socialNetwork: SocialNetworkSlug): Future[Boolean] = {
+    val curated = name.toLowerCase.replaceAll("\\s", "")
+    influencerRepository.get(curated, socialNetwork).flatMap { signalConsoCertifiedInfluencers =>
       if (signalConsoCertifiedInfluencers.nonEmpty) {
         Future.successful(true)
       } else {
-        socialBladeClient.checkSocialNetworkUsername(socialNetwork, name).flatMap { existsOnSocialBlade =>
+        socialBladeClient.checkSocialNetworkUsername(socialNetwork, curated).flatMap { existsOnSocialBlade =>
           if (existsOnSocialBlade) {
-            influencerRepository.create(CertifiedInfluencer(UUID.randomUUID(), socialNetwork, name)).map(_ => true)
+            influencerRepository.create(CertifiedInfluencer(UUID.randomUUID(), socialNetwork, curated)).map(_ => true)
           } else {
             Future.successful(false)
           }
         }
       }
     }
+  }
 
 }
