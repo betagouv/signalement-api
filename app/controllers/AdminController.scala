@@ -328,7 +328,7 @@ class AdminController(
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(
-            status = ReportStatus.NA,
+            status = ReportStatus.TraitementEnCours,
             tags = List(ReportTag.ProduitDangereux),
             email = recipient
           ),
@@ -342,7 +342,7 @@ class AdminController(
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(
-            status = ReportStatus.TraitementEnCours,
+            status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Italie)),
             email = recipient
           ),
