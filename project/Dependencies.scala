@@ -25,7 +25,7 @@ object Dependencies {
     lazy val playJsonExtensionsVersion = "0.42.0"
     lazy val awsJavaSdkS3Version       = "1.12.603"
     lazy val jacksonModuleScalaVersion = "2.16.0"
-    lazy val postgresqlVersion         = "42.5.4"
+    lazy val postgresqlVersion         = "42.5.5"
     lazy val refinedVersion            = "0.11.0"
     lazy val spoiwoVersion             = "2.2.1"
     lazy val itext7CoreVersion         = "8.0.2"

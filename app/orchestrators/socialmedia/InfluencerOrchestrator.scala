@@ -4,6 +4,7 @@ import models.report.SocialNetworkSlug
 import models.report.socialnetwork.CertifiedInfluencer
 import repositories.influencer.InfluencerRepositoryInterface
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -23,7 +24,9 @@ class InfluencerOrchestrator(
       } else {
         socialBladeClient.checkSocialNetworkUsername(socialNetwork, curated).flatMap { existsOnSocialBlade =>
           if (existsOnSocialBlade) {
-            influencerRepository.create(CertifiedInfluencer(UUID.randomUUID(), socialNetwork, curated)).map(_ => true)
+            influencerRepository
+              .create(CertifiedInfluencer(UUID.randomUUID(), socialNetwork, curated, OffsetDateTime.now()))
+              .map(_ => true)
           } else {
             Future.successful(false)
           }

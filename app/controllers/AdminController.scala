@@ -328,7 +328,7 @@ class AdminController(
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(
-            status = ReportStatus.NA,
+            status = ReportStatus.TraitementEnCours,
             tags = List(ReportTag.ProduitDangereux),
             email = recipient
           ),
