@@ -1,6 +1,5 @@
 package orchestrators
 import cats.implicits.catsSyntaxOption
-
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.ReportNotFound
 import io.scalaland.chimney.dsl._
@@ -14,8 +13,12 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
+import utils.Constants.ActionEvent.REPORT_REOPENED_BY_ADMIN
+import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType
 import utils.SIRET
 
@@ -99,7 +102,14 @@ class EventsOrchestrator(
     events.filter { case (event, _) =>
       userRole match {
         case UserRole.Professionnel =>
-          List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event.action
+          List(
+            REPORT_READING_BY_PRO,
+            REPORT_PRO_RESPONSE,
+            REPORT_REVIEW_ON_RESPONSE,
+            REPORT_CLOSED_BY_NO_READING,
+            REPORT_CLOSED_BY_NO_ACTION,
+            REPORT_REOPENED_BY_ADMIN
+          ) contains event.action
         case _ => true
       }
     }
