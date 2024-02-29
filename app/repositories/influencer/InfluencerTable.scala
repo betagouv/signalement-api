@@ -13,10 +13,17 @@ class InfluencerTable(tag: Tag)(implicit tt: TypedType[SocialNetworkSlug])
   def socialNetwork = column[SocialNetworkSlug]("social_network")
 
   def name         = column[String]("name")
+  def followers    = column[Option[Int]]("followers")
   def creationDate = column[OffsetDateTime]("creation_date")
 
   override def * =
-    (id, socialNetwork, name, creationDate) <> ((CertifiedInfluencer.apply _).tupled, CertifiedInfluencer.unapply)
+    (
+      id,
+      socialNetwork,
+      name,
+      creationDate,
+      followers
+    ) <> ((CertifiedInfluencer.apply _).tupled, CertifiedInfluencer.unapply)
 }
 
 object InfluencerTable {
