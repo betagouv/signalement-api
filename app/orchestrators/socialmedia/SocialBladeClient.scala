@@ -69,9 +69,6 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
   ): Option[CertifiedInflencerResponse] =
     Try(Json.parse(body))
       .map { jsonBody =>
-        println(s"------------------  = ------------------")
-        println(s"------------------ jsonBody = ${jsonBody} ------------------")
-        println(s"------------------  = ------------------")
 
         jsonBody.validate[SocialBladeResponse] match {
           case JsSuccess(response, _) =>
