@@ -62,8 +62,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           }
           .reduceLeft(_ || _)
         // Avoid searching departments in foreign countries
-        departmentsFilter && report.map(_.companyCountry).isEmpty
-
+        departmentsFilter && report.flatMap(_.companyCountry).isEmpty
       }
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
