@@ -54,13 +54,12 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
     val query = table
       .joinLeft(ReportTable.table(Some(userRole)))
       .on(_.id === _.companyId)
-//      .filterIf(search.departments.nonEmpty) { case (company, _) =>
-//        company.department.map(a => a.inSet(search.departments)).getOrElse(false)
-//      }
       .filterIf(search.departments.nonEmpty) { case (company, report) =>
         val departmentsFilter: Rep[Boolean] = search.departments
           .flatMap(toPostalCode)
-          .map(dep => company.department.asColumnOf[String] like s"${dep}%")
+          .map { dep =>
+            company.postalCode.asColumnOf[String] like s"${dep}%"
+          }
           .reduceLeft(_ || _)
         // Avoid searching departments in foreign countries
         departmentsFilter && report.map(_.companyCountry).isEmpty
