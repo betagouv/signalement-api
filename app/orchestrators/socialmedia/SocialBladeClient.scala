@@ -69,7 +69,6 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
   ): Option[CertifiedInflencerResponse] =
     Try(Json.parse(body))
       .map { jsonBody =>
-
         jsonBody.validate[SocialBladeResponse] match {
           case JsSuccess(response, _) =>
             val found = response.data.id.username.equalsIgnoreCase(username)
