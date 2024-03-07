@@ -27,7 +27,7 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
   def checkSocialNetworkUsername(
       platform: SocialNetworkSlug,
       username: String
-  ): Future[Boolean] = {
+  ): Future[Option[CertifiedInflencerResponse]] = {
 
     val request: RequestT[Identity, Either[String, String], Any] = basicRequest
       .get(uri"${config.url}/b/${platform.entryName.toLowerCase}/statistics?query=${username}")
@@ -48,7 +48,7 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
           s"Unexpected status code $statusCode calling Social blade : $body"
         )
         // Act as the username does not exist in social blade
-        false
+        None
 
       case Response(Left(error), statusCode, _, _, _, _) =>
         if (statusCode.code == 404) {
@@ -57,37 +57,48 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
           logger.errorWithTitle("socialblade_client_error", s"Error $statusCode calling Social blade : $error")
         }
         // Act as the username does not exist in social blade
-        false
+        None
     }
 
   }
 
-  private def handleSuccessResponse(body: String, username: String, platform: SocialNetworkSlug): Boolean =
+  private def handleSuccessResponse(
+      body: String,
+      username: String,
+      platform: SocialNetworkSlug
+  ): Option[CertifiedInflencerResponse] =
     Try(Json.parse(body))
       .map { jsonBody =>
         jsonBody.validate[SocialBladeResponse] match {
           case JsSuccess(response, _) =>
             val found = response.data.id.username.equalsIgnoreCase(username)
+            val followers = response.data.statistics.total.subscribers
+              .orElse(response.data.statistics.total.followers)
+              .orElse(response.data.statistics.total.likes)
+
             if (found) {
               logger.infoWithTitle("socialblade_client_found", s"${username} found for ${platform.entryName}")
             } else {
               logger.infoWithTitle("socialblade_client_notfound", s"${username} not found for ${platform.entryName}")
             }
-            found
+
+            Some(CertifiedInflencerResponse(username, followers))
           case JsError(errors) =>
             logger.errorWithTitle(
               "socialblade_client_error",
               s"Cannot parse json to SocialBladeResponse: ${jsonBody.toString}, errors : ${errors}"
             )
             // Act as the username does not exist in social blade
-            false
+            None
         }
       }
       .recover { case exception: Exception =>
         logger.errorWithTitle("socialblade_client_error", "Cannot parse SocialBladeResponse to json", exception)
         // Act as the username does not exist in social blade
-        false
+        None
       }
-      .getOrElse(false)
+      .getOrElse(None)
 
 }
+
+case class CertifiedInflencerResponse(username: String, followers: Option[Int])
