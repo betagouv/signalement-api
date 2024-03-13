@@ -23,9 +23,17 @@ class InfluencerOrchestrator(
         Future.successful(true)
       } else {
         socialBladeClient.checkSocialNetworkUsername(socialNetwork, curated).flatMap { existsOnSocialBlade =>
-          if (existsOnSocialBlade) {
+          if (existsOnSocialBlade.isDefined) {
             influencerRepository
-              .create(CertifiedInfluencer(UUID.randomUUID(), socialNetwork, curated, OffsetDateTime.now()))
+              .create(
+                CertifiedInfluencer(
+                  UUID.randomUUID(),
+                  socialNetwork,
+                  curated,
+                  OffsetDateTime.now(),
+                  existsOnSocialBlade.flatMap(_.followers)
+                )
+              )
               .map(_ => true)
           } else {
             Future.successful(false)
