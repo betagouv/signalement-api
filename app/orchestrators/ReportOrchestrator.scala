@@ -905,7 +905,7 @@ class ReportOrchestrator(
         number = company.flatMap(_.address.number),
         street = company.flatMap(_.address.street),
         addressSupplement = company.flatMap(_.address.addressSupplement),
-        postalCode = company.flatMap(_.address.postalCode),
+        postalCode = company.flatMap(_.address.postalCode).orElse(report.flatMap(_.companyAddress.postalCode)),
         city = company.flatMap(_.address.city),
         country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
