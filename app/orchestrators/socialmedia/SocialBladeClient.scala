@@ -2,6 +2,12 @@ package orchestrators.socialmedia
 
 import config.SocialBladeClientConfiguration
 import models.report.SocialNetworkSlug
+import models.report.SocialNetworkSlug.Facebook
+import models.report.SocialNetworkSlug.Instagram
+import models.report.SocialNetworkSlug.TikTok
+import models.report.SocialNetworkSlug.Twitch
+import models.report.SocialNetworkSlug.Twitter
+import models.report.SocialNetworkSlug.YouTube
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
@@ -99,6 +105,11 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
       }
       .getOrElse(None)
 
+}
+
+object SocialBladeClient {
+  val SocialBladeSupportedSocialNetwork: Set[SocialNetworkSlug] =
+    Set(YouTube, Facebook, Instagram, TikTok, Twitter, Twitch)
 }
 
 case class CertifiedInflencerResponse(username: String, followers: Option[Int])
