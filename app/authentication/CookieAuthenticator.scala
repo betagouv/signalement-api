@@ -101,7 +101,8 @@ class CookieAuthenticator(
         name = settings.cookieName,
         path = settings.cookiePath,
         domain = settings.cookieDomain,
-        secure = settings.secureCookie
+        secure = settings.secureCookie,
+        sameSite = settings.sameSite
       )
     )
 
