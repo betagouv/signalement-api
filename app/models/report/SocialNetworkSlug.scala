@@ -25,4 +25,5 @@ object SocialNetworkSlug extends PlayEnum[SocialNetworkSlug] {
       _.entryName,
       SocialNetworkSlug.withName
     )
+
 }
