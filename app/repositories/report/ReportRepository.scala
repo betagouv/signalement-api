@@ -305,9 +305,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     reportsAndMetadatas <- queryFilter(ReportTable.table(userRole), filter)
       .sortBy { case (report, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities { case (report, maybeMetadata) =>
-      ReportWithMetadata(report, maybeMetadata)
-    }
+    reportsWithMetadata = reportsAndMetadatas.mapEntities(ReportWithMetadata.fromTuple)
   } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
@@ -384,8 +382,20 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .result
       )
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] =
-    db.run(ReportTable.table(userRole).filter(_.id === id).result.headOption)
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] =
+    for {
+      maybeTuple <- db.run(
+        ReportTable
+          .table(userRole)
+          .filter(_.id === id)
+          .joinLeft(ReportMetadataTable.table)
+          .on(_.id === _.reportId)
+          .result
+          .headOption
+      )
+      maybeReportWithMetadata = maybeTuple.map(ReportWithMetadata.fromTuple)
+    } yield maybeReportWithMetadata
+
 }
 
 object ReportRepository {

@@ -1,22 +1,16 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.UserAction.WithPermission
+import authentication.actions.UserAction.WithRole
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import controllers.error.AppError
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
-import models.report.ReportAction
-import models.report.ReportCompany
-import models.report.ReportConsumerUpdate
-import models.report.ReportDraft
-import models.report.ReportResponse
-import models.report.ReportWithFiles
+import models.report._
 import models.report.delete.ReportAdminAction
-import orchestrators.EventsOrchestratorInterface
-import orchestrators.ReportZipExportService
-import orchestrators.ReportAdminActionOrchestrator
-import orchestrators.ReportOrchestrator
-import orchestrators.ReportWithDataOrchestrator
+import orchestrators._
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -32,9 +26,6 @@ import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.FrontRoute
 import utils.QueryStringMapper
-import authentication.actions.UserAction.WithPermission
-import authentication.actions.UserAction.WithRole
-import controllers.error.AppError
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -118,8 +109,9 @@ class ReportController(
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
       for {
-        reportResponse <- request.parseBody[ReportResponse]()
-        visibleReport  <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        reportResponse            <- request.parseBody[ReportResponse]()
+        visibleReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        visibleReport = visibleReportWithMetadata.map(_.report)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -132,8 +124,9 @@ class ReportController(
   def createReportAction(uuid: UUID): Action[JsValue] =
     SecuredAction.andThen(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
-        reportAction <- request.parseBody[ReportAction]()
-        report       <- reportRepository.getFor(Some(request.identity.userRole), uuid)
+        reportAction       <- request.parseBody[ReportAction]()
+        reportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
+        report = reportWithMetadata.map(_.report)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -148,15 +141,15 @@ class ReportController(
     SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
-        visibleReport <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
-        viewedReport <- visibleReport
+        maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        viewedReportWithMetadata <- maybeReportWithMetadata
           .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
           .getOrElse(Future(None))
-        reportFiles <- viewedReport
-          .map(r => reportFileRepository.retrieveReportFiles(r.id))
+        reportFiles <- viewedReportWithMetadata
+          .map(r => reportFileRepository.retrieveReportFiles(r.report.id))
           .getOrElse(Future(List.empty))
-      } yield viewedReport
-        .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+      } yield viewedReportWithMetadata
+        .map(r => Ok(Json.toJson(ReportWithFiles(r.report, r.metadata, reportFiles))))
         .getOrElse(NotFound)
     }
 
@@ -240,9 +233,10 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     SecuredAction.andThen(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
       for {
-        maybeReport <- reportRepository.getFor(Some(request.identity.userRole), uuid)
-        company     <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
-        files       <- reportFileRepository.retrieveReportFiles(uuid)
+        maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
+        maybeReport = maybeReportWithMetadata.map(_.report)
+        company <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+        files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
           reportId = uuid,
           eventType = None,

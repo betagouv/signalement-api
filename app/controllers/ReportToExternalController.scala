@@ -2,18 +2,16 @@ package controllers
 
 import authentication.Authenticator
 import models.Consumer
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportFileOrigin
-import models.report.ReportFileToExternal
-import models.report.ReportFilter
-import models.report.ReportToExternal
-import models.report.ReportWithFiles
-import models.report.ReportWithFilesToExternal
+import models.PaginatedResult.paginatedResultWrites
+import models.report._
 import models.report.ReportWithFilesToExternal.format
+import models.report.reportmetadata.ReportWithMetadata
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
+import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
 import utils.QueryStringMapper
 
 import java.util.UUID
@@ -22,12 +20,6 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import models.PaginatedResult.paginatedResultWrites
-import models.report.ReportTag
-import models.report.reportmetadata.ReportWithMetadata
-import play.api.mvc.ControllerComponents
-import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepositoryInterface
 
 class ReportToExternalController(
     reportRepository: ReportRepositoryInterface,

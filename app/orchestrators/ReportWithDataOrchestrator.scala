@@ -43,7 +43,8 @@ class ReportWithDataOrchestrator(
     reportOrchestrator
       .getVisibleReportForUser(uuid, userToCheckAuthorization)
       .flatMap { maybeReport =>
-        maybeReport.map(report =>
+        maybeReport.map { reportWithMetadata =>
+          val report = reportWithMetadata.report
           for {
             events       <- eventRepository.getEventsWithUsers(uuid, EventFilter())
             maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
@@ -68,7 +69,7 @@ class ReportWithDataOrchestrator(
               reportFiles
             )
           }
-        ) match {
+        } match {
           case Some(f) => f.map(Some(_))
           case None    => Future.successful(None)
         }

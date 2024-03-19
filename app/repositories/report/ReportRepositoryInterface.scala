@@ -75,6 +75,6 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
 
-  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]]
+  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]]
 
 }

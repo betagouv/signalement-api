@@ -609,19 +609,23 @@ class ReportOrchestrator(
       }
     } yield updatedReport
 
-  def handleReportView(report: Report, user: User): Future[Report] =
+  def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
     if (user.userRole == UserRole.Professionnel) {
+      val report = reportWithMetadata.report
       eventRepository
         .getEvents(report.id, EventFilter(None))
         .flatMap(events =>
           if (!events.exists(_.action == Constants.ActionEvent.REPORT_READING_BY_PRO)) {
-            manageFirstViewOfReportByPro(report, user.id)
+            for {
+              viewedReport <- manageFirstViewOfReportByPro(report, user.id)
+              viewedReportWithMetadata = reportWithMetadata.copy(report = viewedReport)
+            } yield viewedReportWithMetadata
           } else {
-            Future(report)
+            Future(reportWithMetadata)
           }
         )
     } else {
-      Future(report)
+      Future(reportWithMetadata)
     }
 
   def removeAccessTokenWhenNoMoreReports(companyId: UUID) =
@@ -901,9 +905,10 @@ class ReportOrchestrator(
     } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
   }
 
-  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
+  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportWithMetadata]] =
     for {
-      report  <- reportRepository.getFor(Some(user.userRole), reportId)
+      reportWithMetadata <- reportRepository.getFor(Some(user.userRole), reportId)
+      report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address(
         number = company.flatMap(_.address.number),
@@ -913,18 +918,18 @@ class ReportOrchestrator(
         city = company.flatMap(_.address.city),
         country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
-      visibleReport <-
+      visibleReportWithMetadata <-
         if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
-          Future(report)
+          Future(reportWithMetadata)
         else {
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)
             .map(_.map(v => Some(v.company.siret)))
             .map { visibleSirets =>
-              report.filter(r => visibleSirets.contains(r.companySiret))
+              reportWithMetadata.filter(r => visibleSirets.contains(r.report.companySiret))
             }
         }
-    } yield visibleReport.map(_.copy(companyAddress = address))
+    } yield visibleReportWithMetadata.map(_.setAddress(address))
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     for {
