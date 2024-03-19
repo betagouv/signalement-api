@@ -586,10 +586,9 @@ object ReportRepository {
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
-    // TODO make this compile
-//      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
-//        maybeMetadataTable.flatMap(_.assignedUserId === assignedUserid).getOrElse(false)
-//      }
+      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
+        maybeMetadataTable.flatMap(_.assignedUserId) === assignedUserid
+      }
 
   }
 
