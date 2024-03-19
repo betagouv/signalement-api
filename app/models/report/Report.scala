@@ -162,7 +162,7 @@ case class ReportWithFilesAndAssignedUser(
     files: List[ReportFile]
 )
 object ReportWithFilesAndAssignedUser {
-  implicit def writer: OWrites[ReportWithFilesAndAssignedUser] =
+  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
     Json.writes[ReportWithFilesAndAssignedUser]
 }
 
