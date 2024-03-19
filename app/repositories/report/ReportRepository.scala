@@ -301,12 +301,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] = for {
-    res <- queryFilter(ReportTable.table(userRole), filter)
-      .map { case (report, _) => report }
-      .sortBy(_.creationDate.desc)
+  ): Future[PaginatedResult[ReportWithMetadata]] = for {
+    reportsAndMetadatas <- queryFilter(ReportTable.table(userRole), filter)
+      .sortBy { case (report, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-  } yield res
+    reportsWithMetadata = reportsAndMetadatas.mapEntities { case (report, maybeMetadata) =>
+      ReportWithMetadata(report, maybeMetadata)
+    }
+  } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table

@@ -19,6 +19,7 @@ import models.event.Event
 import models.event.Event._
 import models.report._
 import models.report.ReportWordOccurrence.StopWords
+import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
@@ -830,7 +831,8 @@ class ReportOrchestrator(
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
-            (r: Report, m: Map[UUID, List[ReportFile]]) => ReportWithFiles(r, m.getOrElse(r.id, Nil))
+            (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
+              ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
           )
         }
     } yield paginatedReportFiles
@@ -850,6 +852,7 @@ class ReportOrchestrator(
       entities = reportsWithFiles.entities.map(reportWithFiles =>
         ReportWithFilesAndResponses(
           reportWithFiles.report,
+          reportWithFiles.metadata,
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
           reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)
@@ -862,7 +865,7 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      toApi: (Report, Map[UUID, List[ReportFile]]) => T
+      toApi: (ReportWithMetadata, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
 
     val maxResults = signalConsoConfiguration.reportsExportLimitMax
@@ -890,11 +893,12 @@ class ReportOrchestrator(
       )
       startGetReportFiles = System.nanoTime()
       _                   = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
-      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+      reportsIds          = paginatedReports.entities.map(_.report.id)
+      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(reportsIds)
       endGetReportFiles = System.nanoTime()
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
-    } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
+    } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
   }
 
   def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =

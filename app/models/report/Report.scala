@@ -10,6 +10,7 @@ import models.company.Company
 import models.event.Event
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
+import models.report.reportmetadata.ReportMetadata
 import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -144,6 +145,7 @@ object WebsiteURL {
 
 case class ReportWithFiles(
     report: Report,
+    metadata: Option[ReportMetadata],
     files: List[ReportFile]
 )
 
@@ -154,6 +156,7 @@ object ReportWithFiles {
 
 case class ReportWithFilesAndResponses(
     report: Report,
+    metadata: Option[ReportMetadata],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
     professionalResponse: Option[Event]
