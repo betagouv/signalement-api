@@ -3,10 +3,9 @@ package repositories.reportmetadata
 import models.report.reportmetadata.Os
 import models.report.reportmetadata.ReportMetadata
 import repositories.DatabaseTable
-import repositories.reportmetadata.ReportMetadataColumnType._
 import repositories.PostgresProfile.api._
 import repositories.report.ReportTable
-import repositories.user.UserTable
+import repositories.reportmetadata.ReportMetadataColumnType._
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
 
@@ -24,12 +23,12 @@ class ReportMetadataTable(tag: Tag) extends DatabaseTable[ReportMetadata](tag, "
     onUpdate = ForeignKeyAction.Restrict,
     onDelete = ForeignKeyAction.Cascade
   )
-
-  def assignedUser = foreignKey("fk_assigned_user", assignedUserId, UserTable.fullTableIncludingDeleted)(
-    _.id,
-    onUpdate = ForeignKeyAction.Restrict,
-    onDelete = ForeignKeyAction.SetNull
-  )
+//
+//  def assignedUser = foreignKey("fk_assigned_user", assignedUserId, UserTable.fullTableIncludingDeleted)(
+//    _.id.?,
+//    onUpdate = ForeignKeyAction.Restrict,
+//    onDelete = ForeignKeyAction.SetNull
+//  )
 
   def construct(data: ReportMetadataData): ReportMetadata = data match {
     case reportId ::

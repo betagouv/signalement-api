@@ -15,7 +15,8 @@ case class ReportMetadataDraft(
     ReportMetadata(
       reportId = reportId,
       isMobileApp = isMobileApp,
-      os = os
+      os = os,
+      assignedUserId = None
     )
 }
 

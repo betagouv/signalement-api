@@ -5,29 +5,27 @@ import models._
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
-import repositories.reportfile.ReportFileTable
 import repositories.report.ReportRepository.ReportOrdering
-import repositories.report.ReportRepository.ReportWithMetadataOrdering
 import repositories.report.ReportRepository.queryFilter
+import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
+import repositories.reportconsumerreview.ResponseConsumerReviewTable
+import repositories.reportfile.ReportFileTable
+import repositories.reportmetadata.ReportMetadataTable
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
 
 import java.time._
+import java.time.temporal.WeekFields
 import java.util.Locale
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.CRUDRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewTable
-import slick.basic.DatabaseConfig
-import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
-import repositories.reportmetadata.ReportMetadataTable
-
-import java.time.temporal.WeekFields
 
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
@@ -305,6 +303,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       limit: Option[Int] = None
   ): Future[PaginatedResult[Report]] = for {
     res <- queryFilter(ReportTable.table(userRole), filter)
+      .map { case (report, _) => report }
       .sortBy(_.creationDate.desc)
       .withPagination(db)(offset, limit)
   } yield res
@@ -587,9 +586,10 @@ object ReportRepository {
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
-      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
-        maybeMetadataTable.flatMap(_.assignedUserId === assignedUserid).getOrElse(false)
-      }
+    // TODO make this compile
+//      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
+//        maybeMetadataTable.flatMap(_.assignedUserId === assignedUserid).getOrElse(false)
+//      }
 
   }
 
