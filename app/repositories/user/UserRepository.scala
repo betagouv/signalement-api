@@ -141,4 +141,12 @@ class UserRepository(
         .filter(_.email.inSetBind(emails))
         .result
     )
+
+  override def findByIds(ids: Seq[UUID]): Future[Seq[User]] =
+    db.run(
+      table
+        .filter(_.id.inSetBind(ids))
+        .result
+    )
+
 }

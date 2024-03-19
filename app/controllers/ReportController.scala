@@ -22,6 +22,7 @@ import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.FrontRoute
@@ -38,6 +39,7 @@ class ReportController(
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
     eventsOrchestrator: EventsOrchestratorInterface,
     reportRepository: ReportRepositoryInterface,
+    userRepository: UserRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
     pdfService: PDFService,
@@ -148,8 +150,12 @@ class ReportController(
         reportFiles <- viewedReportWithMetadata
           .map(r => reportFileRepository.retrieveReportFiles(r.report.id))
           .getOrElse(Future(List.empty))
+        assignedUserId = viewedReportWithMetadata.flatMap(_.metadata.flatMap(_.assignedUserId))
+        maybeAssignedUser <- assignedUserId
+          .map(userId => userRepository.get(userId))
+          .getOrElse(Future.successful(None))
       } yield viewedReportWithMetadata
-        .map(r => Ok(Json.toJson(ReportWithFiles(r.report, r.metadata, reportFiles))))
+        .map(r => Ok(Json.toJson(ReportWithFilesAndAssignedUser(r.report, r.metadata, maybeAssignedUser, reportFiles))))
         .getOrElse(NotFound)
     }
 

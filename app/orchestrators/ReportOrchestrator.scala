@@ -34,6 +34,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email._
 import services.MailService
@@ -68,6 +69,7 @@ class ReportOrchestrator(
     socialNetworkRepository: SocialNetworkRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
+    userRepository: UserRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepositoryInterface,
@@ -850,18 +852,21 @@ class ReportOrchestrator(
     for {
       reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
       reports = reportsWithFiles.entities.map(_.report)
-      reportEventsMap    <- eventRepository.fetchEventsOfReports(reports)
+      reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
+      assignedUsers <- userRepository.findByIds(reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId)))
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
     } yield reportsWithFiles.copy(
-      entities = reportsWithFiles.entities.map(reportWithFiles =>
+      entities = reportsWithFiles.entities.map { reportWithFiles =>
+        val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
         ReportWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
+          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)),
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
           reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)
         )
-      )
+      }
     )
 
   def getReportsWithFile[T](

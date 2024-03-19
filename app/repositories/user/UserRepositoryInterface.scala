@@ -33,4 +33,6 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
   def softDelete(id: UUID): Future[Int]
 
   def findByEmails(emails: List[EmailAddress]): Future[Seq[User]]
+
+  def findByIds(ids: Seq[UUID]): Future[Seq[User]]
 }

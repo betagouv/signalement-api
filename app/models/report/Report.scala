@@ -4,6 +4,7 @@ import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
 import models.PaginatedResult
+import models.User
 import models.UserRole
 import models.company.Address
 import models.company.Company
@@ -154,9 +155,21 @@ object ReportWithFiles {
     Json.writes[ReportWithFiles]
 }
 
+case class ReportWithFilesAndAssignedUser(
+    report: Report,
+    metadata: Option[ReportMetadata],
+    assignedUser: Option[User],
+    files: List[ReportFile]
+)
+object ReportWithFilesAndAssignedUser {
+  implicit def writer: OWrites[ReportWithFilesAndAssignedUser] =
+    Json.writes[ReportWithFilesAndAssignedUser]
+}
+
 case class ReportWithFilesAndResponses(
     report: Report,
     metadata: Option[ReportMetadata],
+    assignedUser: Option[User],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
     professionalResponse: Option[Event]
