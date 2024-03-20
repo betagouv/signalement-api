@@ -13,6 +13,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import utils.Constants.ActionEvent.REPORT_ASSIGNED
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
@@ -109,7 +110,8 @@ class EventsOrchestrator(
             REPORT_REVIEW_ON_RESPONSE,
             REPORT_CLOSED_BY_NO_READING,
             REPORT_CLOSED_BY_NO_ACTION,
-            REPORT_REOPENED_BY_ADMIN
+            REPORT_REOPENED_BY_ADMIN,
+            REPORT_ASSIGNED
           ) contains event.action
         case _ => true
       }

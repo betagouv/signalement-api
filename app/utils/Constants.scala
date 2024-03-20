@@ -81,6 +81,8 @@ object Constants {
     object REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Signalement non consulté")
     object REPORT_CLOSED_BY_NO_ACTION  extends ActionEventValue("Signalement consulté ignoré")
 
+    object REPORT_ASSIGNED extends ActionEventValue("Signalement assigné à un utilisateur")
+
     object EMAIL_CONSUMER_ACKNOWLEDGMENT
         extends ActionEventValue("Email « Accusé de réception » envoyé au consommateur")
     object EMAIL_CONSUMER_REPORT_READING
@@ -134,6 +136,7 @@ object Constants {
       REPORT_REVIEW_ON_RESPONSE,
       REPORT_CLOSED_BY_NO_READING,
       REPORT_CLOSED_BY_NO_ACTION,
+      REPORT_ASSIGNED,
       EMAIL_CONSUMER_ACKNOWLEDGMENT,
       EMAIL_CONSUMER_REPORT_READING,
       EMAIL_CONSUMER_REPORT_RESPONSE,

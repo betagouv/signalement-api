@@ -36,7 +36,7 @@ import scala.concurrent.Future
 
 class ReportController(
     reportOrchestrator: ReportOrchestrator,
-    reportAssignementOrchestrator: ReportAssignementOrchestrator,
+    reportAssignmentOrchestrator: ReportAssignmentOrchestrator,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
     eventsOrchestrator: EventsOrchestratorInterface,
     reportRepository: ReportRepositoryInterface,
@@ -240,8 +240,8 @@ class ReportController(
   def assignReportToUser(uuid: UUID, userId: UUID) =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
       for {
-        _ <- reportAssignementOrchestrator
-          .assignReportToUser(reportId = uuid, currentUser = request.identity, newAssignedUserId = userId)
+        _ <- reportAssignmentOrchestrator
+          .assignReportToUser(reportId = uuid, assigningUser = request.identity, newAssignedUserId = userId)
       } yield NoContent
     }
 
