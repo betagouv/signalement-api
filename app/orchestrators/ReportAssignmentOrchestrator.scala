@@ -8,6 +8,7 @@ import models.event.Event.stringToDetailsJsValue
 import models.report.Report
 import models.report.reportmetadata.ReportWithMetadata
 import play.api.Logger
+import repositories.event.EventRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ProReportAssignedNotification
@@ -79,7 +80,7 @@ class ReportAssignmentOrchestrator(
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_ASSIGNED,
           stringToDetailsJsValue(
-            s"Assignation du signalement à ${assignedUser.firstName} ${assignedUser.lastName} (${assignedUser.email})"
+            s"Affectation du signalement à ${assignedUser.firstName} ${assignedUser.lastName} (${assignedUser.email})"
           )
         )
       )
