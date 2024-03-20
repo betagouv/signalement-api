@@ -5,7 +5,6 @@ import controllers.error.AppError
 import models.User
 import models.report.reportmetadata.ReportWithMetadata
 import play.api.Logger
-import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.user.UserRepositoryInterface
 

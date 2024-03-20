@@ -367,6 +367,14 @@ class SignalConsoComponents(
     companySyncService,
     messagesApi
   )
+
+  val reportAssignementOrchestrator = new ReportAssignementOrchestrator(
+    reportOrchestrator,
+    companiesVisibilityOrchestrator,
+    reportMetadataRepository,
+    userRepository
+  )
+
   val reportWithDataOrchestrator =
     new ReportWithDataOrchestrator(
       reportOrchestrator,
@@ -598,6 +606,7 @@ class SignalConsoComponents(
 
   val reportController = new ReportController(
     reportOrchestrator,
+    reportAssignementOrchestrator,
     reportAdminActionOrchestrator,
     eventsOrchestrator,
     reportRepository,
