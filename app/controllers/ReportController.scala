@@ -36,6 +36,7 @@ import scala.concurrent.Future
 
 class ReportController(
     reportOrchestrator: ReportOrchestrator,
+    reportAssignementOrchestrator: ReportAssignementOrchestrator,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
     eventsOrchestrator: EventsOrchestratorInterface,
     reportRepository: ReportRepositoryInterface,
@@ -234,6 +235,23 @@ class ReportController(
           request.identity
         )
       } yield NoContent
+    }
+
+  def assignReportToUser(uuid: UUID, userId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
+      for {
+        reportResponse <- request.parseBody[ReportResponse]()
+        _ <- reportAssignementOrchestrator
+          .assignReportToUser(reportId = uuid, currentUser = request.identity, newAssignedUserId = userId)
+//        visibleReport = visibleReportWithMetadata.map(_.report)
+//        updatedReport <- visibleReport
+//          .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
+//          .sequence
+        updatedReport = None
+      } yield updatedReport
+        .map(NoContent)
+        .getOrElse(NotFound)
+
     }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
