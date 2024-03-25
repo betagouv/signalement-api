@@ -65,7 +65,7 @@ class EventsOrchestrator(
       _      = logger.debug("Found report")
       filter = buildEventFilter(eventType)
       _      = logger.debug("Fetching events")
-      events <- eventRepository.getEventsWithUsers(reportId, filter)
+      events <- eventRepository.getEventsWithUsers(List(reportId), filter)
       _            = logger.debug(s" ${events.length} reports events found")
       reportEvents = filterAndTransformEvents(userRole, events)
     } yield reportEvents

@@ -848,14 +848,26 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[ReportWithFilesAndResponses]] =
+  ): Future[PaginatedResult[ReportWithFilesAndResponses]] = {
+
+    val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
     for {
       reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
-      reports = reportsWithFiles.entities.map(_.report)
-      reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
+
+      reports   = reportsWithFiles.entities.map(_.report)
+      reportsId = reports.map(_.id)
+
+      reportEventsMap <- eventRepository
+        .getEventsWithUsers(reportsId, filterByReportProResponse)
+        .map(events =>
+          events.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
+            (reportId, EventWithUser(event, user))
+          }.toMap
+        )
+
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
       assignedUsers      <- userRepository.findByIds(assignedUsersIds)
-      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reportsId)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
@@ -865,10 +877,11 @@ class ReportOrchestrator(
           assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
-          reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)
+          reportEventsMap.get(reportWithFiles.report.id)
         )
       }
     )
+  }
 
   def getReportsWithFile[T](
       userRole: Option[UserRole],

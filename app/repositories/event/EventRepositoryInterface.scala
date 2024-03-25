@@ -19,7 +19,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def getEvents(reportId: UUID, filter: EventFilter = EventFilter()): Future[List[Event]]
 
-  def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]]
+  def getEventsWithUsers(reportsIds: List[UUID], filter: EventFilter): Future[List[(Event, Option[User])]]
 
   def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]]
 

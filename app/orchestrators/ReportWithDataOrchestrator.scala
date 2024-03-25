@@ -46,7 +46,7 @@ class ReportWithDataOrchestrator(
         maybeReport.map { reportWithMetadata =>
           val report = reportWithMetadata.report
           for {
-            events       <- eventRepository.getEventsWithUsers(uuid, EventFilter())
+            events       <- eventRepository.getEventsWithUsers(List(uuid), EventFilter())
             maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
             companyEvents <- report.companyId
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
