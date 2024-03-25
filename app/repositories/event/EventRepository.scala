@@ -60,15 +60,18 @@ class EventRepository(
       .result
   }
 
-  override def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
-    getRawEvents(filter)
-      .filter(_.reportId === reportId)
-      .joinLeft(UserTable.table)
-      .on(_.userId === _.id)
-      .sortBy(_._1.creationDate.desc)
-      .to[List]
-      .result
-  }
+  override def getEventsWithUsers(reportsIds: List[UUID], filter: EventFilter): Future[List[(Event, Option[User])]] =
+    db.run {
+      getRawEvents(filter)
+        .filter(
+          _.reportId inSetBind reportsIds
+        )
+        .joinLeft(UserTable.table)
+        .on(_.userId === _.id)
+        .sortBy(_._1.creationDate.desc)
+        .to[List]
+        .result
+    }
 
   override def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] =
     db.run {
