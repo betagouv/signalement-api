@@ -50,12 +50,13 @@ case class ReportDraft(
     ccrfCode: Option[List[String]] = None,
     lang: Option[Locale] = None,
     barcodeProductId: Option[UUID] = None,
-    metadata: Option[ReportMetadataDraft] = None
+    metadata: Option[ReportMetadataDraft] = None,
+    station: Option[String] = None
 ) {
 
   def generateReport(
       maybeCompanyId: Option[UUID],
-      socialNetworkCompany: Option[Company],
+      maybeCompany: Option[Company],
       creationDate: OffsetDateTime,
       expirationDate: OffsetDateTime,
       reportId: UUID = UUID.randomUUID()
@@ -68,12 +69,12 @@ case class ReportDraft(
       subcategories = subcategories,
       details = details,
       influencer = influencer,
-      companyId = maybeCompanyId.orElse(socialNetworkCompany.map(_.id)),
-      companyName = companyName.orElse(socialNetworkCompany.map(_.name)),
-      companyBrand = companyBrand.orElse(socialNetworkCompany.flatMap(_.brand)),
-      companyAddress = companyAddress.orElse(socialNetworkCompany.map(_.address)).getOrElse(Address()),
-      companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
-      companyActivityCode = companyActivityCode.orElse(socialNetworkCompany.flatMap(_.activityCode)),
+      companyId = maybeCompanyId,
+      companyName = companyName.orElse(maybeCompany.map(_.name)),
+      companyBrand = companyBrand.orElse(maybeCompany.flatMap(_.brand)),
+      companyAddress = companyAddress.orElse(maybeCompany.map(_.address)).getOrElse(Address()),
+      companySiret = companySiret.orElse(maybeCompany.map(_.siret)),
+      companyActivityCode = companyActivityCode.orElse(maybeCompany.flatMap(_.activityCode)),
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
@@ -86,8 +87,8 @@ case class ReportDraft(
       status = Report.initialStatus(
         employeeConsumer = employeeConsumer,
         visibleToPro = shouldBeVisibleToPro(),
-        companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
-        companyCountry = companyAddress.orElse(socialNetworkCompany.map(_.address)).flatMap(_.country)
+        companySiret = companySiret.orElse(maybeCompany.map(_.siret)),
+        companyCountry = companyAddress.orElse(maybeCompany.map(_.address)).flatMap(_.country)
       ),
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
@@ -98,7 +99,8 @@ case class ReportDraft(
       expirationDate = expirationDate,
       visibleToPro = shouldBeVisibleToPro(),
       lang = lang,
-      barcodeProductId = barcodeProductId
+      barcodeProductId = barcodeProductId,
+      station = station
     )
 
   def shouldBeVisibleToPro(): Boolean =

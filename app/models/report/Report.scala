@@ -59,7 +59,8 @@ case class Report(
     visibleToPro: Boolean,
     lang: Option[Locale],
     reopenDate: Option[OffsetDateTime] = None,
-    barcodeProductId: Option[UUID]
+    barcodeProductId: Option[UUID],
+    station: Option[String]
 ) {
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))

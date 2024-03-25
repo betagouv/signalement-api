@@ -45,6 +45,7 @@ import utils.Constants.EventType
 import utils.Constants
 import utils.Country
 import utils.EmailAddress
+import utils.SIRET
 import utils.URL
 
 import java.time.LocalDate
@@ -258,10 +259,8 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeReportedCompany        <- extractOptionalCompany(draftReport)
-      maybeCompanyOfSocialNetwork <- draftReport.influencer.flatTraverse(extractCompanyOfSocialNetwork)
-      maybeCompany = maybeReportedCompany.orElse(maybeCompanyOfSocialNetwork)
-      maybeCountry = extractOptionnalCountry(draftReport)
+      maybeCompany <- extractOptionalCompany(draftReport)
+      maybeCountry = extractOptionalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       maybeCompanyWithUsers <- maybeCompany.map { company =>
         for {
@@ -271,8 +270,8 @@ class ReportOrchestrator(
       reportCreationDate = OffsetDateTime.now()
       expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
       reportToCreate = draftReport.generateReport(
-        maybeReportedCompany.map(_.id),
-        maybeCompanyOfSocialNetwork,
+        maybeCompany.map(_.id),
+        maybeCompany,
         reportCreationDate,
         expirationDate
       )
@@ -292,7 +291,7 @@ class ReportOrchestrator(
         val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)
         reportMetadataRepository.create(metadata)
       }
-      .getOrElse(Future.successful(()))
+      .getOrElse(Future.unit)
 
   def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
     val maybeCompanyId     = draftReport.companySiret.map(_ => UUID.randomUUID())
@@ -351,13 +350,19 @@ class ReportOrchestrator(
       case _ => Future.successful(report)
     }
 
-  private def extractOptionnalCountry(draftReport: ReportDraft) =
+  private def extractOptionalCountry(draftReport: ReportDraft) =
     draftReport.companyAddress.flatMap(_.country.map { country =>
       logger.debug(s"Found country ${country} from draft report")
       country
     })
 
   private def extractOptionalCompany(draftReport: ReportDraft): Future[Option[Company]] =
+    OptionT(extractOptionalCompanyFromDraft(draftReport))
+      .orElse(OptionT(extractCompanyOfSocialNetwork(draftReport)))
+      .orElse(OptionT(extractCompanyOfStation(draftReport)))
+      .value
+
+  private def extractOptionalCompanyFromDraft(draftReport: ReportDraft): Future[Option[Company]] =
     draftReport.companySiret match {
       case Some(siret) =>
         val company = Company(
@@ -401,14 +406,35 @@ class ReportOrchestrator(
       company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
     } yield company).value
 
-  private def extractCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
-    influencer.socialNetwork match {
+  private def extractCompanyOfSocialNetwork(reportDraft: ReportDraft): Future[Option[Company]] =
+    reportDraft.influencer.flatMap(_.socialNetwork) match {
       case Some(socialNetwork) =>
         for {
           maybeCompany <- socialNetworkRepository.findCompanyBySocialNetworkSlug(socialNetwork)
           resultingCompany <-
             if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(socialNetwork)
         } yield resultingCompany
+      case None =>
+        Future.successful(None)
+    }
+
+  private def extractCompanyOfStation(reportDraft: ReportDraft): Future[Option[Company]] =
+    reportDraft.station match {
+      case Some(_) =>
+        (for {
+          companyToCreate <- OptionT(companySyncService.companyBySiret(SIRET("50752380102157")))
+          c = Company(
+            siret = companyToCreate.siret,
+            name = companyToCreate.name.getOrElse(""),
+            address = companyToCreate.address,
+            activityCode = companyToCreate.activityCode,
+            isHeadOffice = companyToCreate.isHeadOffice,
+            isOpen = companyToCreate.isOpen,
+            isPublic = companyToCreate.isPublic,
+            brand = companyToCreate.brand
+          )
+          company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+        } yield company).value
       case None =>
         Future.successful(None)
     }

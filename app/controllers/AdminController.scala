@@ -122,7 +122,8 @@ class AdminController(
     influencer = None,
     visibleToPro = true,
     lang = Some(Locale.FRENCH),
-    barcodeProductId = None
+    barcodeProductId = None,
+    station = None
   )
 
   private def genReportFile = ReportFile(
