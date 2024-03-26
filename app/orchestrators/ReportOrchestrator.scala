@@ -84,6 +84,10 @@ class ReportOrchestrator(
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
+  // On envoi tous les signalements concernant une gare à la SNCF pour le moment (on changera lors de la privatisation)
+  // L'entité responsable des gares à la SNCF est SNCF Gares & connections https://annuaire-entreprises.data.gouv.fr/entreprise/sncf-gares-connexions-507523801
+  private val SncfGaresEtConnexionsSIRET: SIRET = SIRET("50752380102157")
+
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   private def genActivationToken(companyId: UUID, validity: Option[TemporalAmount]): Future[String] =
@@ -422,7 +426,7 @@ class ReportOrchestrator(
     reportDraft.station match {
       case Some(_) =>
         (for {
-          companyToCreate <- OptionT(companySyncService.companyBySiret(SIRET("50752380102157")))
+          companyToCreate <- OptionT(companySyncService.companyBySiret(SncfGaresEtConnexionsSIRET))
           c = Company(
             siret = companyToCreate.siret,
             name = companyToCreate.name.getOrElse(""),
