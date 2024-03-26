@@ -3,8 +3,8 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
+import models.MinimalUser
 import models.PaginatedResult
-import models.User
 import models.UserRole
 import models.company.Address
 import models.company.Company
@@ -158,7 +158,7 @@ object ReportWithFiles {
 case class ReportWithFilesAndAssignedUser(
     report: Report,
     metadata: Option[ReportMetadata],
-    assignedUser: Option[User],
+    assignedUser: Option[MinimalUser],
     files: List[ReportFile]
 )
 object ReportWithFilesAndAssignedUser {
@@ -169,7 +169,7 @@ object ReportWithFilesAndAssignedUser {
 case class ReportWithFilesAndResponses(
     report: Report,
     metadata: Option[ReportMetadata],
-    assignedUser: Option[User],
+    assignedUser: Option[MinimalUser],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
     professionalResponse: Option[Event]

@@ -30,6 +30,7 @@ case class User(
 ) {
   def fullName: String = s"${firstName} ${lastName}"
   def isAdmin: Boolean = this.userRole == UserRole.Admin
+
 }
 
 object User {
@@ -72,4 +73,21 @@ case class UserUpdate(
 object UserUpdate {
   implicit val userUpdateFormat: OFormat[UserUpdate] = Json.format[UserUpdate]
 
+}
+
+case class MinimalUser(
+    id: UUID,
+    firstName: String,
+    lastName: String
+)
+object MinimalUser {
+
+  def fromUser(user: User): MinimalUser =
+    MinimalUser(
+      id = user.id,
+      firstName = user.firstName,
+      lastName = user.lastName
+    )
+
+  implicit val minmalUserFormat: OFormat[MinimalUser] = Json.format[MinimalUser]
 }

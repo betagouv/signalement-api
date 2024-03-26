@@ -155,8 +155,11 @@ class ReportController(
         maybeAssignedUser <- assignedUserId
           .map(userId => userRepository.get(userId))
           .getOrElse(Future.successful(None))
+        maybeAssignedMinimalUser = maybeAssignedUser.map(MinimalUser.fromUser)
       } yield viewedReportWithMetadata
-        .map(r => Ok(Json.toJson(ReportWithFilesAndAssignedUser(r.report, r.metadata, maybeAssignedUser, reportFiles))))
+        .map(r =>
+          Ok(Json.toJson(ReportWithFilesAndAssignedUser(r.report, r.metadata, maybeAssignedMinimalUser, reportFiles)))
+        )
         .getOrElse(NotFound)
     }
 

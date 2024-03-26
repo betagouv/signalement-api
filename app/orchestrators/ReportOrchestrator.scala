@@ -861,7 +861,7 @@ class ReportOrchestrator(
         ReportWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
-          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)),
+          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
           reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)

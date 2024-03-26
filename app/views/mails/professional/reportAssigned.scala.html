@@ -4,7 +4,7 @@
 
 @(report: Report, assigningUser: User, assignedUser: User)(implicit frontRoute: FrontRoute)
 
-    @views.html.mails.layout(s"Signalement assigné") {
+    @views.html.mails.layout(s"Signalement affecté") {
         <p>
             Bonjour @assignedUser.firstName @assignedUser.lastName,
         </p>
