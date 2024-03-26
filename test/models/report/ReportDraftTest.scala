@@ -36,13 +36,29 @@ class ReportDraftTest extends Specification {
         companyActivityCode = Some("40.7Z")
       )
 
+      val company = for {
+        name <- aDraftReport.companyName
+        brand = aDraftReport.companyBrand
+        siret <- aDraftReport.companySiret
+        activityCode = aDraftReport.companyActivityCode
+      } yield Company(
+        name = name,
+        brand = brand,
+        address = Address(),
+        siret = siret,
+        activityCode = activityCode,
+        isHeadOffice = false,
+        isOpen = false,
+        isPublic = false
+      )
+
       val reportId                     = UUID.randomUUID()
       val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       val expirationDate               = creationDate.plusDays(100)
       val res =
         aDraftReport.generateReport(
-          maybeCompanyId = None,
-          socialNetworkCompany = None,
+          maybeCompanyId = company.map(_.id),
+          maybeCompany = company,
           creationDate = creationDate,
           expirationDate = expirationDate,
           reportId = reportId
@@ -56,7 +72,7 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.reponseconsoCode, Nil)
         .withFieldConst(_.tags, Nil)
         .withFieldConst(_.companyAddress, Address())
-        .withFieldConst(_.companyId, None)
+        .withFieldConst(_.companyId, company.map(_.id))
         .withFieldConst(_.id, reportId)
         .withFieldConst(_.creationDate, creationDate)
         .withFieldConst(_.expirationDate, expirationDate)
@@ -144,7 +160,7 @@ class ReportDraftTest extends Specification {
         val expirationDate               = creationDate.plusDays(100)
         draft.generateReport(
           maybeCompanyId = None,
-          socialNetworkCompany = socialNetworkCompany,
+          maybeCompany = socialNetworkCompany,
           creationDate = creationDate,
           expirationDate = expirationDate,
           reportId = UUID.randomUUID()

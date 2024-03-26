@@ -64,6 +64,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def lang                     = column[Option[Locale]]("lang")
   def reopenDate               = column[Option[OffsetDateTime]]("reopen_date")
   def barcodeProductId         = column[Option[UUID]]("barcode_product_id")
+  def station                  = column[Option[String]]("station")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -113,6 +114,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         lang ::
         reopenDate ::
         barcodeProductId ::
+        station ::
         HNil =>
       report.Report(
         id = id,
@@ -154,7 +156,9 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         lang = lang,
         reopenDate = reopenDate,
         barcodeProductId = barcodeProductId,
-        influencer = influencerName.map(influencerName => Influencer(socialNetwork, otherSocialNetwork, influencerName))
+        influencer =
+          influencerName.map(influencerName => Influencer(socialNetwork, otherSocialNetwork, influencerName)),
+        station = station
       )
   }
 
@@ -200,6 +204,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.lang ::
       r.reopenDate ::
       r.barcodeProductId ::
+      r.station ::
       HNil
   )
 
@@ -245,6 +250,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[Locale] ::
       Option[OffsetDateTime] ::
       Option[UUID] ::
+      Option[String] ::
       HNil
 
   def * = (
@@ -289,6 +295,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       lang ::
       reopenDate ::
       barcodeProductId ::
+      station ::
       HNil
   ) <> (constructReport, extractReport)
 }
