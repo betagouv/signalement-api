@@ -239,7 +239,6 @@ class ReportController(
 
   def updateReportAssignedUser(uuid: UUID, userId: UUID) =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
-      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         updatedReportWithMetadata <- reportAssignmentOrchestrator
           .assignReportToUser(reportId = uuid, assigningUser = request.identity, newAssignedUserId = userId)
