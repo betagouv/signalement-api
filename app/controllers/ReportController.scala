@@ -237,12 +237,13 @@ class ReportController(
       } yield NoContent
     }
 
-  def assignReportToUser(uuid: UUID, userId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
+  def updateReportAssignedUser(uuid: UUID, userId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
-        _ <- reportAssignmentOrchestrator
+        updatedReportWithMetadata <- reportAssignmentOrchestrator
           .assignReportToUser(reportId = uuid, assigningUser = request.identity, newAssignedUserId = userId)
-      } yield NoContent
+      } yield Ok(Json.toJson(updatedReportWithMetadata))
     }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =

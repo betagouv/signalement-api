@@ -32,18 +32,19 @@ class ReportAssignmentOrchestrator(
 ) {
   val logger = Logger(this.getClass)
 
-  def assignReportToUser(reportId: UUID, assigningUser: User, newAssignedUserId: UUID): Future[Unit] = {
+  def assignReportToUser(reportId: UUID, assigningUser: User, newAssignedUserId: UUID): Future[ReportWithMetadata] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
       maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
       reportWithMetadata      <- maybeReportWithMetadata.liftTo[Future](AppError.ReportNotFound(reportId))
       newAssignedUser         <- checkAssignableToUser(reportWithMetadata, newAssignedUserId)
-      _                       <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
-      _                       <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser)
+      updatedMetadata         <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
+      updatedReportWithMetadata = reportWithMetadata.copy(metadata = Some(updatedMetadata))
+      _ <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser)
       _ <-
         if (assigningToSelf) Future.unit
         else mailService.send(ProReportAssignedNotification(reportWithMetadata.report, assigningUser, newAssignedUser))
-    } yield ()
+    } yield updatedReportWithMetadata
   }
 
   private def checkAssignableToUser(

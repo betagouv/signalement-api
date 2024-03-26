@@ -1,8 +1,10 @@
 package models.report.reportmetadata
 
+import models.UserRole
 import models.company.Address
 import models.report.Report
 import play.api.libs.json.Json
+import play.api.libs.json.OWrites
 import play.api.libs.json.Writes
 
 import java.util.UUID
@@ -33,5 +35,8 @@ object ReportWithMetadata {
     val (report, metadata) = tuple
     ReportWithMetadata(report, metadata)
   }
+
+  implicit def writes(implicit userRole: Option[UserRole]): OWrites[ReportWithMetadata] =
+    Json.writes[ReportWithMetadata]
 
 }

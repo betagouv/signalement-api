@@ -8,6 +8,6 @@ import scala.concurrent.Future
 
 trait ReportMetadataRepositoryInterface extends CRUDRepositoryInterface[ReportMetadata] {
 
-  def setAssignedUser(reportId: UUID, userId: UUID): Future[Int]
+  def setAssignedUser(reportId: UUID, userId: UUID): Future[ReportMetadata]
 
 }

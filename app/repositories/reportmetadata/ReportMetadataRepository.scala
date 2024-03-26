@@ -18,11 +18,16 @@ class ReportMetadataRepository(override val dbConfig: DatabaseConfig[JdbcProfile
   override val table: TableQuery[ReportMetadataTable] = ReportMetadataTable.table
   import dbConfig._
 
-  override def setAssignedUser(reportId: UUID, userId: UUID): Future[Int] = db.run {
-    table
-      .filter(_.reportId === reportId)
-      .map(_.assignedUserId)
-      .update(Some(userId))
+  override def setAssignedUser(reportId: UUID, userId: UUID): Future[ReportMetadata] = {
+    val action = (for {
+      existingMetadata <- table.filter(_.id === reportId).result.headOption
+      newOrUpdatedMetadata = existingMetadata
+        .map(_.copy(assignedUserId = Some(userId)))
+        .getOrElse(ReportMetadata(reportId = reportId, isMobileApp = false, os = None, assignedUserId = Some(userId)))
+      _ <-
+        table.insertOrUpdate(newOrUpdatedMetadata)
+    } yield newOrUpdatedMetadata).transactionally
+    db.run(action)
   }
 
 }
