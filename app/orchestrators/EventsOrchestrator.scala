@@ -91,7 +91,7 @@ class EventsOrchestrator(
     filterOnUserRole(userRole, events).map { case (event, maybeUser) =>
       val maybeEventUser = maybeUser
         // Do not return event user if requesting user is a PRO user
-        .filterNot(_.userRole == UserRole.Professionnel)
+        .filterNot(_ => userRole == UserRole.Professionnel)
         .map(
           _.into[EventUser]
             .withFieldComputed(_.role, _.userRole)
