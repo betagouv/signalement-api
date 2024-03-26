@@ -6,6 +6,7 @@ import repositories.DatabaseTable
 import repositories.PostgresProfile.api._
 import repositories.report.ReportTable
 import repositories.reportmetadata.ReportMetadataColumnType._
+import slick.ast.ColumnOption.PrimaryKey
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
 
@@ -13,7 +14,7 @@ import java.util.UUID
 
 class ReportMetadataTable(tag: Tag) extends DatabaseTable[ReportMetadata](tag, "reports_metadata") {
 
-  def reportId       = column[UUID]("report_id")
+  def reportId       = column[UUID]("report_id", PrimaryKey)
   def isMobileApp    = column[Boolean]("is_mobile_app")
   def os             = column[Option[Os]]("os")
   def assignedUserId = column[Option[UUID]]("assigned_user_id")

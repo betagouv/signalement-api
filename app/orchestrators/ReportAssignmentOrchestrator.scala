@@ -62,7 +62,7 @@ class ReportAssignmentOrchestrator(
       user      <- maybeUser.liftTo[Future](AppError.AssignReportError(s"User ${newAssignedUserId} doesn't exist"))
       visibleCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompanies(user)
       visibleSirets = visibleCompanies.map(_.company.siret)
-      isVisible     = visibleSirets.contains(reportWithMetadata.report.companySiret)
+      isVisible     = reportWithMetadata.report.companySiret.exists(visibleSirets.contains)
       _ <-
         if (isVisible) Future.unit
         else Future.failed(AppError.AssignReportError(s"${reportId} can't be seen by user ${newAssignedUserId}"))

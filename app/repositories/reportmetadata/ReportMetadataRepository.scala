@@ -20,7 +20,7 @@ class ReportMetadataRepository(override val dbConfig: DatabaseConfig[JdbcProfile
 
   override def setAssignedUser(reportId: UUID, userId: UUID): Future[ReportMetadata] = {
     val action = (for {
-      existingMetadata <- table.filter(_.id === reportId).result.headOption
+      existingMetadata <- table.filter(_.reportId === reportId).result.headOption
       newOrUpdatedMetadata = existingMetadata
         .map(_.copy(assignedUserId = Some(userId)))
         .getOrElse(ReportMetadata(reportId = reportId, isMobileApp = false, os = None, assignedUserId = Some(userId)))
