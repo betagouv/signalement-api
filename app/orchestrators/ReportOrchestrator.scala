@@ -853,7 +853,8 @@ class ReportOrchestrator(
       reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
       reports = reportsWithFiles.entities.map(_.report)
       reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
-      assignedUsers <- userRepository.findByIds(reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId)))
+      assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
+      assignedUsers      <- userRepository.findByIds(assignedUsersIds)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>

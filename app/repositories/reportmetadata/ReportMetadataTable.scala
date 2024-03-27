@@ -24,12 +24,6 @@ class ReportMetadataTable(tag: Tag) extends DatabaseTable[ReportMetadata](tag, "
     onUpdate = ForeignKeyAction.Restrict,
     onDelete = ForeignKeyAction.Cascade
   )
-//
-//  def assignedUser = foreignKey("fk_assigned_user", assignedUserId, UserTable.fullTableIncludingDeleted)(
-//    _.id.?,
-//    onUpdate = ForeignKeyAction.Restrict,
-//    onDelete = ForeignKeyAction.SetNull
-//  )
 
   def construct(data: ReportMetadataData): ReportMetadata = data match {
     case reportId ::
