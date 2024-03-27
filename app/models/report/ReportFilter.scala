@@ -40,7 +40,8 @@ case class ReportFilter(
     fullText: Option[String] = None,
     visibleToPro: Option[Boolean] = None,
     isForeign: Option[Boolean] = None,
-    hasBarcode: Option[Boolean] = None
+    hasBarcode: Option[Boolean] = None,
+    assignedUserId: Option[UUID] = None
 )
 
 object ReportFilter {

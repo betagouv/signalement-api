@@ -4,6 +4,7 @@ import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
 import models.report._
+import models.report.reportmetadata.ReportWithMetadata
 import repositories.report.ReportRepositoryInterface
 import utils.CRUDRepositoryMock
 
@@ -58,7 +59,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[Report]] = ???
+  ): Future[PaginatedResult[ReportWithMetadata]] = ???
 
   override def getReportsByIds(ids: List[UUID]): Future[List[Report]] = ???
 
@@ -80,12 +81,15 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] =
-    userRole match {
-      case Some(UserRole.Admin)         => Future.successful(database.get(id))
-      case Some(UserRole.DGCCRF)        => Future.successful(database.get(id))
-      case Some(UserRole.DGAL)          => Future.successful(database.get(id))
-      case Some(UserRole.Professionnel) => Future.successful(database.get(id).filter(_.visibleToPro))
-      case None                         => Future.successful(database.get(id))
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] = {
+    val maybeReport = userRole match {
+      case Some(UserRole.Admin)         => database.get(id)
+      case Some(UserRole.DGCCRF)        => database.get(id)
+      case Some(UserRole.DGAL)          => database.get(id)
+      case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)
+      case None                         => database.get(id)
     }
+    Future.successful(maybeReport.map(ReportWithMetadata(_, None)))
+  }
+
 }

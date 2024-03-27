@@ -512,4 +512,10 @@ object AppError {
     override val title: String        = "Can't create website"
     override val titleForLogs: String = "cant_create_website"
   }
+
+  final case class AssignReportError(override val details: String) extends BadRequestError {
+    override val `type`: String       = "SC-0055"
+    override val title: String        = "Can't assign report"
+    override val titleForLogs: String = "cant_assign_report"
+  }
 }

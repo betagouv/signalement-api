@@ -19,6 +19,7 @@ import models.event.Event
 import models.event.Event._
 import models.report._
 import models.report.ReportWordOccurrence.StopWords
+import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
@@ -33,6 +34,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email._
 import services.MailService
@@ -67,6 +69,7 @@ class ReportOrchestrator(
     socialNetworkRepository: SocialNetworkRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
+    userRepository: UserRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepositoryInterface,
@@ -608,19 +611,23 @@ class ReportOrchestrator(
       }
     } yield updatedReport
 
-  def handleReportView(report: Report, user: User): Future[Report] =
+  def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
     if (user.userRole == UserRole.Professionnel) {
+      val report = reportWithMetadata.report
       eventRepository
         .getEvents(report.id, EventFilter(None))
         .flatMap(events =>
           if (!events.exists(_.action == Constants.ActionEvent.REPORT_READING_BY_PRO)) {
-            manageFirstViewOfReportByPro(report, user.id)
+            for {
+              viewedReport <- manageFirstViewOfReportByPro(report, user.id)
+              viewedReportWithMetadata = reportWithMetadata.copy(report = viewedReport)
+            } yield viewedReportWithMetadata
           } else {
-            Future(report)
+            Future(reportWithMetadata)
           }
         )
     } else {
-      Future(report)
+      Future(reportWithMetadata)
     }
 
   def removeAccessTokenWhenNoMoreReports(companyId: UUID) =
@@ -830,7 +837,8 @@ class ReportOrchestrator(
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
-            (r: Report, m: Map[UUID, List[ReportFile]]) => ReportWithFiles(r, m.getOrElse(r.id, Nil))
+            (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
+              ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
           )
         }
     } yield paginatedReportFiles
@@ -844,17 +852,22 @@ class ReportOrchestrator(
     for {
       reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
       reports = reportsWithFiles.entities.map(_.report)
-      reportEventsMap    <- eventRepository.fetchEventsOfReports(reports)
+      reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
+      assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
+      assignedUsers      <- userRepository.findByIds(assignedUsersIds)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
     } yield reportsWithFiles.copy(
-      entities = reportsWithFiles.entities.map(reportWithFiles =>
+      entities = reportsWithFiles.entities.map { reportWithFiles =>
+        val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
         ReportWithFilesAndResponses(
           reportWithFiles.report,
+          reportWithFiles.metadata,
+          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
           reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)
         )
-      )
+      }
     )
 
   def getReportsWithFile[T](
@@ -862,7 +875,7 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      toApi: (Report, Map[UUID, List[ReportFile]]) => T
+      toApi: (ReportWithMetadata, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
 
     val maxResults = signalConsoConfiguration.reportsExportLimitMax
@@ -890,16 +903,18 @@ class ReportOrchestrator(
       )
       startGetReportFiles = System.nanoTime()
       _                   = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
-      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+      reportsIds          = paginatedReports.entities.map(_.report.id)
+      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(reportsIds)
       endGetReportFiles = System.nanoTime()
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
-    } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
+    } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
   }
 
-  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
+  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportWithMetadata]] =
     for {
-      report  <- reportRepository.getFor(Some(user.userRole), reportId)
+      reportWithMetadata <- reportRepository.getFor(Some(user.userRole), reportId)
+      report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address(
         number = company.flatMap(_.address.number),
@@ -909,18 +924,18 @@ class ReportOrchestrator(
         city = company.flatMap(_.address.city),
         country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
-      visibleReport <-
+      visibleReportWithMetadata <-
         if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
-          Future(report)
+          Future(reportWithMetadata)
         else {
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)
             .map(_.map(v => Some(v.company.siret)))
             .map { visibleSirets =>
-              report.filter(r => visibleSirets.contains(r.companySiret))
+              reportWithMetadata.filter(r => visibleSirets.contains(r.report.companySiret))
             }
         }
-    } yield visibleReport.map(_.copy(companyAddress = address))
+    } yield visibleReportWithMetadata.map(_.setAddress(address))
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     for {

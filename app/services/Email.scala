@@ -180,6 +180,16 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
   }
 
+  final case class ProReportAssignedNotification(report: Report, assigningUser: User, assignedUser: User)
+      extends ProFilteredEmailSingleReport {
+    override val recipients: List[EmailAddress] = List(assignedUser.email)
+    override val subject: String                = EmailSubjects.REPORT_ASSIGNED
+
+    override def getBody: (FrontRoute, EmailAddress) => String = { (frontRoute, _) =>
+      views.html.mails.professional.reportAssigned(report, assigningUser, assignedUser)(frontRoute).toString
+    }
+  }
+
   final case class DgccrfReportNotification(
       recipients: List[EmailAddress],
       subscription: Subscription,
