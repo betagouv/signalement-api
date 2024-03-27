@@ -131,7 +131,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.create(report6), Duration.Inf)
     Await.result(components.reportRepository.create(englishReport), Duration.Inf)
     Await.result(
-      components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios))),
+      components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios), None)),
       Duration.Inf
     )
 

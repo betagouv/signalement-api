@@ -49,6 +49,7 @@ import services.Email.InactiveDgccrfAccount
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
+import services.Email.ProReportAssignedNotification
 import services.Email.ProReportReOpeningNotification
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
@@ -277,6 +278,13 @@ class AdminController(
         Period.ofDays(7)
       )
     }),
+    "pro.report_assignement_to_other" -> (recipient =>
+      ProReportAssignedNotification(
+        report = genReport,
+        assigningUser = genUser,
+        assignedUser = genUser.copy(email = recipient)
+      )
+    ),
     "dgccrf.access_link" ->
       (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.validate_email" ->

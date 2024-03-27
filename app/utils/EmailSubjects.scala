@@ -13,6 +13,7 @@ object EmailSubjects {
   val REPORT_REOPENING          = "Réouverture signalement en attente de réponse"
   val REPORT_ACK_PRO            = "Votre réponse au signalement"
   val REPORT_ACK_PRO_ON_ADMIN_COMPLETION = "Signalement résolu"
+  val REPORT_ASSIGNED                    = "Signalement affecté"
   val REPORT_UNREAD_REMINDER             = "Nouveau(x) signalement(s)"
   val REPORT_TRANSMITTED_REMINDER        = "Signalement(s) en attente de réponse"
   val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: Option[String]) =>

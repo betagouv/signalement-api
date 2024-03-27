@@ -3,27 +3,29 @@ package repositories.report
 import com.github.tminglei.slickpg.TsVector
 import models._
 import models.report._
+import models.report.reportmetadata.ReportMetadata
+import models.report.reportmetadata.ReportWithMetadata
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
-import repositories.reportfile.ReportFileTable
 import repositories.report.ReportRepository.ReportOrdering
 import repositories.report.ReportRepository.queryFilter
+import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
+import repositories.reportconsumerreview.ResponseConsumerReviewTable
+import repositories.reportfile.ReportFileTable
+import repositories.reportmetadata.ReportMetadataTable
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
 
 import java.time._
+import java.time.temporal.WeekFields
 import java.util.Locale
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.CRUDRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewTable
-import slick.basic.DatabaseConfig
-import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
-
-import java.time.temporal.WeekFields
 
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
@@ -122,15 +124,15 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db
       .run(
         queryFilter(ReportTable.table(userRole), filter)
-          .filter(report =>
+          .filter { case (report, _) =>
             report.creationDate > OffsetDateTime
               .now()
               .minusMonths(ticks.toLong)
               .withDayOfMonth(1)
-          )
-          .groupBy(report =>
+          }
+          .groupBy { case (report, _) =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
-          )
+          }
           .map { case ((month, year), group) => (month, year, group.length) }
           .result
       )
@@ -140,10 +142,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
       queryFilter(ReportTable.table(userRole), filter)
-        .filter(report => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong))
-        .groupBy(report =>
+        .filter { case (report, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
+        .groupBy { case (report, _) =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
-        )
+        }
         .map { case ((week, year), group) =>
           (week, year, group.length)
         }
@@ -171,14 +173,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(ReportTable.table(userRole), filter)
-        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
-        .groupBy(report =>
+        .filter { case (report, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
+        .groupBy { case (report, _) =>
           (
             DatePartSQLFunction("day", report.creationDate),
             DatePartSQLFunction("month", report.creationDate),
             DatePartSQLFunction("year", report.creationDate)
           )
-        )
+        }
         .map { case ((day, month, year), group) =>
           (day, month, year, group.length)
         }
@@ -279,9 +281,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
       queryResult <- queryFilter(ReportTable.table(userRole), filter)
+        .map { case (report, _) => report }
         .joinLeft(ReportFileTable.table)
-        .on(_.id === _.reportId)
-        .sortBy(_._1.creationDate.desc)
+        .on { case (report, reportFile) => report.id === reportFile.reportId }
+        .sortBy { case (report, _) => report.creationDate.desc }
         .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
       res = queryResult.entities
         .groupBy(a => a._1)
@@ -291,7 +294,6 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         }
         .toSeq
       filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
-
     } yield filesGroupedByReports
 
   def getReports(
@@ -299,11 +301,12 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] = for {
-    res <- queryFilter(ReportTable.table(userRole), filter)
-      .sortBy(_.creationDate.desc)
+  ): Future[PaginatedResult[ReportWithMetadata]] = for {
+    reportsAndMetadatas <- queryFilter(ReportTable.table(userRole), filter)
+      .sortBy { case (report, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-  } yield res
+    reportsWithMetadata = reportsAndMetadatas.mapEntities(ReportWithMetadata.fromTuple)
+  } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table
@@ -379,8 +382,20 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .result
       )
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]] =
-    db.run(ReportTable.table(userRole).filter(_.id === id).result.headOption)
+  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] =
+    for {
+      maybeTuple <- db.run(
+        ReportTable
+          .table(userRole)
+          .filter(_.id === id)
+          .joinLeft(ReportMetadataTable.table)
+          .on(_.id === _.reportId)
+          .result
+          .headOption
+      )
+      maybeReportWithMetadata = maybeTuple.map(ReportWithMetadata.fromTuple)
+    } yield maybeReportWithMetadata
+
 }
 
 object ReportRepository {
@@ -395,6 +410,12 @@ object ReportRepository {
         case 0 => b.id compareTo (a.id)
         case c => c
       }
+  }
+
+  object ReportWithMetadataOrdering extends Ordering[ReportWithMetadata] {
+    def compare(a: ReportWithMetadata, b: ReportWithMetadata) =
+      ReportOrdering.compare(a.report, b.report)
+
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {
@@ -419,7 +440,10 @@ object ReportRepository {
     }
   }
 
-  def queryFilter(table: Query[ReportTable, Report, Seq], filter: ReportFilter): Query[ReportTable, Report, Seq] = {
+  def queryFilter(
+      table: Query[ReportTable, Report, Seq],
+      filter: ReportFilter
+  ): Query[(ReportTable, Rep[Option[ReportMetadataTable]]), (Report, Option[ReportMetadata]), Seq] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
     table
@@ -572,6 +596,12 @@ object ReportRepository {
           table.firstName ++ " " ++ table.lastName ++ " " ++ table.consumerReferenceNumber.asColumnOf[String]
         ) @@ plainToTsQuery(fullText)
       }
+      .joinLeft(ReportMetadataTable.table)
+      .on(_.id === _.reportId)
+      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
+        maybeMetadataTable.flatMap(_.assignedUserId) === assignedUserid
+      }
+
   }
 
 }

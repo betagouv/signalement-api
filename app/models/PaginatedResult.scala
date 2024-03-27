@@ -12,7 +12,10 @@ case class PaginatedResult[T](
     totalCount: Int,
     hasNextPage: Boolean,
     entities: List[T]
-)
+) {
+  def mapEntities[A](fn: T => A): PaginatedResult[A] =
+    this.copy(entities = entities.map(fn))
+}
 
 object PaginatedResult {
 

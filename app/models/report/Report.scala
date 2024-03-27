@@ -3,6 +3,7 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
+import models.MinimalUser
 import models.PaginatedResult
 import models.UserRole
 import models.company.Address
@@ -10,6 +11,7 @@ import models.company.Company
 import models.event.Event
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
+import models.report.reportmetadata.ReportMetadata
 import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -144,6 +146,7 @@ object WebsiteURL {
 
 case class ReportWithFiles(
     report: Report,
+    metadata: Option[ReportMetadata],
     files: List[ReportFile]
 )
 
@@ -152,8 +155,21 @@ object ReportWithFiles {
     Json.writes[ReportWithFiles]
 }
 
+case class ReportWithFilesAndAssignedUser(
+    report: Report,
+    metadata: Option[ReportMetadata],
+    assignedUser: Option[MinimalUser],
+    files: List[ReportFile]
+)
+object ReportWithFilesAndAssignedUser {
+  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
+    Json.writes[ReportWithFilesAndAssignedUser]
+}
+
 case class ReportWithFilesAndResponses(
     report: Report,
+    metadata: Option[ReportMetadata],
+    assignedUser: Option[MinimalUser],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
     professionalResponse: Option[Event]

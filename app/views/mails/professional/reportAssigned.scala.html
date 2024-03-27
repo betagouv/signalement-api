@@ -1,0 +1,26 @@
+@import utils.FrontRoute
+@import models.report.Report
+@import models.User
+
+@(report: Report, assigningUser: User, assignedUser: User)(implicit frontRoute: FrontRoute)
+
+    @views.html.mails.layout(s"Signalement affecté") {
+        <p>
+            Bonjour @assignedUser.firstName @assignedUser.lastName,
+        </p>
+
+        <p>Un signalement vous a été affecté par @assigningUser.firstName @assigningUser.lastName.</p>
+
+        <p>
+            Pour le consulter et y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.url(s"/suivi-des-signalements/report/${report.id.toString}")">
+            Espace Professionnel</a> à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
+        </p>
+
+        <p>Cordialement,</p>
+
+        <p>
+            <i>L'équipe SignalConso</i>
+        </p>
+
+        @views.html.fragments.linkNotificationsManager()
+    }

@@ -79,6 +79,8 @@ class CompanyAccessController(
         _ <- user
           .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
           .getOrElse(Future(()))
+        // this operation may leave some reports assigned to this user, to which he doesn't have access anymore
+        // in theory here we should find these reports and de-assign them
       } yield if (user.isDefined) Ok else NotFound
   }
 

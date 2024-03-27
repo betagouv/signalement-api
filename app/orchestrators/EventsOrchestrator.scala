@@ -13,6 +13,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import utils.Constants.ActionEvent.REPORT_ASSIGNED
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
@@ -57,8 +58,9 @@ class EventsOrchestrator(
       userRole: UserRole
   ): Future[List[EventWithUser]] =
     for {
-      maybeReport <- reportRepository.getFor(Some(userRole), reportId)
-      _ = logger.debug("Checking if report exists")
+      maybeReportWithMetadata <- reportRepository.getFor(Some(userRole), reportId)
+      maybeReport = maybeReportWithMetadata.map(_.report)
+      _           = logger.debug("Checking if report exists")
       _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
       _      = logger.debug("Found report")
       filter = buildEventFilter(eventType)
@@ -89,7 +91,7 @@ class EventsOrchestrator(
     filterOnUserRole(userRole, events).map { case (event, maybeUser) =>
       val maybeEventUser = maybeUser
         // Do not return event user if requesting user is a PRO user
-        .filterNot(_.userRole == UserRole.Professionnel)
+        .filterNot(_ => userRole == UserRole.Professionnel)
         .map(
           _.into[EventUser]
             .withFieldComputed(_.role, _.userRole)
@@ -108,7 +110,8 @@ class EventsOrchestrator(
             REPORT_REVIEW_ON_RESPONSE,
             REPORT_CLOSED_BY_NO_READING,
             REPORT_CLOSED_BY_NO_ACTION,
-            REPORT_REOPENED_BY_ADMIN
+            REPORT_REOPENED_BY_ADMIN,
+            REPORT_ASSIGNED
           ) contains event.action
         case _ => true
       }

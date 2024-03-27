@@ -102,8 +102,9 @@ case class ReportWithFilesToExternal(
 object ReportWithFilesToExternal {
   implicit val format: OFormat[ReportWithFilesToExternal] = Json.format[ReportWithFilesToExternal]
 
-  def fromReportWithFiles(reportWithFiles: ReportWithFiles) = ReportWithFilesToExternal(
-    report = ReportToExternal.fromReport(reportWithFiles.report),
-    files = reportWithFiles.files.map(ReportFileToExternal.fromReportFile)
-  )
+  def fromReportAndFiles(report: Report, reportFiles: List[ReportFile]) =
+    ReportWithFilesToExternal(
+      report = ReportToExternal.fromReport(report),
+      files = reportFiles.map(ReportFileToExternal.fromReportFile)
+    )
 }

@@ -4,6 +4,7 @@ import models.report._
 import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
+import models.report.reportmetadata.ReportWithMetadata
 import repositories.CRUDRepositoryInterface
 
 import java.time.LocalDate
@@ -56,7 +57,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]]
+  ): Future[PaginatedResult[ReportWithMetadata]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
@@ -74,6 +75,6 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
 
-  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[Report]]
+  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]]
 
 }
