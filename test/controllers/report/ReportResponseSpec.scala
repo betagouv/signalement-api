@@ -290,12 +290,28 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     ReportResponseType.ACCEPTED,
     "details for consumer",
     Some("details for dgccrf"),
-    List(reportResponseFile.id)
+    List(reportResponseFile.id),
+    responseDetails = ResponseDetails.REFUND,
+    otherResponseDetails = None
   )
   val reportResponseRejected =
-    ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"), List.empty)
+    ReportResponse(
+      ReportResponseType.REJECTED,
+      "details for consumer",
+      Some("details for dgccrf"),
+      List.empty,
+      responseDetails = ResponseDetails.REFUND,
+      otherResponseDetails = None
+    )
   val reportResponseNotConcerned =
-    ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
+    ReportResponse(
+      ReportResponseType.NOT_CONCERNED,
+      "details for consumer",
+      Some("details for dgccrf"),
+      List.empty,
+      responseDetails = ResponseDetails.REFUND,
+      otherResponseDetails = None
+    )
 
   override def setupData() = {
     reviewUrl = new URI(
