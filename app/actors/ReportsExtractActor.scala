@@ -14,7 +14,7 @@ import config.SignalConsoConfiguration
 import controllers.routes
 import models._
 import models.company.AccessLevel
-import models.event.Event
+import models.report.EventWithUser
 import models.report.Report
 import models.report.ReportCategory
 import models.report.ReportFile
@@ -30,6 +30,7 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
@@ -132,13 +133,13 @@ object ReportsExtractActor {
   case class ReportColumn(
       name: String,
       column: Column,
-      extract: (Report, List[ReportFile], List[Event], Option[ResponseConsumerReview], List[User]) => String,
+      extract: (Report, List[ReportFile], List[EventWithUser], Option[ResponseConsumerReview], List[User]) => String,
       available: Boolean = true
   ) {
     def extractStringValue(
         report: Report,
         reportFiles: List[ReportFile],
-        events: List[Event],
+        events: List[EventWithUser],
         consumerReview: Option[ResponseConsumerReview],
         users: List[User]
     ): String = extract(report, reportFiles, events, consumerReview, users).take(MaxCharInSingleCell)
@@ -270,8 +271,8 @@ object ReportsExtractActor {
         leftAlignmentColumn,
         (_, _, events, _, _) =>
           events
-            .find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-            .flatMap(e => e.details.validate[ReportResponse].asOpt)
+            .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .flatMap(_.event.details.validate[ReportResponse].asOpt)
             .map(response => ReportResponseType.translate(response.responseType))
             .getOrElse("")
       ),
@@ -289,8 +290,8 @@ object ReportsExtractActor {
             )
             .flatMap(_ =>
               events
-                .find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .map(e => e.details.validate[ReportResponse].get.consumerDetails)
+                .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+                .map(_.event.details.validate[ReportResponse].get.consumerDetails)
             )
             .getOrElse("")
       ),
@@ -308,8 +309,8 @@ object ReportsExtractActor {
             )
             .flatMap(_ =>
               events
-                .find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .flatMap(e => e.details.validate[ReportResponse].get.dgccrfDetails)
+                .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+                .flatMap(_.event.details.validate[ReportResponse].get.dgccrfDetails)
             )
             .getOrElse("")
       ),
@@ -377,9 +378,9 @@ object ReportsExtractActor {
         leftAlignmentColumn,
         (_, _, events, _, _) =>
           events
-            .filter(event => event.eventType == Constants.EventType.DGCCRF)
-            .map(event =>
-              s"Le ${frenchFormatDate(event.creationDate, zone)} : ${event.action.value} - ${event.getDescription}"
+            .filter(_.event.eventType == Constants.EventType.DGCCRF)
+            .map(eventWithUser =>
+              s"Le ${frenchFormatDate(eventWithUser.event.creationDate, zone)} : ${eventWithUser.event.action.value} - ${eventWithUser.event.getDescription}"
             )
             .mkString("\n"),
         available = requestedBy.userRole == UserRole.DGCCRF
@@ -393,7 +394,7 @@ object ReportsExtractActor {
             events,
             _,
             _
-        ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
+        ) => if (events.exists(_.event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
         available = requestedBy.userRole == UserRole.DGCCRF
       )
     ).filter(_.available)
@@ -420,9 +421,10 @@ object ReportsExtractActor {
           limit = Some(signalConsoConfiguration.reportsExportLimitMax)
         )
         .map(_.entities.map(_.report))
-      reportFilesMap     <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
-      reportEventsMap    <- eventRepository.fetchEventsOfReports(paginatedReports)
-      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(paginatedReports.map(_.id))
+      reportIds = paginatedReports.map(_.id)
+      reportFilesMap     <- reportFileRepository.prefetchReportsFiles(reportIds)
+      reportEventsMap    <- eventRepository.getEventsWithUsersMap(reportIds, EventFilter.Empty)
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reportIds)
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
