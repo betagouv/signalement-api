@@ -50,10 +50,11 @@
     </appender>
 
     <logger name="play" level="DEBUG"/>
-    <logger name="application" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="loader" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="actors" level="${LOG_LEVEL:-DEBUG}"/>
+    <logger name="authentication" level="${LOG_LEVEL:-DEBUG}"/>
+    <logger name="config" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="controllers" level="${LOG_LEVEL:-DEBUG}"/>
+    <logger name="loader" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="orchestrators" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="repositories" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="services" level="${LOG_LEVEL:-DEBUG}"/>
