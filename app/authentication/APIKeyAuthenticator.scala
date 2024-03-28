@@ -29,7 +29,7 @@ class APIKeyAuthenticator(
           }
           keyMatchOpt match {
             case Some(consumer) =>
-              logger.debug(s"Access to the API with token ${consumer.name}.")
+              logger.info(s"Access to the API with token ${consumer.name}.")
               Some(consumer)
             case _ =>
               logger.error(
