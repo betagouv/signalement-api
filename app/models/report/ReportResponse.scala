@@ -43,14 +43,14 @@ object ResponseDetails extends PlayEnum[ResponseDetails] {
 
   override def values: IndexedSeq[ResponseDetails] = findValues
 
-  final case object REFUND          extends ResponseDetails
-  final case object REPLACEMENT     extends ResponseDetails
-  final case object DELIVERY        extends ResponseDetails
-  final case object ADVICE          extends ResponseDetails
-  final case object CONFORM         extends ResponseDetails
-  final case object ADAPT_PRACTICES extends ResponseDetails
+  final case object REFUND             extends ResponseDetails
+  final case object REPLACEMENT        extends ResponseDetails
+  final case object DELIVERY           extends ResponseDetails
+  final case object DIRECTIONS_FOR_USE extends ResponseDetails
+  final case object CONFORM            extends ResponseDetails
+  final case object ADAPT_PRACTICES    extends ResponseDetails
 
-  final case object LEGAL                extends ResponseDetails
+  final case object LAWFUL               extends ResponseDetails
   final case object DID_NOT_HAPPEN       extends ResponseDetails
   final case object WRONG_INTERPRETATION extends ResponseDetails
 
