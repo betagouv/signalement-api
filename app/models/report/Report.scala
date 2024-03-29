@@ -5,6 +5,7 @@ import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
 import models.MinimalUser
 import models.PaginatedResult
+import models.User
 import models.UserRole
 import models.company.Address
 import models.company.Company
@@ -154,6 +155,7 @@ object ReportWithFiles {
   implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFiles] =
     Json.writes[ReportWithFiles]
 }
+case class EventWithUser(event: Event, user: Option[User])
 
 case class ReportWithFilesAndAssignedUser(
     report: Report,
@@ -172,10 +174,13 @@ case class ReportWithFilesAndResponses(
     assignedUser: Option[MinimalUser],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
-    professionalResponse: Option[Event]
+    professionalResponse: Option[EventWithUser]
 )
 
 object ReportWithFilesAndResponses {
+  implicit def writerEventWithUser(implicit userRole: Option[UserRole]): OWrites[EventWithUser] =
+    Json.writes[EventWithUser]
+
   implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndResponses] =
     Json.writes[ReportWithFilesAndResponses]
 }

@@ -185,7 +185,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val (maybeReport, events) = Await.result(
           for {
             maybeReport <- reportRepository.get(report.id)
-            events      <- eventRepository.getEventsWithUsers(report.id, EventFilter(None, None))
+            events      <- eventRepository.getEventsWithUsers(List(report.id), EventFilter(None, None))
           } yield (maybeReport, events),
           Duration.Inf
         )
