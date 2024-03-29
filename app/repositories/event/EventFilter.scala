@@ -4,3 +4,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
+
+object EventFilter {
+  val Empty = EventFilter(None, None)
+}
