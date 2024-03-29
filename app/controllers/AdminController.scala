@@ -21,6 +21,7 @@ import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
+import models.report.ResponseDetails
 import models.report.WebsiteURL
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
@@ -136,6 +137,8 @@ class AdminController(
 
   private def genReportResponse = ReportResponse(
     responseType = ReportResponseType.ACCEPTED,
+    responseDetails = ResponseDetails.REFUND,
+    otherResponseDetails = None,
     consumerDetails = "",
     dgccrfDetails = Some(""),
     fileIds = Nil
