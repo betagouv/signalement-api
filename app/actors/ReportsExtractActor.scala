@@ -267,6 +267,16 @@ object ReportsExtractActor {
         available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Répondant",
+        leftAlignmentColumn,
+        (_, _, events, _, _) =>
+          events
+            .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .flatMap(_.user)
+            .map(u => s"${u.firstName} ${u.lastName}")
+            .getOrElse("")
+      ),
+      ReportColumn(
         "Réponse du professionnel",
         leftAlignmentColumn,
         (_, _, events, _, _) =>
