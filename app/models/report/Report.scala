@@ -60,6 +60,7 @@ case class Report(
     lang: Option[Locale],
     reopenDate: Option[OffsetDateTime] = None,
     barcodeProductId: Option[UUID],
+    train: Option[String],
     station: Option[String]
 ) {
 

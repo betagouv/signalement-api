@@ -64,6 +64,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def lang                     = column[Option[Locale]]("lang")
   def reopenDate               = column[Option[OffsetDateTime]]("reopen_date")
   def barcodeProductId         = column[Option[UUID]]("barcode_product_id")
+  def train                    = column[Option[String]]("train")
   def station                  = column[Option[String]]("station")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
@@ -114,6 +115,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         lang ::
         reopenDate ::
         barcodeProductId ::
+        train ::
         station ::
         HNil =>
       report.Report(
@@ -158,6 +160,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         barcodeProductId = barcodeProductId,
         influencer =
           influencerName.map(influencerName => Influencer(socialNetwork, otherSocialNetwork, influencerName)),
+        train = train,
         station = station
       )
   }
@@ -204,6 +207,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.lang ::
       r.reopenDate ::
       r.barcodeProductId ::
+      r.train ::
       r.station ::
       HNil
   )
@@ -251,6 +255,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[OffsetDateTime] ::
       Option[UUID] ::
       Option[String] ::
+      Option[String] ::
       HNil
 
   def * = (
@@ -295,6 +300,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       lang ::
       reopenDate ::
       barcodeProductId ::
+      train ::
       station ::
       HNil
   ) <> (constructReport, extractReport)

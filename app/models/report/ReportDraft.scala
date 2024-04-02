@@ -51,6 +51,7 @@ case class ReportDraft(
     lang: Option[Locale] = None,
     barcodeProductId: Option[UUID] = None,
     metadata: Option[ReportMetadataDraft] = None,
+    train: Option[String] = None,
     station: Option[String] = None
 ) {
 
@@ -100,6 +101,7 @@ case class ReportDraft(
       visibleToPro = shouldBeVisibleToPro(),
       lang = lang,
       barcodeProductId = barcodeProductId,
+      train = train,
       station = station
     )
 

@@ -284,6 +284,7 @@ trait GetReportContext extends AppSpec {
     visibleToPro = true,
     lang = None,
     barcodeProductId = None,
+    train = None,
     station = None
   )
 
@@ -311,6 +312,7 @@ trait GetReportContext extends AppSpec {
     visibleToPro = true,
     lang = None,
     barcodeProductId = None,
+    train = None,
     station = None
   )
 
@@ -338,6 +340,7 @@ trait GetReportContext extends AppSpec {
     visibleToPro = true,
     lang = None,
     barcodeProductId = None,
+    train = None,
     station = None
   )
 

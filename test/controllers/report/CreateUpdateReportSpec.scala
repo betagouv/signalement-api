@@ -3,6 +3,7 @@ package controllers.report
 import models._
 import models.company.AccessLevel
 import models.company.Address
+import models.company.Company
 import models.event.Event
 import models.report._
 import org.specs2.Specification
@@ -140,7 +141,8 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "ReportStatus.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
-        ReportStatus.TraitementEnCours
+        ReportStatus.TraitementEnCours,
+        Some(existingCompany)
       )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
@@ -361,10 +363,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       )
     )
 
-  def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
+  def reportMustHaveBeenCreatedWithStatus(status: ReportStatus, maybeCompany: Option[Company] = None) = {
     val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
     val expectedReport = Fixtures
-      .genReportFromDraft(draftReport, reports.head.companyId)
+      .genReportFromDraft(draftReport, reports.head.companyId, maybeCompany)
       .copy(
         id = reports.head.id,
         creationDate = reports.head.creationDate,

@@ -87,6 +87,8 @@ class ReportOrchestrator(
   // On envoi tous les signalements concernant une gare à la SNCF pour le moment (on changera lors de la privatisation)
   // L'entité responsable des gares à la SNCF est SNCF Gares & connections https://annuaire-entreprises.data.gouv.fr/entreprise/sncf-gares-connexions-507523801
   private val SncfGaresEtConnexionsSIRET: SIRET = SIRET("50752380102157")
+  // On envoi tous les signalements concernant un train de la SNCF au SIRET SNCF Voyageurs
+  private val SncfVoyageursSIRET: SIRET = SIRET("51903758408747")
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 
@@ -363,6 +365,7 @@ class ReportOrchestrator(
   private def extractOptionalCompany(draftReport: ReportDraft): Future[Option[Company]] =
     OptionT(extractOptionalCompanyFromDraft(draftReport))
       .orElse(OptionT(extractCompanyOfSocialNetwork(draftReport)))
+      .orElse(OptionT(extractCompanyOfTrain(draftReport)))
       .orElse(OptionT(extractCompanyOfStation(draftReport)))
       .value
 
@@ -427,6 +430,27 @@ class ReportOrchestrator(
       case Some(_) =>
         (for {
           companyToCreate <- OptionT(companySyncService.companyBySiret(SncfGaresEtConnexionsSIRET))
+          c = Company(
+            siret = companyToCreate.siret,
+            name = companyToCreate.name.getOrElse(""),
+            address = companyToCreate.address,
+            activityCode = companyToCreate.activityCode,
+            isHeadOffice = companyToCreate.isHeadOffice,
+            isOpen = companyToCreate.isOpen,
+            isPublic = companyToCreate.isPublic,
+            brand = companyToCreate.brand
+          )
+          company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+        } yield company).value
+      case None =>
+        Future.successful(None)
+    }
+
+  private def extractCompanyOfTrain(reportDraft: ReportDraft): Future[Option[Company]] =
+    reportDraft.train match {
+      case Some(_) =>
+        (for {
+          companyToCreate <- OptionT(companySyncService.companyBySiret(SncfVoyageursSIRET))
           c = Company(
             siret = companyToCreate.siret,
             name = companyToCreate.name.getOrElse(""),

@@ -123,6 +123,7 @@ class AdminController(
     visibleToPro = true,
     lang = Some(Locale.FRENCH),
     barcodeProductId = None,
+    train = None,
     station = None
   )
 

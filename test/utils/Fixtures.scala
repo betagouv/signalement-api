@@ -179,7 +179,11 @@ object Fixtures {
     fileIds = List.empty
   )
 
-  def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
+  def genReportFromDraft(
+      reportDraft: ReportDraft,
+      maybeCompanyId: Option[UUID] = None,
+      maybeCompany: Option[Company] = None
+  ): Report = {
     val now   = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
     val company = for {
@@ -198,7 +202,7 @@ object Fixtures {
       isOpen = false,
       isPublic = false
     )
-    reportDraft.generateReport(maybeCompanyId, company, creationDate = now, expirationDate = later)
+    reportDraft.generateReport(maybeCompanyId, maybeCompany.orElse(company), creationDate = now, expirationDate = later)
   }
 
   def genReportCategory: Gen[String] =
@@ -242,6 +246,7 @@ object Fixtures {
     visibleToPro = true,
     lang = None,
     barcodeProductId = None,
+    train = None,
     station = None
   )
 
