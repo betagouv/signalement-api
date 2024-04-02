@@ -50,12 +50,14 @@ case class ReportDraft(
     ccrfCode: Option[List[String]] = None,
     lang: Option[Locale] = None,
     barcodeProductId: Option[UUID] = None,
-    metadata: Option[ReportMetadataDraft] = None
+    metadata: Option[ReportMetadataDraft] = None,
+    train: Option[Train] = None,
+    station: Option[String] = None
 ) {
 
   def generateReport(
       maybeCompanyId: Option[UUID],
-      socialNetworkCompany: Option[Company],
+      maybeCompany: Option[Company],
       creationDate: OffsetDateTime,
       expirationDate: OffsetDateTime,
       reportId: UUID = UUID.randomUUID()
@@ -68,12 +70,12 @@ case class ReportDraft(
       subcategories = subcategories,
       details = details,
       influencer = influencer,
-      companyId = maybeCompanyId.orElse(socialNetworkCompany.map(_.id)),
-      companyName = companyName.orElse(socialNetworkCompany.map(_.name)),
-      companyBrand = companyBrand.orElse(socialNetworkCompany.flatMap(_.brand)),
-      companyAddress = companyAddress.orElse(socialNetworkCompany.map(_.address)).getOrElse(Address()),
-      companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
-      companyActivityCode = companyActivityCode.orElse(socialNetworkCompany.flatMap(_.activityCode)),
+      companyId = maybeCompanyId,
+      companyName = companyName.orElse(maybeCompany.map(_.name)),
+      companyBrand = companyBrand.orElse(maybeCompany.flatMap(_.brand)),
+      companyAddress = companyAddress.orElse(maybeCompany.map(_.address)).getOrElse(Address()),
+      companySiret = companySiret.orElse(maybeCompany.map(_.siret)),
+      companyActivityCode = companyActivityCode.orElse(maybeCompany.flatMap(_.activityCode)),
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
@@ -86,8 +88,8 @@ case class ReportDraft(
       status = Report.initialStatus(
         employeeConsumer = employeeConsumer,
         visibleToPro = shouldBeVisibleToPro(),
-        companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
-        companyCountry = companyAddress.orElse(socialNetworkCompany.map(_.address)).flatMap(_.country)
+        companySiret = companySiret.orElse(maybeCompany.map(_.siret)),
+        companyCountry = companyAddress.orElse(maybeCompany.map(_.address)).flatMap(_.country)
       ),
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
@@ -98,7 +100,9 @@ case class ReportDraft(
       expirationDate = expirationDate,
       visibleToPro = shouldBeVisibleToPro(),
       lang = lang,
-      barcodeProductId = barcodeProductId
+      barcodeProductId = barcodeProductId,
+      train = train,
+      station = station
     )
 
   def shouldBeVisibleToPro(): Boolean =
@@ -115,7 +119,9 @@ object ReportDraft {
         .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined
-      || draft.influencer.isDefined)
+      || draft.influencer.isDefined
+      || draft.train.isDefined
+      || draft.station.isDefined)
 
   /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
     * entry name Make sure no translated values is passed as ReportTag to remove this reads
