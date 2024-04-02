@@ -51,7 +51,7 @@ case class ReportDraft(
     lang: Option[Locale] = None,
     barcodeProductId: Option[UUID] = None,
     metadata: Option[ReportMetadataDraft] = None,
-    train: Option[String] = None,
+    train: Option[Train] = None,
     station: Option[String] = None
 ) {
 
@@ -119,7 +119,9 @@ object ReportDraft {
         .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined
-      || draft.influencer.isDefined)
+      || draft.influencer.isDefined
+      || draft.train.isDefined
+      || draft.station.isDefined)
 
   /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
     * entry name Make sure no translated values is passed as ReportTag to remove this reads
