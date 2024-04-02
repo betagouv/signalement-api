@@ -59,7 +59,9 @@ case class Report(
     visibleToPro: Boolean,
     lang: Option[Locale],
     reopenDate: Option[OffsetDateTime] = None,
-    barcodeProductId: Option[UUID]
+    barcodeProductId: Option[UUID],
+    train: Option[Train],
+    station: Option[String]
 ) {
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
@@ -114,6 +116,8 @@ object Report {
       "tags"             -> report.tags,
       "activityCode"     -> report.companyActivityCode,
       "expirationDate"   -> report.expirationDate,
+      "train"            -> report.train,
+      "station"          -> report.station,
       "barcodeProductId" -> report.barcodeProductId
     ) ++ ((userRole, report.contactAgreement) match {
       case (Some(UserRole.Professionnel), false) => Json.obj()

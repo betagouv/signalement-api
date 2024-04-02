@@ -41,7 +41,7 @@ class ReportClosureTaskSpec(implicit ee: ExecutionEnv)
     Fixtures.genDraftReport.sample.get
       .generateReport(
         maybeCompanyId = None,
-        socialNetworkCompany = None,
+        maybeCompany = None,
         creationDate = creationDate,
         expirationDate = expirationDate
       )

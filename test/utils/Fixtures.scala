@@ -179,10 +179,30 @@ object Fixtures {
     fileIds = List.empty
   )
 
-  def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
+  def genReportFromDraft(
+      reportDraft: ReportDraft,
+      maybeCompanyId: Option[UUID] = None,
+      maybeCompany: Option[Company] = None
+  ): Report = {
     val now   = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
-    reportDraft.generateReport(maybeCompanyId, None, creationDate = now, expirationDate = later)
+    val company = for {
+      name <- reportDraft.companyName
+      brand = reportDraft.companyBrand
+      address <- reportDraft.companyAddress
+      siret   <- reportDraft.companySiret
+      activityCode = reportDraft.companyActivityCode
+    } yield Company(
+      name = name,
+      brand = brand,
+      address = address,
+      siret = siret,
+      activityCode = activityCode,
+      isHeadOffice = false,
+      isOpen = false,
+      isPublic = false
+    )
+    reportDraft.generateReport(maybeCompanyId, maybeCompany.orElse(company), creationDate = now, expirationDate = later)
   }
 
   def genReportCategory: Gen[String] =
@@ -225,7 +245,9 @@ object Fixtures {
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     visibleToPro = true,
     lang = None,
-    barcodeProductId = None
+    barcodeProductId = None,
+    train = None,
+    station = None
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
