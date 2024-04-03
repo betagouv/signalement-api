@@ -39,7 +39,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     }
     object Pro {
       def subscriptionDGCCRFCompanySummary(companyId: UUID) = url(
-        s"/bilan-entreprise/${companyId.toString}?mtm_campaign=subscription"
+        s"/entreprise/${companyId.toString}/bilan"
       )
       def register(siret: SIRET, token: String) = url(s"/entreprise/rejoindre/${siret}?token=${token}")
       def manageNotification()                  = url(s"/mes-entreprises")
