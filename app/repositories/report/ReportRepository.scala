@@ -532,6 +532,10 @@ object ReportRepository {
       .filterOpt(filter.details) { case (table, details) =>
         ArrayToStringSQLFunction(table.subcategories, ",", "") ++ " " ++
           ArrayToStringSQLFunction(table.details, ",", "") ++ " " ++
+          table.station.getOrElse("") ++ " " ++
+          table.train.getOrElse("") ++ " " ++
+          table.ter.getOrElse("") ++ " " ++
+          table.nightTrain.getOrElse("") ++ " " ++
           table.influencerName.getOrElse("") regexLike s"$details"
       }
       .filterOpt(filter.description) { case (table, description) =>
