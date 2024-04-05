@@ -139,7 +139,7 @@ class AdminController(
 
   private def genReportResponse = ReportResponse(
     responseType = ReportResponseType.ACCEPTED,
-    responseDetails = ResponseDetails.REFUND,
+    responseDetails = Some(ResponseDetails.REFUND),
     otherResponseDetails = None,
     consumerDetails = "",
     dgccrfDetails = Some(""),
