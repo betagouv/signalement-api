@@ -11,7 +11,7 @@ case class ReportResponse(
     consumerDetails: String,
     dgccrfDetails: Option[String],
     fileIds: List[ReportFileId],
-    responseDetails: ResponseDetails,
+    responseDetails: Option[ResponseDetails],
     otherResponseDetails: Option[String]
 )
 

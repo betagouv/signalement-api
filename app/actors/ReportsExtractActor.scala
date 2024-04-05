@@ -55,7 +55,7 @@ object ReportsExtractActor {
   case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId)
       extends ReportsExtractCommand
   case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends ReportsExtractCommand
-  case object ExtractRequestFailure                                 extends ReportsExtractCommand
+  case class ExtractRequestFailure(error: Throwable)                extends ReportsExtractCommand
 
   val logger: Logger = Logger(this.getClass)
 
@@ -94,7 +94,7 @@ object ReportsExtractActor {
 
           context.pipeToSelf(result) {
             case Success(success) => success
-            case Failure(_)       => ExtractRequestFailure
+            case Failure(error)   => ExtractRequestFailure(error)
           }
           Behaviors.same
 
@@ -102,8 +102,8 @@ object ReportsExtractActor {
           logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
           Behaviors.same
 
-        case ExtractRequestFailure =>
-          logger.info(s"Extract failed")
+        case ExtractRequestFailure(error) =>
+          logger.info(s"Extract failed", error)
           Behaviors.same
       }
     }
@@ -301,7 +301,7 @@ object ReportsExtractActor {
             .flatMap(_ =>
               events
                 .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .map(_.event.details.validate[ReportResponse].get.consumerDetails)
+                .flatMap(_.event.details.asOpt[ReportResponse].map(_.consumerDetails))
             )
             .getOrElse("")
       ),
@@ -320,7 +320,7 @@ object ReportsExtractActor {
             .flatMap(_ =>
               events
                 .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .flatMap(_.event.details.validate[ReportResponse].get.dgccrfDetails)
+                .flatMap(_.event.details.asOpt[ReportResponse].flatMap(_.dgccrfDetails))
             )
             .getOrElse("")
       ),
