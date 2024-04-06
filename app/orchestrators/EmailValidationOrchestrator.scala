@@ -6,6 +6,8 @@ import controllers.error.AppError
 import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
 import models.EmailValidation
+import models.EmailValidation.EmailValidationThreshold
+import models.EmailValidationApi
 import models.EmailValidationFilter
 import models.PaginatedResult
 import models.PaginatedSearch
@@ -37,7 +39,7 @@ class EmailValidationOrchestrator(
   def isEmailValid(email: EmailAddress): Future[Boolean] =
     for {
       emailValidation <- emailValidationRepository.findByEmail(email)
-    } yield emailValidation.exists(_.lastValidationDate.isDefined)
+    } yield emailValidation.exists(_.isValid)
 
   def checkCodeAndValidateEmail(emailValidationBody: ValidateEmailCode): Future[EmailValidationResult] =
     for {
@@ -101,7 +103,7 @@ class EmailValidationOrchestrator(
 
   private def isEmailNotValidatedOrOutdated(maybeValidationDate: Option[OffsetDateTime]) =
     maybeValidationDate match {
-      case Some(validationDate) => validationDate.isBefore(OffsetDateTime.now().minusYears(1L))
+      case Some(validationDate) => validationDate.isBefore(EmailValidationThreshold)
       case None                 => true
     }
 
@@ -132,6 +134,8 @@ class EmailValidationOrchestrator(
         Future(foundEmail)
     }
 
-  def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
-    emailValidationRepository.search(search, paginate)
+  def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidationApi]] =
+    emailValidationRepository
+      .search(search, paginate)
+      .map(_.mapEntities(EmailValidationApi.fromEmailValidation))
 }

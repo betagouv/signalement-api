@@ -1,5 +1,6 @@
 package models
 
+import models.EmailValidation.EmailValidationThreshold
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.QueryStringMapper
@@ -16,10 +17,17 @@ final case class EmailValidation(
     attempts: Int = 0,
     lastAttempt: Option[OffsetDateTime] = None,
     lastValidationDate: Option[OffsetDateTime] = None
-)
+) {
+
+  def isValid =
+    this.lastValidationDate.isDefined && this.lastValidationDate.exists(_.isAfter(EmailValidationThreshold))
+
+}
 
 object EmailValidation {
   implicit val emailValidationformat: OFormat[EmailValidation] = Json.format[EmailValidation]
+
+  def EmailValidationThreshold = OffsetDateTime.now().minusYears(1L)
 }
 
 final case class EmailValidationFilter(
