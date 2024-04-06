@@ -18,7 +18,5 @@ trait EmailValidationRepositoryInterface extends CRUDRepositoryInterface[EmailVa
 
   def exists(email: EmailAddress): Future[Boolean]
 
-  def isValidated(email: EmailAddress): Future[Boolean]
-
   def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]]
 }
