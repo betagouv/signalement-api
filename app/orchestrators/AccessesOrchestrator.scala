@@ -319,7 +319,7 @@ class AccessesOrchestrator(
         )
       )
       _ <- mailService.send(
-        Email.ValidateEmail(
+        Email.DgccrfValidateEmail(
           user.email,
           tokenConfiguration.dgccrfRevalidationTokenDuration.map(_.getDays).getOrElse(7),
           frontRoute.dashboard.validateEmail(token.token)

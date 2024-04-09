@@ -56,7 +56,7 @@ import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
 import services.Email.ResetPassword
-import services.Email.ValidateEmail
+import services.Email.DgccrfValidateEmail
 import services.Email
 import services.MailService
 import services.PDFService
@@ -293,7 +293,7 @@ class AdminController(
     "dgccrf.access_link" ->
       (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.validate_email" ->
-      (ValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
+      (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
       DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
     ),
