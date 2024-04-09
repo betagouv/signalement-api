@@ -37,16 +37,17 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import services.Email.DgccrfAgentAccessLink
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
+import services.Email.DgccrfAgentAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
-import services.Email.DgccrfReportNotification
 import services.Email.DgccrfInactiveAccount
+import services.Email.DgccrfReportNotification
+import services.Email.DgccrfValidateEmail
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
@@ -56,7 +57,7 @@ import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
 import services.Email.ResetPassword
-import services.Email.DgccrfValidateEmail
+import services.Email.UpdateEmailAddress
 import services.Email
 import services.MailService
 import services.PDFService
@@ -253,6 +254,9 @@ class AdminController(
   val availableEmails = Map[String, EmailAddress => Email](
     // ======= Divers =======
     "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "various.update_email_address" -> (recipient =>
+      UpdateEmailAddress(recipient, frontRoute.dashboard.updateEmail("abc"), daysBeforeExpiry = 2)
+    ),
 
     // ======= DGCCRF =======
     "dgccrf.access_link" ->
