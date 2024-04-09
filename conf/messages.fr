@@ -28,7 +28,7 @@ ConsumerReportAckProEmail.responseHeaderOnReopen=L''entreprise n'a pas souhaité
 ConsumerReportAckProEmail.responseContent=Voici sa réponse :
 ConsumerReportAckProEmail.satisfactionQuestion=Êtes-vous satisfait de cette réponse ?
 ConsumerReportAckProEmail.clickYourChoice=Cliquez sur votre choix :
-ConsumerReportAckProEmail.situationImprovement=Sachez que, quelle que soit la réponse de l''entreprise, les enquêteurs de la répression des fraudes peuvent décider de faire un contrôle, en fonction des informations que vous avez transmises.
+ConsumerReportAckProEmail.situationImprovement=Sachez que, quelle que soit la réponse de l''entreprise, les enquêteurs de la répression des fraudes peuvent décider de faire un contrôle, grâce aux informations que vous avez transmises.
 ConsumerReportAckProEmail.waitingForImprovement=Vous souhaitez attendre de voir si la situation s''améliore ?
 ConsumerReportAckProEmail.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation.
 ConsumerReportAckProEmail.satisfactionRequest=Si SignalConso vous donne satisfaction, n''hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> et <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
@@ -68,7 +68,7 @@ ReportClosedByNoReadingEmail.malgreRelancesMessage=Malgré nos relances, <b>l''e
 ReportClosedByNoReadingEmail.enqueteurReceivedMessage=Par contre, <b>les enquêteurs de la répression des fraudes ont bien reçu votre signalement.</b>
 ReportClosedByNoReadingEmail.enqueteurDecideMessage=Ils peuvent décider de contrôler ou de surveiller l''entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
 ReportClosedByNoReadingEmail.nouveauSignalementMessage=Si vous retournez dans cette entreprise et constatez que le problème n''a pas été corrigé, faites un nouveau signalement. Savoir que la situation perdure est un élément important pour les enquêteurs.
-ReportClosedByNoReadingEmail.contractualDisputeMessage=Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation.
+ReportClosedByNoReadingEmail.contractualDisputeMessage=Vous pouvez néanmoins continuer les démarches pour trouver une solution ou obtenir réparation.
 ReportClosedByNoReadingEmail.continuerDemarches=Continuer mes démarches
 ReportClosedByNoReadingEmail.reparationLitigeMessage=Si vous avez déjà obtenu répération concernant votre litige, vous pouvez ignorer ce message.
 ReportClosedByNoReadingEmail.aBientotMessage=À bientôt sur SignalConso !
@@ -82,8 +82,9 @@ ReportNotAnswered.reportDate=Vous avez fait un signalement le <b>{0}</b> concern
 ReportNotAnswered.companySiret=SIRET : <b>{0}</b>
 ReportNotAnswered.noResponse=L''entreprise n''a pas souhaité répondre à votre signalement.
 ReportNotAnswered.enforcementConfirmation=Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement. Ils peuvent décider de contrôler ou de surveiller l''entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
+ReportNotAnswered.enforcementConfirmation=Les enquêteurs de la répression des fraudes ont quant à eux bien reçu votre signalement. Ils peuvent décider de contrôler ou de surveiller l''entreprise que vous avez signalée, grâce aux informations que vous avez transmises.
 ReportNotAnswered.enforcementAdvice=Si vous retournez dans cette entreprise et constatez que le problème n''a pas été corrigé, faites un nouveau signalement. Savoir que la situation perdure est un élément important pour les enquêteurs.
-ReportNotAnswered.disputeAdvice=Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation
+ReportNotAnswered.disputeAdvice=Vous pouvez néanmoins continuer les démarches pour trouver une solution ou obtenir réparation
 ReportNotAnswered.continueAction=Continuer mes démarches
 ReportNotAnswered.ignoreMessage=Si vous avez déjà obtenu réparation concernant votre litige, vous pouvez ignorer ce message.
 ReportNotAnswered.goodbye=À bientôt sur SignalConso !
@@ -96,11 +97,11 @@ ReportAckEmail.reportSubmitted=Votre signalement a bien été enregistré dans S
 ReportAckEmail.employeeOfReportedCompany=Vous avez indiqué être employé(e) de l''entreprise que vous avez signalée.
 ReportAckEmail.reportNotSentToCompany=Afin de garantir la sécurité de votre emploi, votre signalement ne sera pas envoyé à l''entreprise.
 ReportAckEmail.fraudInvestigatorsInformed=Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.
-ReportAckEmail.foreignCompanyReported=Vous avez indiqué que l''entreprise est une entreprise étrangère ({0}).
+ReportAckEmail.foreignCompanyReported=Vous avez indiqué que l''entreprise était une entreprise étrangère ({0}).
 ReportAckEmail.reportNotTransmittedToCompany=Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
 ReportAckEmail.submitToEuropeanConsumersCenter=Vous pouvez faire appel au <a href="{0}">Centre Européen des Consommateurs France</a> pour connaître vos droits ou vous faire aider dans vos démarches amiables. <a href="{0}">{0}</a>
 ReportAckEmail.submitToAndorraCommerceAndConsumption=Nous vous invitons à faire votre signalement directement auprès du service du commerce et de la consommation d''Andorre : <a href="{0}">{0}</a>
-ReportAckEmail.fraudInvestigatorsTransferReport=Par contre les enquêteurs de la répression des fraudes vont le transférer aux autorités compétentes de ce pays.
+ReportAckEmail.fraudInvestigatorsTransferReport=Les enquêteurs de la répression des fraudes vont néanmoins le transférer aux autorités compétentes de ce pays.
 ReportAckEmail.submitToEconsumerGov=Nous vous invitons à faire votre signalement auprès d''econsumer.gov afin d''aider les autorités internationales à lutter contre la fraude. <a href="{0}">{0}</a>
 ReportAckEmail.questionSubmitted=Votre question a bien été enregistrée dans SignalConso.
 ReportAckEmail.respondentWillContactIfNeeded=Un répondant reviendra vers vous si nécessaire pour des compléments éventuels. Puis vous recevrez, dans les plus brefs délais, une réponse définitive ou vous serez réorienté(e) vers le service compétent.
@@ -114,12 +115,12 @@ ReportAckEmail.individualActionsRecommended=Pour augmenter vos chances de trouve
 ReportAckEmail.pdfAttachmentUseful=Vous trouverez en pièce jointe votre signalement au format PDF qui vous sera utile.
 ReportAckEmail.startIndividualActions=Commencer mes démarches
 ReportAckEmail.whatWillHappen=Que va-t-il se passer ?
-ReportAckEmail.companyInformedToCorrectIssue=L''entreprise va être informée de votre signalement pour qu''elle puisse corriger le problème.
+ReportAckEmail.companyInformedToCorrectIssue=L''entreprise va être informée de votre signalement afin de pouvoir corriger le problème.
 ReportAckEmail.emailNotificationUponCompanyReadingReport=Dès que l''entreprise aura lu le signalement, vous recevrez un email.
 ReportAckEmail.companiesHaveTwoMonthsToRegisterAndViewReport=Les entreprises ont un délai de deux mois pour créer leur compte et consulter votre signalement.
 ReportAckEmail.reportSentToFraudInvestigators=Si, malgré nos relances, l''entreprise ne souhaite pas consulter votre signalement, vous serez informé(e) de son refus.
 ReportAckEmail.readOrNot=Que l''entreprise lise ou non votre signalement, <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
-ReportAckEmail.knowYourRightsForAirCompensation=Vous souhaitez connaître vos droits sur l''indemnisation liée à une annulation, un retard, un refus d''embarquement ou un déclassement, consultez le site : <a href="{0}">Direction générale de l'Aviation civile</a>
+ReportAckEmail.knowYourRightsForAirCompensation=Vous souhaitez connaître vos droits sur l''indemnisation liée à une annulation, un retard, un refus d''embarquement ou un déclassement, consultez le site : <a href="{0}">Direction générale de l''Aviation civile</a>
 ReportAckEmail.currentProductRecallCampaigns=Campagnes de retrait/rappel en cours de produits alimentaires :
 ReportAckEmail.doNotConsumeProductsAndTakePhotos=Il est demandé aux personnes détenant ces produits de ne pas les consommer et de les jeter immédiatement
 ReportAckEmail.takePhotosBeforeDisposal=(prendre préalablement des photos de l''emballage comportant les références du produit : date limite de consommation, numéro de lot, code barre, …).
