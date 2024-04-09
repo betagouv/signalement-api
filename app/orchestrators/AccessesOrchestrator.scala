@@ -19,7 +19,7 @@ import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.Email.AdminAccessLink
-import services.Email.AgentAccessLink
+import services.Email.DgccrfAgentAccessLink
 import services.Email.UpdateEmailAddress
 import services.Email
 import services.EmailAddressService
@@ -247,14 +247,14 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          AgentAccessLink("DGCCRF") _,
+          DgccrfAgentAccessLink("DGCCRF") _,
           frontRoute.dashboard.Agent.register _
         )
       case DGALAccount =>
         (
           EmailAddressService.isEmailAcceptableForDgalAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          AgentAccessLink("DGAL") _,
+          DgccrfAgentAccessLink("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
       case AdminAccount =>

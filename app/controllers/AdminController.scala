@@ -37,7 +37,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import services.Email.AgentAccessLink
+import services.Email.DgccrfAgentAccessLink
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -46,7 +46,7 @@ import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
-import services.Email.InactiveDgccrfAccount
+import services.Email.DgccrfInactiveAccount
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
@@ -256,9 +256,9 @@ class AdminController(
 
     // ======= DGCCRF =======
     "dgccrf.access_link" ->
-      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
+      (DgccrfAgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.inactive_account_reminder" -> (recipient =>
-      InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
+      DgccrfInactiveAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
     ),
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
       DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
