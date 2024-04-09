@@ -251,10 +251,33 @@ class AdminController(
   )
 
   val availableEmails = Map[String, EmailAddress => Email](
+    // ======= Divers =======
+    "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+
+    // ======= DGCCRF =======
+    "dgccrf.access_link" ->
+      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.inactive_account_reminder" -> (recipient =>
       InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
     ),
-    "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "dgccrf.report_dangerous_product_notification" -> (recipient =>
+      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
+    ),
+    "dgccrf.report_notif_dgccrf" -> (recipient =>
+      DgccrfReportNotification(
+        List(recipient),
+        genSubscription,
+        List(
+          (genReport, List(genReportFile)),
+          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
+        ),
+        LocalDate.now().minusDays(10)
+      )
+    ),
+    "dgccrf.validate_email" ->
+      (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
+
+    // ======= PRO =======
     "pro.access_invitation"  -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.report_ack_pro" -> (recipient =>
@@ -290,24 +313,8 @@ class AdminController(
         assignedUser = genUser.copy(email = recipient)
       )
     ),
-    "dgccrf.access_link" ->
-      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
-    "dgccrf.validate_email" ->
-      (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
-    "dgccrf.report_dangerous_product_notification" -> (recipient =>
-      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
-    ),
-    "dgccrf.report_notif_dgccrf" -> (recipient =>
-      DgccrfReportNotification(
-        List(recipient),
-        genSubscription,
-        List(
-          (genReport, List(genReportFile)),
-          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
-        ),
-        LocalDate.now().minusDays(10)
-      )
-    ),
+
+    // ======= CONSO =======
     "consumer.report_ack" -> (recipient =>
       ConsumerReportAcknowledgment(
         genReport.copy(email = recipient),
@@ -410,7 +417,6 @@ class AdminController(
         )
       ),
     "consumer.report_ack_case_suisse" ->
-
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(
