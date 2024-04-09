@@ -48,7 +48,7 @@ sealed trait ConsumerEmail extends Email
 
 object Email {
 
-  final case class ResetPassword(user: User, authToken: AuthToken) extends ConsumerEmail {
+  final case class ResetPassword(user: User, authToken: AuthToken) extends ProEmail with DgccrfEmail {
     override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String                = EmailSubjects.RESET_PASSWORD
 

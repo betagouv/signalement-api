@@ -254,7 +254,7 @@ class AdminController(
     "dgccrf.inactive_account_reminder" -> (recipient =>
       InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
     ),
-    "dgccrf.reset_password"  -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "pro.access_invitation"  -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.report_ack_pro" -> (recipient =>
