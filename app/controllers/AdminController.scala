@@ -37,6 +37,8 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import services.Email.AdminAccessLink
+import services.Email.AdminProbeTriggered
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -256,6 +258,12 @@ class AdminController(
     "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "various.update_email_address" -> (recipient =>
       UpdateEmailAddress(recipient, frontRoute.dashboard.updateEmail("abc"), daysBeforeExpiry = 2)
+    ),
+
+    // ======= Admin =======
+    "admin.access_link" -> (recipient => AdminAccessLink(recipient, frontRoute.dashboard.Admin.register("abc"))),
+    "admin.probe_triggered" -> (recipient =>
+      AdminProbeTriggered(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "bas")
     ),
 
     // ======= DGCCRF =======
