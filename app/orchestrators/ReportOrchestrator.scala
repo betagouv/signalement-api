@@ -17,6 +17,8 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.event.Event._
+import models.promise.PromiseOfAction
+import models.promise.PromiseOfActionId
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
@@ -30,6 +32,7 @@ import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
+import repositories.promise.PromiseOfActionRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
@@ -81,6 +84,7 @@ class ReportOrchestrator(
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
+    promiseRepository: PromiseOfActionRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -823,8 +827,8 @@ class ReportOrchestrator(
           status = ReportStatus.fromResponseType(reportResponse.responseType)
         )
       )
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _ <- eventRepository.create(
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
+      responseEvent <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -836,6 +840,18 @@ class ReportOrchestrator(
           Json.toJson(reportResponse)
         )
       )
+      _ <- reportResponse.responseType match {
+        case ReportResponseType.ACCEPTED =>
+          promiseRepository.create(
+            PromiseOfAction(
+              id = PromiseOfActionId(UUID.randomUUID()),
+              reportId = report.id,
+              promiseEventId = responseEvent.id,
+              resolutionEventId = None
+            )
+          )
+        case _ => Future.unit
+      }
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user, maybeCompany)
       _ <- eventRepository.create(
         Event(

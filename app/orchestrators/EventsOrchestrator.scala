@@ -16,6 +16,7 @@ import repositories.report.ReportRepositoryInterface
 import utils.Constants.ActionEvent.REPORT_ASSIGNED
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
+import utils.Constants.ActionEvent.REPORT_PRO_PROMISE_OF_ACTION_HONOURED
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.ActionEvent.REPORT_REOPENED_BY_ADMIN
@@ -107,6 +108,7 @@ class EventsOrchestrator(
           List(
             REPORT_READING_BY_PRO,
             REPORT_PRO_RESPONSE,
+            REPORT_PRO_PROMISE_OF_ACTION_HONOURED,
             REPORT_REVIEW_ON_RESPONSE,
             REPORT_CLOSED_BY_NO_READING,
             REPORT_CLOSED_BY_NO_ACTION,
