@@ -46,6 +46,7 @@ import services.emails.Email
 import services.emails.EmailDefinition
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
+import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.MailService
 
 class AdminController(
@@ -118,13 +119,12 @@ class AdminController(
     ResetPassword,
     UpdateEmailAddress,
     AdminAccessLink,
-    AdminProbeTriggered
+    AdminProbeTriggered,
+    DgccrfAgentAccessLink
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
-    "dgccrf.access_link" ->
-      (DgccrfAgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
     "dgccrf.inactive_account_reminder" -> (recipient =>
       DgccrfInactiveAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
     ),

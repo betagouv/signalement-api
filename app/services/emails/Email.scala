@@ -50,16 +50,6 @@ object Email {
 
   // ======= DGCCRF =======
 
-  final case class DgccrfAgentAccessLink(role: String)(recipient: EmailAddress, invitationUrl: URI)
-      extends DgccrfEmail {
-    override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.dgccrf.accessLink(invitationUrl, role).toString
-
-    override val recipients: List[EmailAddress] = List(recipient)
-  }
-
   final case class DgccrfInactiveAccount(
       user: User,
       expirationDate: Option[LocalDate]
