@@ -62,6 +62,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
 import repositories.probe.ProbeRepository
+import repositories.promise.PromiseOfActionRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -213,6 +214,8 @@ class SignalConsoComponents(
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
+
+  val promiseOfActionRepository = new PromiseOfActionRepository(dbConfig)
 
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
@@ -367,6 +370,7 @@ class SignalConsoComponents(
     tokenConfiguration,
     signalConsoConfiguration,
     companySyncService,
+    promiseOfActionRepository,
     messagesApi
   )
 
@@ -713,6 +717,16 @@ class SignalConsoComponents(
     )
   val barcodeController = new BarcodeController(barcodeOrchestrator, cookieAuthenticator, controllerComponents)
 
+  val promiseOfActionOrchestrator =
+    new PromiseOfActionOrchestrator(
+      promiseOfActionRepository,
+      companiesVisibilityOrchestrator,
+      eventRepository,
+      reportRepository
+    )
+  val promiseOfActionController =
+    new PromiseOfActionController(promiseOfActionOrchestrator, cookieAuthenticator, controllerComponents)
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -775,6 +789,7 @@ class SignalConsoComponents(
       siretExtractorController,
       importController,
       barcodeController,
+      promiseOfActionController,
       assets
     )
 

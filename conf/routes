@@ -215,4 +215,7 @@ POST          /api/import/companies                                     controll
 GET           /api/barcode/gtin/:gtin                                   controllers.BarcodeController.getProductByGTIN(gtin)
 GET           /api/barcode/:id                                          controllers.BarcodeController.getById(id: java.util.UUID)
 
+ GET          /api/promises                                             controllers.PromiseOfActionController.list()
+ POST         /api/promises/:id/honour                                  controllers.PromiseOfActionController.honour(id: PromiseOfActionId)
+
 GET           /assets/*file                                             controllers.Assets.versioned(path="/public", file: Asset)
