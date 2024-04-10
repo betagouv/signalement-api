@@ -26,6 +26,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email._
 import services.EmailDefinitions.ResetPassword
+import services.EmailDefinitions.UpdateEmailAddress
 import services.Email
 import services.EmailDefinition
 import services.MailService
@@ -112,13 +113,11 @@ class AdminController(
   )
 
   val newList: Seq[(String, EmailAddress => Email)] = List(
-    ResetPassword
+    ResetPassword,
+    UpdateEmailAddress
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
-    // ======= Divers =======
-    "various.update_email_address" -> (recipient => UpdateEmailAddress(recipient, dummyURL, daysBeforeExpiry = 2)),
-
     // ======= Admin =======
     "admin.access_link" -> (recipient => AdminAccessLink(recipient, dummyURL)),
     "admin.probe_triggered" -> (recipient =>

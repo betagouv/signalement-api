@@ -20,9 +20,9 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.Email.AdminAccessLink
 import services.Email.DgccrfAgentAccessLink
-import services.Email.UpdateEmailAddress
 import services.Email
 import services.EmailAddressService
+import services.EmailDefinitions.UpdateEmailAddress
 import services.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
@@ -128,7 +128,7 @@ class AccessesOrchestrator(
             )
         }
       _ <- mailService.send(
-        UpdateEmailAddress(
+        UpdateEmailAddress.build(
           newEmail,
           frontRoute.dashboard.updateEmail(token.token),
           tokenConfiguration.updateEmailAddressDuration.getDays

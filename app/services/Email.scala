@@ -46,17 +46,8 @@ sealed trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
 sealed trait ConsumerEmail extends Email
 
 object Email {
-  // ======= Divers =======
+  // ======= Admin =======
 
-  final case class UpdateEmailAddress(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int)
-      extends Email {
-
-    override val recipients: Seq[EmailAddress] = List(recipient)
-    override val subject: String               = EmailSubjects.UPDATE_EMAIL_ADDRESS
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.updateEmailAddress(invitationUrl, daysBeforeExpiry).toString()
-  }
   final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
     override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
 
