@@ -200,6 +200,25 @@ object Email {
           .toString
   }
 
+  final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
+      extends ProFilteredEmailSingleReport {
+    override val recipients: List[EmailAddress] = List(user.email)
+    override val subject: String                = EmailSubjects.REPORT_ACK_PRO
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) =>
+        views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
+  }
+
+  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
+      extends ProFilteredEmailSingleReport {
+    override val recipients: List[EmailAddress] = users.map(_.email)
+    override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+  }
+
   final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
       extends ProFilteredEmailSingleReport {
     override val subject: String                = EmailSubjects.NEW_REPORT
@@ -218,17 +237,6 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
   }
 
-  final case class ProReportsUnreadReminder(
-      recipients: List[EmailAddress],
-      reports: List[Report],
-      period: Period
-  ) extends ProFilteredEmailMultipleReport {
-    override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
-  }
-
   final case class ProReportsReadReminder(
       recipients: List[EmailAddress],
       reports: List[Report],
@@ -240,23 +248,15 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
   }
 
-  final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
-      extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = List(user.email)
-    override val subject: String                = EmailSubjects.REPORT_ACK_PRO
+  final case class ProReportsUnreadReminder(
+      recipients: List[EmailAddress],
+      reports: List[Report],
+      period: Period
+  ) extends ProFilteredEmailMultipleReport {
+    override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
 
     override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
-  }
-
-  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
-      extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = users.map(_.email)
-    override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
   }
 
   final case class ProReportAssignedNotification(report: Report, assigningUser: User, assignedUser: User)

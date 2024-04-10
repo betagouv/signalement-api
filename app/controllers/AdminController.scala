@@ -52,6 +52,7 @@ import services.Email.DgccrfReportNotification
 import services.Email.DgccrfValidateEmail
 import services.Email.ProCompaniesAccessesInvitations
 import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompaniesAccesses
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
 import services.Email.ProReportAssignedNotification
@@ -59,6 +60,8 @@ import services.Email.ProReportReOpeningNotification
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
+import services.Email.ProResponseAcknowledgmentOnAdminCompletion
+import services.Email.ReportDeletionConfirmation
 import services.Email.ResetPassword
 import services.Email.UpdateEmailAddress
 import services.Email
@@ -168,6 +171,8 @@ class AdminController(
     isPublic = true,
     brand = Some("une super enseigne")
   )
+
+  private def genCompanyList = List(genCompany, genCompany, genCompany)
 
   private def genSiren = SIREN.fromSIRET(genCompany.siret)
 
@@ -293,11 +298,15 @@ class AdminController(
     // ======= PRO =======
     "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.access_invitation_multiple_companies" -> (recipient =>
-      ProCompaniesAccessesInvitations(recipient, List(genCompany, genCompany, genCompany), genSiren, dummyURL)
+      ProCompaniesAccessesInvitations(recipient, genCompanyList, genSiren, dummyURL)
     ),
-    "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
+    "pro.new_company_access"     -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
+    "pro.new_companies_accesses" -> (recipient => ProNewCompaniesAccesses(recipient, genCompanyList, genSiren)),
     "pro.report_ack_pro" -> (recipient =>
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
+    ),
+    "pro.report_ack_pro_on_admin_completion" -> (recipient =>
+      ProResponseAcknowledgmentOnAdminCompletion(genReport, List(genUser.copy(email = recipient), genUser, genUser))
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
@@ -327,6 +336,13 @@ class AdminController(
         report = genReport,
         assigningUser = genUser,
         assignedUser = genUser.copy(email = recipient)
+      )
+    ),
+    "pro.report_deletion_confirmation" -> (_ =>
+      ReportDeletionConfirmation(
+        genReport,
+        Some(genCompany),
+        controllerComponents.messagesApi
       )
     ),
 
