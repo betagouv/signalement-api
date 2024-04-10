@@ -21,7 +21,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.emails.Email.AdminAccessLink
 import services.emails.Email.DgccrfAgentAccessLink
 import services.EmailAddressService
-import services.emails.EmailDefinitions.UpdateEmailAddress
+import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.Email
 import services.emails.MailServiceInterface
 import utils.EmailAddress

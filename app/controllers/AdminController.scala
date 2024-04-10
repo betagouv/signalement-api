@@ -25,8 +25,8 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.emails.Email._
-import services.emails.EmailDefinitions.ResetPassword
-import services.emails.EmailDefinitions.UpdateEmailAddress
+import services.emails.EmailDefinitionsVarious.ResetPassword
+import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.PDFService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent

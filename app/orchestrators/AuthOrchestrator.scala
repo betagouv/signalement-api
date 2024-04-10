@@ -21,7 +21,7 @@ import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.emails.EmailDefinitions.ResetPassword
+import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.MailService
 import utils.Logs.RichLogger
 import utils.EmailAddress
