@@ -36,8 +36,8 @@ import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import services.Email._
-import services.MailService
+import services.emails.Email._
+import services.emails.MailService
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent

@@ -1,21 +1,21 @@
-package services
+package services.emails
 
 import akka.actor.ActorSystem
 import cats.data.NonEmptyList
 import com.sun.mail.smtp.SMTPSendFailedException
 import play.api.Logger
 import play.api.libs.mailer._
-import services.MailRetriesService.EmailRequest
-import services.MailRetriesService.getDelayBeforeNextRetry
+import services.emails.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.getDelayBeforeNextRetry
 import utils.EmailAddress
 import utils.Logs.RichLogger
 
 import java.util.concurrent.Executors
 import javax.mail.internet.AddressException
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration.DurationDouble
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Random
 import scala.util.Success

@@ -15,8 +15,8 @@ import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.DgccrfReportNotification
-import services.MailService
+import services.emails.Email.DgccrfReportNotification
+import services.emails.MailService
 import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
 import tasks.ScheduledTask
 import utils.Constants.Departments

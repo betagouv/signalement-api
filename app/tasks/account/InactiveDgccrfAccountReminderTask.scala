@@ -7,8 +7,8 @@ import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.DgccrfInactiveAccount
-import services.MailService
+import services.emails.Email.DgccrfInactiveAccount
+import services.emails.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Logs.RichLogger

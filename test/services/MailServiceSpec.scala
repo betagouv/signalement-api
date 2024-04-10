@@ -7,8 +7,10 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import services.Email.ProNewReportNotification
-import services.MailRetriesService.EmailRequest
+import services.emails.Email.ProNewReportNotification
+import services.emails.MailRetriesService
+import services.emails.MailService
+import services.emails.MailRetriesService.EmailRequest
 import utils._
 
 import java.util.UUID

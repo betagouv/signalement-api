@@ -19,8 +19,8 @@ import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.Email._
-import services.MailService
+import services.emails.Email._
+import services.emails.MailService
 import utils.Constants
 import utils.Constants.ActionEvent._
 

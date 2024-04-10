@@ -11,14 +11,14 @@ import models.EmailValidationApi
 import models.EmailValidationFilter
 import models.PaginatedResult
 import models.PaginatedSearch
-import services.MailServiceInterface
 import utils.EmailAddress
 import models.email.EmailValidationResult
 import models.email.ValidateEmailCode
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import repositories.emailvalidation.EmailValidationRepositoryInterface
-import services.Email.ConsumerValidateEmail
+import services.emails.Email.ConsumerValidateEmail
+import services.emails.MailServiceInterface
 
 import java.time.OffsetDateTime
 import java.util.Locale

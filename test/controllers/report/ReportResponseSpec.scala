@@ -16,7 +16,7 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils._

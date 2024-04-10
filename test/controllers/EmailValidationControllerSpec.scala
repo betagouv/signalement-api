@@ -18,8 +18,8 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.emailvalidation.EmailValidationRepositoryInterface
-import services.Email.ConsumerValidateEmail
-import services.MailRetriesService.EmailRequest
+import services.emails.Email.ConsumerValidateEmail
+import services.emails.MailRetriesService.EmailRequest
 import utils.EmailAddress.EmptyEmailAddress
 import utils.AppSpec
 import utils.EmailAddress

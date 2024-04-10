@@ -19,8 +19,8 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.Email
-import services.MailServiceInterface
+import services.emails.Email
+import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType

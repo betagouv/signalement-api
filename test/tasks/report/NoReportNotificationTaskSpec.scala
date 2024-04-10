@@ -7,7 +7,7 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
 import utils._
 
 import java.time.OffsetDateTime

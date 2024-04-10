@@ -17,11 +17,11 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.ProCompaniesAccessesInvitations
-import services.Email.ProCompanyAccessInvitation
-import services.Email.ProNewCompaniesAccesses
-import services.Email.ProNewCompanyAccess
-import services.MailServiceInterface
+import services.emails.Email.ProCompaniesAccessesInvitations
+import services.emails.Email.ProCompanyAccessInvitation
+import services.emails.Email.ProNewCompaniesAccesses
+import services.emails.Email.ProNewCompanyAccess
+import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress

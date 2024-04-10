@@ -18,12 +18,12 @@ import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
-import services.Email.AdminAccessLink
-import services.Email.DgccrfAgentAccessLink
-import services.Email
+import services.emails.Email.AdminAccessLink
+import services.emails.Email.DgccrfAgentAccessLink
 import services.EmailAddressService
-import services.EmailDefinitions.UpdateEmailAddress
-import services.MailServiceInterface
+import services.emails.EmailDefinitions.UpdateEmailAddress
+import services.emails.Email
+import services.emails.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.PasswordComplexityHelper

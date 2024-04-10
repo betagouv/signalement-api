@@ -24,12 +24,9 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import services.Email._
-import services.EmailDefinitions.ResetPassword
-import services.EmailDefinitions.UpdateEmailAddress
-import services.Email
-import services.EmailDefinition
-import services.MailService
+import services.emails.Email._
+import services.emails.EmailDefinitions.ResetPassword
+import services.emails.EmailDefinitions.UpdateEmailAddress
 import services.PDFService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
@@ -44,7 +41,10 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import services.EmailsExamplesUtils._
+import services.emails.EmailsExamplesUtils._
+import services.emails.Email
+import services.emails.EmailDefinition
+import services.emails.MailService
 
 class AdminController(
     reportRepository: ReportRepositoryInterface,

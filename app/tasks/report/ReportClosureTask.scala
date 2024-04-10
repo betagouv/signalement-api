@@ -13,10 +13,10 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
-import services.Email.ConsumerReportClosedNoAction
-import services.Email.ConsumerReportClosedNoReading
-import services.ConsumerEmail
-import services.MailService
+import services.emails.Email.ConsumerReportClosedNoAction
+import services.emails.Email.ConsumerReportClosedNoReading
+import services.emails.ConsumerEmail
+import services.emails.MailService
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION

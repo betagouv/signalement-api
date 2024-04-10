@@ -1,4 +1,4 @@
-package services
+package services.emails
 
 import models.Subscription
 import models.User
@@ -9,14 +9,7 @@ import models.company.Company
 import models.event.Event
 import models.report.DetailInputValue.toDetailInputValue
 import models.report.ReportFileOrigin.Consumer
-import models.report.Gender
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportResponse
-import models.report.ReportResponseType
-import models.report.ReportStatus
-import models.report.ResponseDetails
-import models.report.WebsiteURL
+import models.report._
 import models.report.reportfile.ReportFileId
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.EventType

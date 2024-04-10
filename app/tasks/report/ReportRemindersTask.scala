@@ -12,10 +12,10 @@ import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
-import services.Email.ProReportsReadReminder
-import services.Email.ProReportsUnreadReminder
-import services.Email
-import services.MailServiceInterface
+import services.emails.Email.ProReportsReadReminder
+import services.emails.Email.ProReportsUnreadReminder
+import services.emails.Email
+import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
 import utils.Constants.ActionEvent._

@@ -28,8 +28,8 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.MailRetriesService
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType

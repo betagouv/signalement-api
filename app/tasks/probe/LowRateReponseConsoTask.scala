@@ -7,8 +7,8 @@ import play.api.Logger
 import repositories.probe.ProbeRepository
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.AdminProbeTriggered
-import services.MailService
+import services.emails.Email.AdminProbeTriggered
+import services.emails.MailService
 import tasks.ScheduledTask
 import utils.Logs.RichLogger
 

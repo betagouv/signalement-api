@@ -11,8 +11,8 @@ import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.ProReportAssignedNotification
-import services.MailService
+import services.emails.Email.ProReportAssignedNotification
+import services.emails.MailService
 import utils.Constants
 
 import java.time.OffsetDateTime

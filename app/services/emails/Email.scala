@@ -1,20 +1,21 @@
-package services
+package services.emails
 
 import cats.data.NonEmptyList
-import models.EmailValidation
-import models.Subscription
-import models.User
 import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
 import models.report.ReportTag
+import models.EmailValidation
+import models.Subscription
+import models.User
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
 import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
+import services.AttachmentService
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute

@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories.event.EventFilter
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.Departments

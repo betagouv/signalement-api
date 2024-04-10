@@ -23,8 +23,8 @@ import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
-import services.MailRetriesService
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService
 import tasks.company.CompanySyncServiceInterface
 
 import java.io.File

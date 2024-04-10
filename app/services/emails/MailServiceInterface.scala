@@ -1,4 +1,5 @@
-package services
+package services.emails
+
 import scala.concurrent.Future
 
 trait MailServiceInterface {

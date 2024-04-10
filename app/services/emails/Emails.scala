@@ -1,11 +1,11 @@
-package services
+package services.emails
 
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.User
 import models.auth.AuthToken
-import services.EmailCategory.Various
-import services.EmailsExamplesUtils._
+import EmailsExamplesUtils._
+import services.emails.EmailCategory.Various
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
