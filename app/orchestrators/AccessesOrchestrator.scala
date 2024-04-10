@@ -18,7 +18,7 @@ import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
-import services.emails.Email.AdminAccessLink
+import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.Email.DgccrfAgentAccessLink
 import services.EmailAddressService
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
@@ -261,7 +261,7 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration.toJava,
-          AdminAccessLink,
+          AdminAccessLink.build _,
           frontRoute.dashboard.Admin.register _
         )
     }

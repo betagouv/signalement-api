@@ -44,6 +44,8 @@ import scala.concurrent.duration._
 import services.emails.EmailsExamplesUtils._
 import services.emails.Email
 import services.emails.EmailDefinition
+import services.emails.EmailDefinitionsAdmin.AdminAccessLink
+import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.MailService
 
 class AdminController(
@@ -114,16 +116,12 @@ class AdminController(
 
   val newList: Seq[(String, EmailAddress => Email)] = List(
     ResetPassword,
-    UpdateEmailAddress
+    UpdateEmailAddress,
+    AdminAccessLink,
+    AdminProbeTriggered
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
-    // ======= Admin =======
-    "admin.access_link" -> (recipient => AdminAccessLink(recipient, dummyURL)),
-    "admin.probe_triggered" -> (recipient =>
-      AdminProbeTriggered(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "bas")
-    ),
-
     // ======= DGCCRF =======
     "dgccrf.access_link" ->
       (DgccrfAgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),

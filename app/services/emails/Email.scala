@@ -47,25 +47,6 @@ sealed trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
 sealed trait ConsumerEmail extends Email
 
 object Email {
-  // ======= Admin =======
-
-  final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
-    override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.admin.accessLink(invitationUrl).toString
-
-    override val recipients: List[EmailAddress] = List(recipient)
-  }
-
-  final case class AdminProbeTriggered(recipients: Seq[EmailAddress], probeName: String, rate: Double, issue: String)
-      extends AdminEmail {
-
-    override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.admin.probetriggered(probeName, rate, issue).toString()
-  }
 
   // ======= DGCCRF =======
 
