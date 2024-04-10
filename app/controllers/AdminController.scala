@@ -1,28 +1,15 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.UserAction.WithRole
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
-import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
-import models.auth.AuthToken
 import models.company.Address
-import models.company.Company
 import models.event.Event
-import models.report.ReportFileOrigin.Consumer
-import models.report.reportfile.ReportFileId
-import models.report.Gender
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportFilter
-import models.report.ReportResponse
-import models.report.ReportResponseType
-import models.report.ReportStatus
-import models.report.ReportTag
-import models.report.ResponseDetails
-import models.report.WebsiteURL
+import models.report._
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
@@ -37,43 +24,16 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import services.Email.AdminAccessLink
-import services.Email.AdminProbeTriggered
-import services.Email.ConsumerProResponseNotification
-import services.Email.ConsumerProResponseNotificationOnAdminCompletion
-import services.Email.ConsumerReportAcknowledgment
-import services.Email.ConsumerReportClosedNoAction
-import services.Email.ConsumerReportClosedNoReading
-import services.Email.ConsumerReportReadByProNotification
-import services.Email.ConsumerValidateEmail
-import services.Email.DgccrfAgentAccessLink
-import services.Email.DgccrfDangerousProductReportNotification
-import services.Email.DgccrfInactiveAccount
-import services.Email.DgccrfReportNotification
-import services.Email.DgccrfValidateEmail
-import services.Email.ProCompaniesAccessesInvitations
-import services.Email.ProCompanyAccessInvitation
-import services.Email.ProNewCompaniesAccesses
-import services.Email.ProNewCompanyAccess
-import services.Email.ProNewReportNotification
-import services.Email.ProReportAssignedNotification
-import services.Email.ProReportReOpeningNotification
-import services.Email.ProReportsReadReminder
-import services.Email.ProReportsUnreadReminder
-import services.Email.ProResponseAcknowledgment
-import services.Email.ProResponseAcknowledgmentOnAdminCompletion
-import services.Email.ReportDeletionConfirmation
-import services.Email.ResetPassword
-import services.Email.UpdateEmailAddress
+import services.Email._
+import services.EmailDefinitions.ResetPassword
 import services.Email
+import services.EmailDefinition
 import services.MailService
 import services.PDFService
-import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
-import authentication.actions.UserAction.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -83,6 +43,8 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import services.EmailsExamplesUtils._
+
 class AdminController(
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
@@ -102,119 +64,6 @@ class AdminController(
   val logger: Logger                        = Logger(this.getClass)
   implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
   implicit val timeout: akka.util.Timeout   = 5.seconds
-
-  val dummyURL = java.net.URI.create("https://lien-test")
-
-  private def genReport = Report(
-    id = UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c"),
-    gender = Some(Gender.Female),
-    category = "Test",
-    subcategories = List("test"),
-    details = List(toDetailInputValue("test")),
-    companyId = Some(UUID.randomUUID()),
-    companyName = Some("Dummy Inc."),
-    companyBrand = Some("Dummy Inc. Store"),
-    companyAddress = Address(Some("3 bis"), Some("Rue des exemples"), None, Some("13006"), Some("Douceville")),
-    companySiret = Some(SIRET("12345678912345")),
-    companyActivityCode = None,
-    websiteURL = WebsiteURL(None, None),
-    phone = None,
-    creationDate = OffsetDateTime.now(),
-    firstName = "John",
-    lastName = "Doe",
-    email = EmailAddress("john.doe@example.com"),
-    contactAgreement = true,
-    employeeConsumer = false,
-    status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now().plusDays(50),
-    influencer = None,
-    visibleToPro = true,
-    lang = Some(Locale.FRENCH),
-    barcodeProductId = None,
-    train = None,
-    station = None
-  )
-
-  private def genReportFile = ReportFile(
-    id = ReportFileId.generateId(),
-    reportId = Some(UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c")),
-    creationDate = OffsetDateTime.now(),
-    filename = s"${UUID.randomUUID.toString}.png",
-    storageFilename = "String",
-    origin = Consumer,
-    avOutput = None
-  )
-
-  private def genReportResponse = ReportResponse(
-    responseType = ReportResponseType.ACCEPTED,
-    responseDetails = Some(ResponseDetails.REFUND),
-    otherResponseDetails = None,
-    consumerDetails = "",
-    dgccrfDetails = Some(""),
-    fileIds = Nil
-  )
-
-  private def genCompany = Company(
-    id = UUID.randomUUID,
-    siret = SIRET.fromUnsafe("12345678901234"),
-    creationDate = OffsetDateTime.now(),
-    name = "Test Entreprise",
-    address = Address(
-      number = Some("3"),
-      street = Some("rue des Champs"),
-      postalCode = Some("75015"),
-      city = Some("Paris"),
-      country = None
-    ),
-    activityCode = None,
-    isHeadOffice = true,
-    isOpen = true,
-    isPublic = true,
-    brand = Some("une super enseigne")
-  )
-
-  private def genCompanyList = List(genCompany, genCompany, genCompany)
-
-  private def genSiren = SIREN.fromSIRET(genCompany.siret)
-
-  private def genUser = User(
-    id = UUID.randomUUID,
-    password = "",
-    email = EmailAddress("text@example.com"),
-    firstName = "Jeanne",
-    lastName = "Dupont",
-    userRole = UserRole.Admin,
-    lastEmailValidation = None
-  )
-
-  private def genEvent =
-    Event(
-      UUID.randomUUID(),
-      None,
-      None,
-      None,
-      OffsetDateTime.now(),
-      EventType.PRO,
-      POST_ACCOUNT_ACTIVATION_DOC
-    )
-
-  private def genAuthToken =
-    AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now().plusDays(10))
-
-  private def genSubscription = Subscription(
-    id = UUID.randomUUID,
-    userId = None,
-    email = None,
-    departments = List("75"),
-    countries = Nil,
-    withTags = Nil,
-    withoutTags = Nil,
-    categories = Nil,
-    sirets = Nil,
-    frequency = java.time.Period.ofDays(1)
-  )
-
-  case class EmailContent(subject: String, body: play.twirl.api.Html)
 
   implicit val messagesProvider: Messages = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   val availablePdfs = Seq[(String, Html)](
@@ -262,9 +111,12 @@ class AdminController(
     )(messagesProvider)
   )
 
+  val newList: Seq[(String, EmailAddress => Email)] = List(
+    ResetPassword
+  ).flatMap(readExamplesWithFullKey)
+
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= Divers =======
-    "various.reset_password"       -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "various.update_email_address" -> (recipient => UpdateEmailAddress(recipient, dummyURL, daysBeforeExpiry = 2)),
 
     // ======= Admin =======
@@ -576,17 +428,32 @@ class AdminController(
   )
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
-    Future(Ok(Json.toJson(availableEmails.map(_._1))))
+    val codesFromNewList = newList.map(_._1)
+    Future(Ok(Json.toJson(availableEmails.map(_._1) ++ codesFromNewList)))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+    val recipientAddress = EmailAddress(to)
+    val itemInNewList    = newList.find(_._1 == templateRef)
+    val maybeEmail = itemInNewList match {
+      case Some(definition) =>
+        Some(definition._2(recipientAddress))
+      case None =>
+        availableEmails
+          .find(_._1 == templateRef)
+          .map { case (_, fn) => fn(recipientAddress) }
+    }
     Future(
-      availableEmails
-        .find(_._1 == templateRef)
-        .map { case (_, fn) => mailService.send(fn(EmailAddress(to))) }
+      maybeEmail
+        .map(mailService.send)
         .map(_ => Ok)
         .getOrElse(NotFound)
     )
   }
+
+  private def readExamplesWithFullKey(emailDefinition: EmailDefinition): Seq[(String, EmailAddress => Email)] =
+    emailDefinition.examples.map { case (key, fn) =>
+      s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
+    }
 
   def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availablePdfs.map(_._1))))

@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import models.EmailValidation
 import models.Subscription
 import models.User
-import models.auth.AuthToken
 import models.company.Company
 import models.event.Event
 import models.report.Report
@@ -26,7 +25,7 @@ import java.time.LocalDate
 import java.time.Period
 import java.util.Locale
 
-sealed trait Email {
+trait Email {
   val recipients: Seq[EmailAddress]
   val subject: String
   def getBody: (FrontRoute, EmailAddress) => String
@@ -48,14 +47,6 @@ sealed trait ConsumerEmail extends Email
 
 object Email {
   // ======= Divers =======
-
-  final case class ResetPassword(user: User, authToken: AuthToken) extends ProEmail with DgccrfEmail {
-    override val recipients: List[EmailAddress] = List(user.email)
-    override val subject: String                = EmailSubjects.RESET_PASSWORD
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
-      views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
-  }
 
   final case class UpdateEmailAddress(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int)
       extends Email {

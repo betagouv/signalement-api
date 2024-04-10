@@ -2,34 +2,16 @@ package orchestrators
 
 import authentication.CookieAuthenticator
 import authentication.CredentialsProvider
-import utils.Logs.RichLogger
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
-import controllers.error.AppError.DGCCRFUserEmailValidationExpired
-import controllers.error.AppError.DeletedAccount
-import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
-import controllers.error.AppError.SamePasswordError
-import controllers.error.AppError.TooMuchAuthAttempts
-import controllers.error.AppError.UserNotFound
-import models.User
-import models.UserRole
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration.DurationInt
-import scala.language.postfixOps
-import cats.syntax.option._
 import cats.instances.future.catsStdInstancesForFuture
+import cats.syntax.option._
 import config.TokenConfiguration
 import controllers.error.AppError
-import models.auth.AuthAttempt
-import models.auth.AuthToken
-import models.auth.PasswordChange
-import models.auth.UserCredentials
-import models.auth.UserLogin
-import models.auth.UserPassword
-import models.auth.UserSession
+import controllers.error.AppError._
+import models.User
+import models.UserRole
+import models.auth._
 import orchestrators.AuthOrchestrator.AuthAttemptPeriod
 import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
@@ -39,14 +21,20 @@ import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.ResetPassword
+import services.EmailDefinitions.ResetPassword
 import services.MailService
+import utils.Logs.RichLogger
 import utils.EmailAddress
 import utils.PasswordComplexityHelper
 
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 import scala.util.Failure
 import scala.util.Success
 
@@ -133,7 +121,7 @@ class AuthOrchestrator(
           _ = logger.debug(s"Creating auth token for ${user.id}")
           authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, authTokenExpiration))
           _ = logger.debug(s"Sending reset email to ${user.id}")
-          _ <- mailService.send(ResetPassword(user, authToken))
+          _ <- mailService.send(ResetPassword.build(user, authToken))
         } yield ()
       case _ =>
         logger.warnWithTitle("reset_pwd_user_not_found", "User not found, cannot reset password")
