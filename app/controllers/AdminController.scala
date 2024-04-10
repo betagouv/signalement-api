@@ -50,6 +50,7 @@ import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfInactiveAccount
 import services.Email.DgccrfReportNotification
 import services.Email.DgccrfValidateEmail
+import services.Email.ProCompaniesAccessesInvitations
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
@@ -168,6 +169,8 @@ class AdminController(
     brand = Some("une super enseigne")
   )
 
+  private def genSiren = SIREN.fromSIRET(genCompany.siret)
+
   private def genUser = User(
     id = UUID.randomUUID,
     password = "",
@@ -255,13 +258,11 @@ class AdminController(
 
   val availableEmails = Map[String, EmailAddress => Email](
     // ======= Divers =======
-    "various.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
-    "various.update_email_address" -> (recipient =>
-      UpdateEmailAddress(recipient, frontRoute.dashboard.updateEmail("abc"), daysBeforeExpiry = 2)
-    ),
+    "various.reset_password"       -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "various.update_email_address" -> (recipient => UpdateEmailAddress(recipient, dummyURL, daysBeforeExpiry = 2)),
 
     // ======= Admin =======
-    "admin.access_link" -> (recipient => AdminAccessLink(recipient, frontRoute.dashboard.Admin.register("abc"))),
+    "admin.access_link" -> (recipient => AdminAccessLink(recipient, dummyURL)),
     "admin.probe_triggered" -> (recipient =>
       AdminProbeTriggered(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "bas")
     ),
@@ -290,7 +291,10 @@ class AdminController(
       (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
 
     // ======= PRO =======
-    "pro.access_invitation"  -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
+    "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
+    "pro.access_invitation_multiple_companies" -> (recipient =>
+      ProCompaniesAccessesInvitations(recipient, List(genCompany, genCompany, genCompany), genSiren, dummyURL)
+    ),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.report_ack_pro" -> (recipient =>
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
