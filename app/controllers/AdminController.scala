@@ -262,7 +262,7 @@ class AdminController(
     )(messagesProvider)
   )
 
-  val availableEmails = Map[String, EmailAddress => Email](
+  val availableEmails = List[(String, EmailAddress => Email)](
     // ======= Divers =======
     "various.reset_password"       -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "various.update_email_address" -> (recipient => UpdateEmailAddress(recipient, dummyURL, daysBeforeExpiry = 2)),
@@ -576,13 +576,13 @@ class AdminController(
   )
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
-    Future(Ok(Json.toJson(availableEmails.keys)))
+    Future(Ok(Json.toJson(availableEmails.map(_._1))))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     Future(
       availableEmails
-        .get(templateRef)
-        .map(e => mailService.send(e(EmailAddress(to))))
+        .find(_._1 == templateRef)
+        .map { case (_, fn) => mailService.send(fn(EmailAddress(to))) }
         .map(_ => Ok)
         .getOrElse(NotFound)
     )
