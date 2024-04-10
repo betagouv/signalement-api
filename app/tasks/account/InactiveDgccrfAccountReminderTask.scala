@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.emails.Email.DgccrfInactiveAccount
+import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 import services.emails.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -57,7 +57,7 @@ class InactiveDgccrfAccountReminderTask(
     val now            = OffsetDateTime.now()
     val expirationDate = user.lastEmailValidation.map(_.plus(inactivePeriod))
     for {
-      _ <- mailService.send(DgccrfInactiveAccount(user, expirationDate.map(_.toLocalDate)))
+      _ <- mailService.send(DgccrfInactiveAccount.build(user, expirationDate.map(_.toLocalDate)))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

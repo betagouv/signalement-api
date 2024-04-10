@@ -50,17 +50,6 @@ object Email {
 
   // ======= DGCCRF =======
 
-  final case class DgccrfInactiveAccount(
-      user: User,
-      expirationDate: Option[LocalDate]
-  ) extends DgccrfEmail {
-    override val recipients: Seq[EmailAddress] = List(user.email)
-    override val subject: String               = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
-  }
-
   final case class DgccrfDangerousProductReportNotification(
       recipients: Seq[EmailAddress],
       report: Report

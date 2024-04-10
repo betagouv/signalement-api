@@ -44,10 +44,11 @@ import scala.concurrent.duration._
 import services.emails.EmailsExamplesUtils._
 import services.emails.Email
 import services.emails.EmailDefinition
+import services.emails.MailService
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
-import services.emails.MailService
+import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 
 class AdminController(
     reportRepository: ReportRepositoryInterface,
@@ -120,14 +121,13 @@ class AdminController(
     UpdateEmailAddress,
     AdminAccessLink,
     AdminProbeTriggered,
-    DgccrfAgentAccessLink
+    DgccrfAgentAccessLink,
+    DgccrfInactiveAccount
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
-    "dgccrf.inactive_account_reminder" -> (recipient =>
-      DgccrfInactiveAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
-    ),
+
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
       DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
     ),
