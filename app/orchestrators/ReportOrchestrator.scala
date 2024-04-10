@@ -89,6 +89,7 @@ class ReportOrchestrator(
   private val SncfGaresEtConnexionsSIRET: SIRET = SIRET("50752380102157")
   // On envoi tous les signalements concernant un train de la SNCF au SIRET SNCF Voyageurs
   private val SncfVoyageursSIRET: SIRET = SIRET("51903758408747")
+  private val TrenitaliaSIRET: SIRET    = SIRET("52028700400078")
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 
@@ -448,9 +449,13 @@ class ReportOrchestrator(
 
   private def extractCompanyOfTrain(reportDraft: ReportDraft): Future[Option[Company]] =
     reportDraft.train match {
-      case Some(_) =>
+      case Some(Train(train, _, _)) =>
+        val trainSiret = train match {
+          case "TRENITALIA" => TrenitaliaSIRET
+          case _            => SncfVoyageursSIRET
+        }
         (for {
-          companyToCreate <- OptionT(companySyncService.companyBySiret(SncfVoyageursSIRET))
+          companyToCreate <- OptionT(companySyncService.companyBySiret(trainSiret))
           c = Company(
             siret = companyToCreate.siret,
             name = companyToCreate.name.getOrElse(""),
