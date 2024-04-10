@@ -40,6 +40,7 @@ import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email.AdminAccessLink
 import services.Email.AdminProbeTriggered
 import services.Email.ConsumerProResponseNotification
+import services.Email.ConsumerProResponseNotificationOnAdminCompletion
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
@@ -529,6 +530,13 @@ class AdminController(
       ConsumerProResponseNotification(
         genReport.copy(email = recipient),
         genReportResponse,
+        Some(genCompany),
+        controllerComponents.messagesApi
+      )
+    ),
+    "consumer.report_ack_pro_consumer_on_admin_completion" -> (recipient =>
+      ConsumerProResponseNotificationOnAdminCompletion(
+        genReport.copy(email = recipient),
         Some(genCompany),
         controllerComponents.messagesApi
       )
