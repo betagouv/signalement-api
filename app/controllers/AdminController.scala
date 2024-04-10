@@ -37,17 +37,22 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import services.Email.AgentAccessLink
+import services.Email.AdminAccessLink
+import services.Email.AdminProbeTriggered
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
 import services.Email.ConsumerValidateEmail
+import services.Email.DgccrfAgentAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
+import services.Email.DgccrfInactiveAccount
 import services.Email.DgccrfReportNotification
-import services.Email.InactiveDgccrfAccount
+import services.Email.DgccrfValidateEmail
+import services.Email.ProCompaniesAccessesInvitations
 import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompaniesAccesses
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
 import services.Email.ProReportAssignedNotification
@@ -55,8 +60,10 @@ import services.Email.ProReportReOpeningNotification
 import services.Email.ProReportsReadReminder
 import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
+import services.Email.ProResponseAcknowledgmentOnAdminCompletion
+import services.Email.ReportDeletionConfirmation
 import services.Email.ResetPassword
-import services.Email.ValidateEmail
+import services.Email.UpdateEmailAddress
 import services.Email
 import services.MailService
 import services.PDFService
@@ -165,6 +172,10 @@ class AdminController(
     brand = Some("une super enseigne")
   )
 
+  private def genCompanyList = List(genCompany, genCompany, genCompany)
+
+  private def genSiren = SIREN.fromSIRET(genCompany.siret)
+
   private def genUser = User(
     id = UUID.randomUUID,
     password = "",
@@ -251,14 +262,51 @@ class AdminController(
   )
 
   val availableEmails = Map[String, EmailAddress => Email](
-    "dgccrf.inactive_account_reminder" -> (recipient =>
-      InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
+    // ======= Divers =======
+    "various.reset_password"       -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "various.update_email_address" -> (recipient => UpdateEmailAddress(recipient, dummyURL, daysBeforeExpiry = 2)),
+
+    // ======= Admin =======
+    "admin.access_link" -> (recipient => AdminAccessLink(recipient, dummyURL)),
+    "admin.probe_triggered" -> (recipient =>
+      AdminProbeTriggered(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "bas")
     ),
-    "dgccrf.reset_password"  -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
-    "pro.access_invitation"  -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
-    "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
+
+    // ======= DGCCRF =======
+    "dgccrf.access_link" ->
+      (DgccrfAgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
+    "dgccrf.inactive_account_reminder" -> (recipient =>
+      DgccrfInactiveAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
+    ),
+    "dgccrf.report_dangerous_product_notification" -> (recipient =>
+      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
+    ),
+    "dgccrf.report_notif_dgccrf" -> (recipient =>
+      DgccrfReportNotification(
+        List(recipient),
+        genSubscription,
+        List(
+          (genReport, List(genReportFile)),
+          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
+        ),
+        LocalDate.now().minusDays(10)
+      )
+    ),
+    "dgccrf.validate_email" ->
+      (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
+
+    // ======= PRO =======
+    "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
+    "pro.access_invitation_multiple_companies" -> (recipient =>
+      ProCompaniesAccessesInvitations(recipient, genCompanyList, genSiren, dummyURL)
+    ),
+    "pro.new_company_access"     -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
+    "pro.new_companies_accesses" -> (recipient => ProNewCompaniesAccesses(recipient, genCompanyList, genSiren)),
     "pro.report_ack_pro" -> (recipient =>
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
+    ),
+    "pro.report_ack_pro_on_admin_completion" -> (recipient =>
+      ProResponseAcknowledgmentOnAdminCompletion(genReport, List(genUser.copy(email = recipient), genUser, genUser))
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
@@ -290,24 +338,15 @@ class AdminController(
         assignedUser = genUser.copy(email = recipient)
       )
     ),
-    "dgccrf.access_link" ->
-      (AgentAccessLink("DGCCRF")(_, frontRoute.dashboard.Agent.register(token = "abc"))),
-    "dgccrf.validate_email" ->
-      (ValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
-    "dgccrf.report_dangerous_product_notification" -> (recipient =>
-      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
-    ),
-    "dgccrf.report_notif_dgccrf" -> (recipient =>
-      DgccrfReportNotification(
-        List(recipient),
-        genSubscription,
-        List(
-          (genReport, List(genReportFile)),
-          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
-        ),
-        LocalDate.now().minusDays(10)
+    "pro.report_deletion_confirmation" -> (_ =>
+      ReportDeletionConfirmation(
+        genReport,
+        Some(genCompany),
+        controllerComponents.messagesApi
       )
     ),
+
+    // ======= CONSO =======
     "consumer.report_ack" -> (recipient =>
       ConsumerReportAcknowledgment(
         genReport.copy(email = recipient),
@@ -410,7 +449,6 @@ class AdminController(
         )
       ),
     "consumer.report_ack_case_suisse" ->
-
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(

@@ -7,7 +7,7 @@ import play.api.Logger
 import repositories.probe.ProbeRepository
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.ProbeTriggered
+import services.Email.AdminProbeTriggered
 import services.MailService
 import tasks.ScheduledTask
 import utils.Logs.RichLogger
@@ -38,7 +38,7 @@ class LowRateLanceurDAlerteTask(
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
-          .send(ProbeTriggered(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas"))
+          .send(AdminProbeTriggered(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas"))
       } yield ()
     case rate =>
       logger.debug(s"Taux de signalements correct: $rate%")

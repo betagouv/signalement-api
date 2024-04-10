@@ -47,8 +47,9 @@ sealed trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
 sealed trait ConsumerEmail extends Email
 
 object Email {
+  // ======= Divers =======
 
-  final case class ResetPassword(user: User, authToken: AuthToken) extends ConsumerEmail {
+  final case class ResetPassword(user: User, authToken: AuthToken) extends ProEmail with DgccrfEmail {
     override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String                = EmailSubjects.RESET_PASSWORD
 
@@ -56,13 +57,91 @@ object Email {
       views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
   }
 
-  final case class ValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI) extends ConsumerEmail {
+  final case class UpdateEmailAddress(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int)
+      extends Email {
+
+    override val recipients: Seq[EmailAddress] = List(recipient)
+    override val subject: String               = EmailSubjects.UPDATE_EMAIL_ADDRESS
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.updateEmailAddress(invitationUrl, daysBeforeExpiry).toString()
+  }
+  final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
+    override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.admin.accessLink(invitationUrl).toString
+
+    override val recipients: List[EmailAddress] = List(recipient)
+  }
+
+  final case class AdminProbeTriggered(recipients: Seq[EmailAddress], probeName: String, rate: Double, issue: String)
+      extends AdminEmail {
+
+    override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.admin.probetriggered(probeName, rate, issue).toString()
+  }
+
+  // ======= DGCCRF =======
+
+  final case class DgccrfAgentAccessLink(role: String)(recipient: EmailAddress, invitationUrl: URI)
+      extends DgccrfEmail {
+    override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.dgccrf.accessLink(invitationUrl, role).toString
+
+    override val recipients: List[EmailAddress] = List(recipient)
+  }
+
+  final case class DgccrfInactiveAccount(
+      user: User,
+      expirationDate: Option[LocalDate]
+  ) extends DgccrfEmail {
+    override val recipients: Seq[EmailAddress] = List(user.email)
+    override val subject: String               = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
+      views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
+  }
+
+  final case class DgccrfDangerousProductReportNotification(
+      recipients: Seq[EmailAddress],
+      report: Report
+  ) extends DgccrfEmail {
+    override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] "))
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
+      views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
+  }
+
+  final case class DgccrfReportNotification(
+      recipients: List[EmailAddress],
+      subscription: Subscription,
+      reports: Seq[(Report, List[ReportFile])],
+      startDate: LocalDate
+  ) extends DgccrfEmail {
+    override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
+      reports.length,
+      subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
+    )
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
+      views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
+  }
+
+  final case class DgccrfValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI)
+      extends DgccrfEmail {
     override val recipients: List[EmailAddress] = List(email)
     override val subject: String                = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
   }
+
+  // ======= PRO =======
 
   final case class ProCompanyAccessInvitation(
       recipient: EmailAddress,
@@ -121,46 +200,6 @@ object Email {
           .toString
   }
 
-  final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
-      extends ProFilteredEmailSingleReport {
-    override val subject: String                = EmailSubjects.NEW_REPORT
-    override val recipients: List[EmailAddress] = userList.toList
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
-  }
-
-  final case class ProReportReOpeningNotification(userList: List[EmailAddress], report: Report)
-      extends ProFilteredEmailSingleReport {
-    override val subject: String                = EmailSubjects.REPORT_REOPENING
-    override val recipients: List[EmailAddress] = userList.toList
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
-  }
-
-  final case class ProReportsUnreadReminder(
-      recipients: List[EmailAddress],
-      reports: List[Report],
-      period: Period
-  ) extends ProFilteredEmailMultipleReport {
-    override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
-  }
-
-  final case class ProReportsReadReminder(
-      recipients: List[EmailAddress],
-      reports: List[Report],
-      period: Period
-  ) extends ProFilteredEmailMultipleReport {
-    override val subject: String = EmailSubjects.REPORT_TRANSMITTED_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
-  }
-
   final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
       extends ProFilteredEmailSingleReport {
     override val recipients: List[EmailAddress] = List(user.email)
@@ -180,6 +219,46 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
   }
 
+  final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
+      extends ProFilteredEmailSingleReport {
+    override val subject: String                = EmailSubjects.NEW_REPORT
+    override val recipients: List[EmailAddress] = userList.toList
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
+  }
+
+  final case class ProReportReOpeningNotification(userList: List[EmailAddress], report: Report)
+      extends ProFilteredEmailSingleReport {
+    override val subject: String                = EmailSubjects.REPORT_REOPENING
+    override val recipients: List[EmailAddress] = userList.toList
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
+  }
+
+  final case class ProReportsReadReminder(
+      recipients: List[EmailAddress],
+      reports: List[Report],
+      period: Period
+  ) extends ProFilteredEmailMultipleReport {
+    override val subject: String = EmailSubjects.REPORT_TRANSMITTED_REMINDER
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
+  }
+
+  final case class ProReportsUnreadReminder(
+      recipients: List[EmailAddress],
+      reports: List[Report],
+      period: Period
+  ) extends ProFilteredEmailMultipleReport {
+    override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
+  }
+
   final case class ProReportAssignedNotification(report: Report, assigningUser: User, assignedUser: User)
       extends ProFilteredEmailSingleReport {
     override val recipients: List[EmailAddress] = List(assignedUser.email)
@@ -188,63 +267,6 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = { (frontRoute, _) =>
       views.html.mails.professional.reportAssigned(report, assigningUser, assignedUser)(frontRoute).toString
     }
-  }
-
-  final case class DgccrfReportNotification(
-      recipients: List[EmailAddress],
-      subscription: Subscription,
-      reports: Seq[(Report, List[ReportFile])],
-      startDate: LocalDate
-  ) extends DgccrfEmail {
-    override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
-      reports.length,
-      subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
-    )
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-      views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
-  }
-
-  final case class DgccrfDangerousProductReportNotification(
-      recipients: Seq[EmailAddress],
-      report: Report
-  ) extends DgccrfEmail {
-    override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] "))
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-      views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
-  }
-
-  final case class AgentAccessLink(role: String)(recipient: EmailAddress, invitationUrl: URI) extends DgccrfEmail {
-    override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.dgccrf.accessLink(invitationUrl, role).toString
-    override val recipients: List[EmailAddress] = List(recipient)
-  }
-
-  final case class InactiveDgccrfAccount(
-      user: User,
-      expirationDate: Option[LocalDate]
-  ) extends DgccrfEmail {
-    override val recipients: Seq[EmailAddress] = List(user.email)
-    override val subject: String               = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
-  }
-
-  final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
-    override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.admin.accessLink(invitationUrl).toString
-    override val recipients: List[EmailAddress] = List(recipient)
-  }
-
-  final case class ProbeTriggered(recipients: Seq[EmailAddress], probeName: String, rate: Double, issue: String)
-      extends AdminEmail {
-
-    override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.admin.probetriggered(probeName, rate, issue).toString()
   }
 
   final case class ReportDeletionConfirmation(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
@@ -259,6 +281,8 @@ object Email {
         .confirmReportDeletionEmail(report, maybeCompany)(frontRoute, messagesProvider)
         .toString
   }
+
+  // ======= Conso =======
 
   final case class ConsumerReportAcknowledgment(
       report: Report,
@@ -403,16 +427,6 @@ object Email {
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.attachmentSeqForWorkflowStepN(3, report.lang.getOrElse(Locale.FRENCH))
-  }
-
-  final case class UpdateEmailAddress(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int)
-      extends Email {
-
-    override val recipients: Seq[EmailAddress] = List(recipient)
-    override val subject: String               = EmailSubjects.UPDATE_EMAIL_ADDRESS
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.updateEmailAddress(invitationUrl, daysBeforeExpiry).toString()
   }
 
   private def getLocaleOrDefault(locale: Option[Locale]): Locale = locale.getOrElse(Locale.FRENCH)
