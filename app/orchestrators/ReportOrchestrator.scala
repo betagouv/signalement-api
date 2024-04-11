@@ -37,6 +37,7 @@ import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.Email._
+import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.MailService
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
@@ -328,7 +329,7 @@ class ReportOrchestrator(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.build(ddEmails, report))
       } else {
         Future.unit
       }

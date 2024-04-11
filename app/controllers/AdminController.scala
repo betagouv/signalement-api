@@ -24,10 +24,19 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
+import services.PDFService
 import services.emails.Email._
+import services.emails.EmailDefinitionsAdmin.AdminAccessLink
+import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
+import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
+import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
+import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
-import services.PDFService
+import services.emails.EmailsExamplesUtils._
+import services.emails.Email
+import services.emails.EmailDefinition
+import services.emails.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -41,14 +50,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import services.emails.EmailsExamplesUtils._
-import services.emails.Email
-import services.emails.EmailDefinition
-import services.emails.MailService
-import services.emails.EmailDefinitionsAdmin.AdminAccessLink
-import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
-import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
-import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 
 class AdminController(
     reportRepository: ReportRepositoryInterface,
@@ -122,15 +123,13 @@ class AdminController(
     AdminAccessLink,
     AdminProbeTriggered,
     DgccrfAgentAccessLink,
-    DgccrfInactiveAccount
+    DgccrfInactiveAccount,
+    DgccrfDangerousProductReportNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
 
-    "dgccrf.report_dangerous_product_notification" -> (recipient =>
-      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
-    ),
     "dgccrf.report_notif_dgccrf" -> (recipient =>
       DgccrfReportNotification(
         List(recipient),
@@ -584,7 +583,7 @@ class AdminController(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.build(ddEmails, report))
       } else {
         Future.unit
       }

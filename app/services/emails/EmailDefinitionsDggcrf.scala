@@ -1,6 +1,7 @@
 package services.emails
 
 import models.User
+import models.report.Report
 import services.emails.EmailCategory.Dgccrf
 import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
@@ -43,6 +44,24 @@ object EmailDefinitionsDggcrf {
         override val subject: String               = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
         override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
           views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
+      }
+  }
+
+  case object DgccrfDangerousProductReportNotification extends EmailDefinition {
+    override val category = Dgccrf
+
+    override def examples =
+      Seq(
+        "report_dangerous_product_notification" -> (recipient => build(Seq(recipient), genReport))
+      )
+
+    def build(theRecipients: Seq[EmailAddress], report: Report): Email =
+      new Email {
+        override val recipients = theRecipients
+        override val subject    = EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] "))
+
+        override def getBody = (frontRoute, contact) =>
+          views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
       }
   }
 
