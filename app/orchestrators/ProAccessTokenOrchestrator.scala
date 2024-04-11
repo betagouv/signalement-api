@@ -9,8 +9,8 @@ import models.company.AccessLevel
 import models.company.Company
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
-import models.token._
 import models.token.TokenKind.CompanyJoin
+import models.token._
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
@@ -18,17 +18,13 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.emails.Email.ProCompaniesAccessesInvitations
-import services.emails.Email.ProCompanyAccessInvitation
 import services.emails.Email.ProNewCompaniesAccesses
 import services.emails.Email.ProNewCompanyAccess
+import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.EmailAddress
-import utils.FrontRoute
-import utils.PasswordComplexityHelper
-import utils.SIREN
-import utils.SIRET
+import utils._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -210,7 +206,7 @@ class ProAccessTokenOrchestrator(
     for {
       tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
       _ <- mailService.send(
-        ProCompanyAccessInvitation(
+        ProCompanyAccessInvitation.build(
           recipient = email,
           company = company,
           invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),

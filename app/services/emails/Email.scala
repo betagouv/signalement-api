@@ -47,19 +47,6 @@ object Email {
 
   // ======= PRO =======
 
-  final case class ProCompanyAccessInvitation(
-      recipient: EmailAddress,
-      company: Company,
-      invitationUrl: URI,
-      invitedBy: Option[User]
-  ) extends ProEmail {
-    override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
-  }
-
   final case class ProCompaniesAccessesInvitations(
       recipient: EmailAddress,
       companies: List[Company],
