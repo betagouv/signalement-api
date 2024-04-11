@@ -31,6 +31,7 @@ import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
+import services.emails.EmailDefinitionsDggcrf.DgccrfReportNotification
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
@@ -42,7 +43,6 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
 
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.Locale
@@ -124,23 +124,13 @@ class AdminController(
     AdminProbeTriggered,
     DgccrfAgentAccessLink,
     DgccrfInactiveAccount,
-    DgccrfDangerousProductReportNotification
+    DgccrfDangerousProductReportNotification,
+    DgccrfReportNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
 
-    "dgccrf.report_notif_dgccrf" -> (recipient =>
-      DgccrfReportNotification(
-        List(recipient),
-        genSubscription,
-        List(
-          (genReport, List(genReportFile)),
-          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
-        ),
-        LocalDate.now().minusDays(10)
-      )
-    ),
     "dgccrf.validate_email" ->
       (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
 

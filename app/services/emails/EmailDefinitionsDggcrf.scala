@@ -1,7 +1,10 @@
 package services.emails
 
+import models.Subscription
 import models.User
 import models.report.Report
+import models.report.ReportFile
+import models.report.ReportTag
 import services.emails.EmailCategory.Dgccrf
 import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
@@ -62,6 +65,42 @@ object EmailDefinitionsDggcrf {
 
         override def getBody = (frontRoute, contact) =>
           views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
+      }
+  }
+
+  case object DgccrfReportNotification extends EmailDefinition {
+    override val category = Dgccrf
+
+    override def examples =
+      Seq(
+        "report_notif_dgccrf" -> (recipient =>
+          build(
+            List(recipient),
+            genSubscription,
+            List(
+              (genReport, List(genReportFile)),
+              (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
+            ),
+            LocalDate.now().minusDays(10)
+          )
+        )
+      )
+
+    def build(
+        theRecipients: List[EmailAddress],
+        subscription: Subscription,
+        reports: Seq[(Report, List[ReportFile])],
+        startDate: LocalDate
+    ): Email =
+      new Email {
+        override val recipients = theRecipients
+        override val subject = EmailSubjects.REPORT_NOTIF_DGCCRF(
+          reports.length,
+          subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
+        )
+
+        override def getBody = (frontRoute, contact) =>
+          views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
       }
   }
 

@@ -6,9 +6,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
-import models.report.ReportTag
 import models.EmailValidation
-import models.Subscription
 import models.User
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
@@ -22,7 +20,6 @@ import utils.FrontRoute
 import utils.SIREN
 
 import java.net.URI
-import java.time.LocalDate
 import java.time.Period
 import java.util.Locale
 
@@ -49,21 +46,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= DGCCRF =======
-
-  final case class DgccrfReportNotification(
-      recipients: List[EmailAddress],
-      subscription: Subscription,
-      reports: Seq[(Report, List[ReportFile])],
-      startDate: LocalDate
-  ) extends DgccrfEmail {
-    override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
-      reports.length,
-      subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
-    )
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-      views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
-  }
 
   final case class DgccrfValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI)
       extends DgccrfEmail {
