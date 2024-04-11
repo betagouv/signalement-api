@@ -20,6 +20,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.Email._
+import services.emails.EmailDefinitionsPro.ProReportReOpeningNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompletion
 import services.emails.MailService
 import utils.Constants
@@ -68,7 +69,7 @@ class ReportAdminActionOrchestrator(
         )
       )
       (_, users) <- getCompanyWithUsers(updatedReport)
-      _          <- users.traverse(u => mailService.send(ProReportReOpeningNotification(u.map(_.email), updatedReport)))
+      _ <- users.traverse(u => mailService.send(ProReportReOpeningNotification.build(u.map(_.email), updatedReport)))
     } yield ()
 
   private def reOpenReport(report: Report): Future[Report] = {

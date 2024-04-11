@@ -148,4 +148,23 @@ object EmailDefinitionsPro {
       }
   }
 
+  case object ProReportReOpeningNotification extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq(
+        "report_reopening_notification" -> (recipient => build(List(recipient), genReport))
+      )
+
+    def build(userList: List[EmailAddress], theReport: Report): Email =
+      new ProFilteredEmailSingleReport {
+        override val report: Report                 = theReport
+        override val subject: String                = EmailSubjects.REPORT_REOPENING
+        override val recipients: List[EmailAddress] = userList.toList
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
+      }
+  }
+
 }

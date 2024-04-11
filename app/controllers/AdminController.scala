@@ -131,13 +131,13 @@ class AdminController(
     ProNewCompaniesAccesses,
     ProResponseAcknowledgment,
     ProResponseAcknowledgmentOnAdminCompletion,
-    ProNewReportNotification
+    ProNewReportNotification,
+    ProReportReOpeningNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
     "pro.reports_transmitted_reminder" -> (recipient => {
       val report1 = genReport
       val report2 = genReport.copy(companyId = report1.companyId)
