@@ -17,7 +17,6 @@ import services.AttachmentService
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
-import utils.SIREN
 
 import java.time.Period
 import java.util.Locale
@@ -45,21 +44,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProNewCompaniesAccesses(
-      recipient: EmailAddress,
-      companies: List[Company],
-      siren: SIREN
-  ) extends ProEmail {
-    override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional
-          .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
-          .toString
-  }
 
   final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
       extends ProFilteredEmailSingleReport {

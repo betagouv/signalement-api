@@ -17,9 +17,9 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.emails.Email.ProNewCompaniesAccesses
 import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
+import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
 import services.emails.EmailDefinitionsPro.ProNewCompanyAccess
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
@@ -166,7 +166,7 @@ class ProAccessTokenOrchestrator(
       _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
         case Nil    => Future.successful(())
-        case c :: _ => mailService.send(ProNewCompaniesAccesses(user.email, companies, SIREN.fromSIRET(c.siret)))
+        case c :: _ => mailService.send(ProNewCompaniesAccesses.build(user.email, companies, SIREN.fromSIRET(c.siret)))
       }
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()

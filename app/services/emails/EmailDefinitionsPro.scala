@@ -65,4 +65,23 @@ object EmailDefinitionsPro {
       }
   }
 
+  case object ProNewCompaniesAccesses extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq("new_companies_accesses" -> (recipient => build(recipient, genCompanyList, genSiren)))
+
+    def build(recipient: EmailAddress, companies: List[Company], siren: SIREN): Email =
+      new Email {
+        override val recipients: List[EmailAddress] = List(recipient)
+        override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) =>
+            views.html.mails.professional
+              .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
+              .toString
+      }
+  }
+
 }
