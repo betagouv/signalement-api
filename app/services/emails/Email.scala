@@ -45,17 +45,6 @@ sealed trait ConsumerEmail extends Email
 
 object Email {
 
-  // ======= DGCCRF =======
-
-  final case class DgccrfValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI)
-      extends DgccrfEmail {
-    override val recipients: List[EmailAddress] = List(email)
-    override val subject: String                = EmailSubjects.VALIDATE_EMAIL
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
-  }
-
   // ======= PRO =======
 
   final case class ProCompanyAccessInvitation(

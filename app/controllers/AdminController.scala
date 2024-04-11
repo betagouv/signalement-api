@@ -32,6 +32,7 @@ import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 import services.emails.EmailDefinitionsDggcrf.DgccrfReportNotification
+import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
@@ -125,14 +126,12 @@ class AdminController(
     DgccrfAgentAccessLink,
     DgccrfInactiveAccount,
     DgccrfDangerousProductReportNotification,
-    DgccrfReportNotification
+    DgccrfReportNotification,
+    DgccrfValidateEmail
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
-
-    "dgccrf.validate_email" ->
-      (DgccrfValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
 
     // ======= PRO =======
     "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),

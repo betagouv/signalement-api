@@ -104,4 +104,32 @@ object EmailDefinitionsDggcrf {
       }
   }
 
+  case object DgccrfValidateEmail extends EmailDefinition {
+    override val category = Dgccrf
+
+    override def examples =
+      Seq(
+        "validate_email" -> (recipient =>
+          build(
+            recipient,
+            7,
+            dummyURL
+          )
+        )
+      )
+
+    def build(
+        email: EmailAddress,
+        daysBeforeExpiry: Int,
+        validationUrl: URI
+    ): Email =
+      new Email {
+        override val recipients: List[EmailAddress] = List(email)
+        override val subject: String                = EmailSubjects.VALIDATE_EMAIL
+
+        override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+          views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
+      }
+  }
+
 }

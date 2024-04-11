@@ -20,9 +20,9 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
+import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
 import services.EmailAddressService
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
-import services.emails.Email
 import services.emails.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
@@ -319,7 +319,7 @@ class AccessesOrchestrator(
         )
       )
       _ <- mailService.send(
-        Email.DgccrfValidateEmail(
+        DgccrfValidateEmail.build(
           user.email,
           tokenConfiguration.dgccrfRevalidationTokenDuration.map(_.getDays).getOrElse(7),
           frontRoute.dashboard.validateEmail(token.token)
