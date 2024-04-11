@@ -33,10 +33,10 @@ sealed trait DgccrfEmail extends Email
 
 sealed trait ProEmail         extends Email
 sealed trait ProFilteredEmail extends ProEmail
-sealed trait ProFilteredEmailSingleReport extends ProFilteredEmail {
+trait ProFilteredEmailSingleReport extends ProFilteredEmail {
   val report: Report
 }
-sealed trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
+trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
   val reports: List[Report]
 }
 sealed trait ConsumerEmail extends Email
@@ -44,16 +44,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
-      extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = List(user.email)
-    override val subject: String                = EmailSubjects.REPORT_ACK_PRO
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
-  }
 
   final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
       extends ProFilteredEmailSingleReport {

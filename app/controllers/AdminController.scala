@@ -33,6 +33,7 @@ import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
 import services.emails.EmailDefinitionsPro.ProNewCompanyAccess
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
@@ -131,15 +132,13 @@ class AdminController(
     ProCompanyAccessInvitation,
     ProCompaniesAccessesInvitations,
     ProNewCompanyAccess,
-    ProNewCompaniesAccesses
+    ProNewCompaniesAccesses,
+    ProResponseAcknowledgment
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.report_ack_pro" -> (recipient =>
-      ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
-    ),
     "pro.report_ack_pro_on_admin_completion" -> (recipient =>
       ProResponseAcknowledgmentOnAdminCompletion(genReport, List(genUser.copy(email = recipient), genUser, genUser))
     ),

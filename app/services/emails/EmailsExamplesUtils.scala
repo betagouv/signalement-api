@@ -69,8 +69,8 @@ object EmailsExamplesUtils {
     responseType = ReportResponseType.ACCEPTED,
     responseDetails = Some(ResponseDetails.REFUND),
     otherResponseDetails = None,
-    consumerDetails = "",
-    dgccrfDetails = Some(""),
+    consumerDetails = "blablabla",
+    dgccrfDetails = Some("ouplalalala"),
     fileIds = Nil
   )
 

@@ -17,10 +17,11 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.event.Event._
-import models.report._
 import models.report.ReportWordOccurrence.StopWords
+import models.report._
 import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import models.website.Website
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -43,11 +44,7 @@ import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants
-import utils.Country
-import utils.EmailAddress
-import utils.SIRET
-import utils.URL
+import utils._
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -755,7 +752,7 @@ class ReportOrchestrator(
       user: User,
       maybeCompany: Option[Company]
   ) = for {
-    _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
+    _ <- mailService.send(ProResponseAcknowledgment.build(report, reportResponse, user))
     _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 

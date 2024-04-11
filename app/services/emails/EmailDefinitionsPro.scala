@@ -2,6 +2,8 @@ package services.emails
 
 import models.User
 import models.company.Company
+import models.report.Report
+import models.report.ReportResponse
 import services.emails.EmailCategory.Pro
 import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
@@ -81,6 +83,25 @@ object EmailDefinitionsPro {
             views.html.mails.professional
               .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
               .toString
+      }
+  }
+
+  case object ProResponseAcknowledgment extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq("report_ack_pro" -> (recipient => build(genReport, genReportResponse, genUser.copy(email = recipient))))
+
+    def build(theReport: Report, reportResponse: ReportResponse, user: User): Email =
+      new ProFilteredEmailSingleReport {
+        override val report: Report                 = theReport
+        override val recipients: List[EmailAddress] = List(user.email)
+        override val subject: String                = EmailSubjects.REPORT_ACK_PRO
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) =>
+            views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
+
       }
   }
 
