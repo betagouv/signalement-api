@@ -46,21 +46,6 @@ object Email {
 
   // ======= PRO =======
 
-  final case class ProNewCompanyAccess(
-      recipient: EmailAddress,
-      company: Company,
-      invitedBy: Option[User]
-  ) extends ProEmail {
-    override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional
-          .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)(frontRoute)
-          .toString
-  }
-
   final case class ProNewCompaniesAccesses(
       recipient: EmailAddress,
       companies: List[Company],

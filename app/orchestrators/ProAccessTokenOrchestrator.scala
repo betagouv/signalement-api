@@ -18,9 +18,9 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.emails.Email.ProNewCompaniesAccesses
-import services.emails.Email.ProNewCompanyAccess
 import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
+import services.emails.EmailDefinitionsPro.ProNewCompanyAccess
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -157,7 +157,7 @@ class ProAccessTokenOrchestrator(
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
-      _ <- mailService.send(ProNewCompanyAccess(user.email, company, invitedBy))
+      _ <- mailService.send(ProNewCompanyAccess.build(user.email, company, invitedBy))
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()
 

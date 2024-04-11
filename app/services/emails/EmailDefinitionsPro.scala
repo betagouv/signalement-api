@@ -46,4 +46,23 @@ object EmailDefinitionsPro {
       }
   }
 
+  case object ProNewCompanyAccess extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq("new_company_access" -> (recipient => build(recipient, genCompany, None)))
+
+    def build(recipient: EmailAddress, company: Company, invitedBy: Option[User]): Email =
+      new Email {
+        override val recipients: List[EmailAddress] = List(recipient)
+        override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) =>
+            views.html.mails.professional
+              .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)(frontRoute)
+              .toString
+      }
+  }
+
 }
