@@ -1,5 +1,6 @@
 package services.emails
 
+import cats.data.NonEmptyList
 import models.User
 import models.company.Company
 import models.report.Report
@@ -123,6 +124,26 @@ object EmailDefinitionsPro {
 
         override def getBody: (FrontRoute, EmailAddress) => String =
           (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+
+      }
+  }
+
+  case object ProNewReportNotification extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq(
+        "report_notification" -> (recipient => build(NonEmptyList.of(recipient), genReport))
+      )
+
+    def build(userList: NonEmptyList[EmailAddress], theReport: Report): Email =
+      new ProFilteredEmailSingleReport {
+        override val report: Report                 = theReport
+        override val subject: String                = EmailSubjects.NEW_REPORT
+        override val recipients: List[EmailAddress] = userList.toList
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
 
       }
   }

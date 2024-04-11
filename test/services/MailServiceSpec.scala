@@ -7,7 +7,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import services.emails.Email.ProNewReportNotification
+import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.MailRetriesService
 import services.emails.MailService
 import services.emails.MailRetriesService.EmailRequest
@@ -113,7 +113,7 @@ class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceS
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
           reportForSubsidiary
         )
@@ -150,7 +150,7 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
           reportForSubsidiary
         )
@@ -193,7 +193,7 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
           reportForSubsidiary
         )
@@ -237,7 +237,7 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail),
           reportForSubsidiary
         )
@@ -281,7 +281,7 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail),
           reportForSubsidiary
         )
@@ -316,14 +316,14 @@ class MailServiceSpecGroupForMaxRecipients(implicit ee: ExecutionEnv) extends Ba
       executionContext
     )
 
-    ProNewReportNotification(
+    ProNewReportNotification.build(
       NonEmptyList.of(EmailAddress(s"1@email.fr"), EmailAddress(s"2@email.fr")),
       reportForSubsidiary
     )
 
     Await.result(
       mailService.send(
-        ProNewReportNotification(
+        ProNewReportNotification.build(
           NonEmptyList.fromListUnsafe(recipients),
           reportForSubsidiary
         )

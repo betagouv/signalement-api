@@ -130,13 +130,13 @@ class AdminController(
     ProNewCompanyAccess,
     ProNewCompaniesAccesses,
     ProResponseAcknowledgment,
-    ProResponseAcknowledgmentOnAdminCompletion
+    ProResponseAcknowledgmentOnAdminCompletion,
+    ProNewReportNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
     "pro.reports_transmitted_reminder" -> (recipient => {
       val report1 = genReport
@@ -495,7 +495,7 @@ class AdminController(
       }.sequence
       _ <- reportAndEmailList.map {
         case (report, Some(adminsEmails)) =>
-          mailService.send(ProNewReportNotification(adminsEmails, report))
+          mailService.send(ProNewReportNotification.build(adminsEmails, report))
         case (report, None) =>
           logger.debug(s"Not sending email for report ${report.id}, no admin found")
           Future.unit

@@ -21,7 +21,6 @@ import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
-import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import models.website.Website
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -39,6 +38,8 @@ import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.Email._
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
+import services.emails.EmailDefinitionsPro.ProNewReportNotification
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import services.emails.MailService
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
@@ -123,7 +124,7 @@ class ReportOrchestrator(
           logger.debug("Found user, sending notification")
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
-            _ <- mailService.send(ProNewReportNotification(companyUserEmails, report))
+            _ <- mailService.send(ProNewReportNotification.build(companyUserEmails, report))
             reportWithUpdatedStatus <- reportRepository.update(
               report.id,
               report.copy(status = ReportStatus.TraitementEnCours)

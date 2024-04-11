@@ -1,6 +1,5 @@
 package services.emails
 
-import cats.data.NonEmptyList
 import models.company.Company
 import models.event.Event
 import models.report.Report
@@ -41,15 +40,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
-      extends ProFilteredEmailSingleReport {
-    override val subject: String                = EmailSubjects.NEW_REPORT
-    override val recipients: List[EmailAddress] = userList.toList
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
-  }
 
   final case class ProReportReOpeningNotification(userList: List[EmailAddress], report: Report)
       extends ProFilteredEmailSingleReport {
