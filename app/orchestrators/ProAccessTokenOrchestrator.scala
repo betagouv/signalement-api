@@ -17,9 +17,9 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.emails.Email.ProCompaniesAccessesInvitations
 import services.emails.Email.ProNewCompaniesAccesses
 import services.emails.Email.ProNewCompanyAccess
+import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
@@ -233,7 +233,7 @@ class ProAccessTokenOrchestrator(
         case Nil => Future.successful(())
         case (tokenCode, c) :: _ =>
           mailService.send(
-            ProCompaniesAccessesInvitations(
+            ProCompaniesAccessesInvitations.build(
               recipient = email,
               companies = list.map(_._2),
               siren = SIREN.fromSIRET(c.siret),

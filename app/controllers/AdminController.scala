@@ -29,6 +29,7 @@ import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsDggcrf._
+import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
@@ -125,16 +126,15 @@ class AdminController(
     DgccrfDangerousProductReportNotification,
     DgccrfReportNotification,
     DgccrfValidateEmail,
-    ProCompanyAccessInvitation
+    ProCompanyAccessInvitation,
+    ProCompaniesAccessesInvitations
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= DGCCRF =======
 
     // ======= PRO =======
-    "pro.access_invitation_multiple_companies" -> (recipient =>
-      ProCompaniesAccessesInvitations(recipient, genCompanyList, genSiren, dummyURL)
-    ),
+
     "pro.new_company_access"     -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.new_companies_accesses" -> (recipient => ProNewCompaniesAccesses(recipient, genCompanyList, genSiren)),
     "pro.report_ack_pro" -> (recipient =>

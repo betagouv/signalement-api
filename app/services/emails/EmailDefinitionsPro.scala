@@ -7,6 +7,7 @@ import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
+import utils.SIREN
 
 import java.net.URI
 
@@ -22,8 +23,26 @@ object EmailDefinitionsPro {
       new Email {
         override val recipients: List[EmailAddress] = List(recipient)
         override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
+
         override def getBody: (FrontRoute, EmailAddress) => String =
           (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
+      }
+  }
+
+  case object ProCompaniesAccessesInvitations extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq("access_invitation_multiple_companies" -> (recipient => build(recipient, genCompanyList, genSiren, dummyURL)))
+
+    def build(recipient: EmailAddress, companies: List[Company], siren: SIREN, invitationUrl: URI): Email =
+      new Email {
+        override val recipients: List[EmailAddress] = List(recipient)
+        override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (_, _) =>
+            views.html.mails.professional.companiesAccessesInvitations(invitationUrl, companies, siren.value).toString
       }
   }
 

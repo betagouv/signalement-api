@@ -19,7 +19,6 @@ import utils.EmailSubjects
 import utils.FrontRoute
 import utils.SIREN
 
-import java.net.URI
 import java.time.Period
 import java.util.Locale
 
@@ -46,20 +45,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProCompaniesAccessesInvitations(
-      recipient: EmailAddress,
-      companies: List[Company],
-      siren: SIREN,
-      invitationUrl: URI
-  ) extends ProEmail {
-    override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (_, _) =>
-        views.html.mails.professional.companiesAccessesInvitations(invitationUrl, companies, siren.value).toString
-  }
 
   final case class ProNewCompanyAccess(
       recipient: EmailAddress,
