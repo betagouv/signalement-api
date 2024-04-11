@@ -28,9 +28,6 @@ trait Email {
   def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
-sealed trait AdminEmail  extends Email
-sealed trait DgccrfEmail extends Email
-
 sealed trait ProEmail         extends Email
 sealed trait ProFilteredEmail extends ProEmail
 trait ProFilteredEmailSingleReport extends ProFilteredEmail {
@@ -44,15 +41,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProResponseAcknowledgmentOnAdminCompletion(report: Report, users: List[User])
-      extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = users.map(_.email)
-    override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
-  }
 
   final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
       extends ProFilteredEmailSingleReport {

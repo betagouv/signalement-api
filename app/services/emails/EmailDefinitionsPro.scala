@@ -105,4 +105,26 @@ object EmailDefinitionsPro {
       }
   }
 
+  case object ProResponseAcknowledgmentOnAdminCompletion extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq(
+        "report_ack_pro_on_admin_completion" -> (recipient =>
+          build(genReport, List(genUser.copy(email = recipient), genUser, genUser))
+        )
+      )
+
+    def build(theReport: Report, users: List[User]): Email =
+      new ProFilteredEmailSingleReport {
+        override val report: Report                 = theReport
+        override val recipients: List[EmailAddress] = users.map(_.email)
+        override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
+
+        override def getBody: (FrontRoute, EmailAddress) => String =
+          (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+
+      }
+  }
+
 }

@@ -20,15 +20,16 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.Email._
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompletion
 import services.emails.MailService
 import utils.Constants
 import utils.Constants.ActionEvent._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.tools.nsc.tasty.SafeEq
 
 class ReportAdminActionOrchestrator(
@@ -179,7 +180,7 @@ class ReportAdminActionOrchestrator(
         reportAdminCompletionDetails
       )
       (maybeCompany, users) <- getCompanyWithUsers(report)
-      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, u)))
+      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.build(report, u)))
       _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(

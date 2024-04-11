@@ -29,11 +29,7 @@ import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsDggcrf._
-import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
-import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
-import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
-import services.emails.EmailDefinitionsPro.ProNewCompanyAccess
-import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
+import services.emails.EmailDefinitionsPro._
 import services.emails.EmailDefinitionsVarious.ResetPassword
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
@@ -133,15 +129,13 @@ class AdminController(
     ProCompaniesAccessesInvitations,
     ProNewCompanyAccess,
     ProNewCompaniesAccesses,
-    ProResponseAcknowledgment
+    ProResponseAcknowledgment,
+    ProResponseAcknowledgmentOnAdminCompletion
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.report_ack_pro_on_admin_completion" -> (recipient =>
-      ProResponseAcknowledgmentOnAdminCompletion(genReport, List(genUser.copy(email = recipient), genUser, genUser))
-    ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_reopening_notification" -> (recipient => ProReportReOpeningNotification(List(recipient), genReport)),
     "pro.reports_transmitted_reminder" -> (recipient => {
