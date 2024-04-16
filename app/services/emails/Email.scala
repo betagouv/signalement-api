@@ -2,7 +2,6 @@ package services.emails
 
 import models.company.Company
 import models.report.Report
-import models.report.ReportResponse
 import models.EmailValidation
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
@@ -36,32 +35,6 @@ trait ConsumerEmail extends Email
 object Email {
 
   // ======= Conso =======
-
-  final case class ConsumerProResponseNotification(
-      report: Report,
-      reportResponse: ReportResponse,
-      maybeCompany: Option[Company],
-      messagesApi: MessagesApi
-  ) extends ConsumerEmail {
-    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
-    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
-
-    override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String                = messagesApi("ConsumerReportAckProEmail.subject")(lang)
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer
-        .reportToConsumerAcknowledgmentPro(
-          report,
-          maybeCompany,
-          reportResponse,
-          frontRoute.website.reportReview(report.id.toString)
-        )
-        .toString
-
-    override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
-  }
 
   final case class ConsumerProResponseNotificationOnAdminCompletion(
       report: Report,

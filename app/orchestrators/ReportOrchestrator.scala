@@ -36,7 +36,7 @@ import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import services.emails.Email._
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
@@ -758,7 +758,7 @@ class ReportOrchestrator(
       maybeCompany: Option[Company]
   ) = for {
     _ <- mailService.send(ProResponseAcknowledgment.build(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany, messagesApi))
+    _ <- mailService.send(ConsumerProResponseNotification.EmailImpl(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 
   // dead code ?

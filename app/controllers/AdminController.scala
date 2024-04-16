@@ -28,6 +28,7 @@ import services.PDFService
 import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
@@ -140,20 +141,13 @@ class AdminController(
     ProReportAssignedNotification,
     ConsumerReportDeletionConfirmation,
     ConsumerReportAcknowledgment,
-    ConsumerReportReadByProNotification
+    ConsumerReportReadByProNotification,
+    ConsumerProResponseNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= CONSO =======
 
-    "consumer.report_ack_pro_consumer" -> (recipient =>
-      ConsumerProResponseNotification(
-        genReport.copy(email = recipient),
-        genReportResponse,
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
     "consumer.report_ack_pro_consumer_on_admin_completion" -> (recipient =>
       ConsumerProResponseNotificationOnAdminCompletion(
         genReport.copy(email = recipient),
@@ -256,7 +250,7 @@ class AdminController(
       _ <- filteredEvents.map { case (report, responseEvent) =>
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
         mailService.send(
-          ConsumerProResponseNotification(
+          ConsumerProResponseNotification.EmailImpl(
             report,
             responseEvent.details.as[ReportResponse],
             maybeCompany,

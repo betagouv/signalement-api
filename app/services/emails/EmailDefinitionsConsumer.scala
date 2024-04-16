@@ -5,6 +5,7 @@ import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
+import models.report.ReportResponse
 import models.report.ReportStatus
 import models.report.ReportTag
 import play.api.i18n.Lang
@@ -274,6 +275,44 @@ object EmailDefinitionsConsumer {
       override def getAttachements: AttachmentService => Seq[Attachment] =
         _.attachmentSeqForWorkflowStepN(3, report.lang.getOrElse(Locale.FRENCH))
     }
+  }
+
+  case object ConsumerProResponseNotification extends EmailDefinition {
+    override val category = Consumer
+
+    override def examples =
+      Seq(
+        "report_ack_pro_consumer" -> ((recipient, messagesApi) =>
+          EmailImpl(genReport.copy(email = recipient), genReportResponse, Some(genCompany), messagesApi)
+        )
+      )
+
+    final case class EmailImpl(
+        report: Report,
+        reportResponse: ReportResponse,
+        maybeCompany: Option[Company],
+        messagesApi: MessagesApi
+    ) extends ConsumerEmail {
+      private val lang                                        = Lang(getLocaleOrDefault(report.lang))
+      implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
+      override val recipients: List[EmailAddress] = List(report.email)
+      override val subject: String                = messagesApi("ConsumerReportAckProEmail.subject")(lang)
+
+      override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
+        views.html.mails.consumer
+          .reportToConsumerAcknowledgmentPro(
+            report,
+            maybeCompany,
+            reportResponse,
+            frontRoute.website.reportReview(report.id.toString)
+          )
+          .toString
+
+      override def getAttachements: AttachmentService => Seq[Attachment] =
+        _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
+    }
+
   }
 
   private def getLocaleOrDefault(locale: Option[Locale]): Locale = locale.getOrElse(Locale.FRENCH)
