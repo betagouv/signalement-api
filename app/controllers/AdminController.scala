@@ -132,22 +132,13 @@ class AdminController(
     ProResponseAcknowledgment,
     ProResponseAcknowledgmentOnAdminCompletion,
     ProNewReportNotification,
-    ProReportReOpeningNotification
+    ProReportReOpeningNotification,
+    ProReportsReadReminder
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.reports_transmitted_reminder" -> (recipient => {
-      val report1 = genReport
-      val report2 = genReport.copy(companyId = report1.companyId)
-      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
-      ProReportsReadReminder(
-        List(recipient),
-        List(report1, report2, report3),
-        Period.ofDays(7)
-      )
-    }),
     "pro.reports_unread_reminder" -> (recipient => {
       val report1 = genReport
       val report2 = genReport.copy(companyId = report1.companyId)

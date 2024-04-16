@@ -35,22 +35,12 @@ trait ProFilteredEmailSingleReport extends ProFilteredEmail {
 trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
   val reports: List[Report]
 }
+
 sealed trait ConsumerEmail extends Email
 
 object Email {
 
   // ======= PRO =======
-
-  final case class ProReportsReadReminder(
-      recipients: List[EmailAddress],
-      reports: List[Report],
-      period: Period
-  ) extends ProFilteredEmailMultipleReport {
-    override val subject: String = EmailSubjects.REPORT_TRANSMITTED_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
-  }
 
   final case class ProReportsUnreadReminder(
       recipients: List[EmailAddress],

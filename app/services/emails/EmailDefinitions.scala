@@ -21,6 +21,7 @@ object EmailCategory extends PlayEnum[EmailCategory] {
 
 trait EmailDefinition {
   val category: EmailCategory
+
   def examples: Seq[(String, EmailAddress => Email)]
 
 }

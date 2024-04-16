@@ -8,9 +8,9 @@ import models.company.AccessLevel
 import models.event.Event
 import models.report.ReportStatus
 import orchestrators.CompaniesVisibilityOrchestrator
-import org.mockito.Mockito.when
 import org.mockito.ArgumentMatchers.argThat
 import org.mockito.ArgumentMatchers.{eq => eqTo}
+import org.mockito.Mockito.when
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito.any
 import org.specs2.mock.Mockito.mock
@@ -19,6 +19,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import services.emails.EmailDefinitionsPro.ProReportsReadReminder
 import services.emails.Email
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -31,9 +32,9 @@ import utils.TaskRepositoryMock
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.Period
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 
 class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
@@ -116,7 +117,9 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
       when(mailService.send(Email.ProReportsUnreadReminder(List(proUser1.email), List(report4), Period.ofDays(7))))
         .thenReturn(Future.unit)
       when(
-        mailService.send(Email.ProReportsReadReminder(List(proUser1.email), List(report5, report6), Period.ofDays(7)))
+        mailService.send(
+          ProReportsReadReminder.EmailImpl(List(proUser1.email), List(report5, report6), Period.ofDays(7))
+        )
       ).thenReturn(Future.unit)
 
       when(eventRepository.create(argMatching[Event] { case Event(_, Some(report1.id), _, _, _, _, _, _) => }))
