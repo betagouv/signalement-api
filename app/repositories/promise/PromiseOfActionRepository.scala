@@ -25,22 +25,27 @@ class PromiseOfActionRepository(override val dbConfig: DatabaseConfig[JdbcProfil
 
   import dbConfig._
 
-  override def listPromisesWithEventsAndReport(
+  def listPromisesWithEventsAndReport(
       userRole: Option[UserRole],
       companyIds: List[UUID]
-  ): Future[Seq[((Report, PromiseOfAction), Event)]] = db.run(
+  ): Future[Seq[(((Report, PromiseOfAction), Event), Option[Event])]] = db.run(
     ReportTable
       .table(userRole)
       .filter(_.companyId inSetBind companyIds)
       .join(table)
       .on { case (report, promise) => report.id === promise.reportId }
-      .filter { case (_, promise) => promise.resolutionEventId.isEmpty }
       .join(EventTable.table)
       .on { case ((_, promise), event) => promise.promiseEventId === event.id }
+      .joinLeft(EventTable.table)
+      .on { case (((_, promise), _), resolutionEvent) => promise.resolutionEventId === resolutionEvent.id }
       .result
   )
 
-  override def honour(promiseId: PromiseOfActionId, resolutionEventId: UUID): Future[Int] = db.run(
+  override def check(promiseId: PromiseOfActionId, resolutionEventId: UUID): Future[Int] = db.run(
     table.filter(_.id === promiseId).map(_.resolutionEventId).update(Some(resolutionEventId))
+  )
+
+  override def uncheck(promiseId: PromiseOfActionId): Future[Int] = db.run(
+    table.filter(_.id === promiseId).map(_.resolutionEventId).update(None)
   )
 }

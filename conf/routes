@@ -216,6 +216,7 @@ GET           /api/barcode/gtin/:gtin                                   controll
 GET           /api/barcode/:id                                          controllers.BarcodeController.getById(id: java.util.UUID)
 
  GET          /api/promises                                             controllers.PromiseOfActionController.list()
- POST         /api/promises/:id/honour                                  controllers.PromiseOfActionController.honour(id: PromiseOfActionId)
+ POST         /api/promises/:id/check                                  controllers.PromiseOfActionController.check(id: PromiseOfActionId)
+ POST         /api/promises/:id/uncheck                                  controllers.PromiseOfActionController.uncheck(id: PromiseOfActionId)
 
 GET           /assets/*file                                             controllers.Assets.versioned(path="/public", file: Asset)

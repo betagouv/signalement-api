@@ -14,6 +14,7 @@ trait PromiseOfActionRepositoryInterface extends TypedCRUDRepositoryInterface[Pr
   def listPromisesWithEventsAndReport(
       userRole: Option[UserRole],
       companyIds: List[UUID]
-  ): Future[Seq[((Report, PromiseOfAction), Event)]]
-  def honour(promiseId: PromiseOfActionId, resolutionEventId: UUID): Future[Int]
+  ): Future[Seq[(((Report, PromiseOfAction), Event), Option[Event])]]
+  def check(promiseId: PromiseOfActionId, resolutionEventId: UUID): Future[Int]
+  def uncheck(promiseId: PromiseOfActionId): Future[Int]
 }

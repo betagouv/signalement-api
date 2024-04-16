@@ -23,8 +23,13 @@ class PromiseOfActionController(
     promiseOrchestrator.listForUser(request.identity).map(promises => Ok(Json.toJson(promises)))
   }
 
-  def honour(id: PromiseOfActionId) =
+  def check(id: PromiseOfActionId) =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
-      promiseOrchestrator.resolve(request.identity, id).map(_ => NoContent)
+      promiseOrchestrator.check(request.identity, id).map(_ => NoContent)
+    }
+
+  def uncheck(id: PromiseOfActionId) =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+      promiseOrchestrator.uncheck(request.identity, id).map(_ => NoContent)
     }
 }

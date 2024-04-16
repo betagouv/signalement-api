@@ -13,7 +13,8 @@ case class PromiseOfActionApi(
     report: Report,
     expirationDate: OffsetDateTime,
     engagement: ResponseDetails,
-    otherEngagement: Option[String]
+    otherEngagement: Option[String],
+    resolutionDate: Option[OffsetDateTime]
 )
 
 object PromiseOfActionApi {

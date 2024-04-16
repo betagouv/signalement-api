@@ -33,20 +33,26 @@ class PromiseOfActionOrchestrator(
         Some(proUser.userRole),
         companiesWithAccesses.map(_.company.id)
       )
-    } yield promises.flatMap { case ((report, promise), event) =>
+    } yield promises.flatMap { case (((report, promise), promiseEvent), resolutionEvent) =>
+      val today = OffsetDateTime.now().toLocalDate
       for {
-        reportResponse  <- event.details.asOpt[ReportResponse]
+        _ <- resolutionEvent match {
+          case None        => Some(())
+          case Some(event) => if (event.creationDate.toLocalDate.plusDays(1).isBefore(today)) None else Some(())
+        }
+        reportResponse  <- promiseEvent.details.asOpt[ReportResponse]
         responseDetails <- reportResponse.responseDetails
       } yield PromiseOfActionApi(
         promise.id,
         report,
-        event.creationDate.plusDays(8),
+        promiseEvent.creationDate.plusDays(8),
         responseDetails,
-        reportResponse.otherResponseDetails
+        reportResponse.otherResponseDetails,
+        resolutionEvent.map(_.creationDate)
       )
     }
 
-  def resolve(proUser: User, promiseId: PromiseOfActionId): Future[Unit] =
+  def check(proUser: User, promiseId: PromiseOfActionId): Future[Unit] =
     for {
       maybePromise          <- promiseOfActionRepository.get(promiseId)
       promise               <- maybePromise.liftTo[Future](PromiseOfActionNotFound(promiseId))
@@ -69,7 +75,22 @@ class PromiseOfActionOrchestrator(
           Json.obj()
         )
       )
-      _ <- promiseOfActionRepository.honour(promiseId, event.id)
+      _ <- promiseOfActionRepository.check(promiseId, event.id)
+    } yield ()
+
+  def uncheck(proUser: User, promiseId: PromiseOfActionId) =
+    for {
+      maybePromise          <- promiseOfActionRepository.get(promiseId)
+      promise               <- maybePromise.liftTo[Future](PromiseOfActionNotFound(promiseId))
+      maybeReport           <- reportRepository.getFor(Some(proUser.userRole), promise.reportId)
+      report                <- maybeReport.liftTo[Future](ReportNotFound(promise.reportId))
+      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
+      _ <- report.report.companyId match {
+        case Some(companyId) if companiesWithAccesses.map(_.company.id).contains(companyId) => Future.unit
+        case _ => Future.failed(ReportNotFound(promise.reportId))
+      }
+      _ <- promiseOfActionRepository.uncheck(promiseId)
+      _ <- eventRepository.deletePromiseOfAction(report.report.id)
     } yield ()
 
 }
