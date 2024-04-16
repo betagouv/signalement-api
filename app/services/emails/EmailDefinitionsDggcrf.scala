@@ -80,7 +80,7 @@ object EmailDefinitionsDggcrf {
     override def examples =
       Seq(
         "report_notif_dgccrf" -> ((recipient, _) =>
-          build(
+          EmailImpl(
             List(recipient),
             genSubscription,
             List(
@@ -92,22 +92,21 @@ object EmailDefinitionsDggcrf {
         )
       )
 
-    def build(
-        theRecipients: List[EmailAddress],
+    final case class EmailImpl(
+        recipients: List[EmailAddress],
         subscription: Subscription,
         reports: Seq[(Report, List[ReportFile])],
         startDate: LocalDate
-    ): Email =
-      new Email {
-        override val recipients = theRecipients
-        override val subject = EmailSubjects.REPORT_NOTIF_DGCCRF(
-          reports.length,
-          subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
-        )
+    ) extends Email {
+      override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
+        reports.length,
+        subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
+      )
 
-        override def getBody = (frontRoute, contact) =>
-          views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
+        views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString
+    }
+
   }
 
   case object DgccrfValidateEmail extends EmailDefinition {
@@ -116,7 +115,7 @@ object EmailDefinitionsDggcrf {
     override def examples =
       Seq(
         "validate_email" -> ((recipient, _) =>
-          build(
+          EmailImpl(
             recipient,
             7,
             dummyURL
@@ -124,18 +123,14 @@ object EmailDefinitionsDggcrf {
         )
       )
 
-    def build(
-        email: EmailAddress,
-        daysBeforeExpiry: Int,
-        validationUrl: URI
-    ): Email =
-      new Email {
-        override val recipients: List[EmailAddress] = List(email)
-        override val subject: String                = EmailSubjects.VALIDATE_EMAIL
+    final case class EmailImpl(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI) extends Email {
+      override val recipients: List[EmailAddress] = List(email)
+      override val subject: String                = EmailSubjects.VALIDATE_EMAIL
 
-        override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-          views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+        views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
+    }
+
   }
 
 }
