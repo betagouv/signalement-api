@@ -141,26 +141,13 @@ class AdminController(
     ConsumerReportReadByProNotification,
     ConsumerProResponseNotification,
     ConsumerProResponseNotificationOnAdminCompletion,
-    ConsumerReportClosedNoReading
+    ConsumerReportClosedNoReading,
+    ConsumerReportClosedNoAction
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= CONSO =======
 
-    "consumer.report_closed_no_action" -> (recipient =>
-      ConsumerReportClosedNoAction(
-        genReport.copy(email = recipient),
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
-    "consumer.report_closed_no_action_case_dispute" -> (recipient =>
-      ConsumerReportClosedNoAction(
-        genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
     "consumer.validate_email" -> (recipient =>
       ConsumerValidateEmail(EmailValidation(email = recipient), None, controllerComponents.messagesApi)
     )

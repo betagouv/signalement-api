@@ -13,7 +13,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
-import services.emails.Email.ConsumerReportClosedNoAction
+import services.emails.EmailDefinitionsConsumer.ConsumerReportClosedNoAction
 import services.emails.EmailDefinitionsConsumer.ConsumerReportClosedNoReading
 import services.emails.Email
 import services.emails.MailService
@@ -88,7 +88,7 @@ class ReportClosureTask(
         ReportStatus.ConsulteIgnore,
         REPORT_CLOSED_BY_NO_ACTION,
         "Clôture automatique : signalement consulté ignoré",
-        ConsumerReportClosedNoAction,
+        ConsumerReportClosedNoAction.EmailImpl,
         EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
       )
     } else {
