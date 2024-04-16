@@ -247,14 +247,14 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink.build("DGCCRF") _,
+          DgccrfAgentAccessLink.EmailImpl("DGCCRF") _,
           frontRoute.dashboard.Agent.register _
         )
       case DGALAccount =>
         (
           EmailAddressService.isEmailAcceptableForDgalAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink.build("DGAL") _,
+          DgccrfAgentAccessLink.EmailImpl("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
       case AdminAccount =>

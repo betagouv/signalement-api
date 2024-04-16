@@ -269,7 +269,7 @@ class AdminController(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification.build(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.EmailImpl(ddEmails, report))
       } else {
         Future.unit
       }
