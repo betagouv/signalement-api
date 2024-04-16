@@ -15,8 +15,8 @@ import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.DgccrfReportNotification
-import services.MailService
+import services.emails.EmailDefinitionsDggcrf.DgccrfReportNotification
+import services.emails.MailService
 import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
 import tasks.ScheduledTask
 import utils.Constants.Departments
@@ -91,7 +91,7 @@ class ReportNotificationTask(
           s"Sending a subscription notification email to ${emailAddress}"
         )
         mailService.send {
-          DgccrfReportNotification(
+          DgccrfReportNotification.Email(
             List(emailAddress),
             subscription,
             filteredReport.toList,

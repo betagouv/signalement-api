@@ -88,6 +88,8 @@ import repositories.usersettings.UserReportsFiltersRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
 import services._
+import services.emails.MailRetriesService
+import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask

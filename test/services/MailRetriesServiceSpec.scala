@@ -1,5 +1,7 @@
 package services
 
+import services.emails.MailRetriesService
+
 import scala.concurrent.duration._
 
 class MailRetriesServiceSpec extends org.specs2.mutable.Specification {

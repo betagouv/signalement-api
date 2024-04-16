@@ -1,11 +1,13 @@
-package services
+package services.emails
 
 import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
 import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
+import services.AttachmentService
+import services.PDFService
 import utils.EmailAddress
 import utils.FrontRoute
 
@@ -28,7 +30,7 @@ class MailService(
   implicit private[this] val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
   override def send(
-      email: Email
+      email: BaseEmail
   ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)
     case email =>

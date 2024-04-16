@@ -17,8 +17,8 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.event.Event._
-import models.report._
 import models.report.ReportWordOccurrence.StopWords
+import models.report._
 import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
 import models.website.Website
@@ -36,17 +36,18 @@ import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import services.Email._
-import services.MailService
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
+import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
+import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
+import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
+import services.emails.EmailDefinitionsPro.ProNewReportNotification
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
+import services.emails.MailService
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants
-import utils.Country
-import utils.EmailAddress
-import utils.SIRET
-import utils.URL
+import utils._
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -125,7 +126,7 @@ class ReportOrchestrator(
           logger.debug("Found user, sending notification")
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
-            _ <- mailService.send(ProNewReportNotification(companyUserEmails, report))
+            _ <- mailService.send(ProNewReportNotification.Email(companyUserEmails, report))
             reportWithUpdatedStatus <- reportRepository.update(
               report.id,
               report.copy(status = ReportStatus.TraitementEnCours)
@@ -328,7 +329,7 @@ class ReportOrchestrator(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.Email(ddEmails, report))
       } else {
         Future.unit
       }
@@ -345,7 +346,9 @@ class ReportOrchestrator(
       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
     )
     for {
-      _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements, messagesApi))
+      _ <- mailService.send(
+        ConsumerReportAcknowledgment.Email(report, maybeCompany, event, reportAttachements, messagesApi)
+      )
       _ <- eventRepository.create(event)
     } yield ()
   }
@@ -734,7 +737,7 @@ class ReportOrchestrator(
 
   private def notifyConsumer(report: Report) = for {
     maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-    _            <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
+    _            <- mailService.send(ConsumerReportReadByProNotification.Email(report, maybeCompany, messagesApi))
     _ <- eventRepository.create(
       Event(
         id = UUID.randomUUID(),
@@ -754,8 +757,8 @@ class ReportOrchestrator(
       user: User,
       maybeCompany: Option[Company]
   ) = for {
-    _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany, messagesApi))
+    _ <- mailService.send(ProResponseAcknowledgment.Email(report, reportResponse, user))
+    _ <- mailService.send(ConsumerProResponseNotification.Email(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 
   // dead code ?
