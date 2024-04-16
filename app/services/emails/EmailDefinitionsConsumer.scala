@@ -4,11 +4,7 @@ import models.EmailValidation
 import models.company.Address
 import models.company.Company
 import models.event.Event
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportResponse
-import models.report.ReportStatus
-import models.report.ReportTag
+import models.report._
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
@@ -232,7 +228,7 @@ object EmailDefinitionsConsumer {
         event: Event,
         files: Seq[ReportFile],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -263,7 +259,7 @@ object EmailDefinitionsConsumer {
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -293,7 +289,7 @@ object EmailDefinitionsConsumer {
         reportResponse: ReportResponse,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -329,7 +325,7 @@ object EmailDefinitionsConsumer {
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -409,7 +405,7 @@ object EmailDefinitionsConsumer {
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -439,7 +435,7 @@ object EmailDefinitionsConsumer {
         emailValidation: EmailValidation,
         locale: Option[Locale],
         messagesApi: MessagesApi
-    ) extends ConsumerEmail {
+    ) extends Email {
       private val lang                                        = Lang(getLocaleOrDefault(locale))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 

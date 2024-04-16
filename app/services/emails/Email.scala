@@ -13,15 +13,10 @@ trait Email {
   def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
-sealed trait ProEmail         extends Email
-sealed trait ProFilteredEmail extends ProEmail
+sealed trait ProFilteredEmail extends Email
 trait ProFilteredEmailSingleReport extends ProFilteredEmail {
   val report: Report
 }
 trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
   val reports: List[Report]
 }
-
-trait ConsumerEmail extends Email
-
-object Email {}

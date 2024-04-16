@@ -12,16 +12,16 @@ import models.token.AgentAccessToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
 import models.token.TokenKind.AdminAccount
-import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
+import services.EmailAddressService
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
-import services.EmailAddressService
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.MailServiceInterface
 import utils.EmailAddress
@@ -128,7 +128,7 @@ class AccessesOrchestrator(
             )
         }
       _ <- mailService.send(
-        UpdateEmailAddress.build(
+        UpdateEmailAddress.EmailImpl(
           newEmail,
           frontRoute.dashboard.updateEmail(token.token),
           tokenConfiguration.updateEmailAddressDuration.getDays
@@ -261,7 +261,7 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration.toJava,
-          AdminAccessLink.build _,
+          AdminAccessLink.EmailImpl,
           frontRoute.dashboard.Admin.register _
         )
     }

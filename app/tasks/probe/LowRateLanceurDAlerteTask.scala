@@ -39,7 +39,8 @@ class LowRateLanceurDAlerteTask(
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
           .send(
-            AdminProbeTriggered.build(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas")
+            AdminProbeTriggered
+              .EmailImpl(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas")
           )
       } yield ()
     case rate =>
