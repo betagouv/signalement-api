@@ -37,24 +37,6 @@ object Email {
 
   // ======= Conso =======
 
-  final case class ConsumerReportReadByProNotification(
-      report: Report,
-      maybeCompany: Option[Company],
-      messagesApi: MessagesApi
-  ) extends ConsumerEmail {
-    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
-    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
-
-    override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String                = messagesApi("ConsumerReportTransmittedEmail.subject")(lang)
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.consumer.reportTransmission(report, maybeCompany).toString
-
-    override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.attachmentSeqForWorkflowStepN(3, report.lang.getOrElse(Locale.FRENCH))
-  }
-
   final case class ConsumerProResponseNotification(
       report: Report,
       reportResponse: ReportResponse,

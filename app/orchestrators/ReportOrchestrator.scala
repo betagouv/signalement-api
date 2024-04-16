@@ -38,6 +38,7 @@ import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.Email._
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
+import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
@@ -736,7 +737,7 @@ class ReportOrchestrator(
 
   private def notifyConsumer(report: Report) = for {
     maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-    _            <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
+    _            <- mailService.send(ConsumerReportReadByProNotification.EmailImpl(report, maybeCompany, messagesApi))
     _ <- eventRepository.create(
       Event(
         id = UUID.randomUUID(),

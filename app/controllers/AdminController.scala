@@ -30,6 +30,7 @@ import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
+import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailDefinitionsVarious.ResetPassword
@@ -138,21 +139,13 @@ class AdminController(
     ProReportsUnreadReminder,
     ProReportAssignedNotification,
     ConsumerReportDeletionConfirmation,
-    ConsumerReportAcknowledgment
+    ConsumerReportAcknowledgment,
+    ConsumerReportReadByProNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
-    // ======= PRO =======
-
     // ======= CONSO =======
 
-    "consumer.report_transmitted" -> (recipient =>
-      ConsumerReportReadByProNotification(
-        genReport.copy(email = recipient),
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
     "consumer.report_ack_pro_consumer" -> (recipient =>
       ConsumerProResponseNotification(
         genReport.copy(email = recipient),
