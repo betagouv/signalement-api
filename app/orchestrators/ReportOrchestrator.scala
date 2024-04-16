@@ -37,6 +37,7 @@ import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.Email._
+import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
@@ -344,7 +345,9 @@ class ReportOrchestrator(
       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
     )
     for {
-      _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements, messagesApi))
+      _ <- mailService.send(
+        ConsumerReportAcknowledgment.EmailImpl(report, maybeCompany, event, reportAttachements, messagesApi)
+      )
       _ <- eventRepository.create(event)
     } yield ()
   }

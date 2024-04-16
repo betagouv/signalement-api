@@ -7,7 +7,6 @@ import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import models._
 import models.admin.ReportInputList
-import models.company.Address
 import models.event.Event
 import models.report._
 import orchestrators.ReportFileOrchestrator
@@ -29,6 +28,8 @@ import services.PDFService
 import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
+import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
+import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailDefinitionsVarious.ResetPassword
@@ -36,7 +37,6 @@ import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
 import services.emails.Email
 import services.emails.EmailDefinition
-import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
@@ -137,184 +137,15 @@ class AdminController(
     ProReportsReadReminder,
     ProReportsUnreadReminder,
     ProReportAssignedNotification,
-    ConsumerReportDeletionConfirmation
+    ConsumerReportDeletionConfirmation,
+    ConsumerReportAcknowledgment
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
     // ======= CONSO =======
-    "consumer.report_ack" -> (recipient =>
-      ConsumerReportAcknowledgment(
-        genReport.copy(email = recipient),
-        Some(genCompany),
-        genEvent,
-        Nil,
-        controllerComponents.messagesApi
-      )
-    ),
-    "consumer.report_ack_case_reponseconso" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_dispute" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_dangerous_product" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.TraitementEnCours,
-            tags = List(ReportTag.ProduitDangereux),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_euro" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Italie)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_euro_and_dispute" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            tags = List(ReportTag.LitigeContractuel),
-            companyAddress = Address(country = Some(Country.Islande)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_andorre" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Andorre)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_andorre_and_dispute" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            tags = List(ReportTag.LitigeContractuel),
-            companyAddress = Address(country = Some(Country.Andorre)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_suisse" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Suisse)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_suisse_and_dispute" -> (recipient =>
-      ConsumerReportAcknowledgment(
-        genReport.copy(
-          status = ReportStatus.NA,
-          tags = List(ReportTag.LitigeContractuel),
-          companyAddress = Address(country = Some(Country.Suisse)),
-          email = recipient
-        ),
-        Some(genCompany),
-        genEvent,
-        Nil,
-        controllerComponents.messagesApi
-      )
-    ),
-    "consumer.report_ack_case_compagnie_aerienne" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            email = recipient,
-            tags = List(ReportTag.CompagnieAerienne)
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_abroad_default" ->
-      (recipient =>
-        ConsumerReportAcknowledgment(
-          genReport.copy(
-            status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Bahamas)),
-            email = recipient
-          ),
-          Some(genCompany),
-          genEvent,
-          Nil,
-          controllerComponents.messagesApi
-        )
-      ),
-    "consumer.report_ack_case_abroad_default_and_dispute" -> (recipient =>
-      ConsumerReportAcknowledgment(
-        genReport.copy(
-          status = ReportStatus.NA,
-          tags = List(ReportTag.LitigeContractuel),
-          companyAddress = Address(country = Some(Country.Bahamas)),
-          email = recipient
-        ),
-        Some(genCompany),
-        genEvent,
-        Nil,
-        controllerComponents.messagesApi
-      )
-    ),
+
     "consumer.report_transmitted" -> (recipient =>
       ConsumerReportReadByProNotification(
         genReport.copy(email = recipient),
@@ -496,7 +327,7 @@ class AdminController(
         event match {
           case Some(evt) =>
             Some(
-              ConsumerReportAcknowledgment(
+              ConsumerReportAcknowledgment.EmailImpl(
                 report,
                 maybeCompany,
                 evt,
