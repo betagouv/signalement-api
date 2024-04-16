@@ -1,5 +1,6 @@
 package services.emails
 
+import models.EmailValidation
 import models.company.Address
 import models.company.Company
 import models.event.Event
@@ -421,6 +422,38 @@ object EmailDefinitionsConsumer {
       override def getAttachements: AttachmentService => Seq[Attachment] =
         _.needWorkflowSeqForWorkflowStepN(4, report)
 
+    }
+
+  }
+  case object ConsumerValidateEmail extends EmailDefinition {
+    override val category = Consumer
+
+    override def examples =
+      Seq(
+        "validate_email" -> ((recipient, messagesApi) =>
+          EmailImpl(EmailValidation(email = recipient), None, messagesApi)
+        )
+      )
+
+    final case class EmailImpl(
+        emailValidation: EmailValidation,
+        locale: Option[Locale],
+        messagesApi: MessagesApi
+    ) extends ConsumerEmail {
+      private val lang                                        = Lang(getLocaleOrDefault(locale))
+      implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
+      override val recipients: List[EmailAddress] = List(emailValidation.email)
+      override val subject: String                = messagesApi("ConsumerValidateEmail.subject")(lang)
+
+      override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
+        views.html.mails.consumer
+          .confirmEmail(emailValidation.email, emailValidation.confirmationCode)(
+            frontRoute,
+            contactAddress,
+            messagesProvider
+          )
+          .toString
     }
 
   }

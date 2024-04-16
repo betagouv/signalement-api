@@ -25,7 +25,6 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.PDFService
-import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsConsumer._
@@ -142,16 +141,11 @@ class AdminController(
     ConsumerProResponseNotification,
     ConsumerProResponseNotificationOnAdminCompletion,
     ConsumerReportClosedNoReading,
-    ConsumerReportClosedNoAction
+    ConsumerReportClosedNoAction,
+    ConsumerValidateEmail
   ).flatMap(readExamplesWithFullKey)
 
-  val availableEmails = List[(String, EmailAddress => Email)](
-    // ======= CONSO =======
-
-    "consumer.validate_email" -> (recipient =>
-      ConsumerValidateEmail(EmailValidation(email = recipient), None, controllerComponents.messagesApi)
-    )
-  )
+  val availableEmails = List[(String, EmailAddress => Email)]()
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     val codesFromNewList = newList.map(_._1)

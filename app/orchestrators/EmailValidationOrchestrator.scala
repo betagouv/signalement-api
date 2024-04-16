@@ -5,20 +5,16 @@ import config.EmailConfiguration
 import controllers.error.AppError
 import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
-import models.EmailValidation
 import models.EmailValidation.EmailValidationThreshold
-import models.EmailValidationApi
-import models.EmailValidationFilter
-import models.PaginatedResult
-import models.PaginatedSearch
-import utils.EmailAddress
+import models._
 import models.email.EmailValidationResult
 import models.email.ValidateEmailCode
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import repositories.emailvalidation.EmailValidationRepositoryInterface
-import services.emails.Email.ConsumerValidateEmail
+import services.emails.EmailDefinitionsConsumer.ConsumerValidateEmail
 import services.emails.MailServiceInterface
+import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -93,7 +89,7 @@ class EmailValidationOrchestrator(
         if (isEmailNotValidatedOrOutdated(emailValidation.lastValidationDate)) {
           logger.debug(s"Email ${emailValidation.email} not validated our outdated, sending email")
           mailService
-            .send(ConsumerValidateEmail(emailValidation, locale, messagesApi))
+            .send(ConsumerValidateEmail.EmailImpl(emailValidation, locale, messagesApi))
             .map(_ => EmailValidationResult.failure)
         } else {
           logger.debug(s"Email validated")
