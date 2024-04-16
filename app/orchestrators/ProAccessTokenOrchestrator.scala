@@ -9,26 +9,22 @@ import models.company.AccessLevel
 import models.company.Company
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
-import models.token._
 import models.token.TokenKind.CompanyJoin
+import models.token._
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.Email.ProCompaniesAccessesInvitations
-import services.Email.ProCompanyAccessInvitation
-import services.Email.ProNewCompaniesAccesses
-import services.Email.ProNewCompanyAccess
-import services.MailServiceInterface
+import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
+import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
+import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
+import services.emails.EmailDefinitionsPro.ProNewCompanyAccess
+import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.EmailAddress
-import utils.FrontRoute
-import utils.PasswordComplexityHelper
-import utils.SIREN
-import utils.SIRET
+import utils._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -161,7 +157,7 @@ class ProAccessTokenOrchestrator(
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
-      _ <- mailService.send(ProNewCompanyAccess(user.email, company, invitedBy))
+      _ <- mailService.send(ProNewCompanyAccess.Email(user.email, company, invitedBy))
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()
 
@@ -169,8 +165,9 @@ class ProAccessTokenOrchestrator(
     for {
       _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
-        case Nil    => Future.successful(())
-        case c :: _ => mailService.send(ProNewCompaniesAccesses(user.email, companies, SIREN.fromSIRET(c.siret)))
+        case Nil => Future.successful(())
+        case c :: _ =>
+          mailService.send(ProNewCompaniesAccesses.Email(user.email, companies, SIREN.fromSIRET(c.siret)))
       }
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
@@ -210,7 +207,7 @@ class ProAccessTokenOrchestrator(
     for {
       tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
       _ <- mailService.send(
-        ProCompanyAccessInvitation(
+        ProCompanyAccessInvitation.Email(
           recipient = email,
           company = company,
           invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
@@ -237,7 +234,7 @@ class ProAccessTokenOrchestrator(
         case Nil => Future.successful(())
         case (tokenCode, c) :: _ =>
           mailService.send(
-            ProCompaniesAccessesInvitations(
+            ProCompaniesAccessesInvitations.Email(
               recipient = email,
               companies = list.map(_._2),
               siren = SIREN.fromSIRET(c.siret),

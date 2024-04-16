@@ -19,16 +19,19 @@ import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.Email._
-import services.MailService
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
+import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
+import services.emails.EmailDefinitionsPro.ProReportReOpeningNotification
+import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompletion
+import services.emails.MailService
 import utils.Constants
 import utils.Constants.ActionEvent._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.tools.nsc.tasty.SafeEq
 
 class ReportAdminActionOrchestrator(
@@ -67,7 +70,7 @@ class ReportAdminActionOrchestrator(
         )
       )
       (_, users) <- getCompanyWithUsers(updatedReport)
-      _          <- users.traverse(u => mailService.send(ProReportReOpeningNotification(u.map(_.email), updatedReport)))
+      _ <- users.traverse(u => mailService.send(ProReportReOpeningNotification.Email(u.map(_.email), updatedReport)))
     } yield ()
 
   private def reOpenReport(report: Report): Future[Report] = {
@@ -151,7 +154,7 @@ class ReportAdminActionOrchestrator(
       _            <- reportRepository.delete(id)
       _ <- report.companyId.map(id => reportOrchestrator.removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
       _ <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
-      _ <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
+      _ <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
     } yield report
 
   private def getCompanyWithUsers(report: Report): Future[(Option[Company], Option[List[User]])] = for {
@@ -179,8 +182,10 @@ class ReportAdminActionOrchestrator(
         reportAdminCompletionDetails
       )
       (maybeCompany, users) <- getCompanyWithUsers(report)
-      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion(report, u)))
-      _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
+      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.Email(report, u)))
+      _ <- mailService.send(
+        ConsumerProResponseNotificationOnAdminCompletion.Email(report, maybeCompany, messagesApi)
+      )
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

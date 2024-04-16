@@ -12,25 +12,24 @@ import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
-import services.Email.ProReportsReadReminder
-import services.Email.ProReportsUnreadReminder
-import services.Email
-import services.MailServiceInterface
+import services.emails.EmailDefinitionsPro.ProReportsReadReminder
+import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
+import services.emails.BaseEmail
+import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.SYSTEM
 import utils.EmailAddress
+import utils.Logs.RichLogger
 
 import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
 import scala.util.Success
-import utils.Logs.RichLogger
-
-import scala.concurrent.duration.FiniteDuration
 class ReportRemindersTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
@@ -97,13 +96,13 @@ class ReportRemindersTask(
               readByProsSent <- sendReminderEmailIfAtLeastOneReport(
                 readByPros,
                 users,
-                ProReportsReadReminder,
+                ProReportsReadReminder.Email,
                 EMAIL_PRO_REMIND_NO_ACTION
               )
               notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
                 notReadByPros,
                 users,
-                ProReportsUnreadReminder,
+                ProReportsUnreadReminder.Email,
                 EMAIL_PRO_REMIND_NO_READING
               )
             } yield List(readByProsSent, notReadByProsSent).flatten
@@ -116,7 +115,7 @@ class ReportRemindersTask(
   private def sendReminderEmailIfAtLeastOneReport(
       reports: List[Report],
       users: List[User],
-      email: (List[EmailAddress], List[Report], Period) => Email,
+      email: (List[EmailAddress], List[Report], Period) => BaseEmail,
       action: ActionEventValue
   ): Future[Option[Either[List[UUID], List[UUID]]]] =
     if (reports.nonEmpty) {
@@ -156,7 +155,7 @@ class ReportRemindersTask(
   private def sendReminderEmail(
       reports: List[Report],
       users: List[User],
-      email: (List[EmailAddress], List[Report], Period) => Email,
+      email: (List[EmailAddress], List[Report], Period) => BaseEmail,
       action: ActionEventValue
   ): Future[Unit] = {
     val emailAddresses = users.map(_.email)

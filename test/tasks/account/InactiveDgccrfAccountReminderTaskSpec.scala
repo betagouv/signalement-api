@@ -12,8 +12,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Results
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.MailRetriesService
-import services.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService.EmailRequest
+import services.emails.MailRetriesService
 import utils.AppSpec
 import utils.Constants.ActionEvent
 import utils.Constants.EventType

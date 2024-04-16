@@ -12,18 +12,18 @@ import models.token.AgentAccessToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
 import models.token.TokenKind.AdminAccount
-import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
-import services.Email.AdminAccessLink
-import services.Email.DgccrfAgentAccessLink
-import services.Email.UpdateEmailAddress
-import services.Email
 import services.EmailAddressService
-import services.MailServiceInterface
+import services.emails.EmailDefinitionsAdmin.AdminAccessLink
+import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
+import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
+import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
+import services.emails.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.PasswordComplexityHelper
@@ -128,7 +128,7 @@ class AccessesOrchestrator(
             )
         }
       _ <- mailService.send(
-        UpdateEmailAddress(
+        UpdateEmailAddress.Email(
           newEmail,
           frontRoute.dashboard.updateEmail(token.token),
           tokenConfiguration.updateEmailAddressDuration.getDays
@@ -247,21 +247,21 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink("DGCCRF") _,
+          DgccrfAgentAccessLink.Email("DGCCRF") _,
           frontRoute.dashboard.Agent.register _
         )
       case DGALAccount =>
         (
           EmailAddressService.isEmailAcceptableForDgalAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink("DGAL") _,
+          DgccrfAgentAccessLink.Email("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
       case AdminAccount =>
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration.toJava,
-          AdminAccessLink,
+          AdminAccessLink.Email,
           frontRoute.dashboard.Admin.register _
         )
     }
@@ -319,7 +319,7 @@ class AccessesOrchestrator(
         )
       )
       _ <- mailService.send(
-        Email.DgccrfValidateEmail(
+        DgccrfValidateEmail.Email(
           user.email,
           tokenConfiguration.dgccrfRevalidationTokenDuration.map(_.getDays).getOrElse(7),
           frontRoute.dashboard.validateEmail(token.token)
