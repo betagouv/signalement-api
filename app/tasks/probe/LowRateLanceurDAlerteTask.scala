@@ -40,7 +40,7 @@ class LowRateLanceurDAlerteTask(
         _ <- mailService
           .send(
             AdminProbeTriggered
-              .EmailImpl(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas")
+              .Email(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas")
           )
       } yield ()
     case rate =>

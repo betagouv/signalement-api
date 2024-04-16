@@ -91,7 +91,7 @@ class ReportNotificationTask(
           s"Sending a subscription notification email to ${emailAddress}"
         )
         mailService.send {
-          DgccrfReportNotification.EmailImpl(
+          DgccrfReportNotification.Email(
             List(emailAddress),
             subscription,
             filteredReport.toList,

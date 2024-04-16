@@ -36,7 +36,10 @@ import utils.EmailAddress
 trait EmailDefinition {
   val category: EmailCategory
 
-  def examples: Seq[(String, (EmailAddress, MessagesApi) => Email)]
+  def examples: Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)]
+
+  // Each EmailDefinition object should also define an Email case class
+  // This can't be enforced sadly
 
 }
 

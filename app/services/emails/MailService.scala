@@ -30,7 +30,7 @@ class MailService(
   implicit private[this] val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
   override def send(
-      email: Email
+      email: BaseEmail
   ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)
     case email =>

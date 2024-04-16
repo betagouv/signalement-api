@@ -27,11 +27,11 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_deletion_confirmation" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), Some(genCompany), messagesApi)
         )
       )
 
-    final case class EmailImpl(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi) extends Email {
+    final case class Email(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
       override val recipients: List[EmailAddress]             = List(report.email)
@@ -50,7 +50,7 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_ack" -> ((recipient, messagesApi) =>
-          EmailImpl(
+          Email(
             genReport.copy(email = recipient),
             Some(genCompany),
             genEvent,
@@ -60,7 +60,7 @@ object EmailDefinitionsConsumer {
         ),
         "report_ack_case_reponseconso" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
               Some(genCompany),
               genEvent,
@@ -70,7 +70,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_dispute" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
               Some(genCompany),
               genEvent,
@@ -80,7 +80,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_dangerous_product" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.TraitementEnCours,
                 tags = List(ReportTag.ProduitDangereux),
@@ -94,7 +94,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_euro" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 companyAddress = Address(country = Some(Country.Italie)),
@@ -108,7 +108,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_euro_and_dispute" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 tags = List(ReportTag.LitigeContractuel),
@@ -123,7 +123,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_andorre" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 companyAddress = Address(country = Some(Country.Andorre)),
@@ -137,7 +137,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_andorre_and_dispute" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 tags = List(ReportTag.LitigeContractuel),
@@ -152,7 +152,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_suisse" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 companyAddress = Address(country = Some(Country.Suisse)),
@@ -165,7 +165,7 @@ object EmailDefinitionsConsumer {
             )
           ),
         "report_ack_case_suisse_and_dispute" -> ((recipient, messagesApi) =>
-          EmailImpl(
+          Email(
             genReport.copy(
               status = ReportStatus.NA,
               tags = List(ReportTag.LitigeContractuel),
@@ -180,7 +180,7 @@ object EmailDefinitionsConsumer {
         ),
         "report_ack_case_compagnie_aerienne" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 email = recipient,
@@ -194,7 +194,7 @@ object EmailDefinitionsConsumer {
           ),
         "report_ack_case_abroad_default" ->
           ((recipient, messagesApi) =>
-            EmailImpl(
+            Email(
               genReport.copy(
                 status = ReportStatus.NA,
                 companyAddress = Address(country = Some(Country.Bahamas)),
@@ -207,7 +207,7 @@ object EmailDefinitionsConsumer {
             )
           ),
         "report_ack_case_abroad_default_and_dispute" -> ((recipient, messagesApi) =>
-          EmailImpl(
+          Email(
             genReport.copy(
               status = ReportStatus.NA,
               tags = List(ReportTag.LitigeContractuel),
@@ -222,13 +222,13 @@ object EmailDefinitionsConsumer {
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         maybeCompany: Option[Company],
         event: Event,
         files: Seq[ReportFile],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -251,15 +251,15 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_transmitted" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), Some(genCompany), messagesApi)
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -280,16 +280,16 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_ack_pro_consumer" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), genReportResponse, Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), genReportResponse, Some(genCompany), messagesApi)
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         reportResponse: ReportResponse,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -317,15 +317,15 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_ack_pro_consumer_on_admin_completion" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), Some(genCompany), messagesApi)
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -352,10 +352,10 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_closed_no_reading" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), Some(genCompany), messagesApi)
         ),
         "report_closed_no_reading_case_dispute" -> ((recipient, messagesApi) =>
-          EmailImpl(
+          Email(
             genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
             Some(genCompany),
             messagesApi
@@ -363,11 +363,11 @@ object EmailDefinitionsConsumer {
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -390,10 +390,10 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_closed_no_action" -> ((recipient, messagesApi) =>
-          EmailImpl(genReport.copy(email = recipient), Some(genCompany), messagesApi)
+          Email(genReport.copy(email = recipient), Some(genCompany), messagesApi)
         ),
         "report_closed_no_action_case_dispute" -> ((recipient, messagesApi) =>
-          EmailImpl(
+          Email(
             genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
             Some(genCompany),
             messagesApi
@@ -401,11 +401,11 @@ object EmailDefinitionsConsumer {
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         report: Report,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(report.lang))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 
@@ -426,16 +426,14 @@ object EmailDefinitionsConsumer {
 
     override def examples =
       Seq(
-        "validate_email" -> ((recipient, messagesApi) =>
-          EmailImpl(EmailValidation(email = recipient), None, messagesApi)
-        )
+        "validate_email" -> ((recipient, messagesApi) => Email(EmailValidation(email = recipient), None, messagesApi))
       )
 
-    final case class EmailImpl(
+    final case class Email(
         emailValidation: EmailValidation,
         locale: Option[Locale],
         messagesApi: MessagesApi
-    ) extends Email {
+    ) extends BaseEmail {
       private val lang                                        = Lang(getLocaleOrDefault(locale))
       implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
 

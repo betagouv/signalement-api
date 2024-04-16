@@ -6,14 +6,14 @@ import services.AttachmentService
 import utils.EmailAddress
 import utils.FrontRoute
 
-trait Email {
+trait BaseEmail {
   val recipients: Seq[EmailAddress]
   val subject: String
   def getBody: (FrontRoute, EmailAddress) => String
   def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
-sealed trait ProFilteredEmail extends Email
+sealed trait ProFilteredEmail extends BaseEmail
 trait ProFilteredEmailSingleReport extends ProFilteredEmail {
   val report: Report
 }

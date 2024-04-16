@@ -70,9 +70,7 @@ class ReportAdminActionOrchestrator(
         )
       )
       (_, users) <- getCompanyWithUsers(updatedReport)
-      _ <- users.traverse(u =>
-        mailService.send(ProReportReOpeningNotification.EmailImpl(u.map(_.email), updatedReport))
-      )
+      _ <- users.traverse(u => mailService.send(ProReportReOpeningNotification.Email(u.map(_.email), updatedReport)))
     } yield ()
 
   private def reOpenReport(report: Report): Future[Report] = {
@@ -156,7 +154,7 @@ class ReportAdminActionOrchestrator(
       _            <- reportRepository.delete(id)
       _ <- report.companyId.map(id => reportOrchestrator.removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
       _ <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
-      _ <- mailService.send(ConsumerReportDeletionConfirmation.EmailImpl(report, maybeCompany, messagesApi))
+      _ <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
     } yield report
 
   private def getCompanyWithUsers(report: Report): Future[(Option[Company], Option[List[User]])] = for {
@@ -184,9 +182,9 @@ class ReportAdminActionOrchestrator(
         reportAdminCompletionDetails
       )
       (maybeCompany, users) <- getCompanyWithUsers(report)
-      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.EmailImpl(report, u)))
+      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.Email(report, u)))
       _ <- mailService.send(
-        ConsumerProResponseNotificationOnAdminCompletion.EmailImpl(report, maybeCompany, messagesApi)
+        ConsumerProResponseNotificationOnAdminCompletion.Email(report, maybeCompany, messagesApi)
       )
       _ <- eventRepository.create(
         Event(

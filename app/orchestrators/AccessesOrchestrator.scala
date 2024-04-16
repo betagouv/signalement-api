@@ -128,7 +128,7 @@ class AccessesOrchestrator(
             )
         }
       _ <- mailService.send(
-        UpdateEmailAddress.EmailImpl(
+        UpdateEmailAddress.Email(
           newEmail,
           frontRoute.dashboard.updateEmail(token.token),
           tokenConfiguration.updateEmailAddressDuration.getDays
@@ -247,21 +247,21 @@ class AccessesOrchestrator(
         (
           EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink.EmailImpl("DGCCRF") _,
+          DgccrfAgentAccessLink.Email("DGCCRF") _,
           frontRoute.dashboard.Agent.register _
         )
       case DGALAccount =>
         (
           EmailAddressService.isEmailAcceptableForDgalAccount _,
           tokenConfiguration.dgccrfJoinDuration,
-          DgccrfAgentAccessLink.EmailImpl("DGAL") _,
+          DgccrfAgentAccessLink.Email("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
       case AdminAccount =>
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration.toJava,
-          AdminAccessLink.EmailImpl,
+          AdminAccessLink.Email,
           frontRoute.dashboard.Admin.register _
         )
     }
@@ -319,7 +319,7 @@ class AccessesOrchestrator(
         )
       )
       _ <- mailService.send(
-        DgccrfValidateEmail.EmailImpl(
+        DgccrfValidateEmail.Email(
           user.email,
           tokenConfiguration.dgccrfRevalidationTokenDuration.map(_.getDays).getOrElse(7),
           frontRoute.dashboard.validateEmail(token.token)

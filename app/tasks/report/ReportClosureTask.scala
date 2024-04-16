@@ -15,7 +15,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerReportClosedNoAction
 import services.emails.EmailDefinitionsConsumer.ConsumerReportClosedNoReading
-import services.emails.Email
+import services.emails.BaseEmail
 import services.emails.MailService
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
@@ -88,7 +88,7 @@ class ReportClosureTask(
         ReportStatus.ConsulteIgnore,
         REPORT_CLOSED_BY_NO_ACTION,
         "Clôture automatique : signalement consulté ignoré",
-        ConsumerReportClosedNoAction.EmailImpl,
+        ConsumerReportClosedNoAction.Email,
         EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
       )
     } else {
@@ -96,7 +96,7 @@ class ReportClosureTask(
         ReportStatus.NonConsulte,
         REPORT_CLOSED_BY_NO_READING,
         "Clôture automatique : signalement non consulté",
-        ConsumerReportClosedNoReading.EmailImpl,
+        ConsumerReportClosedNoReading.Email,
         EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
       )
     }
@@ -131,7 +131,7 @@ class ReportClosureTask(
     } yield ()
   }
 
-  private def eventuallySendConsumerEmail(report: Report, email: Email) = {
+  private def eventuallySendConsumerEmail(report: Report, email: BaseEmail) = {
     val hasReportBeenReOpened = report.reopenDate.isDefined
     // We don't want the consumer to be notified when a pro is requesting a report reopening.
     // The consumer will only be notified when the pro will reply.

@@ -57,7 +57,7 @@ class InactiveDgccrfAccountReminderTask(
     val now            = OffsetDateTime.now()
     val expirationDate = user.lastEmailValidation.map(_.plus(inactivePeriod))
     for {
-      _ <- mailService.send(DgccrfInactiveAccount.EmailImpl(user, expirationDate.map(_.toLocalDate)))
+      _ <- mailService.send(DgccrfInactiveAccount.Email(user, expirationDate.map(_.toLocalDate)))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

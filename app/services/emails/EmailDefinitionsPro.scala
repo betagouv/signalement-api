@@ -22,14 +22,14 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("access_invitation" -> ((recipient, _) => EmailImpl(recipient, genCompany, dummyURL, None)))
+      Seq("access_invitation" -> ((recipient, _) => Email(recipient, genCompany, dummyURL, None)))
 
-    final case class EmailImpl(
+    final case class Email(
         recipient: EmailAddress,
         company: Company,
         invitationUrl: URI,
         invitedBy: Option[User]
-    ) extends Email {
+    ) extends BaseEmail {
       override val recipients: List[EmailAddress] = List(recipient)
       override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
 
@@ -45,16 +45,16 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "access_invitation_multiple_companies" -> ((recipient, _) =>
-          EmailImpl(recipient, genCompanyList, genSiren, dummyURL)
+          Email(recipient, genCompanyList, genSiren, dummyURL)
         )
       )
 
-    final case class EmailImpl(
+    final case class Email(
         recipient: EmailAddress,
         companies: List[Company],
         siren: SIREN,
         invitationUrl: URI
-    ) extends Email {
+    ) extends BaseEmail {
       override val recipients: List[EmailAddress] = List(recipient)
       override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
 
@@ -68,13 +68,13 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("new_company_access" -> ((recipient, _) => EmailImpl(recipient, genCompany, None)))
+      Seq("new_company_access" -> ((recipient, _) => Email(recipient, genCompany, None)))
 
-    final case class EmailImpl(
+    final case class Email(
         recipient: EmailAddress,
         company: Company,
         invitedBy: Option[User]
-    ) extends Email {
+    ) extends BaseEmail {
       override val recipients: List[EmailAddress] = List(recipient)
       override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
 
@@ -90,13 +90,13 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("new_companies_accesses" -> ((recipient, _) => EmailImpl(recipient, genCompanyList, genSiren)))
+      Seq("new_companies_accesses" -> ((recipient, _) => Email(recipient, genCompanyList, genSiren)))
 
-    final case class EmailImpl(
+    final case class Email(
         recipient: EmailAddress,
         companies: List[Company],
         siren: SIREN
-    ) extends Email {
+    ) extends BaseEmail {
       override val recipients: List[EmailAddress] = List(recipient)
       override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
 
@@ -113,10 +113,10 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_ack_pro" -> ((recipient, _) => EmailImpl(genReport, genReportResponse, genUser.copy(email = recipient)))
+        "report_ack_pro" -> ((recipient, _) => Email(genReport, genReportResponse, genUser.copy(email = recipient)))
       )
 
-    final case class EmailImpl(report: Report, reportResponse: ReportResponse, user: User)
+    final case class Email(report: Report, reportResponse: ReportResponse, user: User)
         extends ProFilteredEmailSingleReport {
       override val recipients: List[EmailAddress] = List(user.email)
       override val subject: String                = EmailSubjects.REPORT_ACK_PRO
@@ -133,11 +133,11 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "report_ack_pro_on_admin_completion" -> ((recipient, _) =>
-          EmailImpl(genReport, List(genUser.copy(email = recipient), genUser, genUser))
+          Email(genReport, List(genUser.copy(email = recipient), genUser, genUser))
         )
       )
 
-    final case class EmailImpl(report: Report, users: List[User]) extends ProFilteredEmailSingleReport {
+    final case class Email(report: Report, users: List[User]) extends ProFilteredEmailSingleReport {
       override val recipients: List[EmailAddress] = users.map(_.email)
       override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
 
@@ -151,11 +151,10 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_notification" -> ((recipient, _) => EmailImpl(NonEmptyList.of(recipient), genReport))
+        "report_notification" -> ((recipient, _) => Email(NonEmptyList.of(recipient), genReport))
       )
 
-    final case class EmailImpl(userList: NonEmptyList[EmailAddress], report: Report)
-        extends ProFilteredEmailSingleReport {
+    final case class Email(userList: NonEmptyList[EmailAddress], report: Report) extends ProFilteredEmailSingleReport {
       override val subject: String                = EmailSubjects.NEW_REPORT
       override val recipients: List[EmailAddress] = userList.toList
 
@@ -169,10 +168,10 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_reopening_notification" -> ((recipient, _) => EmailImpl(List(recipient), genReport))
+        "report_reopening_notification" -> ((recipient, _) => Email(List(recipient), genReport))
       )
 
-    final case class EmailImpl(userList: List[EmailAddress], report: Report) extends ProFilteredEmailSingleReport {
+    final case class Email(userList: List[EmailAddress], report: Report) extends ProFilteredEmailSingleReport {
       override val subject: String                = EmailSubjects.REPORT_REOPENING
       override val recipients: List[EmailAddress] = userList.toList
 
@@ -191,12 +190,12 @@ object EmailDefinitionsPro {
       val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
       Seq(
         "reports_transmitted_reminder" -> ((recipient, _) =>
-          EmailImpl(List(recipient), List(report1, report2, report3), Period.ofDays(7))
+          Email(List(recipient), List(report1, report2, report3), Period.ofDays(7))
         )
       )
     }
 
-    final case class EmailImpl(
+    final case class Email(
         recipients: List[EmailAddress],
         reports: List[Report],
         period: Period
@@ -219,12 +218,12 @@ object EmailDefinitionsPro {
 
       Seq(
         "reports_unread_reminder" -> ((recipient, _) =>
-          EmailImpl(List(recipient), List(report1, report2, report3), Period.ofDays(7))
+          Email(List(recipient), List(report1, report2, report3), Period.ofDays(7))
         )
       )
     }
 
-    final case class EmailImpl(
+    final case class Email(
         recipients: List[EmailAddress],
         reports: List[Report],
         period: Period
@@ -242,11 +241,11 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "report_assignement_to_other" -> ((recipient, _) =>
-          EmailImpl(report = genReport, assigningUser = genUser, assignedUser = genUser.copy(email = recipient))
+          Email(report = genReport, assigningUser = genUser, assignedUser = genUser.copy(email = recipient))
         )
       )
 
-    final case class EmailImpl(report: Report, assigningUser: User, assignedUser: User)
+    final case class Email(report: Report, assigningUser: User, assignedUser: User)
         extends ProFilteredEmailSingleReport {
       override val recipients: List[EmailAddress] = List(assignedUser.email)
       override val subject: String                = EmailSubjects.REPORT_ASSIGNED

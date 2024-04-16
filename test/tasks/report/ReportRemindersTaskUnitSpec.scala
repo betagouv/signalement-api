@@ -113,14 +113,14 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
 
       when(
         mailService.send(
-          ProReportsUnreadReminder.EmailImpl(List(proUser1.email), List(report1, report2), Period.ofDays(7))
+          ProReportsUnreadReminder.Email(List(proUser1.email), List(report1, report2), Period.ofDays(7))
         )
       ).thenReturn(Future.unit)
-      when(mailService.send(ProReportsUnreadReminder.EmailImpl(List(proUser1.email), List(report4), Period.ofDays(7))))
+      when(mailService.send(ProReportsUnreadReminder.Email(List(proUser1.email), List(report4), Period.ofDays(7))))
         .thenReturn(Future.unit)
       when(
         mailService.send(
-          ProReportsReadReminder.EmailImpl(List(proUser1.email), List(report5, report6), Period.ofDays(7))
+          ProReportsReadReminder.Email(List(proUser1.email), List(report5, report6), Period.ofDays(7))
         )
       ).thenReturn(Future.unit)
 

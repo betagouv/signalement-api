@@ -40,7 +40,7 @@ class LowRateReponseConsoTask(
         _ <- mailService
           .send(
             AdminProbeTriggered
-              .EmailImpl(users.map(_.email), "Taux de signalements 'Réponse conso' faible", rate, "bas")
+              .Email(users.map(_.email), "Taux de signalements 'Réponse conso' faible", rate, "bas")
           )
       } yield ()
     case rate =>

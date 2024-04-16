@@ -14,7 +14,7 @@ object EmailDefinitionsVarious {
   case object ResetPassword extends EmailDefinition {
     override val category = Various
 
-    final case class EmailImpl(user: User, authToken: AuthToken) extends Email {
+    final case class Email(user: User, authToken: AuthToken) extends BaseEmail {
       override val recipients: List[EmailAddress] = List(user.email)
       override val subject: String                = EmailSubjects.RESET_PASSWORD
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
@@ -22,14 +22,14 @@ object EmailDefinitionsVarious {
     }
 
     override def examples =
-      Seq("reset_password" -> ((recipient, _) => EmailImpl(genUser.copy(email = recipient), genAuthToken)))
+      Seq("reset_password" -> ((recipient, _) => Email(genUser.copy(email = recipient), genAuthToken)))
 
   }
 
   case object UpdateEmailAddress extends EmailDefinition {
     override val category = Various
 
-    final case class EmailImpl(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int) extends Email {
+    final case class Email(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int) extends BaseEmail {
 
       override val recipients: Seq[EmailAddress] = List(recipient)
       override val subject: String               = EmailSubjects.UPDATE_EMAIL_ADDRESS
@@ -38,7 +38,7 @@ object EmailDefinitionsVarious {
         views.html.mails.updateEmailAddress(invitationUrl, daysBeforeExpiry).toString()
     }
     override def examples =
-      Seq("update_email_address" -> ((recipient, _) => EmailImpl(recipient, dummyURL, daysBeforeExpiry = 2)))
+      Seq("update_email_address" -> ((recipient, _) => Email(recipient, dummyURL, daysBeforeExpiry = 2)))
 
   }
 }

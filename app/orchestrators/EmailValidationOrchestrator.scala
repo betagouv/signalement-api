@@ -89,7 +89,7 @@ class EmailValidationOrchestrator(
         if (isEmailNotValidatedOrOutdated(emailValidation.lastValidationDate)) {
           logger.debug(s"Email ${emailValidation.email} not validated our outdated, sending email")
           mailService
-            .send(ConsumerValidateEmail.EmailImpl(emailValidation, locale, messagesApi))
+            .send(ConsumerValidateEmail.Email(emailValidation, locale, messagesApi))
             .map(_ => EmailValidationResult.failure)
         } else {
           logger.debug(s"Email validated")

@@ -29,7 +29,7 @@ import services.emails.EmailDefinitionsConsumer._
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailsExamplesUtils._
-import services.emails.Email
+import services.emails.BaseEmail
 import services.emails.EmailDefinition
 import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.MailService
@@ -111,7 +111,7 @@ class AdminController(
     )(messagesProvider)
   )
 
-  private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => Email)] =
+  private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)] =
     allEmailDefinitions.flatMap(readExamplesWithFullKey)
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
@@ -132,7 +132,7 @@ class AdminController(
 
   private def readExamplesWithFullKey(
       emailDefinition: EmailDefinition
-  ): Seq[(String, (EmailAddress, MessagesApi) => Email)] =
+  ): Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)] =
     emailDefinition.examples.map { case (key, fn) =>
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }
@@ -168,7 +168,7 @@ class AdminController(
       _ <- filteredEvents.map { case (report, responseEvent) =>
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
         mailService.send(
-          ConsumerProResponseNotification.EmailImpl(
+          ConsumerProResponseNotification.Email(
             report,
             responseEvent.details.as[ReportResponse],
             maybeCompany,
@@ -202,7 +202,7 @@ class AdminController(
       }.sequence
       _ <- reportAndEmailList.map {
         case (report, Some(adminsEmails)) =>
-          mailService.send(ProNewReportNotification.EmailImpl(adminsEmails, report))
+          mailService.send(ProNewReportNotification.Email(adminsEmails, report))
         case (report, None) =>
           logger.debug(s"Not sending email for report ${report.id}, no admin found")
           Future.unit
@@ -232,7 +232,7 @@ class AdminController(
         event match {
           case Some(evt) =>
             Some(
-              ConsumerReportAcknowledgment.EmailImpl(
+              ConsumerReportAcknowledgment.Email(
                 report,
                 maybeCompany,
                 evt,
@@ -269,7 +269,7 @@ class AdminController(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification.EmailImpl(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.Email(ddEmails, report))
       } else {
         Future.unit
       }

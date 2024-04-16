@@ -14,7 +14,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import services.emails.EmailDefinitionsPro.ProReportsReadReminder
 import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
-import services.emails.Email
+import services.emails.BaseEmail
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
@@ -96,13 +96,13 @@ class ReportRemindersTask(
               readByProsSent <- sendReminderEmailIfAtLeastOneReport(
                 readByPros,
                 users,
-                ProReportsReadReminder.EmailImpl,
+                ProReportsReadReminder.Email,
                 EMAIL_PRO_REMIND_NO_ACTION
               )
               notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
                 notReadByPros,
                 users,
-                ProReportsUnreadReminder.EmailImpl,
+                ProReportsUnreadReminder.Email,
                 EMAIL_PRO_REMIND_NO_READING
               )
             } yield List(readByProsSent, notReadByProsSent).flatten
@@ -115,7 +115,7 @@ class ReportRemindersTask(
   private def sendReminderEmailIfAtLeastOneReport(
       reports: List[Report],
       users: List[User],
-      email: (List[EmailAddress], List[Report], Period) => Email,
+      email: (List[EmailAddress], List[Report], Period) => BaseEmail,
       action: ActionEventValue
   ): Future[Option[Either[List[UUID], List[UUID]]]] =
     if (reports.nonEmpty) {
@@ -155,7 +155,7 @@ class ReportRemindersTask(
   private def sendReminderEmail(
       reports: List[Report],
       users: List[User],
-      email: (List[EmailAddress], List[Report], Period) => Email,
+      email: (List[EmailAddress], List[Report], Period) => BaseEmail,
       action: ActionEventValue
   ): Future[Unit] = {
     val emailAddresses = users.map(_.email)

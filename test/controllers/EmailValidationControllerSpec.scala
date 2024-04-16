@@ -167,9 +167,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         maybeEmailValidation.isDefined shouldEqual true
         maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual None
         val expectedEmail =
-          maybeEmailValidation.map(emailValidation =>
-            ConsumerValidateEmail.EmailImpl(emailValidation, None, messagesApi)
-          )
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail.Email(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
         val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(unknownEmail), emailSubject, emailBody)
@@ -196,9 +194,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         maybeEmailValidation.isDefined shouldEqual true
         maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual None
         val expectedEmail =
-          maybeEmailValidation.map(emailValidation =>
-            ConsumerValidateEmail.EmailImpl(emailValidation, None, messagesApi)
-          )
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail.Email(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
         val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
@@ -227,9 +223,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         maybeEmailValidation.isDefined shouldEqual true
         maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual Some(oldDate)
         val expectedEmail =
-          maybeEmailValidation.map(emailValidation =>
-            ConsumerValidateEmail.EmailImpl(emailValidation, None, messagesApi)
-          )
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail.Email(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
         val emailBody    = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)

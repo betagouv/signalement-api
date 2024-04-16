@@ -121,7 +121,7 @@ class AuthOrchestrator(
           _ = logger.debug(s"Creating auth token for ${user.id}")
           authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, authTokenExpiration))
           _ = logger.debug(s"Sending reset email to ${user.id}")
-          _ <- mailService.send(ResetPassword.EmailImpl(user, authToken))
+          _ <- mailService.send(ResetPassword.Email(user, authToken))
         } yield ()
       case _ =>
         logger.warnWithTitle("reset_pwd_user_not_found", "User not found, cannot reset password")

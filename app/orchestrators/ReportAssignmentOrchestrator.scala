@@ -44,7 +44,7 @@ class ReportAssignmentOrchestrator(
         if (assigningToSelf) Future.unit
         else
           mailService.send(
-            ProReportAssignedNotification.EmailImpl(reportWithMetadata.report, assigningUser, newAssignedUser)
+            ProReportAssignedNotification.Email(reportWithMetadata.report, assigningUser, newAssignedUser)
           )
     } yield newAssignedUser
   }

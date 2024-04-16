@@ -126,7 +126,7 @@ class ReportOrchestrator(
           logger.debug("Found user, sending notification")
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
-            _ <- mailService.send(ProNewReportNotification.EmailImpl(companyUserEmails, report))
+            _ <- mailService.send(ProNewReportNotification.Email(companyUserEmails, report))
             reportWithUpdatedStatus <- reportRepository.update(
               report.id,
               report.copy(status = ReportStatus.TraitementEnCours)
@@ -329,7 +329,7 @@ class ReportOrchestrator(
       } else Future(Seq())
     _ <-
       if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification.EmailImpl(ddEmails, report))
+        mailService.send(DgccrfDangerousProductReportNotification.Email(ddEmails, report))
       } else {
         Future.unit
       }
@@ -347,7 +347,7 @@ class ReportOrchestrator(
     )
     for {
       _ <- mailService.send(
-        ConsumerReportAcknowledgment.EmailImpl(report, maybeCompany, event, reportAttachements, messagesApi)
+        ConsumerReportAcknowledgment.Email(report, maybeCompany, event, reportAttachements, messagesApi)
       )
       _ <- eventRepository.create(event)
     } yield ()
@@ -737,7 +737,7 @@ class ReportOrchestrator(
 
   private def notifyConsumer(report: Report) = for {
     maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-    _            <- mailService.send(ConsumerReportReadByProNotification.EmailImpl(report, maybeCompany, messagesApi))
+    _            <- mailService.send(ConsumerReportReadByProNotification.Email(report, maybeCompany, messagesApi))
     _ <- eventRepository.create(
       Event(
         id = UUID.randomUUID(),
@@ -757,8 +757,8 @@ class ReportOrchestrator(
       user: User,
       maybeCompany: Option[Company]
   ) = for {
-    _ <- mailService.send(ProResponseAcknowledgment.EmailImpl(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification.EmailImpl(report, reportResponse, maybeCompany, messagesApi))
+    _ <- mailService.send(ProResponseAcknowledgment.Email(report, reportResponse, user))
+    _ <- mailService.send(ConsumerProResponseNotification.Email(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 
   // dead code ?
