@@ -22,7 +22,7 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("access_invitation" -> (recipient => build(recipient, genCompany, dummyURL, None)))
+      Seq("access_invitation" -> ((recipient, _) => build(recipient, genCompany, dummyURL, None)))
 
     def build(recipient: EmailAddress, company: Company, invitationUrl: URI, invitedBy: Option[User]): Email =
       new Email {
@@ -38,7 +38,11 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("access_invitation_multiple_companies" -> (recipient => build(recipient, genCompanyList, genSiren, dummyURL)))
+      Seq(
+        "access_invitation_multiple_companies" -> ((recipient, _) =>
+          build(recipient, genCompanyList, genSiren, dummyURL)
+        )
+      )
 
     def build(recipient: EmailAddress, companies: List[Company], siren: SIREN, invitationUrl: URI): Email =
       new Email {
@@ -55,7 +59,7 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("new_company_access" -> (recipient => build(recipient, genCompany, None)))
+      Seq("new_company_access" -> ((recipient, _) => build(recipient, genCompany, None)))
 
     def build(recipient: EmailAddress, company: Company, invitedBy: Option[User]): Email =
       new Email {
@@ -74,7 +78,7 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("new_companies_accesses" -> (recipient => build(recipient, genCompanyList, genSiren)))
+      Seq("new_companies_accesses" -> ((recipient, _) => build(recipient, genCompanyList, genSiren)))
 
     def build(recipient: EmailAddress, companies: List[Company], siren: SIREN): Email =
       new Email {
@@ -93,7 +97,9 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("report_ack_pro" -> (recipient => build(genReport, genReportResponse, genUser.copy(email = recipient))))
+      Seq(
+        "report_ack_pro" -> ((recipient, _) => build(genReport, genReportResponse, genUser.copy(email = recipient)))
+      )
 
     def build(theReport: Report, reportResponse: ReportResponse, user: User): Email =
       new ProFilteredEmailSingleReport {
@@ -113,7 +119,7 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_ack_pro_on_admin_completion" -> (recipient =>
+        "report_ack_pro_on_admin_completion" -> ((recipient, _) =>
           build(genReport, List(genUser.copy(email = recipient), genUser, genUser))
         )
       )
@@ -135,7 +141,7 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_notification" -> (recipient => build(NonEmptyList.of(recipient), genReport))
+        "report_notification" -> ((recipient, _) => build(NonEmptyList.of(recipient), genReport))
       )
 
     def build(userList: NonEmptyList[EmailAddress], theReport: Report): Email =
@@ -155,7 +161,7 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_reopening_notification" -> (recipient => build(List(recipient), genReport))
+        "report_reopening_notification" -> ((recipient, _) => build(List(recipient), genReport))
       )
 
     def build(userList: List[EmailAddress], theReport: Report): Email =
@@ -177,7 +183,7 @@ object EmailDefinitionsPro {
       val report2 = genReport.copy(companyId = report1.companyId)
       val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
       Seq(
-        "reports_transmitted_reminder" -> (recipient =>
+        "reports_transmitted_reminder" -> ((recipient, _) =>
           EmailImpl(List(recipient), List(report1, report2, report3), Period.ofDays(7))
         )
       )
@@ -205,7 +211,7 @@ object EmailDefinitionsPro {
       val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
 
       Seq(
-        "reports_unread_reminder" -> (recipient =>
+        "reports_unread_reminder" -> ((recipient, _) =>
           EmailImpl(List(recipient), List(report1, report2, report3), Period.ofDays(7))
         )
       )
@@ -228,7 +234,7 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_assignement_to_other" -> (recipient =>
+        "report_assignement_to_other" -> ((recipient, _) =>
           EmailImpl(report = genReport, assigningUser = genUser, assignedUser = genUser.copy(email = recipient))
         )
       )

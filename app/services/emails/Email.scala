@@ -33,24 +33,9 @@ trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
   val reports: List[Report]
 }
 
-sealed trait ConsumerEmail extends Email
+trait ConsumerEmail extends Email
 
 object Email {
-
-  // ======= PRO =======
-
-  final case class ReportDeletionConfirmation(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
-      extends ConsumerEmail {
-    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
-    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
-    override val recipients: List[EmailAddress]             = List(report.email)
-    override val subject: String                            = messagesApi("ConsumerReportDeletionEmail.subject")(lang)
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer
-        .confirmReportDeletionEmail(report, maybeCompany)(frontRoute, messagesProvider)
-        .toString
-  }
 
   // ======= Conso =======
 

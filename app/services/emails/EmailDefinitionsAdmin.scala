@@ -14,7 +14,7 @@ object EmailDefinitionsAdmin {
     override val category = Admin
 
     override def examples =
-      Seq("access_link" -> (recipient => build(recipient, dummyURL)))
+      Seq("access_link" -> ((recipient, _) => build(recipient, dummyURL)))
 
     def build(recipient: EmailAddress, invitationUrl: URI): Email =
       new Email {
@@ -32,7 +32,7 @@ object EmailDefinitionsAdmin {
 
     override def examples =
       Seq(
-        "probe_triggered" -> (recipient =>
+        "probe_triggered" -> ((recipient, _) =>
           build(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "bas")
         )
       )

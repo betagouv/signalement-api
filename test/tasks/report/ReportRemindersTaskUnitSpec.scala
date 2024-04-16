@@ -21,7 +21,6 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.EmailDefinitionsPro.ProReportsReadReminder
 import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
-import services.emails.Email
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING

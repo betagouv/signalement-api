@@ -15,7 +15,7 @@ object EmailDefinitionsVarious {
     override val category = Various
 
     override def examples =
-      Seq("reset_password" -> (recipient => build(genUser.copy(email = recipient), genAuthToken)))
+      Seq("reset_password" -> ((recipient, _) => build(genUser.copy(email = recipient), genAuthToken)))
 
     def build(user: User, authToken: AuthToken): Email =
       new Email {
@@ -31,7 +31,7 @@ object EmailDefinitionsVarious {
     override val category = Various
 
     override def examples =
-      Seq("update_email_address" -> (recipient => build(recipient, dummyURL, daysBeforeExpiry = 2)))
+      Seq("update_email_address" -> ((recipient, _) => build(recipient, dummyURL, daysBeforeExpiry = 2)))
 
     def build(recipient: EmailAddress, invitationUrl: URI, daysBeforeExpiry: Int): Email =
       new Email {

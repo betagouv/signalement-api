@@ -20,6 +20,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.Email._
+import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.EmailDefinitionsPro.ProReportReOpeningNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompletion
 import services.emails.MailService
@@ -153,7 +154,7 @@ class ReportAdminActionOrchestrator(
       _            <- reportRepository.delete(id)
       _ <- report.companyId.map(id => reportOrchestrator.removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
       _ <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
-      _ <- mailService.send(ReportDeletionConfirmation(report, maybeCompany, messagesApi))
+      _ <- mailService.send(ConsumerReportDeletionConfirmation.EmailImpl(report, maybeCompany, messagesApi))
     } yield report
 
   private def getCompanyWithUsers(report: Report): Future[(Option[Company], Option[List[User]])] = for {

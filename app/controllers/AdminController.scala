@@ -14,6 +14,7 @@ import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.Messages
+import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -35,6 +36,7 @@ import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
 import services.emails.Email
 import services.emails.EmailDefinition
+import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
@@ -114,7 +116,7 @@ class AdminController(
     )(messagesProvider)
   )
 
-  val newList: Seq[(String, EmailAddress => Email)] = List(
+  val newList: Seq[(String, (EmailAddress, MessagesApi) => Email)] = List(
     ResetPassword,
     UpdateEmailAddress,
     AdminAccessLink,
@@ -134,19 +136,12 @@ class AdminController(
     ProReportReOpeningNotification,
     ProReportsReadReminder,
     ProReportsUnreadReminder,
-    ProReportAssignedNotification
+    ProReportAssignedNotification,
+    ConsumerReportDeletionConfirmation
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
-
-    "pro.report_deletion_confirmation" -> (_ =>
-      ReportDeletionConfirmation(
-        genReport,
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
 
     // ======= CONSO =======
     "consumer.report_ack" -> (recipient =>
@@ -385,21 +380,23 @@ class AdminController(
     val itemInNewList    = newList.find(_._1 == templateRef)
     val maybeEmail = itemInNewList match {
       case Some(definition) =>
-        Some(definition._2(recipientAddress))
+        Some(definition._2(recipientAddress, controllerComponents.messagesApi))
       case None =>
         availableEmails
           .find(_._1 == templateRef)
           .map { case (_, fn) => fn(recipientAddress) }
     }
-    Future(
-      maybeEmail
-        .map(mailService.send)
-        .map(_ => Ok)
-        .getOrElse(NotFound)
-    )
+    maybeEmail match {
+      case None =>
+        Future.successful(NotFound)
+      case Some(email) =>
+        mailService.send(email).map(_ => Ok)
+    }
   }
 
-  private def readExamplesWithFullKey(emailDefinition: EmailDefinition): Seq[(String, EmailAddress => Email)] =
+  private def readExamplesWithFullKey(
+      emailDefinition: EmailDefinition
+  ): Seq[(String, (EmailAddress, MessagesApi) => Email)] =
     emailDefinition.examples.map { case (key, fn) =>
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }

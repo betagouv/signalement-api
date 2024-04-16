@@ -20,7 +20,7 @@ object EmailDefinitionsDggcrf {
     override val category = Dgccrf
 
     override def examples =
-      Seq("access_link" -> (recipient => build("DGCCRF")(recipient, dummyURL)))
+      Seq("access_link" -> ((recipient, _) => build("DGCCRF")(recipient, dummyURL)))
 
     def build(role: String)(recipient: EmailAddress, invitationUrl: URI): Email =
       new Email {
@@ -36,7 +36,7 @@ object EmailDefinitionsDggcrf {
 
     override def examples =
       Seq(
-        "inactive_account_reminder" -> (recipient =>
+        "inactive_account_reminder" -> ((recipient, _) =>
           build(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
         )
       )
@@ -55,7 +55,7 @@ object EmailDefinitionsDggcrf {
 
     override def examples =
       Seq(
-        "report_dangerous_product_notification" -> (recipient => build(Seq(recipient), genReport))
+        "report_dangerous_product_notification" -> ((recipient, _) => build(Seq(recipient), genReport))
       )
 
     def build(theRecipients: Seq[EmailAddress], report: Report): Email =
@@ -73,7 +73,7 @@ object EmailDefinitionsDggcrf {
 
     override def examples =
       Seq(
-        "report_notif_dgccrf" -> (recipient =>
+        "report_notif_dgccrf" -> ((recipient, _) =>
           build(
             List(recipient),
             genSubscription,
@@ -109,7 +109,7 @@ object EmailDefinitionsDggcrf {
 
     override def examples =
       Seq(
-        "validate_email" -> (recipient =>
+        "validate_email" -> ((recipient, _) =>
           build(
             recipient,
             7,
