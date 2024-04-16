@@ -28,11 +28,7 @@ import services.PDFService
 import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
-import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
-import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
-import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
-import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
-import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
+import services.emails.EmailDefinitionsConsumer._
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailDefinitionsVarious.ResetPassword
@@ -144,27 +140,13 @@ class AdminController(
     ConsumerReportAcknowledgment,
     ConsumerReportReadByProNotification,
     ConsumerProResponseNotification,
-    ConsumerProResponseNotificationOnAdminCompletion
+    ConsumerProResponseNotificationOnAdminCompletion,
+    ConsumerReportClosedNoReading
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= CONSO =======
 
-    "consumer.report_closed_no_reading" -> (recipient =>
-      ConsumerReportClosedNoReading(
-        genReport.copy(email = recipient),
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
-    "consumer.report_closed_no_reading_case_dispute" ->
-      (recipient =>
-        ConsumerReportClosedNoReading(
-          genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
-          Some(genCompany),
-          controllerComponents.messagesApi
-        )
-      ),
     "consumer.report_closed_no_action" -> (recipient =>
       ConsumerReportClosedNoAction(
         genReport.copy(email = recipient),

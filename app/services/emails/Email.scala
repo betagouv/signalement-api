@@ -36,25 +36,6 @@ object Email {
 
   // ======= Conso =======
 
-  final case class ConsumerReportClosedNoReading(
-      report: Report,
-      maybeCompany: Option[Company],
-      messagesApi: MessagesApi
-  ) extends ConsumerEmail {
-    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
-    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
-
-    override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String                = messagesApi("ReportClosedByNoReadingEmail.subject")(lang)
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportClosedByNoReading(report, maybeCompany)(frontRoute, messagesProvider).toString
-
-    override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.needWorkflowSeqForWorkflowStepN(3, report)
-
-  }
-
   final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
       extends ConsumerEmail {
     private val lang                                        = Lang(getLocaleOrDefault(report.lang))

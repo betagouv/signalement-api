@@ -14,8 +14,8 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import services.emails.Email.ConsumerReportClosedNoAction
-import services.emails.Email.ConsumerReportClosedNoReading
-import services.emails.ConsumerEmail
+import services.emails.EmailDefinitionsConsumer.ConsumerReportClosedNoReading
+import services.emails.Email
 import services.emails.MailService
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
@@ -25,6 +25,7 @@ import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
+import utils.Logs.RichLogger
 
 import java.time._
 import java.util.UUID
@@ -33,7 +34,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
-import utils.Logs.RichLogger
 
 class ReportClosureTask(
     actorSystem: ActorSystem,
@@ -96,7 +96,7 @@ class ReportClosureTask(
         ReportStatus.NonConsulte,
         REPORT_CLOSED_BY_NO_READING,
         "Clôture automatique : signalement non consulté",
-        ConsumerReportClosedNoReading,
+        ConsumerReportClosedNoReading.EmailImpl,
         EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
       )
     }
@@ -131,7 +131,7 @@ class ReportClosureTask(
     } yield ()
   }
 
-  private def eventuallySendConsumerEmail(report: Report, email: ConsumerEmail) = {
+  private def eventuallySendConsumerEmail(report: Report, email: Email) = {
     val hasReportBeenReOpened = report.reopenDate.isDefined
     // We don't want the consumer to be notified when a pro is requesting a report reopening.
     // The consumer will only be notified when the pro will reply.
