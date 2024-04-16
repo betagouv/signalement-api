@@ -29,6 +29,7 @@ import services.emails.Email._
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
@@ -142,19 +143,13 @@ class AdminController(
     ConsumerReportDeletionConfirmation,
     ConsumerReportAcknowledgment,
     ConsumerReportReadByProNotification,
-    ConsumerProResponseNotification
+    ConsumerProResponseNotification,
+    ConsumerProResponseNotificationOnAdminCompletion
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= CONSO =======
 
-    "consumer.report_ack_pro_consumer_on_admin_completion" -> (recipient =>
-      ConsumerProResponseNotificationOnAdminCompletion(
-        genReport.copy(email = recipient),
-        Some(genCompany),
-        controllerComponents.messagesApi
-      )
-    ),
     "consumer.report_closed_no_reading" -> (recipient =>
       ConsumerReportClosedNoReading(
         genReport.copy(email = recipient),

@@ -19,7 +19,7 @@ import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.emails.Email._
+import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
 import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
 import services.emails.EmailDefinitionsPro.ProReportReOpeningNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompletion
@@ -183,7 +183,9 @@ class ReportAdminActionOrchestrator(
       )
       (maybeCompany, users) <- getCompanyWithUsers(report)
       _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.build(report, u)))
-      _ <- mailService.send(ConsumerProResponseNotificationOnAdminCompletion(report, maybeCompany, messagesApi))
+      _ <- mailService.send(
+        ConsumerProResponseNotificationOnAdminCompletion.EmailImpl(report, maybeCompany, messagesApi)
+      )
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

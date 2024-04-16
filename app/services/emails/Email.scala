@@ -36,29 +36,6 @@ object Email {
 
   // ======= Conso =======
 
-  final case class ConsumerProResponseNotificationOnAdminCompletion(
-      report: Report,
-      maybeCompany: Option[Company],
-      messagesApi: MessagesApi
-  ) extends ConsumerEmail {
-    private val lang                                        = Lang(getLocaleOrDefault(report.lang))
-    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
-
-    override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = messagesApi("ConsumerReportAckProEmailOnAdminCompletion.subject")(lang)
-
-    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.consumer
-        .reportToConsumerAcknowledgmentOnAdminCompletion(
-          report,
-          maybeCompany
-        )
-        .toString
-
-    override def getAttachements: AttachmentService => Seq[Attachment] =
-      s => s.defaultAttachments ++ s.attachmentSeqForWorkflowStepN(4, report.lang.getOrElse(Locale.FRENCH))
-  }
-
   final case class ConsumerReportClosedNoReading(
       report: Report,
       maybeCompany: Option[Company],
