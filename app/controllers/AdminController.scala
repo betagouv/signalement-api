@@ -25,16 +25,13 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.PDFService
-import services.emails.EmailDefinitionsAdmin.AdminAccessLink
-import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.EmailDefinitionsConsumer._
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
-import services.emails.EmailDefinitionsVarious.ResetPassword
-import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.EmailsExamplesUtils._
 import services.emails.Email
 import services.emails.EmailDefinition
+import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
@@ -69,7 +66,7 @@ class AdminController(
   implicit val timeout: akka.util.Timeout   = 5.seconds
 
   implicit val messagesProvider: Messages = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
-  val availablePdfs = Seq[(String, Html)](
+  private val availablePdfs = Seq[(String, Html)](
     "accountActivation" -> views.html.pdfs.accountActivation(
       genCompany,
       Some(genReport.creationDate.toLocalDate),
@@ -114,59 +111,22 @@ class AdminController(
     )(messagesProvider)
   )
 
-  val newList: Seq[(String, (EmailAddress, MessagesApi) => Email)] = List(
-    ResetPassword,
-    UpdateEmailAddress,
-    AdminAccessLink,
-    AdminProbeTriggered,
-    DgccrfAgentAccessLink,
-    DgccrfInactiveAccount,
-    DgccrfDangerousProductReportNotification,
-    DgccrfReportNotification,
-    DgccrfValidateEmail,
-    ProCompanyAccessInvitation,
-    ProCompaniesAccessesInvitations,
-    ProNewCompanyAccess,
-    ProNewCompaniesAccesses,
-    ProResponseAcknowledgment,
-    ProResponseAcknowledgmentOnAdminCompletion,
-    ProNewReportNotification,
-    ProReportReOpeningNotification,
-    ProReportsReadReminder,
-    ProReportsUnreadReminder,
-    ProReportAssignedNotification,
-    ConsumerReportDeletionConfirmation,
-    ConsumerReportAcknowledgment,
-    ConsumerReportReadByProNotification,
-    ConsumerProResponseNotification,
-    ConsumerProResponseNotificationOnAdminCompletion,
-    ConsumerReportClosedNoReading,
-    ConsumerReportClosedNoAction,
-    ConsumerValidateEmail
-  ).flatMap(readExamplesWithFullKey)
-
-  val availableEmails = List[(String, EmailAddress => Email)]()
+  private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => Email)] =
+    allEmailDefinitions.flatMap(readExamplesWithFullKey)
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
-    val codesFromNewList = newList.map(_._1)
-    Future(Ok(Json.toJson(availableEmails.map(_._1) ++ codesFromNewList)))
+    val keys = allEmailExamples.map(_._1)
+    Future(Ok(Json.toJson(keys)))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
-    val recipientAddress = EmailAddress(to)
-    val itemInNewList    = newList.find(_._1 == templateRef)
-    val maybeEmail = itemInNewList match {
-      case Some(definition) =>
-        Some(definition._2(recipientAddress, controllerComponents.messagesApi))
-      case None =>
-        availableEmails
-          .find(_._1 == templateRef)
-          .map { case (_, fn) => fn(recipientAddress) }
-    }
+    val maybeEmail = allEmailExamples
+      .find(_._1 == templateRef)
+      .map(_._2(EmailAddress(to), controllerComponents.messagesApi))
     maybeEmail match {
-      case None =>
-        Future.successful(NotFound)
       case Some(email) =>
         mailService.send(email).map(_ => Ok)
+      case None =>
+        Future.successful(NotFound)
     }
   }
 
