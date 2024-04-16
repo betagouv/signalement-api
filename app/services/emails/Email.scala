@@ -6,7 +6,6 @@ import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
 import models.EmailValidation
-import models.User
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
@@ -14,7 +13,6 @@ import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
 import services.AttachmentService
 import utils.EmailAddress
-import utils.EmailSubjects
 import utils.FrontRoute
 
 import java.util.Locale
@@ -40,16 +38,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProReportAssignedNotification(report: Report, assigningUser: User, assignedUser: User)
-      extends ProFilteredEmailSingleReport {
-    override val recipients: List[EmailAddress] = List(assignedUser.email)
-    override val subject: String                = EmailSubjects.REPORT_ASSIGNED
-
-    override def getBody: (FrontRoute, EmailAddress) => String = { (frontRoute, _) =>
-      views.html.mails.professional.reportAssigned(report, assigningUser, assignedUser)(frontRoute).toString
-    }
-  }
 
   final case class ReportDeletionConfirmation(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
       extends ConsumerEmail {

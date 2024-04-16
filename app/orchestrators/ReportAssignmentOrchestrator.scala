@@ -11,7 +11,7 @@ import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.emails.Email.ProReportAssignedNotification
+import services.emails.EmailDefinitionsPro.ProReportAssignedNotification
 import services.emails.MailService
 import utils.Constants
 
@@ -42,7 +42,10 @@ class ReportAssignmentOrchestrator(
       _                       <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser)
       _ <-
         if (assigningToSelf) Future.unit
-        else mailService.send(ProReportAssignedNotification(reportWithMetadata.report, assigningUser, newAssignedUser))
+        else
+          mailService.send(
+            ProReportAssignedNotification.EmailImpl(reportWithMetadata.report, assigningUser, newAssignedUser)
+          )
     } yield newAssignedUser
   }
 

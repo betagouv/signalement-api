@@ -223,4 +223,25 @@ object EmailDefinitionsPro {
     }
   }
 
+  case object ProReportAssignedNotification extends EmailDefinition {
+    override val category = Pro
+
+    override def examples =
+      Seq(
+        "report_assignement_to_other" -> (recipient =>
+          EmailImpl(report = genReport, assigningUser = genUser, assignedUser = genUser.copy(email = recipient))
+        )
+      )
+
+    final case class EmailImpl(report: Report, assigningUser: User, assignedUser: User)
+        extends ProFilteredEmailSingleReport {
+      override val recipients: List[EmailAddress] = List(assignedUser.email)
+      override val subject: String                = EmailSubjects.REPORT_ASSIGNED
+
+      override def getBody: (FrontRoute, EmailAddress) => String = { (frontRoute, _) =>
+        views.html.mails.professional.reportAssigned(report, assigningUser, assignedUser)(frontRoute).toString
+      }
+    }
+  }
+
 }

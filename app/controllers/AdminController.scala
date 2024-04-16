@@ -133,19 +133,13 @@ class AdminController(
     ProNewReportNotification,
     ProReportReOpeningNotification,
     ProReportsReadReminder,
-    ProReportsUnreadReminder
+    ProReportsUnreadReminder,
+    ProReportAssignedNotification
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.report_assignement_to_other" -> (recipient =>
-      ProReportAssignedNotification(
-        report = genReport,
-        assigningUser = genUser,
-        assignedUser = genUser.copy(email = recipient)
-      )
-    ),
     "pro.report_deletion_confirmation" -> (_ =>
       ReportDeletionConfirmation(
         genReport,
