@@ -157,7 +157,7 @@ class ProAccessTokenOrchestrator(
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
-      _ <- mailService.send(ProNewCompanyAccess.build(user.email, company, invitedBy))
+      _ <- mailService.send(ProNewCompanyAccess.EmailImpl(user.email, company, invitedBy))
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()
 
@@ -165,8 +165,9 @@ class ProAccessTokenOrchestrator(
     for {
       _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
-        case Nil    => Future.successful(())
-        case c :: _ => mailService.send(ProNewCompaniesAccesses.build(user.email, companies, SIREN.fromSIRET(c.siret)))
+        case Nil => Future.successful(())
+        case c :: _ =>
+          mailService.send(ProNewCompaniesAccesses.EmailImpl(user.email, companies, SIREN.fromSIRET(c.siret)))
       }
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
@@ -206,7 +207,7 @@ class ProAccessTokenOrchestrator(
     for {
       tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
       _ <- mailService.send(
-        ProCompanyAccessInvitation.build(
+        ProCompanyAccessInvitation.EmailImpl(
           recipient = email,
           company = company,
           invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
@@ -233,7 +234,7 @@ class ProAccessTokenOrchestrator(
         case Nil => Future.successful(())
         case (tokenCode, c) :: _ =>
           mailService.send(
-            ProCompaniesAccessesInvitations.build(
+            ProCompaniesAccessesInvitations.EmailImpl(
               recipient = email,
               companies = list.map(_._2),
               siren = SIREN.fromSIRET(c.siret),

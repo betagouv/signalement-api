@@ -22,16 +22,21 @@ object EmailDefinitionsPro {
     override val category = Pro
 
     override def examples =
-      Seq("access_invitation" -> ((recipient, _) => build(recipient, genCompany, dummyURL, None)))
+      Seq("access_invitation" -> ((recipient, _) => EmailImpl(recipient, genCompany, dummyURL, None)))
 
-    def build(recipient: EmailAddress, company: Company, invitationUrl: URI, invitedBy: Option[User]): Email =
-      new Email {
-        override val recipients: List[EmailAddress] = List(recipient)
-        override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
+    final case class EmailImpl(
+        recipient: EmailAddress,
+        company: Company,
+        invitationUrl: URI,
+        invitedBy: Option[User]
+    ) extends Email {
+      override val recipients: List[EmailAddress] = List(recipient)
+      override val subject: String                = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
+    }
+
   }
 
   case object ProCompaniesAccessesInvitations extends EmailDefinition {
@@ -40,57 +45,67 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "access_invitation_multiple_companies" -> ((recipient, _) =>
-          build(recipient, genCompanyList, genSiren, dummyURL)
+          EmailImpl(recipient, genCompanyList, genSiren, dummyURL)
         )
       )
 
-    def build(recipient: EmailAddress, companies: List[Company], siren: SIREN, invitationUrl: URI): Email =
-      new Email {
-        override val recipients: List[EmailAddress] = List(recipient)
-        override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
+    final case class EmailImpl(
+        recipient: EmailAddress,
+        companies: List[Company],
+        siren: SIREN,
+        invitationUrl: URI
+    ) extends Email {
+      override val recipients: List[EmailAddress] = List(recipient)
+      override val subject: String                = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (_, _) =>
-            views.html.mails.professional.companiesAccessesInvitations(invitationUrl, companies, siren.value).toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (_, _) =>
+          views.html.mails.professional.companiesAccessesInvitations(invitationUrl, companies, siren.value).toString
+    }
   }
 
   case object ProNewCompanyAccess extends EmailDefinition {
     override val category = Pro
 
     override def examples =
-      Seq("new_company_access" -> ((recipient, _) => build(recipient, genCompany, None)))
+      Seq("new_company_access" -> ((recipient, _) => EmailImpl(recipient, genCompany, None)))
 
-    def build(recipient: EmailAddress, company: Company, invitedBy: Option[User]): Email =
-      new Email {
-        override val recipients: List[EmailAddress] = List(recipient)
-        override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
+    final case class EmailImpl(
+        recipient: EmailAddress,
+        company: Company,
+        invitedBy: Option[User]
+    ) extends Email {
+      override val recipients: List[EmailAddress] = List(recipient)
+      override val subject: String                = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) =>
-            views.html.mails.professional
-              .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)(frontRoute)
-              .toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) =>
+          views.html.mails.professional
+            .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)(frontRoute)
+            .toString
+    }
   }
 
   case object ProNewCompaniesAccesses extends EmailDefinition {
     override val category = Pro
 
     override def examples =
-      Seq("new_companies_accesses" -> ((recipient, _) => build(recipient, genCompanyList, genSiren)))
+      Seq("new_companies_accesses" -> ((recipient, _) => EmailImpl(recipient, genCompanyList, genSiren)))
 
-    def build(recipient: EmailAddress, companies: List[Company], siren: SIREN): Email =
-      new Email {
-        override val recipients: List[EmailAddress] = List(recipient)
-        override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
+    final case class EmailImpl(
+        recipient: EmailAddress,
+        companies: List[Company],
+        siren: SIREN
+    ) extends Email {
+      override val recipients: List[EmailAddress] = List(recipient)
+      override val subject: String                = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) =>
-            views.html.mails.professional
-              .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
-              .toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) =>
+          views.html.mails.professional
+            .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
+            .toString
+    }
   }
 
   case object ProResponseAcknowledgment extends EmailDefinition {
@@ -98,20 +113,18 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_ack_pro" -> ((recipient, _) => build(genReport, genReportResponse, genUser.copy(email = recipient)))
+        "report_ack_pro" -> ((recipient, _) => EmailImpl(genReport, genReportResponse, genUser.copy(email = recipient)))
       )
 
-    def build(theReport: Report, reportResponse: ReportResponse, user: User): Email =
-      new ProFilteredEmailSingleReport {
-        override val report: Report                 = theReport
-        override val recipients: List[EmailAddress] = List(user.email)
-        override val subject: String                = EmailSubjects.REPORT_ACK_PRO
+    final case class EmailImpl(report: Report, reportResponse: ReportResponse, user: User)
+        extends ProFilteredEmailSingleReport {
+      override val recipients: List[EmailAddress] = List(user.email)
+      override val subject: String                = EmailSubjects.REPORT_ACK_PRO
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) =>
-            views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
-
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) =>
+          views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user)(frontRoute).toString
+    }
   }
 
   case object ProResponseAcknowledgmentOnAdminCompletion extends EmailDefinition {
@@ -120,20 +133,17 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "report_ack_pro_on_admin_completion" -> ((recipient, _) =>
-          build(genReport, List(genUser.copy(email = recipient), genUser, genUser))
+          EmailImpl(genReport, List(genUser.copy(email = recipient), genUser, genUser))
         )
       )
 
-    def build(theReport: Report, users: List[User]): Email =
-      new ProFilteredEmailSingleReport {
-        override val report: Report                 = theReport
-        override val recipients: List[EmailAddress] = users.map(_.email)
-        override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
+    final case class EmailImpl(report: Report, users: List[User]) extends ProFilteredEmailSingleReport {
+      override val recipients: List[EmailAddress] = users.map(_.email)
+      override val subject: String                = EmailSubjects.REPORT_ACK_PRO_ON_ADMIN_COMPLETION
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
-
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) => views.html.mails.professional.reportAcknowledgmentProOnAdminCompletion(frontRoute).toString
+    }
   }
 
   case object ProNewReportNotification extends EmailDefinition {
@@ -141,19 +151,17 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_notification" -> ((recipient, _) => build(NonEmptyList.of(recipient), genReport))
+        "report_notification" -> ((recipient, _) => EmailImpl(NonEmptyList.of(recipient), genReport))
       )
 
-    def build(userList: NonEmptyList[EmailAddress], theReport: Report): Email =
-      new ProFilteredEmailSingleReport {
-        override val report: Report                 = theReport
-        override val subject: String                = EmailSubjects.NEW_REPORT
-        override val recipients: List[EmailAddress] = userList.toList
+    final case class EmailImpl(userList: NonEmptyList[EmailAddress], report: Report)
+        extends ProFilteredEmailSingleReport {
+      override val subject: String                = EmailSubjects.NEW_REPORT
+      override val recipients: List[EmailAddress] = userList.toList
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
-
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
+    }
   }
 
   case object ProReportReOpeningNotification extends EmailDefinition {
@@ -161,18 +169,17 @@ object EmailDefinitionsPro {
 
     override def examples =
       Seq(
-        "report_reopening_notification" -> ((recipient, _) => build(List(recipient), genReport))
+        "report_reopening_notification" -> ((recipient, _) => EmailImpl(List(recipient), genReport))
       )
 
-    def build(userList: List[EmailAddress], theReport: Report): Email =
-      new ProFilteredEmailSingleReport {
-        override val report: Report                 = theReport
-        override val subject: String                = EmailSubjects.REPORT_REOPENING
-        override val recipients: List[EmailAddress] = userList.toList
+    final case class EmailImpl(userList: List[EmailAddress], report: Report) extends ProFilteredEmailSingleReport {
+      override val subject: String                = EmailSubjects.REPORT_REOPENING
+      override val recipients: List[EmailAddress] = userList.toList
 
-        override def getBody: (FrontRoute, EmailAddress) => String =
-          (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
-      }
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) => views.html.mails.professional.reportReOpening(report)(frontRoute).toString
+    }
+
   }
 
   case object ProReportsReadReminder extends EmailDefinition {

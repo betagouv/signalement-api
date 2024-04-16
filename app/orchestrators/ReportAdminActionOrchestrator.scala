@@ -70,7 +70,9 @@ class ReportAdminActionOrchestrator(
         )
       )
       (_, users) <- getCompanyWithUsers(updatedReport)
-      _ <- users.traverse(u => mailService.send(ProReportReOpeningNotification.build(u.map(_.email), updatedReport)))
+      _ <- users.traverse(u =>
+        mailService.send(ProReportReOpeningNotification.EmailImpl(u.map(_.email), updatedReport))
+      )
     } yield ()
 
   private def reOpenReport(report: Report): Future[Report] = {
@@ -182,7 +184,7 @@ class ReportAdminActionOrchestrator(
         reportAdminCompletionDetails
       )
       (maybeCompany, users) <- getCompanyWithUsers(report)
-      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.build(report, u)))
+      _ <- users.traverse(u => mailService.send(ProResponseAcknowledgmentOnAdminCompletion.EmailImpl(report, u)))
       _ <- mailService.send(
         ConsumerProResponseNotificationOnAdminCompletion.EmailImpl(report, maybeCompany, messagesApi)
       )

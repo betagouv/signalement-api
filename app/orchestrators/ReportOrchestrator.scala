@@ -126,7 +126,7 @@ class ReportOrchestrator(
           logger.debug("Found user, sending notification")
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
-            _ <- mailService.send(ProNewReportNotification.build(companyUserEmails, report))
+            _ <- mailService.send(ProNewReportNotification.EmailImpl(companyUserEmails, report))
             reportWithUpdatedStatus <- reportRepository.update(
               report.id,
               report.copy(status = ReportStatus.TraitementEnCours)
@@ -757,7 +757,7 @@ class ReportOrchestrator(
       user: User,
       maybeCompany: Option[Company]
   ) = for {
-    _ <- mailService.send(ProResponseAcknowledgment.build(report, reportResponse, user))
+    _ <- mailService.send(ProResponseAcknowledgment.EmailImpl(report, reportResponse, user))
     _ <- mailService.send(ConsumerProResponseNotification.EmailImpl(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 

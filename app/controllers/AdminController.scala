@@ -202,7 +202,7 @@ class AdminController(
       }.sequence
       _ <- reportAndEmailList.map {
         case (report, Some(adminsEmails)) =>
-          mailService.send(ProNewReportNotification.build(adminsEmails, report))
+          mailService.send(ProNewReportNotification.EmailImpl(adminsEmails, report))
         case (report, None) =>
           logger.debug(s"Not sending email for report ${report.id}, no admin found")
           Future.unit
