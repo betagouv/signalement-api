@@ -17,7 +17,6 @@ import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
 
-import java.time.Period
 import java.util.Locale
 
 trait Email {
@@ -41,17 +40,6 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   // ======= PRO =======
-
-  final case class ProReportsUnreadReminder(
-      recipients: List[EmailAddress],
-      reports: List[Report],
-      period: Period
-  ) extends ProFilteredEmailMultipleReport {
-    override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
-
-    override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
-  }
 
   final case class ProReportAssignedNotification(report: Report, assigningUser: User, assignedUser: User)
       extends ProFilteredEmailSingleReport {

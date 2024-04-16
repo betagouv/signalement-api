@@ -42,7 +42,6 @@ import utils.Constants.EventType
 import utils._
 
 import java.time.OffsetDateTime
-import java.time.Period
 import java.util.Locale
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -133,23 +132,13 @@ class AdminController(
     ProResponseAcknowledgmentOnAdminCompletion,
     ProNewReportNotification,
     ProReportReOpeningNotification,
-    ProReportsReadReminder
+    ProReportsReadReminder,
+    ProReportsUnreadReminder
   ).flatMap(readExamplesWithFullKey)
 
   val availableEmails = List[(String, EmailAddress => Email)](
     // ======= PRO =======
 
-    "pro.reports_unread_reminder" -> (recipient => {
-      val report1 = genReport
-      val report2 = genReport.copy(companyId = report1.companyId)
-      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
-
-      ProReportsUnreadReminder(
-        List(recipient),
-        List(report1, report2, report3),
-        Period.ofDays(7)
-      )
-    }),
     "pro.report_assignement_to_other" -> (recipient =>
       ProReportAssignedNotification(
         report = genReport,

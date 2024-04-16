@@ -183,7 +183,7 @@ object EmailDefinitionsPro {
       )
     }
 
-    case class EmailImpl(
+    final case class EmailImpl(
         recipients: List[EmailAddress],
         reports: List[Report],
         period: Period
@@ -193,6 +193,33 @@ object EmailDefinitionsPro {
       override def getBody: (FrontRoute, EmailAddress) => String =
         (frontRoute, _) =>
           views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
+    }
+  }
+
+  case object ProReportsUnreadReminder extends EmailDefinition {
+    override val category = Pro
+
+    override def examples = {
+      val report1 = genReport
+      val report2 = genReport.copy(companyId = report1.companyId)
+      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
+
+      Seq(
+        "reports_unread_reminder" -> (recipient =>
+          EmailImpl(List(recipient), List(report1, report2, report3), Period.ofDays(7))
+        )
+      )
+    }
+
+    final case class EmailImpl(
+        recipients: List[EmailAddress],
+        reports: List[Report],
+        period: Period
+    ) extends ProFilteredEmailMultipleReport {
+      override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
+
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
     }
   }
 

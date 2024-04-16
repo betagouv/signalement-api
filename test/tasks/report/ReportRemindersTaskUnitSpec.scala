@@ -20,6 +20,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.EmailDefinitionsPro.ProReportsReadReminder
+import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
 import services.emails.Email
 import services.emails.MailServiceInterface
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -112,9 +113,11 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
         .thenReturn(Future.successful(Map(report3.id -> List(event3), report7.id -> List(event7))))
 
       when(
-        mailService.send(Email.ProReportsUnreadReminder(List(proUser1.email), List(report1, report2), Period.ofDays(7)))
+        mailService.send(
+          ProReportsUnreadReminder.EmailImpl(List(proUser1.email), List(report1, report2), Period.ofDays(7))
+        )
       ).thenReturn(Future.unit)
-      when(mailService.send(Email.ProReportsUnreadReminder(List(proUser1.email), List(report4), Period.ofDays(7))))
+      when(mailService.send(ProReportsUnreadReminder.EmailImpl(List(proUser1.email), List(report4), Period.ofDays(7))))
         .thenReturn(Future.unit)
       when(
         mailService.send(
