@@ -223,10 +223,7 @@ class SignalConsoComponents(
   def s3Service: S3ServiceInterface = new S3Service()
 
   //  Actor
-  val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
-    AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
-    "antivirus-scan-actor"
-  )
+
   val reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand] =
     actorSystem.spawn(
       ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service),
@@ -335,7 +332,7 @@ class SignalConsoComponents(
     new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
 
   val reportFileOrchestrator =
-    new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service, reportZipExportService)
+    new ReportFileOrchestrator(reportFileRepository, s3Service, reportZipExportService)
 
   val reportOrchestrator = new ReportOrchestrator(
     mailService,

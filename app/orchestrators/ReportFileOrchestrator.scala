@@ -1,7 +1,5 @@
 package orchestrators
 
-import actors.AntivirusScanActor
-import akka.actor.typed.ActorRef
 import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -26,7 +24,6 @@ import scala.concurrent.Future
 
 class ReportFileOrchestrator(
     reportFileRepository: ReportFileRepositoryInterface,
-    antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3ServiceInterface,
     reportZipExportService: ReportZipExportService
 )(implicit val executionContext: ExecutionContext, mat: Materializer) {
@@ -58,10 +55,7 @@ class ReportFileOrchestrator(
         .to(s3Service.upload(reportFile.storageFilename))
         .run()
       _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
-    } yield {
-      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
-      reportFile
-    }
+    } yield reportFile
 
   def removeFromReportId(reportId: UUID): Future[List[Int]] =
     for {
@@ -100,7 +94,6 @@ class ReportFileOrchestrator(
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
           logger.info("Attachment has not been scan by antivirus, rescheduling scan")
-          antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
           Future.failed(AttachmentNotReady(reportFileId))
         case Some(file) if file.filename == filename && file.avOutput.isDefined =>
           Future.successful(s3Service.getSignedUrl(file.storageFilename))
