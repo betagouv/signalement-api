@@ -1,8 +1,8 @@
 package controllers
 
-import actors.ReportsExtractActor
-import akka.actor.typed
 import authentication.Authenticator
+import authentication.actions.UserAction.WithPermission
+import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
@@ -11,20 +11,16 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import cats.implicits.catsSyntaxOption
-
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import utils.QueryStringMapper
-import authentication.actions.UserAction.WithPermission
 
 import java.time.ZoneId
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand],
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -76,7 +72,7 @@ class ReportListController(
       _ = logger.debug(s"Requesting report for user ${request.identity.email}")
       file <- asyncFileRepository
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.Reports))
-      _ = reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, reportFilter, zone)
+
     } yield Ok
   }
 }

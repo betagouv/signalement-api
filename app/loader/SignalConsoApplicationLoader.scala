@@ -388,21 +388,6 @@ class SignalConsoComponents(
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
 
-  val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
-    actorSystem.spawn(
-      ReportsExtractActor.create(
-        reportConsumerReviewOrchestrator,
-        reportFileRepository,
-        companyAccessRepository,
-        reportOrchestrator,
-        eventRepository,
-        asyncFileRepository,
-        s3Service,
-        signalConsoConfiguration
-      ),
-      "reports-extract-actor"
-    )
-
   // This file can be generated in the website using 'yarn minimized-anomalies'.
   // This is the first iteration of the story, using an copied generated file from the website
   // The second version will be to expose the file in the website and fetch it in the API at runtime.
@@ -558,7 +543,6 @@ class SignalConsoComponents(
     new ReportListController(
       reportOrchestrator,
       asyncFileRepository,
-      reportsExtractActor,
       cookieAuthenticator,
       controllerComponents
     )
