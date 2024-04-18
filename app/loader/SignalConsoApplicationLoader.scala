@@ -61,7 +61,6 @@ import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
-import repositories.probe.ProbeRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -92,15 +91,7 @@ import services.emails.MailRetriesService
 import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import tasks.account.InactiveAccountTask
-import tasks.account.InactiveDgccrfAccountReminderTask
-import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.LowRateLanceurDAlerteTask
-import tasks.probe.LowRateReponseConsoTask
-import tasks.report.ReportClosureTask
-import tasks.report.ReportNotificationTask
-import tasks.report.ReportRemindersTask
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
@@ -453,29 +444,6 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
-  val reportClosureTask = new ReportClosureTask(
-    actorSystem,
-    reportRepository,
-    eventRepository,
-    companyRepository,
-    mailService,
-    taskConfiguration,
-    taskRepository,
-    messagesApi
-  )
-  reportClosureTask.schedule()
-
-  val reportReminderTask = new ReportRemindersTask(
-    actorSystem,
-    reportRepository,
-    eventRepository,
-    mailService,
-    companiesVisibilityOrchestrator,
-    taskConfiguration,
-    taskRepository
-  )
-  reportReminderTask.schedule()
-
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
   )
@@ -492,36 +460,6 @@ class SignalConsoComponents(
   companyUpdateTask.schedule()
 
   logger.debug("Starting App and sending sentry alert")
-
-  val reportNotificationTask =
-    new ReportNotificationTask(
-      actorSystem,
-      reportRepository,
-      subscriptionRepository,
-      userRepository,
-      mailService,
-      taskConfiguration,
-      taskRepository
-    )
-  reportNotificationTask.schedule()
-
-  val inactiveDgccrfAccountRemoveTask =
-    new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
-
-  val inactiveDgccrfAccountReminderTask =
-    new InactiveDgccrfAccountReminderTask(
-      userRepository,
-      eventRepository,
-      mailService
-    )
-  val inactiveAccountTask = new InactiveAccountTask(
-    actorSystem,
-    inactiveDgccrfAccountRemoveTask,
-    inactiveDgccrfAccountReminderTask,
-    applicationConfiguration.task,
-    taskRepository
-  )
-  inactiveAccountTask.schedule()
 
   // Controller
 
@@ -716,30 +654,6 @@ class SignalConsoComponents(
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
-
-  // Probes
-  if (applicationConfiguration.task.probe.active) {
-    logger.debug("Probes are enabled")
-    val probeRepository = new ProbeRepository(dbConfig)
-    new LowRateReponseConsoTask(
-      actorSystem,
-      applicationConfiguration.task,
-      taskRepository,
-      probeRepository,
-      userRepository,
-      mailService
-    ).schedule()
-    new LowRateLanceurDAlerteTask(
-      actorSystem,
-      applicationConfiguration.task,
-      taskRepository,
-      probeRepository,
-      userRepository,
-      mailService
-    ).schedule()
-  } else {
-    logger.debug("Probes are disabled")
-  }
 
   // Routes
   lazy val router: Router =
