@@ -8,7 +8,6 @@ import com.typesafe.config.ConfigFactory
 import config._
 import models.report.ArborescenceNode
 import orchestrators._
-import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
 import play.api._
@@ -36,29 +35,22 @@ import repositories.authattempt.AuthAttemptRepository
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.barcode.BarcodeProductRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.company.CompanySyncRepository
-import repositories.company.CompanySyncRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepository
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
-import repositories.dataeconomie.DataEconomieRepository
-import repositories.dataeconomie.DataEconomieRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
-import repositories.rating.RatingRepository
-import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.reportblockednotification.ReportNotificationBlockedRepository
@@ -69,8 +61,6 @@ import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
-import repositories.signalconsoreview.SignalConsoReviewRepository
-import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
@@ -157,8 +147,6 @@ class SignalConsoComponents(
   def tokenConfiguration                                 = signalConsoConfiguration.token
   def uploadConfiguration: UploadConfiguration           = signalConsoConfiguration.upload
 
-  def mobileAppConfiguration = signalConsoConfiguration.mobileApp
-
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     current = new BCryptPasswordHasher(),
     deprecated = Seq.empty
@@ -180,11 +168,9 @@ class SignalConsoComponents(
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
-  val dataEconomieRepository: DataEconomieRepositoryInterface       = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
-  val ratingRepository: RatingRepositoryInterface                 = new RatingRepository(dbConfig)
   val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
@@ -198,15 +184,12 @@ class SignalConsoComponents(
   val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 
-  val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
-
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
   val fingerprintGenerator = new FingerprintGenerator()
 
   val cookieAuthenticator =
     new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
-  val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
@@ -294,15 +277,10 @@ class SignalConsoComponents(
     tokenConfiguration
   )
 
-  val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
 
   val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
-
-  val reportBlockedNotificationOrchestrator = new ReportBlockedNotificationOrchestrator(
-    reportNotificationBlockedRepository
-  )
 
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
@@ -366,8 +344,7 @@ class SignalConsoComponents(
     companiesVisibilityOrchestrator,
     messagesApi
   )
-  val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
-  val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
+  val socialBladeClient = new SocialBladeClient(applicationConfiguration.socialBlade)
 
   // This file can be generated in the website using 'yarn minimized-anomalies'.
   // This is the first iteration of the story, using an copied generated file from the website
@@ -405,14 +382,9 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
-  val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
-
   logger.debug("Starting App and sending sentry alert")
 
   // Controller
-
-  val blacklistedEmailsController =
-    new BlacklistedEmailsController(blacklistedEmailsRepository, cookieAuthenticator, controllerComponents)
 
   val accountController = new AccountController(
     userOrchestrator,
@@ -439,11 +411,6 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val socialNetworkController =
-    new SocialNetworkController(influencerOrchestrator, cookieAuthenticator, controllerComponents)
-  val asyncFileController =
-    new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
-
   val authController = new AuthController(authOrchestrator, cookieAuthenticator, controllerComponents)
 
   val companyAccessController =
@@ -467,32 +434,9 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
-  val mobileAppController = new MobileAppController(signalConsoConfiguration, cookieAuthenticator, controllerComponents)
-  val dataEconomieController =
-    new DataEconomieController(dataEconomieOrchestrator, apiKeyAuthenticator, controllerComponents)
-  val emailValidationController =
-    new EmailValidationController(cookieAuthenticator, emailValidationOrchestrator, controllerComponents)
+  val constantController = new ConstantController(cookieAuthenticator, controllerComponents)
 
   val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
-  val ratingController = new RatingController(ratingRepository, cookieAuthenticator, controllerComponents)
-  val reportBlockedNotificationController =
-    new ReportBlockedNotificationController(
-      cookieAuthenticator,
-      reportBlockedNotificationOrchestrator,
-      controllerComponents
-    )
-  val reportConsumerReviewController =
-    new ReportConsumerReviewController(reportConsumerReviewOrchestrator, cookieAuthenticator, controllerComponents)
-
-  val reportFileController =
-    new ReportFileController(
-      reportFileOrchestrator,
-      cookieAuthenticator,
-      signalConsoConfiguration,
-      controllerComponents,
-      reportRepository
-    )
 
   val reportController = new ReportController(
     reportOrchestrator,
@@ -511,14 +455,6 @@ class SignalConsoComponents(
     reportZipExportService
   )
 
-  val reportedPhoneController = new ReportedPhoneController(
-    reportRepository,
-    companyRepository,
-    asyncFileRepository,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
   val reportListController =
     new ReportListController(
       reportOrchestrator,
@@ -527,25 +463,8 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val signalConsoReviewController =
-    new SignalConsoReviewController(signalConsoReviewRepository, cookieAuthenticator, controllerComponents)
-
-  val reportToExternalController =
-    new ReportToExternalController(
-      reportRepository,
-      reportFileRepository,
-      reportOrchestrator,
-      apiKeyAuthenticator,
-      controllerComponents
-    )
-
   val staticController = new StaticController(cookieAuthenticator, controllerComponents)
 
-  val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
-
-  val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
-  val subscriptionController =
-    new SubscriptionController(subscriptionOrchestrator, cookieAuthenticator, controllerComponents)
   val websiteController = new WebsiteController(
     websitesOrchestrator,
     companyRepository,
@@ -561,35 +480,11 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
-  val siretExtractorController =
-    new SiretExtractorController(siretExtractorService, cookieAuthenticator, controllerComponents)
-
-  val importOrchestrator = new ImportOrchestrator(
-    companyRepository,
-    userOrchestrator,
-    proAccessTokenOrchestrator
-  )
-  val importController = new ImportController(
-    importOrchestrator,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
-  val openFoodFactsService     = new OpenFoodFactsService
-  val openBeautyFactsService   = new OpenBeautyFactsService
-  val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
-  val gs1Service               = new GS1Service(applicationConfiguration.gs1)
+  val openFoodFactsService   = new OpenFoodFactsService
+  val openBeautyFactsService = new OpenBeautyFactsService
+  val gs1Service             = new GS1Service(applicationConfiguration.gs1)
 
   implicit val timeout: Timeout = 30.seconds
-  val barcodeOrchestrator =
-    new BarcodeOrchestrator(
-      gs1Service,
-      openFoodFactsService,
-      openBeautyFactsService,
-      barcodeProductRepository
-    )
-  val barcodeController = new BarcodeController(barcodeOrchestrator, cookieAuthenticator, controllerComponents)
 
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
@@ -600,35 +495,17 @@ class SignalConsoComponents(
     new _root_.router.Routes(
       httpErrorHandler,
       staticController,
-      statisticController,
-      companyAccessController,
       reportListController,
-      reportFileController,
       reportController,
-      reportConsumerReviewController,
       eventsController,
-      reportToExternalController,
-      dataEconomieController,
       adminController,
-      asyncFileController,
       constantController,
-      socialNetworkController,
-      mobileAppController,
       authController,
+      companyAccessController,
       accountController,
-      emailValidationController,
       companyController,
-      ratingController,
-      subscriptionController,
       websiteController,
-      reportedPhoneController,
-      reportBlockedNotificationController,
-      blacklistedEmailsController,
       userReportsFiltersController,
-      signalConsoReviewController,
-      siretExtractorController,
-      importController,
-      barcodeController,
       assets
     )
 
