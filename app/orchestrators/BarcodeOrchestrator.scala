@@ -1,9 +1,6 @@
 package orchestrators
 
-import actors.GS1AuthTokenActor
-import akka.actor.typed.ActorRef
 import akka.actor.typed.Scheduler
-import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.util.Timeout
 import models.barcode.BarcodeProduct
 import models.barcode.gs1.OAuthAccessToken
@@ -19,7 +16,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class BarcodeOrchestrator(
-    gs1AuthTokenActor: ActorRef[GS1AuthTokenActor.Command],
     gs1Service: GS1ServiceInterface,
     openFoodFactsService: OpenFoodFactsServiceInterface,
     openBeautyFactsService: OpenBeautyFactsServiceInterface,
@@ -32,24 +28,17 @@ class BarcodeOrchestrator(
 
   private val logger = Logger(this.getClass)
 
-  private def getGS1Token(
-      request: ActorRef[GS1AuthTokenActor.Reply] => GS1AuthTokenActor.Command
-  ): Future[OAuthAccessToken] =
-    gs1AuthTokenActor.ask[GS1AuthTokenActor.Reply](request).flatMap {
-      case GS1AuthTokenActor.GotToken(token)   => Future.successful(token)
-      case GS1AuthTokenActor.TokenError(error) => Future.failed(error)
-    }
+  
 
   private def getFromGS1API(gtin: String): Future[Option[JsValue]] =
     for {
-      accessToken <- getGS1Token(GS1AuthTokenActor.GetToken.apply)
-      firstTry    <- gs1Service.getProductByGTIN(accessToken, gtin)
+      firstTry <- gs1Service.getProductByGTIN(OAuthAccessToken("accesstokenbidon"), gtin)
 
       result <- firstTry match {
         case Right(value) => Future.successful(value)
         case Left(_) =>
           for {
-            renewedAccessToken <- getGS1Token(GS1AuthTokenActor.RenewToken.apply)
+            renewedAccessToken <- Future.successful(OAuthAccessToken("wallalacestbidon"))
             secondTry          <- gs1Service.getProductByGTIN(renewedAccessToken, gtin)
             maybeProductFromAPI <- secondTry match {
               case Right(value) => Future.successful(value)

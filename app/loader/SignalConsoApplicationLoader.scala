@@ -1,9 +1,6 @@
 package loader
 
 import _root_.controllers._
-import actors._
-import akka.actor.typed
-import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.util.Timeout
 import authentication._
 import com.typesafe.config.Config
@@ -223,10 +220,7 @@ class SignalConsoComponents(
 
   //  Actor
 
-  val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
-    actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
-
-  val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
+  val pdfService                      = new PDFService(signalConsoConfiguration)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)
@@ -586,14 +580,10 @@ class SignalConsoComponents(
   val openBeautyFactsService   = new OpenBeautyFactsService
   val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
   val gs1Service               = new GS1Service(applicationConfiguration.gs1)
-  val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
-    GS1AuthTokenActor(gs1Service),
-    "gs1-auth-token-actor"
-  )
+
   implicit val timeout: Timeout = 30.seconds
   val barcodeOrchestrator =
     new BarcodeOrchestrator(
-      gs1AuthTokenActor,
       gs1Service,
       openFoodFactsService,
       openBeautyFactsService,

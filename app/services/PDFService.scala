@@ -1,7 +1,5 @@
 package services
 
-import actors.HtmlConverterActor
-import akka.actor.typed.ActorRef
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
@@ -19,28 +17,23 @@ import java.io.PipedOutputStream
 import scala.concurrent.ExecutionContext
 
 class PDFService(
-    signalConsoConfiguration: SignalConsoConfiguration,
-    actor: ActorRef[HtmlConverterActor.ConvertCommand]
+    signalConsoConfiguration: SignalConsoConfiguration
 ) {
 
   val logger: Logger       = Logger(this.getClass)
   val tmpDirectory: String = signalConsoConfiguration.tmpDirectory
 
   def createPdfSource(
-      htmlDocuments: Seq[HtmlFormat.Appendable]
+      _htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
     val dfp                 = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
-    val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
-
     val pipedOutputStream = new PipedOutputStream()
     val pipeSize          = 8192 // To match the akka stream chunk size
     val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
-
-    actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
 
     val pdfSource = StreamConverters
       .fromInputStream(() => pipedInputStream)
