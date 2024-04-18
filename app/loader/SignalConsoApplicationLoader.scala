@@ -1,7 +1,6 @@
 package loader
 
 import _root_.controllers._
-import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
@@ -223,12 +222,6 @@ class SignalConsoComponents(
   def s3Service: S3ServiceInterface = new S3Service()
 
   //  Actor
-
-  val reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand] =
-    actorSystem.spawn(
-      ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service),
-      "reported-phones-extract-actor"
-    )
 
   val websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand] =
     actorSystem.spawn(
@@ -534,7 +527,6 @@ class SignalConsoComponents(
     reportRepository,
     companyRepository,
     asyncFileRepository,
-    reportedPhonesExtractActor,
     cookieAuthenticator,
     controllerComponents
   )

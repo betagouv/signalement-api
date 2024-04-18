@@ -1,10 +1,7 @@
 package controllers
 
-import actors.ReportedPhonesExtractActor
-import actors.ReportedPhonesExtractActor.RawFilters
-import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
-import akka.actor.typed
 import authentication.Authenticator
+import authentication.actions.UserAction.WithRole
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -13,7 +10,6 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
-import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -22,7 +18,6 @@ class ReportedPhoneController(
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand],
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -63,10 +58,6 @@ class ReportedPhoneController(
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       asyncFileRepository
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))
-        .map { file =>
-          reportedPhonesExtractActor ! ReportedPhonesExtractActor
-            .ExtractRequest(file.id, request.identity, RawFilters(q, start, end))
-        }
         .map(_ => Ok)
     }
 }
