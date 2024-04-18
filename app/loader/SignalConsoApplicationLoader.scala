@@ -223,12 +223,6 @@ class SignalConsoComponents(
 
   //  Actor
 
-  val websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand] =
-    actorSystem.spawn(
-      WebsiteExtractActor.create(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration),
-      "websites-extract-actor"
-    )
-
   val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
     actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
 
@@ -561,7 +555,6 @@ class SignalConsoComponents(
   val websiteController = new WebsiteController(
     websitesOrchestrator,
     companyRepository,
-    websitesExtractActor,
     cookieAuthenticator,
     controllerComponents
   )

@@ -1,8 +1,7 @@
 package controllers
 
-import actors.WebsiteExtractActor
-import akka.actor.typed
 import authentication.Authenticator
+import authentication.actions.UserAction.WithRole
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyCreation
@@ -17,7 +16,6 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import authentication.actions.UserAction.WithRole
 import utils.URL
 
 import java.time.OffsetDateTime
@@ -28,7 +26,6 @@ import scala.concurrent.duration._
 class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
     val companyRepository: CompanyRepositoryInterface,
-    websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand],
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -88,10 +85,7 @@ class WebsiteController(
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
-      websitesExtractActor ! WebsiteExtractActor.ExtractRequest(
-        request.identity,
-        WebsiteExtractActor.RawFilters(q.filter(_.nonEmpty), start, end)
-      )
+
       Future.successful(Ok)
     }
 
