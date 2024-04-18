@@ -43,7 +43,7 @@ import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotifi
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import services.emails.MailService
-import tasks.company.CompanySyncServiceInterface
+import tasks.company.CompanySearchResult
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -80,17 +80,9 @@ class ReportOrchestrator(
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration,
-    companySyncService: CompanySyncServiceInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
-
-  // On envoi tous les signalements concernant une gare à la SNCF pour le moment (on changera lors de la privatisation)
-  // L'entité responsable des gares à la SNCF est SNCF Gares & connections https://annuaire-entreprises.data.gouv.fr/entreprise/sncf-gares-connexions-507523801
-  private val SncfGaresEtConnexionsSIRET: SIRET = SIRET("50752380102157")
-  // On envoi tous les signalements concernant un train de la SNCF au SIRET SNCF Voyageurs
-  private val SncfVoyageursSIRET: SIRET = SIRET("51903758408747")
-  private val TrenitaliaSIRET: SIRET    = SIRET("52028700400078")
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 
@@ -400,10 +392,11 @@ class ReportOrchestrator(
         Future(None)
     }
 
-  private def searchCompanyOfSocialNetwork(socialNetworkSlug: SocialNetworkSlug): Future[Option[Company]] =
+  private def searchCompanyOfSocialNetwork(socialNetworkSlug: SocialNetworkSlug): Future[Option[Company]] = {
+    val foobar: Option[CompanySearchResult] = scala.None
     (for {
-      socialNetwork   <- OptionT(socialNetworkRepository.get(socialNetworkSlug))
-      companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
+      _               <- OptionT(socialNetworkRepository.get(socialNetworkSlug))
+      companyToCreate <- OptionT(Future.successful(foobar))
       c = Company(
         siret = companyToCreate.siret,
         name = companyToCreate.name.getOrElse(""),
@@ -416,6 +409,7 @@ class ReportOrchestrator(
       )
       company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
     } yield company).value
+  }
 
   private def extractCompanyOfSocialNetwork(reportDraft: ReportDraft): Future[Option[Company]] =
     reportDraft.influencer.flatMap(_.socialNetwork) match {
@@ -433,7 +427,7 @@ class ReportOrchestrator(
     reportDraft.station match {
       case Some(_) =>
         (for {
-          companyToCreate <- OptionT(companySyncService.companyBySiret(SncfGaresEtConnexionsSIRET))
+          companyToCreate <- OptionT(Future.successful(None: Option[CompanySearchResult]))
           c = Company(
             siret = companyToCreate.siret,
             name = companyToCreate.name.getOrElse(""),
@@ -452,13 +446,9 @@ class ReportOrchestrator(
 
   private def extractCompanyOfTrain(reportDraft: ReportDraft): Future[Option[Company]] =
     reportDraft.train match {
-      case Some(Train(train, _, _)) =>
-        val trainSiret = train match {
-          case "TRENITALIA" => TrenitaliaSIRET
-          case _            => SncfVoyageursSIRET
-        }
+      case Some(Train(_, _, _)) =>
         (for {
-          companyToCreate <- OptionT(companySyncService.companyBySiret(trainSiret))
+          companyToCreate <- OptionT(Future.successful(None: Option[CompanySearchResult]))
           c = Company(
             siret = companyToCreate.siret,
             name = companyToCreate.name.getOrElse(""),

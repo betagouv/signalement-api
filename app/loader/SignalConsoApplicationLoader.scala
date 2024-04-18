@@ -91,7 +91,6 @@ import services.emails.MailRetriesService
 import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import tasks.company._
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
@@ -357,7 +356,6 @@ class SignalConsoComponents(
     emailConfiguration,
     tokenConfiguration,
     signalConsoConfiguration,
-    companySyncService,
     messagesApi
   )
 
@@ -444,20 +442,7 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
-  def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
-    applicationConfiguration.task.companyUpdate
-  )
-
   val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
-  val companyUpdateTask = new CompanyUpdateTask(
-    actorSystem,
-    companyRepository,
-    companySyncService,
-    companySyncRepository,
-    taskConfiguration,
-    taskRepository
-  )
-  companyUpdateTask.schedule()
 
   logger.debug("Starting App and sending sentry alert")
 
@@ -622,7 +607,6 @@ class SignalConsoComponents(
 
   val importOrchestrator = new ImportOrchestrator(
     companyRepository,
-    companySyncService,
     userOrchestrator,
     proAccessTokenOrchestrator
   )

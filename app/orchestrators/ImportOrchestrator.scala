@@ -4,7 +4,6 @@ import models.company.AccessLevel
 import models.company.Company
 import repositories.company.CompanyRepositoryInterface
 import tasks.company.CompanySearchResult
-import tasks.company.CompanySyncServiceInterface
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
@@ -24,7 +23,6 @@ trait ImportOrchestratorInterface {
 
 class ImportOrchestrator(
     companyRepository: CompanyRepositoryInterface,
-    companySyncService: CompanySyncServiceInterface,
     userOrchestrator: UserOrchestratorInterface,
     proAccessTokenOrchestrator: ProAccessTokenOrchestratorInterface
 )(implicit ec: ExecutionContext)
@@ -48,18 +46,19 @@ class ImportOrchestrator(
       emails: List[EmailAddress],
       onlyHeadOffice: Boolean,
       level: AccessLevel
-  ): Future[Unit] =
+  ): Future[Unit] = {
+    val foobar: List[CompanySearchResult] = List.empty
     for {
       existingCompanies <- companyRepository.findBySirets(sirets)
-      missingSirets = sirets.diff(existingCompanies.map(_.siret))
-      missingCompanies <- companySyncService.companiesBySirets(missingSirets)
+      _ = sirets.diff(existingCompanies.map(_.siret))
+      missingCompanies <- Future.successful(foobar)
       createdCompanies <- Future.sequence(
         missingCompanies.map(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
       )
 
       companiesFromSiren <- siren match {
-        case Some(siren) => companySyncService.companyBySiren(siren, onlyHeadOffice)
-        case None        => Future.successful(List.empty)
+        case Some(_) => Future.successful(foobar)
+        case None    => Future.successful(List.empty)
       }
       existingCompaniesFromSiren <- companyRepository.findBySirets(companiesFromSiren.map(_.siret))
       missingCompaniesFromSiren = companiesFromSiren.filter(c => existingCompaniesFromSiren.forall(_.siret != c.siret))
@@ -77,5 +76,6 @@ class ImportOrchestrator(
         existingUsers.map(user => proAccessTokenOrchestrator.addInvitedUserAndNotify(user, allCompanies, level))
       )
     } yield ()
+  }
 
 }
