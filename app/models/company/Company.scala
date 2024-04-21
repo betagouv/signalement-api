@@ -40,7 +40,9 @@ case class Company(
     isHeadOffice: Boolean,
     isOpen: Boolean,
     isPublic: Boolean,
-    brand: Option[String]
+    brand: Option[String],
+    commercialName: Option[String],
+    establishmentCommercialName: Option[String]
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
@@ -89,7 +91,9 @@ case class CompanyCreation(
     isHeadOffice: Option[Boolean],
     isOpen: Option[Boolean],
     isPublic: Option[Boolean],
-    brand: Option[String]
+    brand: Option[String],
+    commercialName: Option[String],
+    establishmentCommercialName: Option[String]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
@@ -99,7 +103,9 @@ case class CompanyCreation(
     isHeadOffice = isHeadOffice.getOrElse(false),
     isOpen = isOpen.getOrElse(true),
     isPublic = isPublic.getOrElse(true),
-    brand = brand
+    brand = brand,
+    commercialName = commercialName,
+    establishmentCommercialName = establishmentCommercialName
   )
 }
 
@@ -113,6 +119,8 @@ case class CompanyWithNbReports(
     siret: SIRET,
     creationDate: OffsetDateTime = OffsetDateTime.now(),
     name: String,
+    commercialName: Option[String],
+    establishmentCommercialName: Option[String],
     brand: Option[String],
     address: Address,
     activityCode: Option[String],

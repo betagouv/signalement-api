@@ -265,7 +265,9 @@ class WebsitesOrchestrator(
       isHeadOffice = company.isHeadOffice,
       isOpen = company.isOpen,
       isPublic = company.isPublic,
-      brand = company.brand
+      brand = company.brand,
+      commercialName = company.commercialName,
+      establishmentCommercialName = company.establishmentCommercialName
     )
     for {
       reportIds <- reportRepository.getForWebsiteWithoutCompany(websiteHost)

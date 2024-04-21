@@ -35,6 +35,8 @@ case class Report(
     influencer: Option[Influencer],
     companyId: Option[UUID],
     companyName: Option[String],
+    companyCommercialName: Option[String],
+    companyEstablishmentCommercialName: Option[String],
     companyBrand: Option[String],
     companyAddress: Address,
     companySiret: Option[SIRET],
@@ -234,6 +236,8 @@ object DeprecatedCompanyWithNbReports {
 
 case class ReportCompany(
     name: String,
+    commercialName: Option[String],
+    establishmentCommercialName: Option[String],
     brand: Option[String],
     address: Address,
     siret: SIRET,

@@ -39,7 +39,9 @@ class ImportOrchestrator(
       isHeadOffice = c.isHeadOffice,
       isOpen = c.isOpen,
       isPublic = c.isPublic,
-      brand = c.brand
+      brand = c.brand,
+      commercialName = c.commercialName,
+      establishmentCommercialName = c.establishmentCommercialName
     )
 
   def importUsers(

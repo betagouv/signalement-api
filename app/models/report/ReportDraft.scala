@@ -26,6 +26,8 @@ case class ReportDraft(
     details: List[DetailInputValue],
     influencer: Option[Influencer],
     companyName: Option[String],
+    companyCommercialName: Option[String],
+    companyEstablishmentCommercialName: Option[String],
     companyBrand: Option[String],
     companyAddress: Option[Address],
     companySiret: Option[SIRET],
@@ -72,6 +74,9 @@ case class ReportDraft(
       influencer = influencer,
       companyId = maybeCompanyId,
       companyName = companyName.orElse(maybeCompany.map(_.name)),
+      companyCommercialName = companyCommercialName.orElse(maybeCompany.flatMap(_.commercialName)),
+      companyEstablishmentCommercialName =
+        companyEstablishmentCommercialName.orElse(maybeCompany.flatMap(_.establishmentCommercialName)),
       companyBrand = companyBrand.orElse(maybeCompany.flatMap(_.brand)),
       companyAddress = companyAddress.orElse(maybeCompany.map(_.address)).getOrElse(Address()),
       companySiret = companySiret.orElse(maybeCompany.map(_.siret)),

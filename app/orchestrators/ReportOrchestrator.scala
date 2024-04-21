@@ -389,7 +389,9 @@ class ReportOrchestrator(
             }
             draftReport.companyIsPublic.getOrElse(false)
           },
-          brand = draftReport.companyBrand
+          brand = draftReport.companyBrand,
+          commercialName = draftReport.companyCommercialName,
+          establishmentCommercialName = draftReport.companyEstablishmentCommercialName
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -412,7 +414,9 @@ class ReportOrchestrator(
         isHeadOffice = companyToCreate.isHeadOffice,
         isOpen = companyToCreate.isOpen,
         isPublic = companyToCreate.isPublic,
-        brand = companyToCreate.brand
+        brand = companyToCreate.brand,
+        commercialName = companyToCreate.commercialName,
+        establishmentCommercialName = companyToCreate.establishmentCommercialName
       )
       company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
     } yield company).value
@@ -442,7 +446,9 @@ class ReportOrchestrator(
             isHeadOffice = companyToCreate.isHeadOffice,
             isOpen = companyToCreate.isOpen,
             isPublic = companyToCreate.isPublic,
-            brand = companyToCreate.brand
+            brand = companyToCreate.brand,
+            commercialName = companyToCreate.commercialName,
+            establishmentCommercialName = companyToCreate.establishmentCommercialName
           )
           company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
         } yield company).value
@@ -467,7 +473,9 @@ class ReportOrchestrator(
             isHeadOffice = companyToCreate.isHeadOffice,
             isOpen = companyToCreate.isOpen,
             isPublic = companyToCreate.isPublic,
-            brand = companyToCreate.brand
+            brand = companyToCreate.brand,
+            commercialName = companyToCreate.commercialName,
+            establishmentCommercialName = companyToCreate.establishmentCommercialName
           )
           company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
         } yield company).value
@@ -540,7 +548,9 @@ class ReportOrchestrator(
           isHeadOffice = reportCompany.isHeadOffice,
           isOpen = reportCompany.isOpen,
           isPublic = reportCompany.isPublic,
-          brand = reportCompany.brand
+          brand = reportCompany.brand,
+          commercialName = reportCompany.commercialName,
+          establishmentCommercialName = reportCompany.establishmentCommercialName
         )
       )
       users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)

@@ -38,12 +38,16 @@ class ReportDraftTest extends Specification {
 
       val company = for {
         name <- aDraftReport.companyName
-        brand = aDraftReport.companyBrand
+        brand                       = aDraftReport.companyBrand
+        commercialName              = aDraftReport.companyCommercialName
+        establishmentCommercialName = aDraftReport.companyEstablishmentCommercialName
         siret <- aDraftReport.companySiret
         activityCode = aDraftReport.companyActivityCode
       } yield Company(
         name = name,
         brand = brand,
+        commercialName = commercialName,
+        establishmentCommercialName = establishmentCommercialName,
         address = Address(),
         siret = siret,
         activityCode = activityCode,
