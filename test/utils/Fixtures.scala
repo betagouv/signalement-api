@@ -94,11 +94,13 @@ object Fixtures {
   )
 
   val genCompany = for {
-    _       <- arbitrary[UUID]
-    name    <- arbString.arbitrary
-    brand   <- Gen.option(arbString.arbitrary)
-    siret   <- genSiret()
-    address <- genAddress()
+    _                           <- arbitrary[UUID]
+    name                        <- arbString.arbitrary
+    brand                       <- Gen.option(arbString.arbitrary)
+    commercialName              <- Gen.option(arbString.arbitrary)
+    establishmentCommercialName <- Gen.option(arbString.arbitrary)
+    siret                       <- genSiret()
+    address                     <- genAddress()
   } yield Company(
     siret = siret,
     name = name,
@@ -108,20 +110,26 @@ object Fixtures {
     isOpen = true,
     isHeadOffice = false,
     isPublic = true,
-    brand = brand
+    brand = brand,
+    commercialName = commercialName,
+    establishmentCommercialName = establishmentCommercialName
   )
 
   def genCompanySearchResult(siren: Option[SIREN]) = for {
     siret <- siren
       .map(s => Gen.choose(0, 99999).map(randInt => SIRET.fromUnsafe(s.value + ("" + randInt takeRight 5))))
       .getOrElse(genSiret())
-    name    <- arbString.arbitrary
-    brand   <- Gen.option(arbString.arbitrary)
-    address <- genAddress()
+    name                        <- arbString.arbitrary
+    brand                       <- Gen.option(arbString.arbitrary)
+    commercialName              <- Gen.option(arbString.arbitrary)
+    establishmentCommercialName <- Gen.option(arbString.arbitrary)
+    address                     <- genAddress()
   } yield CompanySearchResult(
     siret = siret,
     name = Some(name),
     brand = brand,
+    commercialName = commercialName,
+    establishmentCommercialName = establishmentCommercialName,
     isHeadOffice = false,
     address = address,
     activityCode = None,
@@ -161,6 +169,8 @@ object Fixtures {
     influencer = None,
     companyName = Some(company.name),
     companyBrand = company.brand,
+    companyCommercialName = company.commercialName,
+    companyEstablishmentCommercialName = company.establishmentCommercialName,
     companyAddress = Some(company.address),
     companySiret = Some(company.siret),
     companyActivityCode = None,
@@ -188,13 +198,17 @@ object Fixtures {
     val later = now.plusDays(50)
     val company = for {
       name <- reportDraft.companyName
-      brand = reportDraft.companyBrand
+      brand                       = reportDraft.companyBrand
+      commercialName              = reportDraft.companyCommercialName
+      establishmentCommercialName = reportDraft.companyEstablishmentCommercialName
       address <- reportDraft.companyAddress
       siret   <- reportDraft.companySiret
       activityCode = reportDraft.companyActivityCode
     } yield Company(
       name = name,
       brand = brand,
+      commercialName = commercialName,
+      establishmentCommercialName = establishmentCommercialName,
       address = address,
       siret = siret,
       activityCode = activityCode,
@@ -229,6 +243,8 @@ object Fixtures {
     creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     companyName = Some(company.name),
     companyBrand = company.brand,
+    companyCommercialName = company.commercialName,
+    companyEstablishmentCommercialName = company.establishmentCommercialName,
     companyAddress = company.address,
     companySiret = Some(company.siret),
     companyActivityCode = company.activityCode,
@@ -264,11 +280,24 @@ object Fixtures {
   } yield ReportConsumerUpdate(firstName, lastName, email, Some(consumerReferenceNumber))
 
   def genReportCompany = for {
-    name    <- arbString.arbitrary
-    brand   <- Gen.option(arbString.arbitrary)
-    address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
-    siret   <- genSiret()
-  } yield ReportCompany(name, brand, address, siret, None, isHeadOffice = true, isOpen = true, isPublic = true)
+    name                        <- arbString.arbitrary
+    brand                       <- Gen.option(arbString.arbitrary)
+    commercialName              <- Gen.option(arbString.arbitrary)
+    establishmentCommercialName <- Gen.option(arbString.arbitrary)
+    address                     <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
+    siret                       <- genSiret()
+  } yield ReportCompany(
+    name,
+    brand,
+    commercialName,
+    establishmentCommercialName,
+    address,
+    siret,
+    None,
+    isHeadOffice = true,
+    isOpen = true,
+    isPublic = true
+  )
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id        <- arbitrary[UUID]

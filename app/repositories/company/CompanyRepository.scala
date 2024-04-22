@@ -230,7 +230,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
        SELECT
           c.id, c.siret, c.creation_date, c.name, c.activity_code,
           c.street_number, c.street, c.address_supplement, c.city, c.postal_code,
-          c.is_headoffice, c.is_open, c.is_public, c.brand,c.country,
+          c.is_headoffice, c.is_open, c.is_public, c.brand, c.commercial_name, c.establishment_commercial_name, c.country,
           COALESCE(ir.count_ignored, 0) AS count_ignored
        FROM
           companies c
@@ -271,6 +271,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           Boolean,
           Option[String],
           Option[String],
+          Option[String],
+          Option[String],
           Int
       )
     ]
@@ -292,6 +294,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
               isOpen,
               isPublic,
               brand,
+              commercialName,
+              establishmentCommercialName,
               country,
               countIgnored
             ) =>
@@ -312,7 +316,9 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
             isHeadOffice = isHeadOffice,
             isOpen = isOpen,
             isPublic = isPublic,
-            brand = brand
+            brand = brand,
+            commercialName = commercialName,
+            establishmentCommercialName = establishmentCommercialName
           )
           (company, countIgnored)
       }.toList

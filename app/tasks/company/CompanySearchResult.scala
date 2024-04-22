@@ -13,6 +13,8 @@ import java.time.OffsetDateTime
 case class CompanySearchResult(
     siret: SIRET,
     name: Option[String],
+    commercialName: Option[String],
+    establishmentCommercialName: Option[String],
     brand: Option[String],
     isHeadOffice: Boolean,
     address: Address,
