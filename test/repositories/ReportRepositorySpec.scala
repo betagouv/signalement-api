@@ -116,6 +116,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
+      category = "TravauxRenovations",
       lang = Some(Locale.ENGLISH),
       status = ReportStatus.Infonde
     )
