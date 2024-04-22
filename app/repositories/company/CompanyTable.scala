@@ -13,21 +13,23 @@ import java.util.UUID
 import java.time.OffsetDateTime
 
 class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
-  def siret             = column[SIRET]("siret", O.Unique)
-  def creationDate      = column[OffsetDateTime]("creation_date")
-  def name              = column[String]("name")
-  def streetNumber      = column[Option[String]]("street_number")
-  def street            = column[Option[String]]("street")
-  def addressSupplement = column[Option[String]]("address_supplement")
-  def city              = column[Option[String]]("city")
-  def postalCode        = column[Option[String]]("postal_code")
-  def department        = column[Option[String]]("department")
-  def activityCode      = column[Option[String]]("activity_code")
-  def isHeadOffice      = column[Boolean]("is_headoffice")
-  def isOpen            = column[Boolean]("is_open")
-  def isPublic          = column[Boolean]("is_public")
-  def brand             = column[Option[String]]("brand")
-  def country           = column[Option[Country]]("country")
+  def siret                       = column[SIRET]("siret", O.Unique)
+  def creationDate                = column[OffsetDateTime]("creation_date")
+  def name                        = column[String]("name")
+  def streetNumber                = column[Option[String]]("street_number")
+  def street                      = column[Option[String]]("street")
+  def addressSupplement           = column[Option[String]]("address_supplement")
+  def city                        = column[Option[String]]("city")
+  def postalCode                  = column[Option[String]]("postal_code")
+  def department                  = column[Option[String]]("department")
+  def activityCode                = column[Option[String]]("activity_code")
+  def isHeadOffice                = column[Boolean]("is_headoffice")
+  def isOpen                      = column[Boolean]("is_open")
+  def isPublic                    = column[Boolean]("is_public")
+  def brand                       = column[Option[String]]("brand")
+  def commercialName              = column[Option[String]]("commercial_name")
+  def establishmentCommercialName = column[Option[String]]("establishment_commercial_name")
+  def country                     = column[Option[Country]]("country")
 
   type CompanyTuple = (
       UUID,
@@ -44,6 +46,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Boolean,
       Boolean,
       Boolean,
+      Option[String],
+      Option[String],
       Option[String],
       Option[Country]
   )
@@ -65,6 +69,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           isOpen,
           isPublic,
           brand,
+          commercialName,
+          establishmentCommercialName,
           country
         ) =>
       Company(
@@ -84,7 +90,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         isHeadOffice = isHeadOffice,
         isOpen = isOpen,
         isPublic = isPublic,
-        brand = brand
+        brand = brand,
+        commercialName = commercialName,
+        establishmentCommercialName = establishmentCommercialName
       )
   }
 
@@ -99,7 +107,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           isHeadOffice,
           isOpen,
           isPublic,
-          brand
+          brand,
+          commercialName,
+          establishmentCommercialName
         ) =>
       (
         id,
@@ -117,6 +127,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         isOpen,
         isPublic,
         brand,
+        commercialName,
+        establishmentCommercialName,
         address.country
       )
   }
@@ -137,6 +149,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
     isOpen,
     isPublic,
     brand,
+    commercialName,
+    establishmentCommercialName,
     country
   ) <> (constructCompany, extractCompany.lift)
 }

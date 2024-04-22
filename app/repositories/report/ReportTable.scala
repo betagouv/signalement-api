@@ -24,50 +24,52 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   implicit val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
     MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
-  def gender                   = column[Option[Gender]]("gender")
-  def category                 = column[String]("category")
-  def subcategories            = column[List[String]]("subcategories")
-  def details                  = column[List[String]]("details")
-  def socialNetwork            = column[Option[SocialNetworkSlug]]("social_network")
-  def otherSocialNetwork       = column[Option[String]]("other_social_network")
-  def influencerName           = column[Option[String]]("influencer_name")
-  def companyId                = column[Option[UUID]]("company_id")
-  def companyName              = column[Option[String]]("company_name")
-  def companyBrand             = column[Option[String]]("company_brand")
-  def companySiret             = column[Option[SIRET]]("company_siret")
-  def companyStreetNumber      = column[Option[String]]("company_street_number")
-  def companyStreet            = column[Option[String]]("company_street")
-  def companyAddressSupplement = column[Option[String]]("company_address_supplement")
-  def companyPostalCode        = column[Option[String]]("company_postal_code")
-  def companyCity              = column[Option[String]]("company_city")
-  def companyCountry           = column[Option[Country]]("company_country")
-  def companyActivityCode      = column[Option[String]]("company_activity_code")
-  def websiteURL               = column[Option[URL]]("website_url")
-  def host                     = column[Option[String]]("host")
-  def phone                    = column[Option[String]]("phone")
-  def creationDate             = column[OffsetDateTime]("creation_date")
-  def firstName                = column[String]("first_name")
-  def lastName                 = column[String]("last_name")
-  def email                    = column[EmailAddress]("email")
-  def consumerPhone            = column[Option[String]]("consumer_phone")
-  def consumerReferenceNumber  = column[Option[String]]("consumer_reference_number")
-  def contactAgreement         = column[Boolean]("contact_agreement")
-  def employeeConsumer         = column[Boolean]("employee_consumer")
-  def forwardToReponseConso    = column[Boolean]("forward_to_reponseconso")
-  def status                   = column[String]("status")
-  def vendor                   = column[Option[String]]("vendor")
-  def tags                     = column[List[ReportTag]]("tags")
-  def reponseconsoCode         = column[List[String]]("reponseconso_code")
-  def ccrfCode                 = column[List[String]]("ccrf_code")
-  def expirationDate           = column[OffsetDateTime]("expiration_date")
-  def visibleToPro             = column[Boolean]("visible_to_pro")
-  def lang                     = column[Option[Locale]]("lang")
-  def reopenDate               = column[Option[OffsetDateTime]]("reopen_date")
-  def barcodeProductId         = column[Option[UUID]]("barcode_product_id")
-  def train                    = column[Option[String]]("train")
-  def ter                      = column[Option[String]]("ter")
-  def nightTrain               = column[Option[String]]("night_train")
-  def station                  = column[Option[String]]("station")
+  def gender                             = column[Option[Gender]]("gender")
+  def category                           = column[String]("category")
+  def subcategories                      = column[List[String]]("subcategories")
+  def details                            = column[List[String]]("details")
+  def socialNetwork                      = column[Option[SocialNetworkSlug]]("social_network")
+  def otherSocialNetwork                 = column[Option[String]]("other_social_network")
+  def influencerName                     = column[Option[String]]("influencer_name")
+  def companyId                          = column[Option[UUID]]("company_id")
+  def companyName                        = column[Option[String]]("company_name")
+  def companyCommercialName              = column[Option[String]]("company_commercial_name")
+  def companyEstablishmentCommercialName = column[Option[String]]("company_establishment_commercial_name")
+  def companyBrand                       = column[Option[String]]("company_brand")
+  def companySiret                       = column[Option[SIRET]]("company_siret")
+  def companyStreetNumber                = column[Option[String]]("company_street_number")
+  def companyStreet                      = column[Option[String]]("company_street")
+  def companyAddressSupplement           = column[Option[String]]("company_address_supplement")
+  def companyPostalCode                  = column[Option[String]]("company_postal_code")
+  def companyCity                        = column[Option[String]]("company_city")
+  def companyCountry                     = column[Option[Country]]("company_country")
+  def companyActivityCode                = column[Option[String]]("company_activity_code")
+  def websiteURL                         = column[Option[URL]]("website_url")
+  def host                               = column[Option[String]]("host")
+  def phone                              = column[Option[String]]("phone")
+  def creationDate                       = column[OffsetDateTime]("creation_date")
+  def firstName                          = column[String]("first_name")
+  def lastName                           = column[String]("last_name")
+  def email                              = column[EmailAddress]("email")
+  def consumerPhone                      = column[Option[String]]("consumer_phone")
+  def consumerReferenceNumber            = column[Option[String]]("consumer_reference_number")
+  def contactAgreement                   = column[Boolean]("contact_agreement")
+  def employeeConsumer                   = column[Boolean]("employee_consumer")
+  def forwardToReponseConso              = column[Boolean]("forward_to_reponseconso")
+  def status                             = column[String]("status")
+  def vendor                             = column[Option[String]]("vendor")
+  def tags                               = column[List[ReportTag]]("tags")
+  def reponseconsoCode                   = column[List[String]]("reponseconso_code")
+  def ccrfCode                           = column[List[String]]("ccrf_code")
+  def expirationDate                     = column[OffsetDateTime]("expiration_date")
+  def visibleToPro                       = column[Boolean]("visible_to_pro")
+  def lang                               = column[Option[Locale]]("lang")
+  def reopenDate                         = column[Option[OffsetDateTime]]("reopen_date")
+  def barcodeProductId                   = column[Option[UUID]]("barcode_product_id")
+  def train                              = column[Option[String]]("train")
+  def ter                                = column[Option[String]]("ter")
+  def nightTrain                         = column[Option[String]]("night_train")
+  def station                            = column[Option[String]]("station")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -87,6 +89,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         companyId ::
         companyName ::
         companyBrand ::
+        companyCommercialName ::
+        companyEstablishmentCommercialName ::
         companySiret ::
         companyStreetNumber ::
         companyStreet ::
@@ -131,6 +135,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         companyId = companyId,
         companyName = companyName,
         companyBrand = companyBrand,
+        companyCommercialName = companyCommercialName,
+        companyEstablishmentCommercialName = companyEstablishmentCommercialName,
         companyAddress = Address(
           number = companyStreetNumber,
           street = companyStreet,
@@ -181,6 +187,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.companyId ::
       r.companyName ::
       r.companyBrand ::
+      r.companyCommercialName ::
+      r.companyEstablishmentCommercialName ::
       r.companySiret ::
       r.companyAddress.number ::
       r.companyAddress.street ::
@@ -228,6 +236,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[String] ::
       Option[String] ::
       Option[UUID] ::
+      Option[String] ::
+      Option[String] ::
       Option[String] ::
       Option[String] ::
       Option[SIRET] ::
@@ -278,6 +288,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       companyId ::
       companyName ::
       companyBrand ::
+      companyCommercialName ::
+      companyEstablishmentCommercialName ::
       companySiret ::
       companyStreetNumber ::
       companyStreet ::

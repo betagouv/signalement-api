@@ -34,6 +34,8 @@ object EmailsExamplesUtils {
     companyId = Some(UUID.randomUUID()),
     companyName = Some("Dummy Inc."),
     companyBrand = Some("Dummy Inc. Store"),
+    companyCommercialName = Some("Dummy Inc. Commercial Name"),
+    companyEstablishmentCommercialName = Some("Dummy Inc. Establishment Commercial Name"),
     companyAddress = Address(Some("3 bis"), Some("Rue des exemples"), None, Some("13006"), Some("Douceville")),
     companySiret = Some(SIRET("12345678912345")),
     companyActivityCode = None,
@@ -90,7 +92,9 @@ object EmailsExamplesUtils {
     isHeadOffice = true,
     isOpen = true,
     isPublic = true,
-    brand = Some("une super enseigne")
+    brand = Some("une super enseigne"),
+    commercialName = Some("nom commercial"),
+    establishmentCommercialName = Some("nom commercial de l'établissement donc pas le même")
   )
 
   def genCompanyList = List(genCompany, genCompany, genCompany)
