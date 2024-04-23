@@ -8,7 +8,6 @@ import com.typesafe.config.ConfigFactory
 import config._
 import models.report.ArborescenceNode
 import orchestrators._
-import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
 import play.api._
@@ -52,8 +51,6 @@ import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
-import repositories.rating.RatingRepository
-import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.reportblockednotification.ReportNotificationBlockedRepository
@@ -173,7 +170,6 @@ class SignalConsoComponents(
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
-  val ratingRepository: RatingRepositoryInterface                 = new RatingRepository(dbConfig)
   val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
@@ -347,8 +343,7 @@ class SignalConsoComponents(
     companiesVisibilityOrchestrator,
     messagesApi
   )
-  val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
-  val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
+  val socialBladeClient = new SocialBladeClient(applicationConfiguration.socialBlade)
 
   // This file can be generated in the website using 'yarn minimized-anomalies'.
   // This is the first iteration of the story, using an copied generated file from the website
@@ -390,75 +385,6 @@ class SignalConsoComponents(
 
   // Controller
 
-  val accountController = new AccountController(
-    userOrchestrator,
-    userRepository,
-    accessesOrchestrator,
-    proAccessTokenOrchestrator,
-    emailConfiguration,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
-  val adminController = new AdminController(
-    reportRepository,
-    companyAccessRepository,
-    eventRepository,
-    mailService,
-    pdfService,
-    emailConfiguration,
-    reportFileOrchestrator,
-    companyRepository,
-    subscriptionRepository,
-    frontRoute,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
-  val authController = new AuthController(authOrchestrator, cookieAuthenticator, controllerComponents)
-
-  val companyAccessController =
-    new CompanyAccessController(
-      userRepository,
-      companyRepository,
-      companyAccessRepository,
-      accessTokenRepository,
-      proAccessTokenOrchestrator,
-      companiesVisibilityOrchestrator,
-      companyAccessOrchestrator,
-      cookieAuthenticator,
-      controllerComponents
-    )
-
-  val companyController = new CompanyController(
-    companyOrchestrator,
-    companiesVisibilityOrchestrator,
-    companyRepository,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
-  val constantController = new ConstantController(cookieAuthenticator, controllerComponents)
-
-  val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
-
-  val reportController = new ReportController(
-    reportOrchestrator,
-    reportAssignmentOrchestrator,
-    reportAdminActionOrchestrator,
-    eventsOrchestrator,
-    reportRepository,
-    userRepository,
-    reportFileRepository,
-    companyRepository,
-    pdfService,
-    frontRoute,
-    cookieAuthenticator,
-    controllerComponents,
-    reportWithDataOrchestrator,
-    reportZipExportService
-  )
-
   val reportListController =
     new ReportListController(
       reportOrchestrator,
@@ -467,32 +393,11 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val staticController = new StaticController(cookieAuthenticator, controllerComponents)
-
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
-
-  val websiteController = new WebsiteController(
-    websitesOrchestrator,
-    companyRepository,
-    cookieAuthenticator,
-    controllerComponents
-  )
 
   val userReportsFiltersRepository: UserReportsFiltersRepositoryInterface = new UserReportsFiltersRepository(dbConfig)
   val userReportsFiltersOrchestrator = new UserReportsFiltersOrchestrator(userReportsFiltersRepository)
-  val userReportsFiltersController = new UserReportsFiltersController(
-    userReportsFiltersOrchestrator,
-    cookieAuthenticator,
-    controllerComponents
-  )
 
-  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
-
-  val importOrchestrator = new ImportOrchestrator(
-    companyRepository,
-    userOrchestrator,
-    proAccessTokenOrchestrator
-  )
   val openFoodFactsService   = new OpenFoodFactsService
   val openBeautyFactsService = new OpenBeautyFactsService
   val gs1Service             = new GS1Service(applicationConfiguration.gs1)
