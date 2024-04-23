@@ -23,18 +23,6 @@ import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
-import repositories.accesstoken.AccessTokenRepository
-import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.authattempt.AuthAttemptRepository
-import repositories.authattempt.AuthAttemptRepositoryInterface
-import repositories.authtoken.AuthTokenRepository
-import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.company.CompanyRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companyactivationattempt.CompanyActivationAttemptRepository
-import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
@@ -43,21 +31,15 @@ import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.report.ReportRepositoryInterface
-import repositories.reportblockednotification.ReportNotificationBlockedRepository
-import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
-import repositories.reportmetadata.ReportMetadataRepository
-import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
 import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
-import repositories.website.WebsiteRepository
-import repositories.website.WebsiteRepositoryInterface
 import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -137,11 +119,7 @@ class SignalConsoComponents(
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
-  val taskRepository                                            = new TaskRepository(dbConfig)
-  val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
-  val accessTokenRepository: AccessTokenRepositoryInterface =
-    new AccessTokenRepository(dbConfig, companyAccessRepository)
-  def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
+  val taskRepository = new TaskRepository(dbConfig)
 
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
@@ -177,9 +155,6 @@ class SignalConsoComponents(
 
   // Orchestrator
 
-  def companiesVisibilityOrchestrator =
-    new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
-
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
 
@@ -197,7 +172,6 @@ class SignalConsoComponents(
     reportFileOrchestrator,
     eventRepository,
     userRepository,
-    companiesVisibilityOrchestrator,
     signalConsoConfiguration
   )
 

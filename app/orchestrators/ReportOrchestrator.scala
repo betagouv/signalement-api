@@ -3,7 +3,6 @@ package orchestrators
 import config.SignalConsoConfiguration
 import controllers.error.AppError._
 import models._
-import models.company.Company
 import models.event.Event
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
@@ -14,8 +13,6 @@ import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.Constants.ActionEvent
 
-import java.time.OffsetDateTime
-import java.time.Period
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
@@ -28,31 +25,11 @@ class ReportOrchestrator(
     reportFileOrchestrator: ReportFileOrchestrator,
     eventRepository: EventRepositoryInterface,
     userRepository: UserRepositoryInterface,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-
-  def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
-    val maybeCompanyId     = draftReport.companySiret.map(_ => UUID.randomUUID())
-    val reportCreationDate = OffsetDateTime.now()
-    val expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, None)
-    draftReport.generateReport(maybeCompanyId, None, reportCreationDate, expirationDate)
-  }
-
-  private def chooseExpirationDate(
-      baseDate: OffsetDateTime,
-      maybeCompanyWithUsers: Option[(Company, List[User])]
-  ): OffsetDateTime = {
-    val delayIfCompanyHasNoUsers = Period.ofDays(60)
-    val delayIfCompanyHasUsers   = Period.ofDays(25)
-    val delay =
-      if (maybeCompanyWithUsers.exists(_._2.nonEmpty)) delayIfCompanyHasUsers
-      else delayIfCompanyHasNoUsers
-    baseDate.plus(delay)
-  }
 
   def getReportsForUser(
       connectedUser: User,
@@ -61,26 +38,15 @@ class ReportOrchestrator(
       limit: Option[Int]
   ): Future[PaginatedResult[ReportWithFiles]] =
     for {
-      sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-        filter.siretSirenList,
-        connectedUser
-      )
-      _ = logger.trace(
-        s"Original sirenSirets : ${filter.siretSirenList} , SanitizedSirenSirets : $sanitizedSirenSirets"
-      )
       paginatedReportFiles <-
-        if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
-          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
-        } else {
-          getReportsWithFile[ReportWithFiles](
-            Some(connectedUser.userRole),
-            filter.copy(siretSirenList = sanitizedSirenSirets),
-            offset,
-            limit,
-            (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
-              ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
-          )
-        }
+        getReportsWithFile[ReportWithFiles](
+          Some(connectedUser.userRole),
+          filter,
+          offset,
+          limit,
+          (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
+            ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
+        )
     } yield paginatedReportFiles
 
   def getReportsWithResponsesForUser(
