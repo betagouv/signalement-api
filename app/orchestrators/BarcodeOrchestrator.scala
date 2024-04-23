@@ -28,8 +28,6 @@ class BarcodeOrchestrator(
 
   private val logger = Logger(this.getClass)
 
-  
-
   private def getFromGS1API(gtin: String): Future[Option[JsValue]] =
     for {
       firstTry <- gs1Service.getProductByGTIN(OAuthAccessToken("accesstokenbidon"), gtin)
