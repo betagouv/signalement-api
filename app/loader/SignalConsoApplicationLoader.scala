@@ -36,21 +36,16 @@ import repositories.authattempt.AuthAttemptRepository
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.barcode.BarcodeProductRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.company.CompanySyncRepository
-import repositories.company.CompanySyncRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepository
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
-import repositories.dataeconomie.DataEconomieRepository
-import repositories.dataeconomie.DataEconomieRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
@@ -69,8 +64,6 @@ import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
-import repositories.signalconsoreview.SignalConsoReviewRepository
-import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
@@ -177,7 +170,6 @@ class SignalConsoComponents(
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
-  val dataEconomieRepository: DataEconomieRepositoryInterface       = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
@@ -501,19 +493,11 @@ class SignalConsoComponents(
     userOrchestrator,
     proAccessTokenOrchestrator
   )
-  val openFoodFactsService     = new OpenFoodFactsService
-  val openBeautyFactsService   = new OpenBeautyFactsService
-  val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
-  val gs1Service               = new GS1Service(applicationConfiguration.gs1)
+  val openFoodFactsService   = new OpenFoodFactsService
+  val openBeautyFactsService = new OpenBeautyFactsService
+  val gs1Service             = new GS1Service(applicationConfiguration.gs1)
 
   implicit val timeout: Timeout = 30.seconds
-  val barcodeOrchestrator =
-    new BarcodeOrchestrator(
-      gs1Service,
-      openFoodFactsService,
-      openBeautyFactsService,
-      barcodeProductRepository
-    )
 
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
