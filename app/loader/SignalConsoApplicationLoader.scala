@@ -135,33 +135,25 @@ class SignalConsoComponents(
     deprecated = Seq.empty
   )
 
-  //  Repositories
-
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
   val taskRepository                                            = new TaskRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
-  val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
-  val authTokenRepository: AuthTokenRepositoryInterface     = new AuthTokenRepository(dbConfig)
-  def companyRepository: CompanyRepositoryInterface         = new CompanyRepository(dbConfig)
-  val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
-    new CompanyActivationAttemptRepository(dbConfig)
+  def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
+
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
-  def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
-  def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
-  val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
-  val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
-    new ReportNotificationBlockedRepository(dbConfig)
+  def eventRepository: EventRepositoryInterface   = new EventRepository(dbConfig)
+  def reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
+
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
   def reportFileRepository: ReportFileRepositoryInterface     = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   def userRepository: UserRepositoryInterface                 = new UserRepository(dbConfig, passwordHasherRegistry)
-  val websiteRepository: WebsiteRepositoryInterface           = new WebsiteRepository(dbConfig)
 
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
