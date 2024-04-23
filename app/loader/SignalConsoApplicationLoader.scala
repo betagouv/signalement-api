@@ -155,9 +155,6 @@ class SignalConsoComponents(
   def emailConfiguration                                 = applicationConfiguration.mail
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
   def tokenConfiguration                                 = signalConsoConfiguration.token
-  def uploadConfiguration: UploadConfiguration           = signalConsoConfiguration.upload
-
-  def mobileAppConfiguration = signalConsoConfiguration.mobileApp
 
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     current = new BCryptPasswordHasher(),
@@ -198,15 +195,12 @@ class SignalConsoComponents(
   val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 
-  val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
-
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
   val fingerprintGenerator = new FingerprintGenerator()
 
   val cookieAuthenticator =
     new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
-  val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
@@ -294,15 +288,10 @@ class SignalConsoComponents(
     tokenConfiguration
   )
 
-  val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
 
   val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
-
-  val reportBlockedNotificationOrchestrator = new ReportBlockedNotificationOrchestrator(
-    reportNotificationBlockedRepository
-  )
 
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
@@ -405,8 +394,6 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
-  val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
-
   logger.debug("Starting App and sending sentry alert")
 
   // Controller
@@ -459,10 +446,9 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
+  val constantController = new ConstantController(cookieAuthenticator, controllerComponents)
 
   val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
-
 
   val reportController = new ReportController(
     reportOrchestrator,
@@ -480,7 +466,6 @@ class SignalConsoComponents(
     reportWithDataOrchestrator,
     reportZipExportService
   )
-
 
   val reportListController =
     new ReportListController(
