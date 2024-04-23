@@ -59,8 +59,6 @@ import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
 import services._
-import services.emails.MailRetriesService
-import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
@@ -184,15 +182,6 @@ class SignalConsoComponents(
 
   val pdfService                      = new PDFService(signalConsoConfiguration)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
-  val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
-  lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)
-  val mailService = new MailService(
-    mailRetriesService,
-    emailConfiguration,
-    reportNotificationBlockedRepository,
-    pdfService,
-    attachmentService
-  )
 
   // Orchestrator
 
