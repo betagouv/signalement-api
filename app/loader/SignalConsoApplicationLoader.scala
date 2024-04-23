@@ -527,25 +527,10 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val signalConsoReviewController =
-    new SignalConsoReviewController(signalConsoReviewRepository, cookieAuthenticator, controllerComponents)
-
-  val reportToExternalController =
-    new ReportToExternalController(
-      reportRepository,
-      reportFileRepository,
-      reportOrchestrator,
-      apiKeyAuthenticator,
-      controllerComponents
-    )
-
   val staticController = new StaticController(cookieAuthenticator, controllerComponents)
 
-  val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
-
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
-  val subscriptionController =
-    new SubscriptionController(subscriptionOrchestrator, cookieAuthenticator, controllerComponents)
+
   val websiteController = new WebsiteController(
     websitesOrchestrator,
     companyRepository,
@@ -562,20 +547,12 @@ class SignalConsoComponents(
   )
 
   val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
-  val siretExtractorController =
-    new SiretExtractorController(siretExtractorService, cookieAuthenticator, controllerComponents)
 
   val importOrchestrator = new ImportOrchestrator(
     companyRepository,
     userOrchestrator,
     proAccessTokenOrchestrator
   )
-  val importController = new ImportController(
-    importOrchestrator,
-    cookieAuthenticator,
-    controllerComponents
-  )
-
   val openFoodFactsService     = new OpenFoodFactsService
   val openBeautyFactsService   = new OpenBeautyFactsService
   val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
@@ -589,7 +566,6 @@ class SignalConsoComponents(
       openBeautyFactsService,
       barcodeProductRepository
     )
-  val barcodeController = new BarcodeController(barcodeOrchestrator, cookieAuthenticator, controllerComponents)
 
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
