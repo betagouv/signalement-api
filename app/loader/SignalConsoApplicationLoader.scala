@@ -411,9 +411,6 @@ class SignalConsoComponents(
 
   // Controller
 
-  val blacklistedEmailsController =
-    new BlacklistedEmailsController(blacklistedEmailsRepository, cookieAuthenticator, controllerComponents)
-
   val accountController = new AccountController(
     userOrchestrator,
     userRepository,
@@ -439,11 +436,6 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val socialNetworkController =
-    new SocialNetworkController(influencerOrchestrator, cookieAuthenticator, controllerComponents)
-  val asyncFileController =
-    new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
-
   val authController = new AuthController(authOrchestrator, cookieAuthenticator, controllerComponents)
 
   val companyAccessController =
@@ -468,31 +460,9 @@ class SignalConsoComponents(
   )
 
   val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
-  val mobileAppController = new MobileAppController(signalConsoConfiguration, cookieAuthenticator, controllerComponents)
-  val dataEconomieController =
-    new DataEconomieController(dataEconomieOrchestrator, apiKeyAuthenticator, controllerComponents)
-  val emailValidationController =
-    new EmailValidationController(cookieAuthenticator, emailValidationOrchestrator, controllerComponents)
 
   val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
-  val ratingController = new RatingController(ratingRepository, cookieAuthenticator, controllerComponents)
-  val reportBlockedNotificationController =
-    new ReportBlockedNotificationController(
-      cookieAuthenticator,
-      reportBlockedNotificationOrchestrator,
-      controllerComponents
-    )
-  val reportConsumerReviewController =
-    new ReportConsumerReviewController(reportConsumerReviewOrchestrator, cookieAuthenticator, controllerComponents)
 
-  val reportFileController =
-    new ReportFileController(
-      reportFileOrchestrator,
-      cookieAuthenticator,
-      signalConsoConfiguration,
-      controllerComponents,
-      reportRepository
-    )
 
   val reportController = new ReportController(
     reportOrchestrator,
@@ -511,13 +481,6 @@ class SignalConsoComponents(
     reportZipExportService
   )
 
-  val reportedPhoneController = new ReportedPhoneController(
-    reportRepository,
-    companyRepository,
-    asyncFileRepository,
-    cookieAuthenticator,
-    controllerComponents
-  )
 
   val reportListController =
     new ReportListController(
