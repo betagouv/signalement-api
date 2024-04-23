@@ -507,18 +507,7 @@ class SignalConsoComponents(
   lazy val router: Router =
     new _root_.router.Routes(
       httpErrorHandler,
-      staticController,
       reportListController,
-      reportController,
-      eventsController,
-      adminController,
-      constantController,
-      authController,
-      companyAccessController,
-      accountController,
-      companyController,
-      websiteController,
-      userReportsFiltersController,
       assets
     )
 
