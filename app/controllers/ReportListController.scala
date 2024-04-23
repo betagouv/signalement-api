@@ -1,8 +1,6 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.UserAction.WithPermission
-import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
@@ -10,17 +8,13 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import repositories.asyncfiles.AsyncFileRepositoryInterface
-import utils.QueryStringMapper
 
-import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
-    asyncFileRepository: AsyncFileRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -51,28 +45,4 @@ class ReportListController(
       )
   }
 
-  def extractReports = SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
-    for {
-      reportFilter <- ReportFilter
-        .fromQueryString(request.queryString)
-        .toOption
-        .liftTo[Future] {
-          logger.warn(s"Failed to parse ReportFilter query params")
-          throw MalformedQueryParams
-        }
-      _ = logger.debug(s"Parsing zone query param")
-      zone <- (new QueryStringMapper(request.queryString))
-        .timeZone("zone")
-        // temporary retrocompat, so we can mep the API safely
-        .orElse(Some(ZoneId.of("Europe/Paris")))
-        .liftTo[Future] {
-          logger.warn(s"Failed to parse zone query param")
-          throw MalformedQueryParams
-        }
-      _ = logger.debug(s"Requesting report for user ${request.identity.email}")
-      file <- asyncFileRepository
-        .create(AsyncFile.build(request.identity, kind = AsyncFileKind.Reports))
-
-    } yield Ok
-  }
 }

@@ -25,14 +25,10 @@ import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
 import repositories.accesstoken.AccessTokenRepository
 import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.authattempt.AuthAttemptRepository
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.blacklistedemails.BlacklistedEmailsRepository
-import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
@@ -45,8 +41,6 @@ import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
-import repositories.influencer.InfluencerRepository
-import repositories.influencer.InfluencerRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.reportblockednotification.ReportNotificationBlockedRepository
@@ -57,8 +51,6 @@ import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
-import repositories.socialnetwork.SocialNetworkRepository
-import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
@@ -149,12 +141,10 @@ class SignalConsoComponents(
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
-  val taskRepository                                                    = new TaskRepository(dbConfig)
-  val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
-  val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
+  val taskRepository                                            = new TaskRepository(dbConfig)
+  val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
-  val asyncFileRepository: AsyncFileRepositoryInterface     = new AsyncFileRepository(dbConfig)
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface     = new AuthTokenRepository(dbConfig)
   def companyRepository: CompanyRepositoryInterface         = new CompanyRepository(dbConfig)
@@ -170,11 +160,10 @@ class SignalConsoComponents(
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
-  def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
-  val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
-  def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
-  val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
-  val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
+  def reportFileRepository: ReportFileRepositoryInterface     = new ReportFileRepository(dbConfig)
+  val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
+  def userRepository: UserRepositoryInterface                 = new UserRepository(dbConfig, passwordHasherRegistry)
+  val websiteRepository: WebsiteRepositoryInterface           = new WebsiteRepository(dbConfig)
 
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
@@ -210,9 +199,6 @@ class SignalConsoComponents(
   def companiesVisibilityOrchestrator =
     new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
 
-  val emailValidationOrchestrator =
-    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
-
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
 
@@ -225,25 +211,13 @@ class SignalConsoComponents(
     new ReportFileOrchestrator(reportFileRepository, s3Service, reportZipExportService)
 
   val reportOrchestrator = new ReportOrchestrator(
-    mailService,
     reportConsumerReviewOrchestrator,
     reportRepository,
-    reportMetadataRepository,
     reportFileOrchestrator,
-    companyRepository,
-    socialNetworkRepository,
-    accessTokenRepository,
     eventRepository,
     userRepository,
-    websiteRepository,
     companiesVisibilityOrchestrator,
-    subscriptionRepository,
-    blacklistedEmailsRepository,
-    emailValidationOrchestrator,
-    emailConfiguration,
-    tokenConfiguration,
-    signalConsoConfiguration,
-    messagesApi
+    signalConsoConfiguration
   )
 
   logger.debug("Starting App and sending sentry alert")
@@ -251,7 +225,6 @@ class SignalConsoComponents(
   val reportListController =
     new ReportListController(
       reportOrchestrator,
-      asyncFileRepository,
       cookieAuthenticator,
       controllerComponents
     )
