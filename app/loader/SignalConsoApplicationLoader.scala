@@ -3,83 +3,48 @@ package loader
 import _root_.controllers._
 import akka.util.Timeout
 import authentication._
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import config._
-import models.report.ArborescenceNode
 import orchestrators._
-import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
 import play.api._
-import play.api.db.slick.DbName
-import play.api.db.slick.SlickComponents
-import play.api.libs.json.JsArray
-import play.api.libs.json.Json
+import play.api.db.slick.{DbName, SlickComponents}
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.Cookie
-import play.api.mvc.EssentialFilter
+import play.api.mvc.{Cookie, EssentialFilter}
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
-import pureconfig.ConfigConvert
-import pureconfig.ConfigReader
-import pureconfig.ConfigSource
+import pureconfig.{ConfigConvert, ConfigReader, ConfigSource}
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
-import repositories.accesstoken.AccessTokenRepository
-import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.authattempt.AuthAttemptRepository
-import repositories.authattempt.AuthAttemptRepositoryInterface
-import repositories.authtoken.AuthTokenRepository
-import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.blacklistedemails.BlacklistedEmailsRepository
-import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
-import repositories.company.CompanyRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companyactivationattempt.CompanyActivationAttemptRepository
-import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
-import repositories.consumer.ConsumerRepository
-import repositories.consumer.ConsumerRepositoryInterface
-import repositories.emailvalidation.EmailValidationRepository
-import repositories.emailvalidation.EmailValidationRepositoryInterface
-import repositories.event.EventRepository
-import repositories.event.EventRepositoryInterface
-import repositories.influencer.InfluencerRepository
-import repositories.influencer.InfluencerRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.report.ReportRepositoryInterface
-import repositories.reportblockednotification.ReportNotificationBlockedRepository
-import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
-import repositories.reportconsumerreview.ResponseConsumerReviewRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-import repositories.reportfile.ReportFileRepository
-import repositories.reportfile.ReportFileRepositoryInterface
-import repositories.reportmetadata.ReportMetadataRepository
-import repositories.reportmetadata.ReportMetadataRepositoryInterface
-import repositories.socialnetwork.SocialNetworkRepository
-import repositories.socialnetwork.SocialNetworkRepositoryInterface
-import repositories.subscription.SubscriptionRepository
-import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.accesstoken.{AccessTokenRepository, AccessTokenRepositoryInterface}
+import repositories.asyncfiles.{AsyncFileRepository, AsyncFileRepositoryInterface}
+import repositories.authattempt.{AuthAttemptRepository, AuthAttemptRepositoryInterface}
+import repositories.authtoken.{AuthTokenRepository, AuthTokenRepositoryInterface}
+import repositories.blacklistedemails.{BlacklistedEmailsRepository, BlacklistedEmailsRepositoryInterface}
+import repositories.company.{CompanyRepository, CompanyRepositoryInterface}
+import repositories.companyaccess.{CompanyAccessRepository, CompanyAccessRepositoryInterface}
+import repositories.companyactivationattempt.{CompanyActivationAttemptRepository, CompanyActivationAttemptRepositoryInterface}
+import repositories.consumer.{ConsumerRepository, ConsumerRepositoryInterface}
+import repositories.emailvalidation.{EmailValidationRepository, EmailValidationRepositoryInterface}
+import repositories.event.{EventRepository, EventRepositoryInterface}
+import repositories.influencer.{InfluencerRepository, InfluencerRepositoryInterface}
+import repositories.report.{ReportRepository, ReportRepositoryInterface}
+import repositories.reportblockednotification.{ReportNotificationBlockedRepository, ReportNotificationBlockedRepositoryInterface}
+import repositories.reportconsumerreview.{ResponseConsumerReviewRepository, ResponseConsumerReviewRepositoryInterface}
+import repositories.reportfile.{ReportFileRepository, ReportFileRepositoryInterface}
+import repositories.reportmetadata.{ReportMetadataRepository, ReportMetadataRepositoryInterface}
+import repositories.socialnetwork.{SocialNetworkRepository, SocialNetworkRepositoryInterface}
+import repositories.subscription.{SubscriptionRepository, SubscriptionRepositoryInterface}
 import repositories.tasklock.TaskRepository
-import repositories.user.UserRepository
-import repositories.user.UserRepositoryInterface
-import repositories.usersettings.UserReportsFiltersRepository
-import repositories.usersettings.UserReportsFiltersRepositoryInterface
-import repositories.website.WebsiteRepository
-import repositories.website.WebsiteRepositoryInterface
+import repositories.user.{UserRepository, UserRepositoryInterface}
+import repositories.website.{WebsiteRepository, WebsiteRepositoryInterface}
 import services._
-import services.emails.MailRetriesService
-import services.emails.MailService
+import services.emails.{MailRetriesService, MailService}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import utils.EmailAddress
-import utils.FrontRoute
-import utils.LoggingFilter
+import utils.{EmailAddress, FrontRoute, LoggingFilter}
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -332,58 +297,9 @@ class SignalConsoComponents(
       responseConsumerReviewRepository
     )
 
-  val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
-    mailService,
-    reportConsumerReviewOrchestrator,
-    reportRepository,
-    reportOrchestrator,
-    reportFileOrchestrator,
-    companyRepository,
-    eventRepository,
-    companiesVisibilityOrchestrator,
-    messagesApi
-  )
-  val socialBladeClient = new SocialBladeClient(applicationConfiguration.socialBlade)
-
-  // This file can be generated in the website using 'yarn minimized-anomalies'.
-  // This is the first iteration of the story, using an copied generated file from the website
-  // The second version will be to expose the file in the website and fetch it in the API at runtime.
-  val arborescenceFrAsJson = context.environment
-    .resourceAsStream("minimized-anomalies_fr.json")
-    .map(json =>
-      try Json.parse(json)
-      finally json.close()
-    )
-    .map(_.as[JsArray])
-    .map(ArborescenceNode.fromJson)
-    .get
-
-  val arborescenceEnAsJson = context.environment
-    .resourceAsStream("minimized-anomalies_en.json")
-    .map(json =>
-      try Json.parse(json)
-      finally json.close()
-    )
-    .map(_.as[JsArray])
-    .map(ArborescenceNode.fromJson)
-    .get
-
-  val statsOrchestrator =
-    new StatsOrchestrator(
-      reportRepository,
-      eventRepository,
-      responseConsumerReviewRepository,
-      accessTokenRepository,
-      arborescenceFrAsJson,
-      arborescenceEnAsJson
-    )
-
-  val websitesOrchestrator =
-    new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
   logger.debug("Starting App and sending sentry alert")
 
-  // Controller
 
   val reportListController =
     new ReportListController(
@@ -393,14 +309,6 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
-
-  val userReportsFiltersRepository: UserReportsFiltersRepositoryInterface = new UserReportsFiltersRepository(dbConfig)
-  val userReportsFiltersOrchestrator = new UserReportsFiltersOrchestrator(userReportsFiltersRepository)
-
-  val openFoodFactsService   = new OpenFoodFactsService
-  val openBeautyFactsService = new OpenBeautyFactsService
-  val gs1Service             = new GS1Service(applicationConfiguration.gs1)
 
   implicit val timeout: Timeout = 30.seconds
 
