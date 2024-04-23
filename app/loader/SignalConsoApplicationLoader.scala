@@ -3,48 +3,77 @@ package loader
 import _root_.controllers._
 import akka.util.Timeout
 import authentication._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import config._
 import orchestrators._
 import org.flywaydb.core.Flyway
 import play.api._
-import play.api.db.slick.{DbName, SlickComponents}
+import play.api.db.slick.DbName
+import play.api.db.slick.SlickComponents
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{Cookie, EssentialFilter}
+import play.api.mvc.Cookie
+import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
-import pureconfig.{ConfigConvert, ConfigReader, ConfigSource}
+import pureconfig.ConfigConvert
+import pureconfig.ConfigReader
+import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
-import repositories.accesstoken.{AccessTokenRepository, AccessTokenRepositoryInterface}
-import repositories.asyncfiles.{AsyncFileRepository, AsyncFileRepositoryInterface}
-import repositories.authattempt.{AuthAttemptRepository, AuthAttemptRepositoryInterface}
-import repositories.authtoken.{AuthTokenRepository, AuthTokenRepositoryInterface}
-import repositories.blacklistedemails.{BlacklistedEmailsRepository, BlacklistedEmailsRepositoryInterface}
-import repositories.company.{CompanyRepository, CompanyRepositoryInterface}
-import repositories.companyaccess.{CompanyAccessRepository, CompanyAccessRepositoryInterface}
-import repositories.companyactivationattempt.{CompanyActivationAttemptRepository, CompanyActivationAttemptRepositoryInterface}
-import repositories.consumer.{ConsumerRepository, ConsumerRepositoryInterface}
-import repositories.emailvalidation.{EmailValidationRepository, EmailValidationRepositoryInterface}
-import repositories.event.{EventRepository, EventRepositoryInterface}
-import repositories.influencer.{InfluencerRepository, InfluencerRepositoryInterface}
-import repositories.report.{ReportRepository, ReportRepositoryInterface}
-import repositories.reportblockednotification.{ReportNotificationBlockedRepository, ReportNotificationBlockedRepositoryInterface}
-import repositories.reportconsumerreview.{ResponseConsumerReviewRepository, ResponseConsumerReviewRepositoryInterface}
-import repositories.reportfile.{ReportFileRepository, ReportFileRepositoryInterface}
-import repositories.reportmetadata.{ReportMetadataRepository, ReportMetadataRepositoryInterface}
-import repositories.socialnetwork.{SocialNetworkRepository, SocialNetworkRepositoryInterface}
-import repositories.subscription.{SubscriptionRepository, SubscriptionRepositoryInterface}
+import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.authattempt.AuthAttemptRepository
+import repositories.authattempt.AuthAttemptRepositoryInterface
+import repositories.authtoken.AuthTokenRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
+import repositories.blacklistedemails.BlacklistedEmailsRepository
+import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
+import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companyactivationattempt.CompanyActivationAttemptRepository
+import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
+import repositories.consumer.ConsumerRepository
+import repositories.consumer.ConsumerRepositoryInterface
+import repositories.emailvalidation.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepositoryInterface
+import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
+import repositories.influencer.InfluencerRepository
+import repositories.influencer.InfluencerRepositoryInterface
+import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.reportmetadata.ReportMetadataRepository
+import repositories.reportmetadata.ReportMetadataRepositoryInterface
+import repositories.socialnetwork.SocialNetworkRepository
+import repositories.socialnetwork.SocialNetworkRepositoryInterface
+import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
-import repositories.user.{UserRepository, UserRepositoryInterface}
-import repositories.website.{WebsiteRepository, WebsiteRepositoryInterface}
+import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
+import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import services._
-import services.emails.{MailRetriesService, MailService}
+import services.emails.MailRetriesService
+import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import utils.{EmailAddress, FrontRoute, LoggingFilter}
+import utils.EmailAddress
+import utils.FrontRoute
+import utils.LoggingFilter
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -135,7 +164,6 @@ class SignalConsoComponents(
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
-  val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
@@ -154,8 +182,6 @@ class SignalConsoComponents(
 
   val cookieAuthenticator =
     new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
-
-  val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
   implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
     keyId = configuration.get[String]("alpakka.s3.aws.credentials.access-key-id"),
@@ -181,70 +207,11 @@ class SignalConsoComponents(
 
   // Orchestrator
 
-  val userOrchestrator = new UserOrchestrator(userRepository, eventRepository)
-
-  val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
-    userOrchestrator,
-    companyRepository,
-    companyAccessRepository,
-    accessTokenRepository,
-    userRepository,
-    eventRepository,
-    mailService,
-    frontRoute,
-    tokenConfiguration
-  )
-
-  val accessesOrchestrator = new AccessesOrchestrator(
-    userOrchestrator,
-    accessTokenRepository,
-    mailService,
-    frontRoute,
-    tokenConfiguration
-  )
-
-  val authOrchestrator = new AuthOrchestrator(
-    authAttemptRepository,
-    userRepository,
-    accessesOrchestrator,
-    authTokenRepository,
-    tokenConfiguration,
-    credentialsProvider,
-    mailService,
-    cookieAuthenticator
-  )
-
   def companiesVisibilityOrchestrator =
     new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
 
-  val companyAccessOrchestrator =
-    new CompanyAccessOrchestrator(
-      companyAccessRepository,
-      companyRepository,
-      accessTokenRepository,
-      companyActivationAttemptRepository,
-      proAccessTokenOrchestrator
-    )
-
-  private val taskConfiguration: TaskConfiguration = applicationConfiguration.task
-  val companyOrchestrator = new CompanyOrchestrator(
-    companyRepository,
-    companiesVisibilityOrchestrator,
-    reportRepository,
-    websiteRepository,
-    accessTokenRepository,
-    eventRepository,
-    pdfService,
-    taskConfiguration,
-    frontRoute,
-    emailConfiguration,
-    tokenConfiguration
-  )
-
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
-
-  val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
 
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
@@ -279,27 +246,7 @@ class SignalConsoComponents(
     messagesApi
   )
 
-  val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
-    reportOrchestrator,
-    companiesVisibilityOrchestrator,
-    mailService,
-    reportMetadataRepository,
-    userRepository,
-    eventRepository
-  )
-
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
-      reportOrchestrator,
-      companyRepository,
-      eventRepository,
-      reportFileRepository,
-      responseConsumerReviewRepository
-    )
-
-
   logger.debug("Starting App and sending sentry alert")
-
 
   val reportListController =
     new ReportListController(
@@ -308,7 +255,6 @@ class SignalConsoComponents(
       cookieAuthenticator,
       controllerComponents
     )
-
 
   implicit val timeout: Timeout = 30.seconds
 
