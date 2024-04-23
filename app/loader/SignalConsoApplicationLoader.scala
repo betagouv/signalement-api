@@ -7,7 +7,6 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
 import orchestrators._
-import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
 import play.api.db.slick.SlickComponents
@@ -92,25 +91,7 @@ class SignalConsoComponents(
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
-  // Run database migration scripts
-  Flyway
-    .configure()
-    .dataSource(
-      applicationConfiguration.flyway.jdbcUrl,
-      applicationConfiguration.flyway.user,
-      applicationConfiguration.flyway.password
-    )
-    // DATA_LOSS / DESTRUCTIVE / BE AWARE ---- Keep to "false"
-    // Be careful when enabling this as it removes the safety net that ensures Flyway does not migrate the wrong database in case of a configuration mistake!
-    // This is useful for initial Flyway production deployments on projects with an existing DB.
-    // See https://flywaydb.org/documentation/configuration/parameters/baselineOnMigrate for more information
-    .baselineOnMigrate(applicationConfiguration.flyway.baselineOnMigrate)
-    .load()
-    .migrate()
-
-  def emailConfiguration                                 = applicationConfiguration.mail
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
-  def tokenConfiguration                                 = signalConsoConfiguration.token
 
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     current = new BCryptPasswordHasher(),
