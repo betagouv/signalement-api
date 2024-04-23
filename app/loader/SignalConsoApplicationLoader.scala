@@ -111,13 +111,6 @@ class SignalConsoComponents(
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   def userRepository: UserRepositoryInterface                 = new UserRepository(dbConfig, passwordHasherRegistry)
 
-  val crypter              = new JcaCrypter(applicationConfiguration.crypter)
-  val signer               = new JcaSigner(applicationConfiguration.signer)
-  val fingerprintGenerator = new FingerprintGenerator()
-
-  val cookieAuthenticator =
-    new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
-
   implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
     keyId = configuration.get[String]("alpakka.s3.aws.credentials.access-key-id"),
     secretKey = configuration.get[String]("alpakka.s3.aws.credentials.secret-access-key"),
@@ -150,7 +143,6 @@ class SignalConsoComponents(
   val reportListController =
     new ReportListController(
       reportOrchestrator,
-      cookieAuthenticator,
       controllerComponents
     )
 

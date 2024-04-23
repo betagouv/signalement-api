@@ -1,6 +1,5 @@
 package controllers
 
-import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
@@ -15,10 +14,9 @@ import scala.concurrent.duration._
 
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
-    authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(authenticator, controllerComponents) {
+    extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger                      = Logger(this.getClass)
