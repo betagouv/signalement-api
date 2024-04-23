@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 class ReportOrchestrator(
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
-    reportFileOrchestrator: ReportFileOrchestrator,
     eventRepository: EventRepositoryInterface,
     userRepository: UserRepositoryInterface,
     signalConsoConfiguration: SignalConsoConfiguration
@@ -123,8 +122,8 @@ class ReportOrchestrator(
       startGetReportFiles = System.nanoTime()
       _                   = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
       reportsIds          = paginatedReports.entities.map(_.report.id)
-      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(reportsIds)
-      endGetReportFiles = System.nanoTime()
+      reportFilesMap      = Map[UUID, List[ReportFile]]()
+      endGetReportFiles   = System.nanoTime()
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))

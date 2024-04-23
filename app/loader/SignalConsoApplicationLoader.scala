@@ -32,8 +32,6 @@ import repositories.report.ReportRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-import repositories.reportfile.ReportFileRepository
-import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
@@ -110,7 +108,6 @@ class SignalConsoComponents(
 
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
-  def reportFileRepository: ReportFileRepositoryInterface     = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   def userRepository: UserRepositoryInterface                 = new UserRepository(dbConfig, passwordHasherRegistry)
 
@@ -131,7 +128,6 @@ class SignalConsoComponents(
 
   //  Actor
 
-  val pdfService                      = new PDFService(signalConsoConfiguration)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
 
   // Orchestrator
@@ -141,16 +137,9 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
-  val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
-
-  val reportFileOrchestrator =
-    new ReportFileOrchestrator(reportFileRepository, s3Service, reportZipExportService)
-
   val reportOrchestrator = new ReportOrchestrator(
     reportConsumerReviewOrchestrator,
     reportRepository,
-    reportFileOrchestrator,
     eventRepository,
     userRepository,
     signalConsoConfiguration
