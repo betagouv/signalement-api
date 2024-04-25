@@ -16,6 +16,10 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
       s"/avis/$id?evaluation=${evaluation.entryName}"
     )
+
+    def engagementReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
+      s"/avis-engagement/$id?evaluation=${evaluation.entryName}"
+    )
   }
 
   object dashboard {

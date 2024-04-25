@@ -1,7 +1,7 @@
 package controllers.error
 
 import models.UserRole
-import models.promise.PromiseOfActionId
+import models.engagement.EngagementId
 import models.report.Report
 import models.report.reportfile.ReportFileId
 import models.website.WebsiteId
@@ -520,10 +520,10 @@ object AppError {
     override val titleForLogs: String = "cant_assign_report"
   }
 
-  final case class PromiseOfActionNotFound(id: PromiseOfActionId) extends NotFoundError {
+  final case class EngagementNotFound(id: EngagementId) extends NotFoundError {
     override val `type`: String       = "SC-0056"
-    override val title: String        = s"Promise of action $id not found"
-    override val details: String      = s"Promise of action $id not found"
-    override val titleForLogs: String = "promise_not_found"
+    override val title: String        = s"Engagement $id not found"
+    override val details: String      = s"Engagement $id not found"
+    override val titleForLogs: String = "engagement_found"
   }
 }

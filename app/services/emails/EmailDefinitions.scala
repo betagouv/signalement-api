@@ -5,6 +5,7 @@ import enumeratum.PlayEnum
 import play.api.i18n.MessagesApi
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
+import services.emails.EmailDefinitionsConsumer.ConsumerProEngagementReview
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
@@ -70,6 +71,7 @@ object EmailDefinitions {
     ProReportsUnreadReminder,
     ProReportAssignedNotification,
     // Consumer
+    ConsumerProEngagementReview,
     ConsumerReportDeletionConfirmation,
     ConsumerReportAcknowledgment,
     ConsumerReportReadByProNotification,

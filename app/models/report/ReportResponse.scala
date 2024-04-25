@@ -17,6 +17,18 @@ case class ReportResponse(
 
 object ReportResponse {
   implicit val reportResponse: OFormat[ReportResponse] = Json.format[ReportResponse]
+
+  def translateResponseDetails(reportResponse: ReportResponse): Option[String] =
+    reportResponse.responseDetails.map {
+      case ResponseDetails.REFUND             => "procéder à un remboursement ou un avoir"
+      case ResponseDetails.REPLACEMENT        => "procéder à une réparation ou au remplacement du produit défectueux"
+      case ResponseDetails.DELIVERY           => "procéder à la livraison du bien ou du service"
+      case ResponseDetails.DIRECTIONS_FOR_USE => "apporter un conseil d’utilisation"
+      case ResponseDetails.CONFORM            => "se conformer à la réglementation en vigueur"
+      case ResponseDetails.ADAPT_PRACTICES    => "adapter mes pratiques"
+      case ResponseDetails.OTHER              => reportResponse.otherResponseDetails.getOrElse("")
+      case _                                  => ""
+    }
 }
 
 sealed trait ReportResponseType extends EnumEntry
