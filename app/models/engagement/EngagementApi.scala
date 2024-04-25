@@ -1,4 +1,4 @@
-package models.promise
+package models.engagement
 
 import models.UserRole
 import models.report.Report
@@ -8,16 +8,16 @@ import play.api.libs.json.OWrites
 
 import java.time.OffsetDateTime
 
-case class PromiseOfActionApi(
-    id: PromiseOfActionId,
+case class EngagementApi(
+    id: EngagementId,
     report: Report,
-    expirationDate: OffsetDateTime,
     engagement: ResponseDetails,
     otherEngagement: Option[String],
+    expirationDate: OffsetDateTime,
     resolutionDate: Option[OffsetDateTime]
 )
 
-object PromiseOfActionApi {
-  implicit def writes(implicit userRole: Option[UserRole]): OWrites[PromiseOfActionApi] =
-    Json.writes[PromiseOfActionApi]
+object EngagementApi {
+  implicit def writes(implicit userRole: Option[UserRole]): OWrites[EngagementApi] =
+    Json.writes[EngagementApi]
 }

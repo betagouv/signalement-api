@@ -17,8 +17,8 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.event.Event._
-import models.promise.PromiseOfAction
-import models.promise.PromiseOfActionId
+import models.engagement.Engagement
+import models.engagement.EngagementId
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
@@ -32,7 +32,7 @@ import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
-import repositories.promise.PromiseOfActionRepositoryInterface
+import repositories.engagement.EngagementRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
@@ -84,7 +84,7 @@ class ReportOrchestrator(
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
-    promiseRepository: PromiseOfActionRepositoryInterface,
+    engagementRepository: EngagementRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -809,6 +809,7 @@ class ReportOrchestrator(
 
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
+    val now = OffsetDateTime.now()
     for {
       _ <- reportFileOrchestrator.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
@@ -824,7 +825,7 @@ class ReportOrchestrator(
           Some(report.id),
           report.companyId,
           Some(user.id),
-          OffsetDateTime.now(),
+          now,
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
@@ -832,12 +833,13 @@ class ReportOrchestrator(
       )
       _ <- reportResponse.responseType match {
         case ReportResponseType.ACCEPTED =>
-          promiseRepository.create(
-            PromiseOfAction(
-              id = PromiseOfActionId(UUID.randomUUID()),
+          engagementRepository.create(
+            Engagement(
+              id = EngagementId(UUID.randomUUID()),
               reportId = report.id,
               promiseEventId = responseEvent.id,
-              resolutionEventId = None
+              resolutionEventId = None,
+              expirationDate = now.plusDays(8)
             )
           )
         case _ => Future.unit
@@ -849,7 +851,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           None,
-          OffsetDateTime.now(),
+          now,
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
@@ -860,7 +862,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           Some(user.id),
-          OffsetDateTime.now(),
+          now,
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )

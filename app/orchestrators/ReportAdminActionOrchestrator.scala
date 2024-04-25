@@ -37,6 +37,7 @@ import scala.tools.nsc.tasty.SafeEq
 class ReportAdminActionOrchestrator(
     mailService: MailService,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+    engagementOrchestrator: EngagementOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     reportFileOrchestrator: ReportFileOrchestrator,
@@ -151,6 +152,7 @@ class ReportAdminActionOrchestrator(
       _            <- eventRepository.deleteByReportId(id)
       _            <- reportFileOrchestrator.removeFromReportId(id)
       _            <- reportConsumerReviewOrchestrator.remove(id)
+      _            <- engagementOrchestrator.removeEngagement(id)
       _            <- reportRepository.delete(id)
       _ <- report.companyId.map(id => reportOrchestrator.removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
       _ <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)

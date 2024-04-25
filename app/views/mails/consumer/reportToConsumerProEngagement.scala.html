@@ -1,0 +1,90 @@
+@import models.report.ReportResponse
+@import models.report.Report
+@import java.net.URI
+@import models.report.review.ResponseEvaluation
+@import models.company.Company
+@(report: Report, maybeCompany: Option[Company], reportResponse: ReportResponse, isResolved: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
+
+@views.html.mails.layout(Messages("ConsumerReportProEngagementEmail.title")) {
+    <p>
+    @Messages("ConsumerReportProEngagementEmail.greeting", report.firstName, report.lastName)
+    </p>
+
+    <p>
+    @Messages("ConsumerReportProEngagementEmail.reportDescription", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+    </p>
+    @if(report.companySiret.isDefined) {
+        <p style="text-align: center;">
+        @Html(Messages("ConsumerReportAckProEmail.companySiret", report.companySiret.get))
+        </p>
+    }
+    <p style="text-align: center;">
+    @views.html.fragments.proAddressForConsumer(maybeCompany)
+    </p>
+
+    <p>@Messages("ConsumerReportProEngagementEmail.responseContent")</p>
+
+    <p>
+        <i>"@reportResponse.consumerDetails"</i>
+    </p>
+
+  @reportResponse.otherResponseDetails match {
+  case Some(otherResponseDetails) => {
+        <p>
+          Il y a 8 jours, l'entreprise a pris en compte votre signalement et a pris l'engagement suivant :
+          <br />
+          <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
+        </p>
+    }
+    case None => {<p>Il y a 8 jours, l'entreprise a pris en compte votre signalement et s'est engagée à <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b></p>}
+  }
+
+    @if(isResolved) {
+        <p>Le professionnel nous a indiqué avoir tenu son engagement. Nous souhaiterions donc votre avis concernant celui-ci.</p>
+    } else {
+        <p>À ce jour, le professionnel ne nous a pas indiqué avoir tenu son engagement. Il est cependant possible qu'il ait tenu son engagement directement avec vous sans nous l'indiquer. Nous souhaiterions donc votre avis.</p>
+    }
+
+    <p>
+        <b>@Messages("ConsumerReportProEngagementEmail.satisfactionQuestion")</b> @Messages("ConsumerReportProEngagementEmail.clickYourChoice")
+    <div style="display: flex; margin: 50px ">
+        <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px">
+            <img src='cid:happy' alt="positif" width="75" height="75">
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.positive")</p>
+        </a>
+        <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px">
+            <img src='cid:neutral' alt="neutre" width="75" height="75"/>
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.neutral")</p>
+        </a>
+        <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px">
+            <img src='cid:sad' alt="négatif" width="75" height="75" />
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.negative")</p>
+        </a>
+    </div>
+    </p>
+
+    <p>
+    @Html(Messages("ConsumerReportProEngagementEmail.satisfactionRequest"))
+    </p>
+    <p>
+    @Html(Messages("ConsumerReportProEngagementEmail.serviceImprovement"))
+    </p>
+    <p>@Messages("ConsumerReportProEngagementEmail.contributionThanks")</p>
+    <p>@Messages("ConsumerReportProEngagementEmail.spreadTheWord")</p>
+
+    <p>
+        <i>@Messages("ConsumerReportProEngagementEmail.teamSignature")</i>
+    </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+        @Messages("ConsumerReportProEngagementEmail.signalConsoExplanationHeader")
+        </div>
+        <img src="cid:@Messages("attachment.report.step4")" style="max-width: 100%"/>
+    </div>
+}
