@@ -109,6 +109,10 @@ class StatisticController(
     statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
+  def getReportEngagementReviews(companyId: Option[UUID]) = SecuredAction.async {
+    statsOrchestrator.getReportEngagementReview(companyId).map(x => Ok(Json.toJson(x)))
+  }
+
   def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
     statsOrchestrator.getReportsTagsDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }

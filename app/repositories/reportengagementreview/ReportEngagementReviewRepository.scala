@@ -6,6 +6,7 @@ import repositories.TypedCRUDRepository
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import repositories.PostgresProfile.api._
+import repositories.report.ReportTable
 import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 
 import java.util.UUID
@@ -24,4 +25,16 @@ class ReportEngagementReviewRepository(
 
   override def findByReportId(reportId: UUID): Future[List[EngagementReview]] =
     db.run(table.filter(_.reportId === reportId).to[List].result)
+
+  override def findByCompany(companyId: Option[UUID]): Future[List[EngagementReview]] = db.run(
+    table
+      .join(ReportTable.table)
+      .on(_.reportId === _.id)
+      .filterOpt(companyId) { case (table, id) =>
+        table._2.companyId === id
+      }
+      .map(_._1)
+      .to[List]
+      .result
+  )
 }
