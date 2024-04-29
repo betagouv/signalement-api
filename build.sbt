@@ -34,6 +34,7 @@ routesImport ++= Seq(
   "java.time.OffsetDateTime",
   "models.investigation.InvestigationStatus",
   "models.website.WebsiteId",
+  "models.engagement.EngagementId",
   "utils.SIRET",
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",

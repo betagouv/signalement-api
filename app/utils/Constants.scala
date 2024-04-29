@@ -77,7 +77,10 @@ object Constants {
 
     object REPORT_READING_BY_PRO extends ActionEventValue("Première consultation du signalement par le professionnel")
     object REPORT_PRO_RESPONSE   extends ActionEventValue("Réponse du professionnel au signalement")
-    object REPORT_REVIEW_ON_RESPONSE   extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
+    object REPORT_PRO_ENGAGEMENT_HONOURED extends ActionEventValue("Engagement du professionnel marqué comme honoré")
+    object REPORT_REVIEW_ON_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
+    object REPORT_REVIEW_ON_ENGAGEMENT
+        extends ActionEventValue("Avis du consommateur sur l'engagement du professionnel")
     object REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Signalement non consulté")
     object REPORT_CLOSED_BY_NO_ACTION  extends ActionEventValue("Signalement consulté ignoré")
 
@@ -133,6 +136,7 @@ object Constants {
       COMPANY_ADDRESS_CHANGE,
       REPORT_READING_BY_PRO,
       REPORT_PRO_RESPONSE,
+      REPORT_PRO_ENGAGEMENT_HONOURED,
       REPORT_REVIEW_ON_RESPONSE,
       REPORT_CLOSED_BY_NO_READING,
       REPORT_CLOSED_BY_NO_ACTION,

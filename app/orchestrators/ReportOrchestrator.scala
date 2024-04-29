@@ -17,6 +17,8 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.event.Event._
+import models.engagement.Engagement
+import models.engagement.EngagementId
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
@@ -30,6 +32,7 @@ import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
+import repositories.engagement.EngagementRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
@@ -81,6 +84,7 @@ class ReportOrchestrator(
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
+    engagementRepository: EngagementRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -815,6 +819,7 @@ class ReportOrchestrator(
 
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
+    val now = OffsetDateTime.now()
     for {
       _ <- reportFileOrchestrator.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
@@ -823,19 +828,32 @@ class ReportOrchestrator(
           status = ReportStatus.fromResponseType(reportResponse.responseType)
         )
       )
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _ <- eventRepository.create(
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
+      responseEvent <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(user.id),
-          OffsetDateTime.now(),
+          now,
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
         )
       )
+      _ <- reportResponse.responseType match {
+        case ReportResponseType.ACCEPTED =>
+          engagementRepository.create(
+            Engagement(
+              id = EngagementId(UUID.randomUUID()),
+              reportId = report.id,
+              promiseEventId = responseEvent.id,
+              resolutionEventId = None,
+              expirationDate = now.plusDays(8) // We fix to 8 days at the moment
+            )
+          )
+        case _ => Future.unit
+      }
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user, maybeCompany)
       _ <- eventRepository.create(
         Event(
@@ -843,7 +861,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           None,
-          OffsetDateTime.now(),
+          now,
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
@@ -854,7 +872,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           Some(user.id),
-          OffsetDateTime.now(),
+          now,
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )

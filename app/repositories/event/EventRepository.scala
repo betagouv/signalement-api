@@ -11,6 +11,7 @@ import repositories.report.ReportTable
 import repositories.user.UserTable
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 // import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 // import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
@@ -41,6 +42,14 @@ class EventRepository(
     .run(
       table
         .filter(_.reportId === uuidReport)
+        .delete
+    )
+
+  override def deleteEngagement(uuidReport: UUID): Future[Int] = db
+    .run(
+      table
+        .filter(_.reportId === uuidReport)
+        .filter(_.action === ActionEvent.REPORT_PRO_ENGAGEMENT_HONOURED.value)
         .delete
     )
 

@@ -15,6 +15,7 @@ GET           /api/stats/reports/delay/read                             controll
 GET           /api/stats/reports/tags                                   controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                                 controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/reviews                                controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/engagement-reviews                     controllers.StatisticController.getReportEngagementReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/pro-totransmit                         controllers.StatisticController.getProReportToTransmitStat()
 GET           /api/stats/reports/pro-transmitted                        controllers.StatisticController.getProReportTransmittedStat()
 GET           /api/stats/reports/pro-response                           controllers.StatisticController.getProReportResponseStat(responseStatusQuery: Option[List[ReportResponseType]])
@@ -214,5 +215,12 @@ POST          /api/import/companies                                     controll
 
 GET           /api/barcode/gtin/:gtin                                   controllers.BarcodeController.getProductByGTIN(gtin)
 GET           /api/barcode/:id                                          controllers.BarcodeController.getById(id: java.util.UUID)
+
+GET           /api/engagements                                          controllers.EngagementController.list()
+POST          /api/engagements/:id/check                                controllers.EngagementController.check(id: EngagementId)
+POST          /api/engagements/:id/uncheck                              controllers.EngagementController.uncheck(id: EngagementId)
+POST          /api/reports/:uuid/engagement/review                      controllers.EngagementController.reviewEngagementOnReportResponse(uuid: java.util.UUID)
+GET           /api/reports/:uuid/engagement/review                      controllers.EngagementController.getEngagementReview(uuid: java.util.UUID)
+GET           /api/reports/:uuid/engagement/review/exists               controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)
 
 GET           /assets/*file                                             controllers.Assets.versioned(path="/public", file: Asset)

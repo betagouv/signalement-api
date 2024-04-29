@@ -311,6 +311,46 @@ object EmailDefinitionsConsumer {
     }
 
   }
+
+  case object ConsumerProEngagementReview extends EmailDefinition {
+    override val category = Consumer
+
+    override def examples =
+      Seq(
+        "report_pro_engagement_review" -> ((recipient, messagesApi) =>
+          Email(genReport.copy(email = recipient), Some(genCompany), genReportResponse, isResolved = true, messagesApi)
+        )
+      )
+
+    final case class Email(
+        report: Report,
+        maybeCompany: Option[Company],
+        reportResponse: ReportResponse,
+        isResolved: Boolean,
+        messagesApi: MessagesApi
+    ) extends BaseEmail {
+      private val lang                                        = Lang(getLocaleOrDefault(report.lang))
+      implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
+      override val recipients: List[EmailAddress] = List(report.email)
+      override val subject: String                = messagesApi("ConsumerReportProEngagementEmail.subject")(lang)
+
+      override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
+        views.html.mails.consumer
+          .reportToConsumerProEngagement(
+            report,
+            maybeCompany,
+            reportResponse,
+            isResolved,
+            frontRoute.website.engagementReview(report.id.toString)
+          )
+          .toString
+
+      override def getAttachements: AttachmentService => Seq[Attachment] =
+        _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
+    }
+  }
+
   case object ConsumerProResponseNotificationOnAdminCompletion extends EmailDefinition {
     override val category = Consumer
 

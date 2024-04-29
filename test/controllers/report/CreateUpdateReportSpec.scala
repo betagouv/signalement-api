@@ -50,6 +50,8 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport = draftReport.copy(
           companyName = Some(company.name),
           companyBrand = company.brand,
+          companyCommercialName = company.commercialName,
+          companyEstablishmentCommercialName = company.establishmentCommercialName,
           companySiret = Some(company.siret),
           companyAddress = Some(address),
           companyActivityCode = company.activityCode
@@ -82,6 +84,8 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
         draftReport = draftReport.copy(
           companyName = Some(company.name),
           companyBrand = company.brand,
+          companyCommercialName = company.commercialName,
+          companyEstablishmentCommercialName = company.establishmentCommercialName,
           companySiret = Some(company.siret),
           companyAddress = Some(address)
         )
@@ -110,7 +114,13 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a professional who has no account                                   ${step {
-        draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
+        draftReport = draftReport.copy(
+          companyName = Some(anotherCompany.name),
+          companyBrand = anotherCompany.brand,
+          companyCommercialName = anotherCompany.commercialName,
+          companyEstablishmentCommercialName = anotherCompany.establishmentCommercialName,
+          companySiret = Some(anotherCompany.siret)
+        )
       }}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "ReportStatus.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
@@ -137,7 +147,13 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a professional who has an activated account                   ${step {
-        draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
+        draftReport = draftReport.copy(
+          companyName = Some(existingCompany.name),
+          companyBrand = existingCompany.brand,
+          companyCommercialName = existingCompany.commercialName,
+          companyEstablishmentCommercialName = existingCompany.establishmentCommercialName,
+          companySiret = Some(existingCompany.siret)
+        )
       }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "ReportStatus.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
@@ -173,8 +189,14 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a dangerous product                                           ${step {
-        draftReport =
-          draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(ReportTag.ProduitDangereux))
+        draftReport = draftReport.copy(
+          companyName = Some(existingCompany.name),
+          companyBrand = existingCompany.brand,
+          companyCommercialName = existingCompany.commercialName,
+          companyEstablishmentCommercialName = existingCompany.establishmentCommercialName,
+          companySiret = Some(existingCompany.siret),
+          tags = List(ReportTag.ProduitDangereux)
+        )
       }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TraitementEnCours"         ${reportMustHaveBeenCreatedWithStatus(

@@ -62,6 +62,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
 import repositories.probe.ProbeRepository
+import repositories.engagement.EngagementRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -70,6 +71,8 @@ import repositories.reportblockednotification.ReportNotificationBlockedRepositor
 import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportengagementreview.ReportEngagementReviewRepository
+import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
@@ -92,6 +95,7 @@ import services.emails.MailRetriesService
 import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import tasks.EngagementEmailTask
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
@@ -206,6 +210,8 @@ class SignalConsoComponents(
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
+  val reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface =
+    new ReportEngagementReviewRepository(dbConfig)
   def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
   def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
@@ -213,6 +219,8 @@ class SignalConsoComponents(
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
+
+  val engagementRepository = new EngagementRepository(dbConfig)
 
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
@@ -337,7 +345,11 @@ class SignalConsoComponents(
   )
 
   val reportConsumerReviewOrchestrator =
-    new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
+    new ReportConsumerReviewOrchestrator(
+      reportRepository,
+      eventRepository,
+      responseConsumerReviewRepository
+    )
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
@@ -367,8 +379,18 @@ class SignalConsoComponents(
     tokenConfiguration,
     signalConsoConfiguration,
     companySyncService,
+    engagementRepository,
     messagesApi
   )
+
+  val engagementOrchestrator =
+    new EngagementOrchestrator(
+      engagementRepository,
+      companiesVisibilityOrchestrator,
+      eventRepository,
+      reportRepository,
+      reportEngagementReviewRepository
+    )
 
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     reportOrchestrator,
@@ -388,17 +410,6 @@ class SignalConsoComponents(
       responseConsumerReviewRepository
     )
 
-  val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
-    mailService,
-    reportConsumerReviewOrchestrator,
-    reportRepository,
-    reportOrchestrator,
-    reportFileOrchestrator,
-    companyRepository,
-    eventRepository,
-    companiesVisibilityOrchestrator,
-    messagesApi
-  )
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
 
@@ -445,10 +456,24 @@ class SignalConsoComponents(
       reportRepository,
       eventRepository,
       responseConsumerReviewRepository,
+      reportEngagementReviewRepository,
       accessTokenRepository,
       arborescenceFrAsJson,
       arborescenceEnAsJson
     )
+
+  val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
+    mailService,
+    reportConsumerReviewOrchestrator,
+    engagementOrchestrator,
+    reportRepository,
+    reportOrchestrator,
+    reportFileOrchestrator,
+    companyRepository,
+    eventRepository,
+    companiesVisibilityOrchestrator,
+    messagesApi
+  )
 
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
@@ -522,6 +547,17 @@ class SignalConsoComponents(
     taskRepository
   )
   inactiveAccountTask.schedule()
+
+  val engagementEmailTask = new EngagementEmailTask(
+    mailService,
+    companyRepository,
+    engagementRepository,
+    actorSystem,
+    taskConfiguration,
+    taskRepository,
+    messagesApi
+  )
+  engagementEmailTask.schedule()
 
   // Controller
 
@@ -713,6 +749,9 @@ class SignalConsoComponents(
     )
   val barcodeController = new BarcodeController(barcodeOrchestrator, cookieAuthenticator, controllerComponents)
 
+  val engagementController =
+    new EngagementController(engagementOrchestrator, cookieAuthenticator, controllerComponents)
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -775,6 +814,7 @@ class SignalConsoComponents(
       siretExtractorController,
       importController,
       barcodeController,
+      engagementController,
       assets
     )
 

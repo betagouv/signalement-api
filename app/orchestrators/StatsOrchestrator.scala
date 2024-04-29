@@ -16,6 +16,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
@@ -32,6 +33,7 @@ class StatsOrchestrator(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
+    reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     arborescenceFr: List[ArborescenceNode],
     arborescenceEn: List[ArborescenceNode]
@@ -138,6 +140,17 @@ class StatsOrchestrator(
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>
+      events.foldLeft(ReportReviewStats()) { case (acc, event) =>
+        ReportReviewStats(
+          positive = acc.positive + (if (event.evaluation == ResponseEvaluation.Positive) 1 else 0),
+          neutral = acc.neutral + (if (event.evaluation == ResponseEvaluation.Neutral) 1 else 0),
+          negative = acc.negative + (if (event.evaluation == ResponseEvaluation.Negative) 1 else 0)
+        )
+      }
+    }
+
+  def getReportEngagementReview(id: Option[UUID]): Future[ReportReviewStats] =
+    reportEngagementReviewRepository.findByCompany(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
         ReportReviewStats(
           positive = acc.positive + (if (event.evaluation == ResponseEvaluation.Positive) 1 else 0),

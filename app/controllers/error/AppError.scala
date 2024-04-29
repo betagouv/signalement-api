@@ -1,6 +1,7 @@
 package controllers.error
 
 import models.UserRole
+import models.engagement.EngagementId
 import models.report.Report
 import models.report.reportfile.ReportFileId
 import models.website.WebsiteId
@@ -517,5 +518,12 @@ object AppError {
     override val `type`: String       = "SC-0055"
     override val title: String        = "Can't assign report"
     override val titleForLogs: String = "cant_assign_report"
+  }
+
+  final case class EngagementNotFound(id: EngagementId) extends NotFoundError {
+    override val `type`: String       = "SC-0056"
+    override val title: String        = s"Engagement $id not found"
+    override val details: String      = s"Engagement $id not found"
+    override val titleForLogs: String = "engagement_found"
   }
 }
