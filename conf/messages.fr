@@ -47,6 +47,10 @@ ConsumerReportProEngagementEmail.greeting=Bonjour {0} {1},
 ConsumerReportProEngagementEmail.reportDescription=Vous avez fait un signalement le {0} concernant une entreprise :
 ConsumerReportProEngagementEmail.companySiret=SIRET : <b>{0}</b>
 ConsumerReportProEngagementEmail.responseContent=Pour rappel, voici sa réponse :
+ConsumerReportProEngagementEmail.eightDaysAgoOther=Il y a 8 jours, l'entreprise a pris en compte votre signalement et a pris l'engagement suivant :
+ConsumerReportProEngagementEmail.eightDaysAgo=Il y a 8 jours, l'entreprise a pris en compte votre signalement et s'est engagée à
+ConsumerReportProEngagementEmail.proDidHonoured=Le professionnel nous a indiqué avoir tenu son engagement. Nous souhaiterions donc votre avis concernant celui-ci.
+ConsumerReportProEngagementEmail.proMayHaveHonoured=À ce jour, le professionnel ne nous a pas indiqué avoir tenu son engagement. Il est cependant possible qu'il ait tenu son engagement directement avec vous sans nous l'indiquer. Nous souhaiterions donc votre avis.
 ConsumerReportProEngagementEmail.satisfactionQuestion=La société a-t-elle tenu ses engagements ?
 ConsumerReportProEngagementEmail.clickYourChoice=Cliquez sur votre choix :
 ConsumerReportProEngagementEmail.satisfactionRequest=Si SignalConso vous donne satisfaction, n''hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> et <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
