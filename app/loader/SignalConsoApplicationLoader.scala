@@ -456,6 +456,7 @@ class SignalConsoComponents(
       reportRepository,
       eventRepository,
       responseConsumerReviewRepository,
+      reportEngagementReviewRepository,
       accessTokenRepository,
       arborescenceFrAsJson,
       arborescenceEnAsJson
