@@ -18,7 +18,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def deleteByReportId(uuidReport: UUID): Future[Int]
 
-  def deletePromiseOfAction(uuidReport: UUID): Future[Int]
+  def deleteEngagement(uuidReport: UUID): Future[Int]
 
   def getEvents(reportId: UUID, filter: EventFilter = EventFilter()): Future[List[Event]]
 

@@ -849,7 +849,7 @@ class ReportOrchestrator(
               reportId = report.id,
               promiseEventId = responseEvent.id,
               resolutionEventId = None,
-              expirationDate = now.plusDays(8)
+              expirationDate = now.plusDays(8) // We fix to 8 days at the moment
             )
           )
         case _ => Future.unit

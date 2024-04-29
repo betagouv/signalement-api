@@ -37,20 +37,20 @@ class EngagementRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
       .table(userRole)
       .filter(_.companyId inSetBind companyIds)
       .join(table)
-      .on { case (report, promise) => report.id === promise.reportId }
+      .on { case (report, engagement) => report.id === engagement.reportId }
       .join(EventTable.table)
-      .on { case ((_, promise), event) => promise.promiseEventId === event.id }
+      .on { case ((_, engagement), promiseEvent) => engagement.promiseEventId === promiseEvent.id }
       .joinLeft(EventTable.table)
-      .on { case (((_, promise), _), resolutionEvent) => promise.resolutionEventId === resolutionEvent.id }
+      .on { case (((_, engagement), _), resolutionEvent) => engagement.resolutionEventId === resolutionEvent.id }
       .result
   )
 
-  override def check(promiseId: EngagementId, resolutionEventId: UUID): Future[Int] = db.run(
-    table.filter(_.id === promiseId).map(_.resolutionEventId).update(Some(resolutionEventId))
+  override def check(engagementId: EngagementId, resolutionEventId: UUID): Future[Int] = db.run(
+    table.filter(_.id === engagementId).map(_.resolutionEventId).update(Some(resolutionEventId))
   )
 
-  override def uncheck(promiseId: EngagementId): Future[Int] = db.run(
-    table.filter(_.id === promiseId).map(_.resolutionEventId).update(None)
+  override def uncheck(engagementId: EngagementId): Future[Int] = db.run(
+    table.filter(_.id === engagementId).map(_.resolutionEventId).update(None)
   )
 
   override def listEngagementsExpiringAt(
@@ -61,11 +61,11 @@ class EngagementRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .filter(_.expirationDate >= ZonedDateTime.of(date, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime)
         .filter(_.expirationDate <= ZonedDateTime.of(date, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime)
         .join(ReportTable.table)
-        .on { case (promise, report) => promise.reportId === report.id }
+        .on { case (engagement, report) => engagement.reportId === report.id }
         .join(EventTable.table)
-        .on { case ((promise, _), event) => promise.promiseEventId === event.id }
+        .on { case ((engagement, _), event) => engagement.promiseEventId === event.id }
         .joinLeft(EventTable.table)
-        .on { case (((promise, _), _), resolutionEvent) => promise.resolutionEventId === resolutionEvent.id }
+        .on { case (((engagement, _), _), resolutionEvent) => engagement.resolutionEventId === resolutionEvent.id }
         .result
     )
 }

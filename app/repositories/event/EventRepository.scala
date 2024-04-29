@@ -45,11 +45,11 @@ class EventRepository(
         .delete
     )
 
-  override def deletePromiseOfAction(uuidReport: UUID): Future[Int] = db
+  override def deleteEngagement(uuidReport: UUID): Future[Int] = db
     .run(
       table
         .filter(_.reportId === uuidReport)
-        .filter(_.action === ActionEvent.REPORT_PRO_PROMISE_OF_ACTION_HONOURED.value)
+        .filter(_.action === ActionEvent.REPORT_PRO_ENGAGEMENT_HONOURED.value)
         .delete
     )
 

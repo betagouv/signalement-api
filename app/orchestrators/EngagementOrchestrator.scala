@@ -84,7 +84,7 @@ class EngagementOrchestrator(
           Some(proUser.id),
           OffsetDateTime.now(),
           EventType.PRO,
-          ActionEvent.REPORT_PRO_PROMISE_OF_ACTION_HONOURED,
+          ActionEvent.REPORT_PRO_ENGAGEMENT_HONOURED,
           Json.obj()
         )
       )
@@ -103,7 +103,7 @@ class EngagementOrchestrator(
         case _ => Future.failed(ReportNotFound(engagement.reportId))
       }
       _ <- engagementRepository.uncheck(engagementId)
-      _ <- eventRepository.deletePromiseOfAction(report.report.id)
+      _ <- eventRepository.deleteEngagement(report.report.id)
     } yield ()
 
   def removeEngagement(reportId: UUID): Future[Unit] =
