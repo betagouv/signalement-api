@@ -41,8 +41,8 @@ ConsumerReportAckProEmail.positive=Positive
 ConsumerReportAckProEmail.neutral=Neutral
 ConsumerReportAckProEmail.negative=Negative
 
-ConsumerReportProEngagementEmail.subject=Your feedback on the company's commitment regarding your report
-ConsumerReportProEngagementEmail.title=Your feedback on the company's commitment regarding your report
+ConsumerReportProEngagementEmail.subject=Your feedback on the company''s commitment regarding your report
+ConsumerReportProEngagementEmail.title=Your feedback on the company''s commitment regarding your report
 ConsumerReportProEngagementEmail.greeting=Hello {0} {1},
 ConsumerReportProEngagementEmail.reportDescription=You reported on {0} regarding a company:
 ConsumerReportProEngagementEmail.companySiret=SIRET: <b>{0}</b>
@@ -59,6 +59,9 @@ ConsumerReportProEngagementEmail.contributionThanks=Your feedback will be useful
 ConsumerReportProEngagementEmail.spreadTheWord=Feel free to mention SignalConso to your friends and family and help spread the word! Thank you.
 ConsumerReportProEngagementEmail.teamSignature=The SignalConso Team
 ConsumerReportProEngagementEmail.signalConsoExplanationHeader=Understanding SignalConso
+ConsumerReportProEngagementEmail.positive=Yes
+ConsumerReportProEngagementEmail.neutral=Partially
+ConsumerReportProEngagementEmail.negative=No
 
 
 ConsumerReportAckProEmailOnAdminCompletion.subject=Your report is resolved

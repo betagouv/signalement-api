@@ -291,7 +291,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     "details for consumer",
     Some("details for dgccrf"),
     List(reportResponseFile.id),
-    responseDetails = Some(ResponseDetails.REFUND),
+    responseDetails = Some(ResponseDetails.REMBOURSEMENT),
     otherResponseDetails = None
   )
   val reportResponseRejected =
@@ -300,7 +300,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       "details for consumer",
       Some("details for dgccrf"),
       List.empty,
-      responseDetails = Some(ResponseDetails.REFUND),
+      responseDetails = Some(ResponseDetails.REMBOURSEMENT),
       otherResponseDetails = None
     )
   val reportResponseNotConcerned =
@@ -309,7 +309,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       "details for consumer",
       Some("details for dgccrf"),
       List.empty,
-      responseDetails = Some(ResponseDetails.REFUND),
+      responseDetails = Some(ResponseDetails.REMBOURSEMENT),
       otherResponseDetails = None
     )
 
