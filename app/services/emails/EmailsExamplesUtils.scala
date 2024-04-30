@@ -69,7 +69,7 @@ object EmailsExamplesUtils {
 
   def genReportResponse = ReportResponse(
     responseType = ReportResponseType.ACCEPTED,
-    responseDetails = Some(ResponseDetails.REFUND),
+    responseDetails = Some(ResponseDetails.REMBOURSEMENT),
     otherResponseDetails = None,
     consumerDetails = "blablabla",
     dgccrfDetails = Some("ouplalalala"),
