@@ -20,14 +20,18 @@ object ReportResponse {
 
   def translateResponseDetails(reportResponse: ReportResponse): Option[String] =
     reportResponse.responseDetails.map {
-      case ResponseDetails.REFUND             => "procéder à un remboursement ou un avoir"
-      case ResponseDetails.REPLACEMENT        => "procéder à une réparation ou au remplacement du produit défectueux"
-      case ResponseDetails.DELIVERY           => "procéder à la livraison du bien ou du service"
-      case ResponseDetails.DIRECTIONS_FOR_USE => "apporter un conseil d’utilisation"
-      case ResponseDetails.CONFORM            => "se conformer à la réglementation en vigueur"
-      case ResponseDetails.ADAPT_PRACTICES    => "adapter mes pratiques"
-      case ResponseDetails.OTHER              => reportResponse.otherResponseDetails.getOrElse("")
-      case _                                  => ""
+      case ResponseDetails.REMBOURSEMENT => "procéder à un remboursement ou un avoir"
+      case ResponseDetails.REPARATION_OU_REMPLACEMENT =>
+        "procéder à une réparation ou au remplacement du produit défectueux"
+      case ResponseDetails.LIVRAISON                        => "procéder à la livraison du bien ou du service"
+      case ResponseDetails.CONSEIL_D_UTILISATION            => "apporter un conseil d’utilisation"
+      case ResponseDetails.ME_CONFORMER_A_LA_REGLEMENTATION => "se conformer à la réglementation en vigueur"
+      case ResponseDetails.ADAPTER_MES_PRATIQUES            => "adapter mes pratiques"
+      case ResponseDetails.TRANSMETTRE_AU_SERVICE_COMPETENT => ""
+      case ResponseDetails.DEMANDE_DE_PLUS_D_INFORMATIONS   => ""
+      case ResponseDetails.RESILIATION                      => ""
+      case ResponseDetails.AUTRE                            => reportResponse.otherResponseDetails.getOrElse("")
+      case _                                                => ""
     }
 }
 
@@ -55,22 +59,27 @@ object ResponseDetails extends PlayEnum[ResponseDetails] {
 
   override def values: IndexedSeq[ResponseDetails] = findValues
 
-  final case object REFUND             extends ResponseDetails
-  final case object REPLACEMENT        extends ResponseDetails
-  final case object DELIVERY           extends ResponseDetails
-  final case object DIRECTIONS_FOR_USE extends ResponseDetails
-  final case object CONFORM            extends ResponseDetails
-  final case object ADAPT_PRACTICES    extends ResponseDetails
+  final case object REMBOURSEMENT                    extends ResponseDetails
+  final case object REPARATION_OU_REMPLACEMENT       extends ResponseDetails
+  final case object LIVRAISON                        extends ResponseDetails
+  final case object CONSEIL_D_UTILISATION            extends ResponseDetails
+  final case object ME_CONFORMER_A_LA_REGLEMENTATION extends ResponseDetails
+  final case object ADAPTER_MES_PRATIQUES            extends ResponseDetails
+  final case object TRANSMETTRE_AU_SERVICE_COMPETENT extends ResponseDetails
+  final case object DEMANDE_DE_PLUS_D_INFORMATIONS   extends ResponseDetails
+  final case object RESILIATION                      extends ResponseDetails
 
-  final case object LAWFUL               extends ResponseDetails
-  final case object DID_NOT_HAPPEN       extends ResponseDetails
-  final case object WRONG_INTERPRETATION extends ResponseDetails
+  final case object PRATIQUE_LEGALE          extends ResponseDetails
+  final case object PRATIQUE_N_A_PAS_EU_LIEU extends ResponseDetails
+  final case object MAUVAISE_INTERPRETATION  extends ResponseDetails
+  final case object DEJA_REPONDU             extends ResponseDetails
+  final case object TRAITEMENT_EN_COURS      extends ResponseDetails
 
-  final case object PARTNERSHIP        extends ResponseDetails
-  final case object SAME_GROUP_COMPANY extends ResponseDetails
-  final case object HOMONYM            extends ResponseDetails
-  final case object UNKNOWN_COMPANY    extends ResponseDetails
-  final case object IDENTITY_FRAUD     extends ResponseDetails
+  final case object PARTENAIRE_COMMERCIAL     extends ResponseDetails
+  final case object ENTREPRISE_DU_MEME_GROUPE extends ResponseDetails
+  final case object HOMONYME                  extends ResponseDetails
+  final case object ENTREPRISE_INCONNUE       extends ResponseDetails
+  final case object USURPATION                extends ResponseDetails
 
-  final case object OTHER extends ResponseDetails
+  final case object AUTRE extends ResponseDetails
 }
