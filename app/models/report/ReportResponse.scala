@@ -20,7 +20,7 @@ object ReportResponse {
 
   def translateResponseDetails(reportResponse: ReportResponse): Option[String] =
     reportResponse.responseDetails.map {
-      case ResponseDetails.REMBOURSEMENT => "procéder à un remboursement ou un avoir"
+      case ResponseDetails.REMBOURSEMENT_OU_AVOIR => "procéder à un remboursement ou un avoir"
       case ResponseDetails.REPARATION_OU_REMPLACEMENT =>
         "procéder à une réparation ou au remplacement du produit défectueux"
       case ResponseDetails.LIVRAISON                        => "procéder à la livraison du bien ou du service"
@@ -59,7 +59,7 @@ object ResponseDetails extends PlayEnum[ResponseDetails] {
 
   override def values: IndexedSeq[ResponseDetails] = findValues
 
-  final case object REMBOURSEMENT                    extends ResponseDetails
+  final case object REMBOURSEMENT_OU_AVOIR           extends ResponseDetails
   final case object REPARATION_OU_REMPLACEMENT       extends ResponseDetails
   final case object LIVRAISON                        extends ResponseDetails
   final case object CONSEIL_D_UTILISATION            extends ResponseDetails
