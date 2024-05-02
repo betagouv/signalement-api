@@ -22,6 +22,13 @@ final case class EmailValidation(
   def isValid =
     this.lastValidationDate.isDefined && this.lastValidationDate.exists(_.isAfter(EmailValidationThreshold))
 
+  def getValidationStatus =
+    this.lastValidationDate match {
+      case Some(date) if date.isAfter(EmailValidationThreshold) => EmailValidationStatus.Valid
+      case Some(_)                                              => EmailValidationStatus.Expired
+      case None                                                 => EmailValidationStatus.Invalid
+    }
+
 }
 
 object EmailValidation {

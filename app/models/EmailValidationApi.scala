@@ -1,5 +1,7 @@
 package models
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import io.scalaland.chimney.dsl.TransformationOps
 import play.api.libs.json._
 import utils.EmailAddress
@@ -15,7 +17,7 @@ final case class EmailValidationApi(
     attempts: Int = 0,
     lastAttempt: Option[OffsetDateTime] = None,
     lastValidationDate: Option[OffsetDateTime] = None,
-    isValid: Boolean
+    validationStatus: EmailValidationStatus
 )
 
 object EmailValidationApi {
@@ -25,8 +27,19 @@ object EmailValidationApi {
     emailValidation
       .into[EmailValidationApi]
       .withFieldComputed(
-        _.isValid,
-        _.isValid
+        _.validationStatus,
+        _.getValidationStatus
       )
       .transform
+}
+
+sealed trait EmailValidationStatus extends EnumEntry
+
+object EmailValidationStatus extends PlayEnum[EmailValidationStatus] {
+
+  case object Valid   extends EmailValidationStatus
+  case object Expired extends EmailValidationStatus
+  case object Invalid extends EmailValidationStatus
+
+  override def values: IndexedSeq[EmailValidationStatus] = findValues
 }
