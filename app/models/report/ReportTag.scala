@@ -42,46 +42,60 @@ object ReportTag extends PlayEnum[ReportTag] {
 
   val ReportTagHiddenToProfessionnel = Seq(Bloctel, ReponseConso)
 
-  case object LitigeContractuel      extends ReportTag
-  case object Hygiene                extends ReportTag
-  case object ProduitDangereux       extends ReportTag
-  case object DemarchageADomicile    extends ReportTag
-  case object Ehpad                  extends ReportTag
-  case object DemarchageTelephonique extends ReportTag
-  case object DemarchageInternet     extends ReportTag
-  case object AbsenceDeMediateur     extends ReportTag
-  case object Bloctel                extends ReportTag
-  case object Influenceur            extends ReportTag
-  case object ReponseConso           extends ReportTag
-  case object Internet               extends ReportTag
-  case object ProduitIndustriel      extends ReportTag
-  case object ProduitAlimentaire     extends ReportTag
-  case object CompagnieAerienne      extends ReportTag
-  case object Resiliation            extends ReportTag
-  case object OpenFoodFacts          extends ReportTag
-  case object TransitionEcologique   extends ReportTag
+  case object LitigeContractuel           extends ReportTag
+  case object Hygiene                     extends ReportTag
+  case object ProduitDangereux            extends ReportTag
+  case object DemarchageADomicile         extends ReportTag
+  case object Ehpad                       extends ReportTag
+  case object DemarchageTelephonique      extends ReportTag
+  case object DemarchageInternet          extends ReportTag
+  case object AbsenceDeMediateur          extends ReportTag
+  case object Bloctel                     extends ReportTag
+  case object Influenceur                 extends ReportTag
+  case object ReponseConso                extends ReportTag
+  case object Internet                    extends ReportTag
+  case object ProduitIndustriel           extends ReportTag
+  case object ProduitAlimentaire          extends ReportTag
+  case object CompagnieAerienne           extends ReportTag
+  case object Resiliation                 extends ReportTag
+  case object OpenFoodFacts               extends ReportTag
+  case object TransitionEcologique        extends ReportTag
+  case object ProduitPerime               extends ReportTag
+  case object CommandeEffectuee           extends ReportTag
+  case object ImpressionTicket            extends ReportTag
+  case object QuantiteNonConforme         extends ReportTag
+  case object AppelCommercial             extends ReportTag
+  case object Prix                        extends ReportTag
+  case object AlimentationMaterielAnimaux extends ReportTag
 
   implicit class ReportTagTranslationOps(reportTag: ReportTag) {
 
     def translate(): String = reportTag match {
-      case LitigeContractuel      => "Litige contractuel"
-      case Hygiene                => "hygiène"
-      case ProduitDangereux       => "Produit dangereux"
-      case DemarchageADomicile    => "Démarchage à domicile"
-      case Ehpad                  => "Ehpad"
-      case DemarchageTelephonique => "Démarchage téléphonique"
-      case DemarchageInternet     => "Démarchage internet"
-      case AbsenceDeMediateur     => "Absence de médiateur"
-      case Bloctel                => "Bloctel"
-      case Influenceur            => "Influenceur"
-      case ReponseConso           => "ReponseConso"
-      case Internet               => "Internet"
-      case ProduitIndustriel      => "Produit industriel"
-      case ProduitAlimentaire     => "Produit alimentaire"
-      case CompagnieAerienne      => "Compagnie aerienne"
-      case Resiliation            => "Résiliation"
-      case OpenFoodFacts          => "OpenFoodFacts"
-      case TransitionEcologique   => "Transition écologique"
+      case LitigeContractuel           => "Litige contractuel"
+      case Hygiene                     => "hygiène"
+      case ProduitDangereux            => "Produit dangereux"
+      case DemarchageADomicile         => "Démarchage à domicile"
+      case Ehpad                       => "Ehpad"
+      case DemarchageTelephonique      => "Démarchage téléphonique"
+      case DemarchageInternet          => "Démarchage internet"
+      case AbsenceDeMediateur          => "Absence de médiateur"
+      case Bloctel                     => "Bloctel"
+      case Influenceur                 => "Influenceur"
+      case ReponseConso                => "ReponseConso"
+      case Internet                    => "Internet"
+      case ProduitIndustriel           => "Produit industriel"
+      case ProduitAlimentaire          => "Produit alimentaire"
+      case CompagnieAerienne           => "Compagnie aerienne"
+      case Resiliation                 => "Résiliation"
+      case OpenFoodFacts               => "OpenFoodFacts"
+      case TransitionEcologique        => "Transition écologique"
+      case ProduitPerime               => "Produit périmé"
+      case CommandeEffectuee           => "Commande effectuée"
+      case ImpressionTicket            => "Impression ticket"
+      case QuantiteNonConforme         => "Quantité non conforme"
+      case AppelCommercial             => "Appel commercial"
+      case Prix                        => "Prix"
+      case AlimentationMaterielAnimaux => "Alimentation matériel animaux"
     }
   }
 
