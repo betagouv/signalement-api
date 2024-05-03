@@ -75,7 +75,7 @@ ConsumerReportAckProEmailOnAdminCompletion.reportDescription=You submitted a rep
 ConsumerReportAckProEmailOnAdminCompletion.companySiret=SIRET: <b>{0}</b>
 ConsumerReportAckProEmailOnAdminCompletion.responseHeader=You have informed us that your issue has been resolved outside the SignalConso platform.
 ConsumerReportAckProEmailOnAdminCompletion.newReportLink=Feel free to submit a new report if you find that the issue has not been corrected. This way, the consumer protection authorities will be better informed of the situation.
-ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest=If SignalConso satisfies you, don't hesitate to support us with a post on <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> and <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
+ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest=If SignalConso satisfies you, don''t hesitate to support us with a post on <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> and <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
 ConsumerReportAckProEmailOnAdminCompletion.serviceImprovement=Please share your feedback about your SignalConso experience and let us know your satisfaction, the issues you encountered, or your improvement suggestions on <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, the government platform dedicated to improving public services.
 ConsumerReportAckProEmailOnAdminCompletion.contributionThanks=Your contribution helps other consumers, and it is essential for our continuous development!
 ConsumerReportAckProEmailOnAdminCompletion.spreadTheWord=Feel free to spread the word about SignalConso among your network and encourage your contacts to do the same! Thank you!
@@ -123,7 +123,7 @@ ReportAckEmail.foreignCompanyReported=You have stated that the company is based 
 ReportAckEmail.reportNotTransmittedToCompany=As indicated on our website, your report will not be forwarded to the company.
 ReportAckEmail.submitToEuropeanConsumersCenter=We recommend submitting your report to the <a href="{0}">Centre Européen des Consommateurs France</a>, who will be able to assist you in resolving your issue. <a href="{0}">{0}</a>
 ReportAckEmail.submitToAndorraCommerceAndConsumption=We invite you to submit your report directly to the Andorra Commerce and Consumption Service: <a href="{0}">{0}</a>
-ReportAckEmail.fraudInvestigatorsTransferReport=However, the Fraud Control investigation team will forward your report to the country's relevant authorities.
+ReportAckEmail.fraudInvestigatorsTransferReport=However, the Fraud Control investigation team will forward your report to the country''s relevant authorities.
 ReportAckEmail.submitToEconsumerGov=To help authorities fight fraud internationally, we recommend submitting your report on <a href="{0}">{0}</a>
 ReportAckEmail.questionSubmitted=Your question has been successfully registered in SignalConso.
 ReportAckEmail.respondentWillContactIfNeeded=A member of staff will get back to you if they need any more details. Shortly afterwards, you will receive a final response or be referred to the appropriate department.
@@ -144,7 +144,7 @@ ReportAckEmail.reportSentToFraudInvestigators=If, after multiple reminders, the 
 ReportAckEmail.readOrNot=In any event, the Fraud Control investigation team will also be made aware of your report.
 ReportAckEmail.knowYourRightsForAirCompensation=If you would like to learn more about your right to compensation following a flight cancellation, delay, denied boarding or a downgrade, visit the <a href="{0}">French Civil Aviation Authority</a> website.
 ReportAckEmail.currentProductRecallCampaigns=Ongoing withdrawals/recalls of food and drink products:
-ReportAckEmail.doNotConsumeProductsAndTakePhotos=Consumers in possession of these products are asked not to use them and instead to dispose of them immediately (before disposal, take photos of the packaging including the product references, including the product's use-by date, batch number and barcode). Individuals who may have consumed these products and who experience symptoms should consult their physician or visit their local emergency department. In no symptoms are present, there is no cause for alarm.
+ReportAckEmail.doNotConsumeProductsAndTakePhotos=Consumers in possession of these products are asked not to use them and instead to dispose of them immediately (before disposal, take photos of the packaging including the product references, including the product''s use-by date, batch number and barcode). Individuals who may have consumed these products and who experience symptoms should consult their physician or visit their local emergency department. In no symptoms are present, there is no cause for alarm.
 ReportAckEmail.takePhotosBeforeDisposal=(take photos of the packaging containing product details beforehand: expiration date, lot number, barcode, etc.).
 ReportAckEmail.seekMedicalAdviceIfSymptoms=Individuals who have consumed these products and experience symptoms are advised to consult their general practitioner or go to the emergency room. If there are no symptoms, there is no need to be concerned.
 ReportAckEmail.goodbyeSignalConso=See you soon on SignalConso!
@@ -176,13 +176,13 @@ reportPDF.report.detailHeader=Report Details
 reportPDF.report.influencerHeader=Identified Influencer
 reportPDF.report.influencerName=Pseudonym: {0}
 reportPDF.report.influencerPlatform=Platform: {0}
-reportPDF.report.responseHeader=Professional's Response
+reportPDF.report.responseHeader=Professional''s Response
 reportPDF.report.responseAccepted=Report Acknowledged
 reportPDF.report.responseRejected=Unfounded Report
 reportPDF.report.responseNotConcerned=Establishment Not Affected by the Report
 reportPDF.report.dgccrfDetailsHeader=Additional Information for Fraud Control
-reportPDF.report.consumerResponseHeader=Consumer's Response
-reportPDF.report.consumerResponseDetailHeader=Consumer's Evaluation of Professional's Response:
+reportPDF.report.consumerResponseHeader=Consumer''s Response
+reportPDF.report.consumerResponseDetailHeader=Consumer''s Evaluation of Professional''s Response:
 reportPDF.report.consumerResponsePositive=Positive
 reportPDF.report.consumerResponseNegative=Negative
 reportPDF.report.consumerResponseNeutral=Neutral
