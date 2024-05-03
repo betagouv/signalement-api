@@ -28,16 +28,11 @@
         <i>"@reportResponse.consumerDetails"</i>
     </p>
 
-  @reportResponse.otherResponseDetails match {
-  case Some(otherResponseDetails) => {
-        <p>
-          @Messages("ConsumerReportProEngagementEmail.eightDaysAgoOther")
-          <br />
-          <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
-        </p>
-    }
-    case None => {<p>@Messages("ConsumerReportProEngagementEmail.eightDaysAgo") <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b></p>}
-  }
+    <p>
+        @Messages("ConsumerReportProEngagementEmail.eightDaysAgo")
+        <br />
+        <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
+    </p>
 
     @if(isResolved) {
         <p>@Messages("ConsumerReportProEngagementEmail.proDidHonoured")</p>

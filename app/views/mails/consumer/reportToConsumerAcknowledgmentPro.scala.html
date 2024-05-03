@@ -5,6 +5,7 @@
 @import models.report.ReportResponse
 @import models.report.review.ResponseEvaluation
 @import models.company.Company
+@import models.report.ReportResponseType
 @(report: Report,maybeCompany: Option[Company], reportResponse: ReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
 
 @views.html.mails.layout(Messages("ConsumerReportAckProEmail.title")) {
@@ -34,12 +35,36 @@
         </p>
     }
 
+    @if(reportResponse.responseType == ReportResponseType.REJECTED) {
+        <p>
+            @Messages("ConsumerReportAckProEmail.signalementInfonde")
+            <br />
+            <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+        </p>
+    }
+
+    @if(reportResponse.responseType == ReportResponseType.NOT_CONCERNED) {
+        <p>
+            @Messages("ConsumerReportAckProEmail.signalementNonConcerne")
+            <br />
+            <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+        </p>
+    }
 
     <p>@Messages("ConsumerReportAckProEmail.responseContent")</p>
 
     <p>
         <i>"@reportResponse.consumerDetails"</i>
     </p>
+
+  @if(reportResponse.responseType == ReportResponseType.ACCEPTED) {
+      <p>
+          @Messages("ConsumerReportAckProEmail.signalementAccepte")
+          <br />
+          <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+      </p>
+      <p>@Messages("ConsumerReportAckProEmail.email8DaysLater")</p>
+  }
 
     <p>
         <b>@Messages("ConsumerReportAckProEmail.satisfactionQuestion")</b> @Messages("ConsumerReportAckProEmail.clickYourChoice")
