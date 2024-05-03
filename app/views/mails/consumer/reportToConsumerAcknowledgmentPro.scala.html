@@ -37,7 +37,7 @@
 
     @if(reportResponse.responseType == ReportResponseType.REJECTED) {
         <p>
-            L'entreprise a considéré que ce signalement était infondé :
+            @Messages("ConsumerReportAckProEmail.signalementInfonde")
             <br />
             <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
         </p>
@@ -45,7 +45,7 @@
 
     @if(reportResponse.responseType == ReportResponseType.NOT_CONCERNED) {
         <p>
-            L'entreprise a déclaré que ce signalement ne concernait pas son entreprise :
+            @Messages("ConsumerReportAckProEmail.signalementNonConcerne")
             <br />
             <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
         </p>
@@ -59,11 +59,11 @@
 
   @if(reportResponse.responseType == ReportResponseType.ACCEPTED) {
       <p>
-          Avec sa réponse, l'entreprise s'est engagée à prendre en compte votre signalement. Elle a pris l'engagement suivant :
+          @Messages("ConsumerReportAckProEmail.signalementAccepte")
           <br />
           <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
       </p>
-      <p>Vous recevrez un nouvel email dans 8 jours pour vous demander si l'entreprise a bien tenu son engagement.</p>
+      <p>@Messages("ConsumerReportAckProEmail.email8DaysLater")</p>
   }
 
     <p>
