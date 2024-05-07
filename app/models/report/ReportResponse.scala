@@ -20,18 +20,29 @@ object ReportResponse {
 
   def translateResponseDetails(reportResponse: ReportResponse): Option[String] =
     reportResponse.responseDetails.map {
-      case ResponseDetails.REMBOURSEMENT_OU_AVOIR => "procéder à un remboursement ou un avoir"
+      case ResponseDetails.REMBOURSEMENT_OU_AVOIR => "Je vais procéder à un remboursement ou un avoir"
       case ResponseDetails.REPARATION_OU_REMPLACEMENT =>
-        "procéder à une réparation ou au remplacement du produit défectueux"
-      case ResponseDetails.LIVRAISON                        => "procéder à la livraison du bien ou du service"
-      case ResponseDetails.CONSEIL_D_UTILISATION            => "apporter un conseil d’utilisation"
-      case ResponseDetails.ME_CONFORMER_A_LA_REGLEMENTATION => "se conformer à la réglementation en vigueur"
-      case ResponseDetails.ADAPTER_MES_PRATIQUES            => "adapter mes pratiques"
-      case ResponseDetails.TRANSMETTRE_AU_SERVICE_COMPETENT => ""
-      case ResponseDetails.DEMANDE_DE_PLUS_D_INFORMATIONS   => ""
-      case ResponseDetails.RESILIATION                      => ""
-      case ResponseDetails.AUTRE                            => reportResponse.otherResponseDetails.getOrElse("")
-      case _                                                => ""
+        "Je vais procéder à une réparation ou au remplacement du produit défectueux"
+      case ResponseDetails.LIVRAISON                        => "Je vais procéder à la livraison du bien ou du service"
+      case ResponseDetails.CONSEIL_D_UTILISATION            => "Je souhaite apporter un conseil d’utilisation"
+      case ResponseDetails.ME_CONFORMER_A_LA_REGLEMENTATION => "Je vais me conformer à la réglementation en vigueur"
+      case ResponseDetails.ADAPTER_MES_PRATIQUES            => "Je vais adapter mes pratiques"
+      case ResponseDetails.TRANSMETTRE_AU_SERVICE_COMPETENT => "Je vais transmettre la demande au service compétent"
+      case ResponseDetails.DEMANDE_DE_PLUS_D_INFORMATIONS =>
+        "Je vais demander davantage d’informations au consommateur afin de lui apporter une réponse"
+      case ResponseDetails.RESILIATION              => "Je vais procéder à la résiliation du contrat"
+      case ResponseDetails.PRATIQUE_LEGALE          => "La pratique signalée est légale"
+      case ResponseDetails.PRATIQUE_N_A_PAS_EU_LIEU => "La pratique signalée n’a pas eu lieu"
+      case ResponseDetails.MAUVAISE_INTERPRETATION  => "Il s’agit d’une mauvaise interprétation des faits"
+      case ResponseDetails.DEJA_REPONDU             => "J’ai déjà répondu à ce consommateur sur la plateforme"
+      case ResponseDetails.TRAITEMENT_EN_COURS =>
+        "Le traitement de ce cas est déjà en cours auprès de notre service client"
+      case ResponseDetails.PARTENAIRE_COMMERCIAL     => "Il concerne un de nos partenaires commerciaux / vendeurs tiers"
+      case ResponseDetails.ENTREPRISE_DU_MEME_GROUPE => "Il concerne une entreprise du même groupe"
+      case ResponseDetails.HOMONYME                  => "Il concerne une société homonyme"
+      case ResponseDetails.ENTREPRISE_INCONNUE       => "Il concerne une société que je ne connais pas"
+      case ResponseDetails.USURPATION                => "Il s’agit d’une usurpation d’identité professionnelle"
+      case ResponseDetails.AUTRE                     => reportResponse.otherResponseDetails.getOrElse("")
     }
 }
 
