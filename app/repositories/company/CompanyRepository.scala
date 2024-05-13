@@ -21,6 +21,7 @@ import utils.SIREN
 import utils.SIRET
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
+import slick.lifted.Rep
 import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.Departments.toPostalCode
@@ -39,6 +40,9 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   override val table: TableQuery[CompanyTable] = CompanyTable.table
   import dbConfig._
+
+  private def least(elements: Rep[Option[Double]]*): Rep[Option[Double]] =
+    SimpleFunction[Option[Double]]("least").apply(elements)
 
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
@@ -95,10 +99,23 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET.fromUnsafe(q))
         case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case SearchCompanyIdentityName(q) =>
-          query.filter(tuple =>
-            (tuple._1.name.toLowerCase like s"%${q.toLowerCase}%") || (tuple._1.brand
-              .map(_.toLowerCase) like s"%${q.toLowerCase}%")
-          )
+          query
+            .filter(tuple =>
+              least(
+                tuple._1.name.? <-> q,
+                tuple._1.brand <-> q,
+                tuple._1.commercialName <-> q,
+                tuple._1.establishmentCommercialName <-> q
+              ).map(dist => dist < 0.68).getOrElse(false)
+            )
+            .sortBy(tuple =>
+              least(
+                tuple._1.name.? <-> q,
+                tuple._1.brand <-> q,
+                tuple._1.commercialName <-> q,
+                tuple._1.establishmentCommercialName <-> q
+              )
+            )
         case id: SearchCompanyIdentityId => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
