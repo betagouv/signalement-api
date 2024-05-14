@@ -45,6 +45,13 @@
             @views.html.fragments.address(company)
             </div>
 
+            <div class="creationDate">
+            Le @{
+                val now = java.time.LocalDate.now()
+                now.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            }
+            </div>
+
             <div class="content mt-3">
 
                 <p class="text-bold">
@@ -70,6 +77,10 @@
 
                 <p class="mt-3">
                     Si vous avez toujours accès à votre/vos compte(s), n'hésitez pas à vérifier vos signalements, à répondre au consommateur ou à faire part de vos observations si vous estimez que le signalement est infondé.
+                </p>
+
+                <p class="mt-3">
+                    Si ces signalements sont expirés à la date de réception du présent courrier, vous les retrouverez dans la liste de vos signalements clôturés. Si vous souhaitez y répondre, vous pouvez demander une réouverture exceptionnelle en contactant notre support par email, en indiquant obligatoirement votre numéro de SIRET dans l’objet de votre mail. Vous disposerez alors de 3 jours pour y répondre.
                 </p>
 
                 <p class="mt-3">
