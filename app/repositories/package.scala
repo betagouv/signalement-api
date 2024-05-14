@@ -13,7 +13,11 @@ package object repositories {
 
     def withPagination(
         db: JdbcBackend#DatabaseDef
-    )(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
+    )(
+        maybeOffset: Option[Long],
+        maybeLimit: Option[Int],
+        maybePreliminaryAction: Option[DBIO[Int]] = None
+    ): Future[PaginatedResult[B]] = {
 
       val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
       val limit  = maybeLimit.map(Math.max(_, 0))
@@ -21,8 +25,31 @@ package object repositories {
       val queryWithOffset         = query.drop(offset)
       val queryWithOffsetAndLimit = limit.map(l => queryWithOffset.take(l)).getOrElse(queryWithOffset)
 
-      val resultF: Future[Seq[B]] = db.run(queryWithOffsetAndLimit.result)
-      val countF: Future[Int]     = db.run(query.length.result)
+      val resultF: Future[Seq[B]] = db.run(
+        maybePreliminaryAction match {
+          case Some(action) =>
+            (for {
+              _      <- action
+              result <- queryWithOffsetAndLimit.result
+            } yield result).transactionally
+
+          case None => queryWithOffsetAndLimit.result
+        }
+      )
+
+      val countF: Future[Int] = db.run(
+        maybePreliminaryAction match {
+          case Some(action) =>
+            (for {
+              _      <- action
+              result <- query.length.result
+            } yield result).transactionally
+
+          case None => query.length.result
+
+        }
+      )
+
       for {
         result <- resultF
         count  <- countF

@@ -90,6 +90,13 @@ body, div {
     width: 8cm;
 }
 
+.creationDate {
+    position: absolute;
+    top: 7.5cm;
+    left: 0.5cm;
+    right: 0.5cm;
+}
+
 .content {
     position: absolute;
     top: 8cm;

@@ -55,6 +55,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .filter(_._2.email === emailWithAccess)
       .map(_._1.companyId)
 
+    val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.similarity_threshold = 0.32"""
+
     val query = table
       .joinLeft(ReportTable.table(Some(userRole)))
       .on(_.id === _.companyId)
@@ -93,6 +95,12 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         )
       }
       .sortBy(_._2.desc)
+
+    val maybePreliminaryAction = search.identity.flatMap {
+      case SearchCompanyIdentityName(_) => Some(setThreshold)
+      case _                            => None
+    }
+
     search.identity
       .map {
         case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
@@ -101,12 +109,10 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         case SearchCompanyIdentityName(q) =>
           query
             .filter(tuple =>
-              least(
-                tuple._1.name.? <-> q,
-                tuple._1.brand <-> q,
-                tuple._1.commercialName <-> q,
-                tuple._1.establishmentCommercialName <-> q
-              ).map(dist => dist < 0.68).getOrElse(false)
+              tuple._1.name.?                        % q ||
+                tuple._1.brand                       % q ||
+                tuple._1.commercialName              % q ||
+                tuple._1.establishmentCommercialName % q
             )
             .sortBy(tuple =>
               least(
@@ -122,7 +128,12 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .filterOpt(search.emailsWithAccess) { case (table, email) =>
         table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
       }
-      .withPagination(db)(maybeOffset = paginate.offset, maybeLimit = paginate.limit)
+      .withPagination(db)(
+        maybeOffset = paginate.offset,
+        maybeLimit = paginate.limit,
+        maybePreliminaryAction = maybePreliminaryAction
+      )
+
   }
 
   override def getOrCreate(siret: SIRET, data: Company): Future[Company] =
