@@ -86,6 +86,10 @@ class AdminController(
       Some(genReport.expirationDate.toLocalDate),
       "123456"
     )(frontRoute = frontRoute, contactAddress = contactAddress),
+    "accountFollowUp" -> views.html.pdfs.accountFollowUp(
+      genCompany,
+      "123456"
+    )(frontRoute = frontRoute, contactAddress = contactAddress),
     "report" -> views.html.pdfs.report(
       genReport,
       Some(genCompany),
