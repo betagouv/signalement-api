@@ -23,7 +23,10 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.Cookie
+import play.api.mvc.CookieHeaderEncoding
 import play.api.mvc.EssentialFilter
+import play.api.mvc.request.DefaultRequestFactory
+import play.api.mvc.request.RequestFactory
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import pureconfig.ConfigConvert
@@ -57,12 +60,12 @@ import repositories.dataeconomie.DataEconomieRepository
 import repositories.dataeconomie.DataEconomieRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
+import repositories.engagement.EngagementRepository
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
 import repositories.probe.ProbeRepository
-import repositories.engagement.EngagementRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -822,5 +825,11 @@ class SignalConsoComponents(
 
   override def httpFilters: Seq[EssentialFilter] =
     Seq(new LoggingFilter(), securityHeadersFilter, allowedHostsFilter, corsFilter)
+
+  override lazy val requestFactory: RequestFactory = new DefaultRequestFactory(httpConfiguration) {
+    override val cookieHeaderEncoding: CookieHeaderEncoding = new CustomCookieHeaderEncoding(
+      applicationConfiguration.cookie
+    )
+  }
 
 }
