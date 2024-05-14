@@ -164,13 +164,11 @@ class CompanyOrchestrator(
     logger.debug(s"searchCompaniesByHost $url")
     for {
       companiesByUrl <- websiteRepository.searchCompaniesByUrl(url)
-      similarHosts = companiesByUrl
-        .filterNot(x => URL(url).getHost.contains(x._1.host))
-        .map(w => WebsiteHost(w._1.host))
-        .distinct
+      (exact, similar) = companiesByUrl.partition(x => URL(url).getHost.contains(x._1.host))
+      similarHosts = similar.distinct
         .take(3)
-      exactMatch = companiesByUrl
-        .filter(x => URL(url).getHost.contains(x._1.host))
+        .map(w => WebsiteHost(w._1.host))
+      exactMatch = exact
         .map { case (website, company) =>
           CompanySearchResultApi.fromCompany(company, website)
         }

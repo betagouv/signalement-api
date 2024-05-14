@@ -488,7 +488,7 @@ object ReportRepository {
       .filterOpt(filter.companyName) { case (table, companyName) =>
         table.companyName like s"${companyName}%"
       }
-      .filterIf(filter.companyCountries.nonEmpty) { case table =>
+      .filterIf(filter.companyCountries.nonEmpty) { table =>
         table.companyCountry
           .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
           .getOrElse(false)
@@ -520,9 +520,7 @@ object ReportRepository {
           table.category === category
         }
       }
-      .filterIf(filter.status.nonEmpty) { case table =>
-        table.status.inSet(filter.status.map(_.entryName))
-      }
+      .filterIf(filter.status.nonEmpty)(table => table.status.inSet(filter.status.map(_.entryName)))
       .filterIf(filter.withTags.nonEmpty) { table =>
         table.tags @& filter.withTags.toList.bind
       }
