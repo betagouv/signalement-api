@@ -541,7 +541,7 @@ class ReportOrchestrator(
   private def isReportTooOld(report: Report) =
     report.creationDate.isBefore(OffsetDateTime.now().minusDays(ReportCompanyChangeThresholdInDays))
 
-  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, requestingUserId: UUID): Future[Report] = {
+  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, requestingUserId: UUID): Future[Report] =
     for {
       existingReport <- reportRepository.get(reportId).flatMap {
         case Some(report) => Future.successful(report)
@@ -549,7 +549,7 @@ class ReportOrchestrator(
       }
       _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
       isSameCompany = existingReport.companySiret.forall(_ == reportCompany.siret)
-      _ <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
+      _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
       company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
       updatedReport <- updateReportCompany_(
         existingReport,
@@ -557,7 +557,6 @@ class ReportOrchestrator(
         requestingUserId
       )
     } yield updatedReport
-  }
 
   private def updateReportCompany_(
       existingReport: Report,
@@ -1044,5 +1043,5 @@ class ReportOrchestrator(
 }
 
 object ReportOrchestrator {
-  val ReportCompanyChangeThresholdInDays : Long = 30L
+  val ReportCompanyChangeThresholdInDays: Long = 30L
 }
