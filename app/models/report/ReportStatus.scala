@@ -45,8 +45,17 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   def hasResponse(report: Report): Boolean = statusWithProResponse.contains(report.status)
 
-  def isFinal(status: ReportStatus): Boolean =
-    Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)
+//  def isFinal(status: ReportStatus): Boolean =
+//    Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)
+//
+//  def isNotFinal(status: ReportStatus) = !isFinal(status)
+
+  implicit class ReportStatusOps(reportStatus: ReportStatus) {
+    def isFinal: Boolean =
+      Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(reportStatus)
+
+    def isNotFinal = !isFinal
+  }
 
   def translate(status: ReportStatus, userRole: UserRole): String = {
     def isPro = userRole == UserRole.Professionnel
