@@ -75,7 +75,7 @@ case class Report(
 
   def isReadByPro = ReportStatus.statusReadByPro.contains(status)
 
-  def isInFinalStatus = ReportStatus.isFinal(status)
+  def isInFinalStatus = status.isFinal
 }
 
 object Report {
@@ -234,23 +234,6 @@ object DeprecatedCompanyWithNbReports {
 
   implicit val paginatedCompanyWithNbReportsWriter: OWrites[PaginatedResult[DeprecatedCompanyWithNbReports]] =
     Json.writes[PaginatedResult[DeprecatedCompanyWithNbReports]]
-}
-
-case class ReportCompany(
-    name: String,
-    commercialName: Option[String],
-    establishmentCommercialName: Option[String],
-    brand: Option[String],
-    address: Address,
-    siret: SIRET,
-    activityCode: Option[String],
-    isHeadOffice: Boolean,
-    isOpen: Boolean,
-    isPublic: Boolean
-)
-
-object ReportCompany {
-  implicit val format: OFormat[ReportCompany] = Json.format[ReportCompany]
 }
 
 case class ReportConsumerUpdate(

@@ -75,9 +75,8 @@ class ReportController(
         reportCompany <- request.parseBody[ReportCompany]()
         result <- reportOrchestrator
           .updateReportCompany(uuid, reportCompany, request.identity.id)
-          .map {
-            case Some(report) => Ok(Json.toJson(report))
-            case None         => NotFound
+          .map { report =>
+            Ok(Json.toJson(report))
           }
       } yield result
     }

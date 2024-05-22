@@ -24,6 +24,7 @@ import models.report._
 import models.report.reportmetadata.ReportWithMetadata
 import models.token.TokenKind.CompanyInit
 import models.website.Website
+import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -119,7 +120,7 @@ class ReportOrchestrator(
         )
     } yield token.token
 
-  private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
+  private def notifyProfessionalOfNewReportAndUpdateStatus(report: Report, company: Company): Future[Report] =
     for {
       maybeCompanyUsers <- companiesVisibilityOrchestrator
         .fetchUsersWithHeadOffices(company.siret)
@@ -274,13 +275,14 @@ class ReportOrchestrator(
       maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      maybeCompanyWithUsers <- maybeCompany.map { company =>
-        for {
-          users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
-        } yield (company, users)
-      }.sequence
+      maybeCompanyWithUsers <- maybeCompany.traverse(company =>
+        companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+      )
       reportCreationDate = OffsetDateTime.now()
-      expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
+      expirationDate = chooseExpirationDate(
+        baseDate = reportCreationDate,
+        companyHasUsers = maybeCompanyWithUsers.exists(_.nonEmpty)
+      )
       reportToCreate = draftReport.generateReport(
         maybeCompany.map(_.id),
         maybeCompany,
@@ -297,7 +299,7 @@ class ReportOrchestrator(
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
-  def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
+  private def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
     draftReport.metadata
       .map { metadataDraft =>
         val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)
@@ -308,19 +310,16 @@ class ReportOrchestrator(
   def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
     val maybeCompanyId     = draftReport.companySiret.map(_ => UUID.randomUUID())
     val reportCreationDate = OffsetDateTime.now()
-    val expirationDate     = chooseExpirationDate(baseDate = reportCreationDate, None)
-    draftReport.generateReport(maybeCompanyId, None, reportCreationDate, expirationDate)
+    draftReport.generateReport(maybeCompanyId, None, reportCreationDate, reportCreationDate)
   }
 
   private def chooseExpirationDate(
       baseDate: OffsetDateTime,
-      maybeCompanyWithUsers: Option[(Company, List[User])]
+      companyHasUsers: Boolean
   ): OffsetDateTime = {
     val delayIfCompanyHasNoUsers = Period.ofDays(60)
     val delayIfCompanyHasUsers   = Period.ofDays(25)
-    val delay =
-      if (maybeCompanyWithUsers.exists(_._2.nonEmpty)) delayIfCompanyHasUsers
-      else delayIfCompanyHasNoUsers
+    val delay                    = if (companyHasUsers) delayIfCompanyHasUsers else delayIfCompanyHasNoUsers
     baseDate.plus(delay)
   }
 
@@ -360,7 +359,7 @@ class ReportOrchestrator(
   private def notifyProfessionalIfNeeded(maybeCompany: Option[Company], report: Report) =
     (report.status, maybeCompany) match {
       case (ReportStatus.TraitementEnCours, Some(company)) =>
-        notifyProfessionalOfNewReport(report, company)
+        notifyProfessionalOfNewReportAndUpdateStatus(report, company)
       case _ => Future.successful(report)
     }
 
@@ -539,107 +538,93 @@ class ReportOrchestrator(
       _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
     } yield reportWithNewData
 
-  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
+  private def isReportTooOld(report: Report) =
+    report.creationDate.isBefore(OffsetDateTime.now().minusDays(ReportCompanyChangeThresholdInDays))
+
+  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, requestingUserId: UUID): Future[Report] =
     for {
-      existingReport <- reportRepository.get(reportId)
-      company <- companyRepository.getOrCreate(
-        reportCompany.siret,
-        Company(
-          siret = reportCompany.siret,
-          name = reportCompany.name,
-          address = reportCompany.address,
-          activityCode = reportCompany.activityCode,
-          isHeadOffice = reportCompany.isHeadOffice,
-          isOpen = reportCompany.isOpen,
-          isPublic = reportCompany.isPublic,
-          brand = reportCompany.brand,
-          commercialName = reportCompany.commercialName,
-          establishmentCommercialName = reportCompany.establishmentCommercialName
+      existingReport <- reportRepository.get(reportId).flatMap {
+        case Some(report) => Future.successful(report)
+        case None         => Future.failed(ReportNotFound(reportId))
+      }
+      _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
+      isSameCompany = existingReport.companySiret.forall(_ == reportCompany.siret)
+      _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
+      company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
+      updatedReport <- updateReportCompany_(
+        existingReport,
+        company,
+        requestingUserId
+      )
+    } yield updatedReport
+
+  private def updateReportCompany_(
+      existingReport: Report,
+      company: Company,
+      adminUserId: UUID
+  ): Future[Report] = {
+    val updateDateTime = OffsetDateTime.now()
+
+    val newReportStatus = Report.initialStatus(
+      employeeConsumer = existingReport.employeeConsumer,
+      visibleToPro = existingReport.visibleToPro,
+      companySiret = existingReport.companySiret,
+      companyCountry = existingReport.companyAddress.country
+    )
+
+    for {
+
+      newExpirationDate <-
+        if (newReportStatus.isNotFinal) {
+          companiesVisibilityOrchestrator
+            .fetchUsersWithHeadOffices(company.siret)
+            .map { companyAndHeadOfficeUsers =>
+              chooseExpirationDate(baseDate = updateDateTime, companyHasUsers = companyAndHeadOfficeUsers.nonEmpty)
+            }
+        } else Future.successful(existingReport.expirationDate)
+
+      reportWithNewCompany <- reportRepository.update(
+        existingReport.id,
+        existingReport.copy(
+          companyId = Some(company.id),
+          companyName = Some(company.name),
+          companyAddress = company.address,
+          companySiret = Some(company.siret),
+          status = newReportStatus,
+          expirationDate = newExpirationDate
         )
       )
-      users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
-      companyWithUsers  = (company, users)
-      updateCompanyDate = OffsetDateTime.now()
-      // Update the company
-      reportWithNewData <- existingReport match {
-        case Some(report) =>
-          reportRepository
-            .update(
-              report.id,
-              report.copy(
-                companyId = Some(company.id),
-                companyName = Some(reportCompany.name),
-                companyAddress = reportCompany.address,
-                companySiret = Some(reportCompany.siret)
-              )
-            )
-            .map(Some(_))
-        case _ => Future(None)
-      }
-      // Update the status if needed
-      reportWithNewStatus <- reportWithNewData
-        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .map(report =>
-          reportRepository
-            .update(
-              report.id,
-              report.copy(
-                status = Report.initialStatus(
-                  employeeConsumer = report.employeeConsumer,
-                  visibleToPro = report.visibleToPro,
-                  companySiret = report.companySiret,
-                  companyCountry = report.companyAddress.country
-                )
-              )
-            )
-            .map(Some(_))
-        )
-        .getOrElse(Future(reportWithNewData))
-      // Update the expiration date if needed
-      reportWithNewStatusAndExpirationDate <- reportWithNewStatus
-        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .filterNot(_.isInFinalStatus)
-        .map(report =>
-          reportRepository
-            .update(
-              report.id,
-              report.copy(
-                expirationDate = chooseExpirationDate(baseDate = updateCompanyDate, Some(companyWithUsers))
-              )
-            )
-            .map(Some(_))
-        )
-        .getOrElse(Future(reportWithNewStatus))
       // Notify the pro if needed
-      updatedReport <- reportWithNewStatusAndExpirationDate
-        .filter(_.status == ReportStatus.TraitementEnCours)
-        .filter(_.companySiret.isDefined)
-        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
-        .getOrElse(Future(reportWithNewStatusAndExpirationDate))
-      _ <- existingReport match {
-        case Some(report) =>
-          eventRepository
-            .create(
-              Event(
-                UUID.randomUUID(),
-                Some(report.id),
-                Some(company.id),
-                Some(userUUID),
-                updateCompanyDate,
-                Constants.EventType.ADMIN,
-                Constants.ActionEvent.REPORT_COMPANY_CHANGE,
-                stringToDetailsJsValue(
-                  s"Entreprise précédente : Siret ${report.companySiret
-                      .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
-                )
+      updatedReport <-
+        if (
+          reportWithNewCompany.status == ReportStatus.TraitementEnCours &&
+          reportWithNewCompany.companySiret.isDefined &&
+          reportWithNewCompany.companySiret != existingReport.companySiret
+        ) {
+          notifyProfessionalOfNewReportAndUpdateStatus(reportWithNewCompany, company)
+        } else Future.successful(reportWithNewCompany)
+
+      _ <-
+        eventRepository
+          .create(
+            Event(
+              UUID.randomUUID(),
+              Some(updatedReport.id),
+              Some(company.id),
+              Some(adminUserId),
+              updateDateTime,
+              Constants.EventType.ADMIN,
+              Constants.ActionEvent.REPORT_COMPANY_CHANGE,
+              stringToDetailsJsValue(
+                s"Entreprise précédente : Siret ${updatedReport.companySiret
+                    .getOrElse("non renseigné")} - ${Some(updatedReport.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
               )
             )
-            .map(Some(_))
-        case _ => Future(None)
-      }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
+          )
+
+      _ <- updatedReport.companyId.map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future.successful(()))
     } yield updatedReport
+  }
 
   def updateReportConsumer(
       reportId: UUID,
@@ -731,7 +716,7 @@ class ReportOrchestrator(
           Constants.ActionEvent.REPORT_READING_BY_PRO
         )
       )
-      isReportAlreadyClosed = ReportStatus.isFinal(report.status)
+      isReportAlreadyClosed = report.status.isFinal
       updatedReport <-
         if (isReportAlreadyClosed) {
           Future(report)
@@ -1055,4 +1040,8 @@ class ReportOrchestrator(
       .sortWith(_.count > _.count)
       .slice(0, 10)
 
+}
+
+object ReportOrchestrator {
+  val ReportCompanyChangeThresholdInDays: Long = 30L
 }

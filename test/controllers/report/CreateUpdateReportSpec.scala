@@ -296,10 +296,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
 
-  val reportConsumerUpdate   = Fixtures.genReportConsumerUpdate.sample.get
-  val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
+  val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
+  val reportCompanySameSiret = Fixtures.genReportCompany.sample.get
+    .copy(name = existingCompany.name, siret = existingCompany.siret, address = existingCompany.address)
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
-    .copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))
+    .copy(name = anotherCompany.name, siret = anotherCompany.siret, address = anotherCompany.address)
 
   override def setupData() =
     Await.result(
