@@ -5,6 +5,7 @@ import models.engagement.EngagementId
 import models.report.Report
 import models.report.reportfile.ReportFileId
 import models.website.WebsiteId
+import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
 import utils.EmailAddress
 import utils.SIRET
 
@@ -335,11 +336,11 @@ object AppError {
 
   }
 
-  final case object ReviewDoesNotExists extends NotFoundError {
+  final case object ReportTooOldToChangeCompany extends NotFoundError {
     override val `type`: String = "SC-0032"
-    override val title: String  = "Review does not exist for the report response."
+    override val title: String  = "The report is too old to update its company."
     override val details: String =
-      s"Un avis existe déjà pour la réponse de l'entreprise."
+      s"Action non autorisée. Le signalement est trop ancien (plus de ${ReportCompanyChangeThresholdInDays} jours) pour pouvoir changer l'entreprise."
     override val titleForLogs: String = "review_already_exists"
 
   }
@@ -526,4 +527,14 @@ object AppError {
     override val details: String      = s"Engagement $id not found"
     override val titleForLogs: String = "engagement_found"
   }
+
+  final case class CannotAlreadyAssociatedToReport(siret: SIRET) extends ConflictError {
+    override val `type`: String = "SC-0057"
+    override val title: String  = "The report already associated to this company"
+    override val details: String =
+      s"Action non autorisée. Le signalement est déjà associé à cette entreprise (SIRET : ${siret.value})."
+    override val titleForLogs: String = "report_already_associated_to_company"
+
+  }
+
 }
