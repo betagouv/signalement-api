@@ -548,7 +548,7 @@ class ReportOrchestrator(
         case None         => Future.failed(ReportNotFound(reportId))
       }
       _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
-      isSameCompany = existingReport.companySiret.forall(_ == reportCompany.siret)
+      isSameCompany = existingReport.companySiret.contains(reportCompany.siret)
       _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
       company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
       updatedReport <- updateReportCompany_(
