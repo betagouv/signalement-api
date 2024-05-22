@@ -42,7 +42,7 @@ class CompanyUpdateTask(
   import session.profile.api._
 
   override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = LocalTime.of(2, 0)
+  override val startTime: LocalTime     = LocalTime.of(3, 0)
   override val interval: FiniteDuration = 1.day
 
   // Be carefull on how much stress you can put to the database, database task are queued into 1000 slot queue.
