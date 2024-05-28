@@ -103,7 +103,7 @@ class EmailValidationOrchestrator(
       case None                 => true
     }
 
-  private[this] def validateProvider(email: EmailAddress): Future[Unit] =
+  def validateProvider(email: EmailAddress): Future[Unit] =
     if (emailConfiguration.emailProvidersBlocklist.exists(email.value.contains(_))) {
       Future.failed(AppError.InvalidEmailProvider)
     } else {

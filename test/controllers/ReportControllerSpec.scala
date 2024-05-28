@@ -328,7 +328,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 EmailAddress("test@sc.com"),
                 EmailAddress("test@sc.com"),
                 skipValidation,
-                List(""),
+                List("yopmail.com"),
                 ".*".r,
                 40
               )

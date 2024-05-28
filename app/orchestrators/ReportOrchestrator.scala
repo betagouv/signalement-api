@@ -204,6 +204,7 @@ class ReportOrchestrator(
     }
 
   private def validateConsumerEmail(draftReport: ReportDraft) = for {
+    _ <- emailValidationOrchestrator.validateProvider(draftReport.email)
     _ <- emailValidationOrchestrator
       .isEmailValid(draftReport.email)
       .ensure {
