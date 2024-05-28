@@ -45,12 +45,7 @@
             @views.html.fragments.address(company)
             </div>
 
-            <div class="creationDate">
-            Le @{
-                val now = java.time.LocalDate.now()
-                now.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-            }
-            </div>
+            @views.html.fragments.creationDate()
 
             <div class="content mt-3">
 
