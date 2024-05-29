@@ -1,6 +1,7 @@
 package tasks.report
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import config.ExportReportsToSFTPConfiguration
 import config.ProbeConfiguration
 import config.ReportRemindersTaskConfiguration
 import config.TaskConfiguration
@@ -52,7 +53,8 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     ),
     inactiveAccounts = null,
     companyUpdate = null,
-    probe = ProbeConfiguration(false)
+    probe = ProbeConfiguration(false),
+    exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv")
   )
 
   val testKit = ActorTestKit()

@@ -2,11 +2,15 @@ package repositories.report
 
 import com.github.tminglei.slickpg.TsVector
 import models._
+import models.barcode.BarcodeProduct
+import models.company.Company
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import repositories.barcode.BarcodeProductTable
+import repositories.company.CompanyTable
 import repositories.report.ReportColumnType._
 import repositories.report.ReportRepository.ReportOrdering
 import repositories.report.ReportRepository.queryFilter
@@ -15,7 +19,10 @@ import repositories.reportconsumerreview.ResponseConsumerReviewTable
 import repositories.reportfile.ReportFileTable
 import repositories.reportmetadata.ReportMetadataTable
 import slick.basic.DatabaseConfig
+import slick.basic.DatabasePublisher
 import slick.jdbc.JdbcProfile
+import slick.jdbc.ResultSetConcurrency
+import slick.jdbc.ResultSetType
 import utils.Constants.Departments.toPostalCode
 import utils._
 
@@ -34,6 +41,21 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
   override val table: TableQuery[ReportTable] = ReportTable.table
   import dbConfig._
+
+  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = db.stream(
+    table
+      .joinLeft(CompanyTable.table)
+      .on { case (report, company) => report.companyId === company.id }
+      .joinLeft(BarcodeProductTable.table)
+      .on { case ((report, _), product) => report.barcodeProductId === product.id }
+      .result
+      .withStatementParameters(
+        rsType = ResultSetType.ForwardOnly,
+        rsConcurrency = ResultSetConcurrency.ReadOnly,
+        fetchSize = 10000
+      )
+      .transactionally
+  )
 
   def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]] = {
 

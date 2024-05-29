@@ -99,6 +99,7 @@ import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.EngagementEmailTask
+import tasks.ExportReportsToSFTPTask
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
@@ -561,6 +562,15 @@ class SignalConsoComponents(
     messagesApi
   )
   engagementEmailTask.schedule()
+
+  val test = new ExportReportsToSFTPTask(
+    actorSystem,
+    taskConfiguration,
+    taskRepository,
+    reportRepository
+  )
+
+  test.schedule()
 
   // Controller
 
