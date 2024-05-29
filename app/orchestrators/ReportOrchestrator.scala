@@ -259,7 +259,7 @@ class ReportOrchestrator(
       blacklistFromDb <- blacklistedEmailsRepository.list()
     } yield {
       val fullBlacklist = blacklistFromDb.map(_.email)
-      if (fullBlacklist.contains(emailAddress.value))
+      if (fullBlacklist.exists(blacklistedEmail => emailAddress.isEquivalentTo(blacklistedEmail)))
         throw SpammerEmailBlocked(emailAddress)
       else ()
     }

@@ -7,6 +7,18 @@ import slick.jdbc.JdbcType
 
 case class EmailAddress private (value: String) extends AnyVal {
   override def toString = value
+
+  // Gmail allows to put '.' in the email as a separator. The email is still the same.
+  // Gmail also allows the '+' trick. We want to bleck all these things
+  def isEquivalentTo(baseEmailAddress: String): Boolean = {
+    val Array(address, domain)         = value.split("@")
+    val Array(baseAddress, baseDomain) = baseEmailAddress.split("@")
+    if (domain == "gmail.com" && baseDomain == "gmail.com") {
+      address.split('+').head.filter(c => c != '.') == baseAddress.split('+').head.filter(c => c != '.')
+    } else {
+      baseEmailAddress == value
+    }
+  }
 }
 
 object EmailAddress {
