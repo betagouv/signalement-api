@@ -259,7 +259,10 @@ class ReportOrchestrator(
       blacklistFromDb <- blacklistedEmailsRepository.list()
     } yield {
       val fullBlacklist = blacklistFromDb.map(_.email)
-      if (fullBlacklist.contains(emailAddress.value))
+      // Small optimisation to only computed the splitted email once
+      // Instead of multiple times in the exists loop
+      val splittedEmailAddress = emailAddress.split
+      if (fullBlacklist.exists(blacklistedEmail => splittedEmailAddress.isEquivalentTo(blacklistedEmail)))
         throw SpammerEmailBlocked(emailAddress)
       else ()
     }
