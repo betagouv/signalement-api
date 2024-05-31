@@ -59,22 +59,20 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
   def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]] = {
 
+    val emailAddressSplitted = report.email.split
+
     val similarReportQuery = table
-      .filter(_.email === report.email)
+      .filterOpt(report.companySiret)(_.companySiret === _)
+      .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
       .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
       .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
-      .filterOpt(report.companyAddress.flatMap(_.number))(_.companyStreetNumber === _)
-      .filterIf(report.companyAddress.flatMap(_.number).isEmpty)(_.companyStreetNumber.isEmpty)
-      .filterOpt(report.companyAddress.flatMap(_.street))(_.companyStreet === _)
-      .filterIf(report.companyAddress.flatMap(_.street).isEmpty)(_.companyStreet.isEmpty)
-      .filterOpt(report.companyAddress.flatMap(_.addressSupplement))(_.companyAddressSupplement === _)
-      .filterIf(report.companyAddress.flatMap(_.addressSupplement).isEmpty)(_.companyAddressSupplement.isEmpty)
-      .filterOpt(report.companyAddress.flatMap(_.city))(_.companyCity === _)
-      .filterIf(report.companyAddress.flatMap(_.city).isEmpty)(_.companyCity.isEmpty)
       .filter(_.creationDate >= after)
       .filter(_.category === report.category)
+      .result
+      // We do this check after because we want to compare 'root' addresses for gmail (without . and +)
+      .map(_.filter(report => emailAddressSplitted.isEquivalentTo(report.email.value)))
 
-    db.run(similarReportQuery.result).map(_.toList)
+    db.run(similarReportQuery.map(_.toList))
   }
 
   def reportsCountBySubcategories(
