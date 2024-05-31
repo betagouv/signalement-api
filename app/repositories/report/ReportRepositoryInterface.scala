@@ -4,8 +4,11 @@ import models.report._
 import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
+import models.barcode.BarcodeProduct
+import models.company.Company
 import models.report.reportmetadata.ReportWithMetadata
 import repositories.CRUDRepositoryInterface
+import slick.basic.DatabasePublisher
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -15,6 +18,8 @@ import scala.collection.SortedMap
 import scala.concurrent.Future
 
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
+
+  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])]
 
   def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]]
 

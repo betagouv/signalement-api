@@ -12,7 +12,8 @@ case class TaskConfiguration(
     reportReminders: ReportRemindersTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration,
     companyUpdate: CompanyUpdateTaskConfiguration,
-    probe: ProbeConfiguration
+    probe: ProbeConfiguration,
+    exportReportsToSFTP: ExportReportsToSFTPConfiguration
 )
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
@@ -41,3 +42,5 @@ case class ReportRemindersTaskConfiguration(
 )
 
 case class ProbeConfiguration(active: Boolean)
+
+case class ExportReportsToSFTPConfiguration(filePath: String, startTime: LocalTime)

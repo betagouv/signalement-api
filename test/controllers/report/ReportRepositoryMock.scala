@@ -3,9 +3,12 @@ package controllers.report
 import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
+import models.barcode.BarcodeProduct
+import models.company.Company
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
 import repositories.report.ReportRepositoryInterface
+import slick.basic.DatabasePublisher
 import utils.CRUDRepositoryMock
 
 import java.time.LocalDate
@@ -92,4 +95,5 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
     Future.successful(maybeReport.map(ReportWithMetadata(_, None)))
   }
 
+  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???
 }
