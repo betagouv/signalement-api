@@ -104,7 +104,9 @@ class ExportReportsToSFTPTask(
   override def runTask(): Future[Unit] = {
     val reports = reportRepository.streamAll
     val file    = new File(taskConfiguration.exportReportsToSFTP.filePath)
+    logger.debug(s"Exporting data to ${file.getPath} (${taskConfiguration.exportReportsToSFTP.filePath})")
     if (file.exists()) {
+      logger.debug("File already exists, deleting.")
       file.delete()
     }
     val fileWriter = new FileWriter(file)
@@ -122,6 +124,7 @@ class ExportReportsToSFTPTask(
         fileWriter.write(line)
       }
       .map { _ =>
+        logger.debug("Closing file.")
         fileWriter.flush()
         fileWriter.close()
       }
