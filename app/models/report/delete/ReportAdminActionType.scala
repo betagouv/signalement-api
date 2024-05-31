@@ -4,15 +4,11 @@ import enumeratum._
 
 sealed trait ReportAdminActionType extends EnumEntry
 
-sealed trait ConsumerReportAdminActionType extends ReportAdminActionType
-sealed trait ProReportAdminActionType      extends ReportAdminActionType
-
 object ReportAdminActionType extends PlayEnum[ReportAdminActionType] {
   val values = findValues
 
-  case object SolvedContractualDispute extends ConsumerReportAdminActionType
-  case object ConsumerThreatenByPro    extends ConsumerReportAdminActionType
-  case object RefundBlackMail          extends ConsumerReportAdminActionType
-  case object OtherReasonDeleteRequest extends ConsumerReportAdminActionType
-  case object SpamDeleteRequest        extends ProReportAdminActionType
+  case object SolvedContractualDispute extends ReportAdminActionType
+  case object ConsumerThreatenByPro    extends ReportAdminActionType
+  case object RefundBlackMail          extends ReportAdminActionType
+  case object OtherReasonDeleteRequest extends ReportAdminActionType
 }

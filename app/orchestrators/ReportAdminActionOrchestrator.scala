@@ -43,7 +43,6 @@ class ReportAdminActionOrchestrator(
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     engagementOrchestrator: EngagementOrchestrator,
     reportRepository: ReportRepositoryInterface,
-    reportOrchestrator: ReportOrchestrator,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
