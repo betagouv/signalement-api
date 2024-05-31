@@ -102,9 +102,11 @@ class ExportReportsToSFTPTask(
   }
 
   override def runTask(): Future[Unit] = {
+    logger.info("Streaming all reports as CSV to SFTP")
     val reports = reportRepository.streamAll
-    val file    = new File(taskConfiguration.exportReportsToSFTP.filePath)
-    logger.debug(s"Exporting data to ${file.getPath} (${taskConfiguration.exportReportsToSFTP.filePath})")
+    logger.debug(s"Opening file to write ${taskConfiguration.exportReportsToSFTP.filePath}")
+    val file = new File(taskConfiguration.exportReportsToSFTP.filePath)
+    logger.info(s"Exporting data to ${file.getPath}")
     if (file.exists()) {
       logger.debug("File already exists, deleting.")
       file.delete()
