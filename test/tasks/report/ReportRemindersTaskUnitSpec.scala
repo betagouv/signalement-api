@@ -54,7 +54,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     inactiveAccounts = null,
     companyUpdate = null,
     probe = ProbeConfiguration(false),
-    exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv")
+    exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30))
   )
 
   val testKit = ActorTestKit()

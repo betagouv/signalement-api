@@ -30,7 +30,7 @@ class ExportReportsToSFTPTask(
 ) extends ScheduledTask(7, "export_reports_to_sftp_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = LocalTime.of(3, 30)
+  override val startTime: LocalTime     = taskConfiguration.exportReportsToSFTP.startTime
   override val interval: FiniteDuration = 1.day
 
   val batchSize = 10000

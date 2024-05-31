@@ -43,4 +43,4 @@ case class ReportRemindersTaskConfiguration(
 
 case class ProbeConfiguration(active: Boolean)
 
-case class ExportReportsToSFTPConfiguration(filePath: String)
+case class ExportReportsToSFTPConfiguration(filePath: String, startTime: LocalTime)
