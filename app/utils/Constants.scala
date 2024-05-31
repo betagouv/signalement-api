@@ -120,6 +120,7 @@ object Constants {
     object EMAIL_INACTIVE_AGENT_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
 
     object CONSUMER_THREATEN_BY_PRO    extends ActionEventValue("ConsumerThreatenByProReportDeletion")
+    object REPORT_SPAM                 extends ActionEventValue("SpamReportDeletion")
     object REFUND_BLACKMAIL            extends ActionEventValue("RefundBlackMailReportDeletion")
     object OTHER_REASON_DELETE_REQUEST extends ActionEventValue("OtherReasonDeleteRequestReportDeletion")
     object SOLVED_CONTRACTUAL_DISPUTE  extends ActionEventValue("SolvedContractualDisputeReportDeletion")
@@ -150,6 +151,7 @@ object Constants {
       EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT,
       EMAIL_PRO_REMIND_NO_READING,
       EMAIL_PRO_REMIND_NO_ACTION,
+      REPORT_SPAM,
       EMAIL_NON_PRISE_EN_COMPTE,
       REPORT_COMPANY_CHANGE,
       REPORT_CONSUMER_CHANGE,

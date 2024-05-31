@@ -537,4 +537,21 @@ object AppError {
 
   }
 
+  final case object SpamReportDeletionLimitedToUniqueSiren extends BadRequestError {
+    override val `type`: String = "SC-0058"
+    override val title: String  = "The spam report deletion is limited to unique siren"
+    override val details: String =
+      s"Action non autorisée. La suppression des signalenements ne peut être faite que sur un SIREN."
+    override val titleForLogs: String = "error_report_spam_deletion_multiple_siren"
+
+  }
+
+  final case class ReportsNotFound(reportIds: Seq[UUID]) extends NotFoundError {
+    override val `type`: String = "SC-0033"
+    override val title: String  = s"Report with ids ${reportIds.mkString(", ")} not found"
+    override val details: String =
+      s"Signalement avec ids ${reportIds.mkString(", ")} introuvables"
+    override val titleForLogs: String = "reports_not_found"
+  }
+
 }
