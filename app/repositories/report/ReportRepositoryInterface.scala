@@ -23,7 +23,11 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]]
 
-  def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]]
+  def findSimilarReportList(
+      report: ReportDraft,
+      after: OffsetDateTime,
+      extendedEmailComparison: Boolean
+  ): Future[List[Report]]
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]]
 

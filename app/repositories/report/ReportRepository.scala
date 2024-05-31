@@ -57,20 +57,36 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .transactionally
   )
 
-  def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]] = {
+  def findSimilarReportList(
+      report: ReportDraft,
+      after: OffsetDateTime,
+      extendedEmailComparison: Boolean
+  ): Future[List[Report]] = {
 
-    val emailAddressSplitted = report.email.split
-
-    val similarReportQuery = table
-      .filterOpt(report.companySiret)(_.companySiret === _)
-      .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
-      .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
-      .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
-      .filter(_.creationDate >= after)
-      .filter(_.category === report.category)
-      .result
-      // We do this check after because we want to compare 'root' addresses for gmail (without . and +)
-      .map(_.filter(report => emailAddressSplitted.isEquivalentTo(report.email.value)))
+    val similarReportQuery =
+      if (extendedEmailComparison) {
+        val emailAddressSplitted = report.email.split
+        table
+          .filter(_.category === report.category)
+          .filterOpt(report.companySiret)(_.companySiret === _)
+          .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
+          .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
+          .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
+          .filter(_.creationDate >= after)
+          .result
+          // We do this check after because we want to compare 'root' addresses for gmail (without . and +)
+          .map(_.filter(report => emailAddressSplitted.isEquivalentTo(report.email.value)))
+      } else {
+        table
+          .filter(_.email === report.email)
+          .filter(_.category === report.category)
+          .filterOpt(report.companySiret)(_.companySiret === _)
+          .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
+          .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
+          .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
+          .filter(_.creationDate >= after)
+          .result
+      }
 
     db.run(similarReportQuery.map(_.toList))
   }
