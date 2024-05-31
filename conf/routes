@@ -45,6 +45,7 @@ GET           /api/reports/cloudword/:companyId                         controll
 POST          /api/reports/:uuid/reopen                                 controllers.ReportController.reopenReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid                                        controllers.ReportController.getReport(uuid: java.util.UUID)
 DELETE        /api/reports/:uuid                                        controllers.ReportController.deleteReport(uuid: java.util.UUID)
+DELETE        /api/reports                                              controllers.ReportController.deleteSpamReport()
 
 POST          /api/reports                                              controllers.ReportController.createReport()
 POST          /api/reports/:uuid/response                               controllers.ReportController.reportResponse(uuid: java.util.UUID)
