@@ -181,12 +181,10 @@ class ReportAdminActionOrchestrator(
       user: User
   ): Future[List[UUID]] = {
     val uniqueReportIds = reportIds.distinct
-    println(s"------------------ uniqueReportIds = ${uniqueReportIds} ------------------")
     for {
       reports <- reportRepository.getReportsByIds(uniqueReportIds.toList)
-      _    = println(s"------------------ reports = ${reports.size} ------------------")
       diff = uniqueReportIds.diff(reports.map(_.id))
-      _    = logger.debug(s"Found $diff")
+      _    = logger.debug(s"Unknown reports : $diff")
       _ <-
         if (diff.nonEmpty) {
           Future.failed(AppError.ReportsNotFound(diff))

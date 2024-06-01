@@ -238,8 +238,6 @@ class ReportController(
           request.identity
         )
       } yield Ok(Json.toJson(deleted))
-
-//      reportAdminActionOrchestrator.deleteSpammedReport(reportsIds, request.identity).map(_ => NoContent)
     }
 
   def reopenReport(uuid: UUID) =
