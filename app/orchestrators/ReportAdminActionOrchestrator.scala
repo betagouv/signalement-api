@@ -206,7 +206,7 @@ class ReportAdminActionOrchestrator(
           s"Removing ${reports.size} reports for companies ${companies.map(c => s" ${c.siret}").mkString(", ")} "
         )
 
-//      _ <- uniqueReportIds.traverse(deleteReport)
+      _ <- uniqueReportIds.traverse(deleteReport)
       _ <- companies.traverse(c => createAdminSpamDeletionReportEvent(c.id.some, user, REPORT_SPAM, reports.size))
     } yield reports.map(_.id)
   }
