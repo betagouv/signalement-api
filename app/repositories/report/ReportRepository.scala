@@ -257,12 +257,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .result
   }
 
-  def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = db.run {
+  def getForWebsiteWithoutCompany(websiteHost: String): Future[List[Report]] = db.run {
     table
       .filter(_.host === websiteHost)
       .filter(_.companySiret.isEmpty)
       .filter(_.status === ReportStatus.NA.entryName)
-      .map(_.id)
       .to[List]
       .result
   }

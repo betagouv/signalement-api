@@ -48,7 +48,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   // dead code
   def getWithWebsites(): Future[List[Report]]
 
-  def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]]
+  def getForWebsiteWithoutCompany(websiteHost: String): Future[List[Report]]
 
   // dead code
   def getWithPhones(): Future[List[Report]]

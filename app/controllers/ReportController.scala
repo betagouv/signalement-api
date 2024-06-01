@@ -74,7 +74,7 @@ class ReportController(
       for {
         reportCompany <- request.parseBody[ReportCompany]()
         result <- reportOrchestrator
-          .updateReportCompany(uuid, reportCompany, request.identity.id)
+          .updateReportCompanyIfRecent(uuid, reportCompany, request.identity.id)
           .map { report =>
             Ok(Json.toJson(report))
           }
