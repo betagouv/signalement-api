@@ -21,12 +21,37 @@ class EmailValidationRepository(
     extends CRUDRepository[EmailValidationTable, EmailValidation]
     with EmailValidationRepositoryInterface {
 
+  val SplitPartEmail     = SimpleFunction.ternary[EmailAddress, String, Int, String]("split_part")
+  val SplitPartString    = SimpleFunction.ternary[String, String, Int, String]("split_part")
+  val ReplaceSQLFunction = SimpleFunction.ternary[String, String, String, String]("replace")
+
   val logger: Logger                                   = Logger(this.getClass)
   override val table: TableQuery[EmailValidationTable] = EmailValidationTable.table
   import dbConfig._
 
   override def findByEmail(email: EmailAddress): Future[Option[EmailValidation]] =
     db.run(table.filter(_.email === email).result.headOption)
+
+  def findSimilarEmail(email: EmailAddress, createdAfter: OffsetDateTime): Future[Option[EmailValidation]] = {
+
+    val rootGmailAddress = s"${email.split.rootAddress}@gmail.com"
+
+    db.run(
+      table
+        .filter(_.creationDate >= createdAfter)
+        .filter(emailValidation =>
+          Case If SplitPartEmail(emailValidation.email, "@", 2) === "gmail.com"
+            Then ReplaceSQLFunction(
+              SplitPartString(SplitPartEmail(emailValidation.email, "@", 1), "+", 1),
+              ".",
+              ""
+            ) ++ "@gmail.com" === rootGmailAddress
+            Else emailValidation.email === email
+        )
+        .result
+        .headOption
+    )
+  }
 
   override def validate(email: EmailAddress): Future[Option[EmailValidation]] = {
     val action = (for {

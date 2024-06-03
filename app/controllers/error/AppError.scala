@@ -554,4 +554,12 @@ object AppError {
     override val titleForLogs: String = "reports_not_found"
   }
 
+  final case class SpamDetected(providedEmail: EmailAddress, foundEmail: EmailAddress) extends BadRequestError {
+    override val `type`: String = "SC-0059"
+    override val title: String  = "Similar email already submitted today"
+    override val details: String =
+      s"Email $providedEmail is similar to $foundEmail which has already been submitted today"
+    override val titleForLogs: String = "similar_email_spam"
+  }
+
 }

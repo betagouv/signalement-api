@@ -105,7 +105,6 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       tags = List(ReportTag.ProduitDangereux)
     )
 
-
   val reportNoTag = Fixtures
     .genReportForCompany(company)
     .sample
@@ -115,7 +114,6 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       companyAddress = Address(postalCode = Some(tagDept + "000")),
       tags = List()
     )
-
 
   override def setupData() =
     Await.result(

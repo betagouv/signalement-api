@@ -68,10 +68,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         val emailAddressSplitted = report.email.split
         table
           .filter(_.category === report.category)
-          .filterOpt(report.companySiret)(_.companySiret === _)
+          .filterOpt(report.companySiret)((report, siret) =>
+            SubstrSQLFunction(report.companySiret.asColumnOf[String], 0.bind, 10.bind) === SIREN.fromSIRET(siret).value
+          )
           .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
-          .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
-          .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
           .filter(_.creationDate >= after)
           .result
           // We do this check after because we want to compare 'root' addresses for gmail (without . and +)

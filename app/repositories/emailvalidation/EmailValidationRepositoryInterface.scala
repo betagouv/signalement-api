@@ -7,10 +7,13 @@ import models.PaginatedSearch
 import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
 
+import java.time.OffsetDateTime
 import scala.concurrent.Future
 
 trait EmailValidationRepositoryInterface extends CRUDRepositoryInterface[EmailValidation] {
   def findByEmail(email: EmailAddress): Future[Option[EmailValidation]]
+
+  def findSimilarEmail(email: EmailAddress, createdAfter: OffsetDateTime): Future[Option[EmailValidation]]
 
   def validate(email: EmailAddress): Future[Option[EmailValidation]]
 
