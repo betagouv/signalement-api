@@ -86,7 +86,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = ???
 
-  override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???
+  override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[Report]] = ???
 
   override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] = {
     val maybeReport = userRole match {
