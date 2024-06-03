@@ -16,7 +16,11 @@ import services.emails.EmailDefinitionsConsumer.ConsumerValidateEmail
 import services.emails.MailServiceInterface
 import utils.EmailAddress
 
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.Locale
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -124,11 +128,26 @@ class EmailValidationOrchestrator(
     emailValidationRepository.findByEmail(email).flatMap {
       case None =>
         logger.debug(s"Unknown email , creating validation entry")
-        emailValidationRepository.create(EmailValidation(email = email))
+        for {
+          _      <- validateValidationSpamToday(email)
+          result <- emailValidationRepository.create(EmailValidation(email = email))
+        } yield result
       case Some(foundEmail) =>
         logger.debug(s"Found email in validation email table ")
         Future(foundEmail)
     }
+
+  private def validateValidationSpamToday(email: EmailAddress): Future[Unit] = {
+    val today = ZonedDateTime.of(LocalDate.now(), LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+    emailValidationRepository.findSimilarEmail(email, today).flatMap {
+      case None =>
+        logger.debug(s"No email validation spam detected")
+        Future.unit
+      case Some(foundEmail) =>
+        logger.debug(s"Found email validation spam for $email : ${foundEmail.email}")
+        Future.failed(AppError.SpamDetected(email, foundEmail.email))
+    }
+  }
 
   def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidationApi]] =
     emailValidationRepository
