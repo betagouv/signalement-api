@@ -545,26 +545,27 @@ class ReportOrchestrator(
   private def isReportTooOld(report: Report) =
     report.creationDate.isBefore(OffsetDateTime.now().minusDays(ReportCompanyChangeThresholdInDays))
 
-  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, requestingUserId: UUID): Future[Report] =
+  def updateReportCompanyIfRecent(
+      reportId: UUID,
+      reportCompany: ReportCompany,
+      requestingUserId: UUID
+  ): Future[Report] =
     for {
       existingReport <- reportRepository.get(reportId).flatMap {
         case Some(report) => Future.successful(report)
         case None         => Future.failed(ReportNotFound(reportId))
       }
       _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
-      isSameCompany = existingReport.companySiret.contains(reportCompany.siret)
-      _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
-      company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
-      updatedReport <- updateReportCompany_(
+      updatedReport <- updateReportCompany(
         existingReport,
-        company,
+        reportCompany,
         requestingUserId
       )
     } yield updatedReport
 
-  private def updateReportCompany_(
+  def updateReportCompany(
       existingReport: Report,
-      company: Company,
+      reportCompany: ReportCompany,
       adminUserId: UUID
   ): Future[Report] = {
     val updateDateTime = OffsetDateTime.now()
@@ -575,9 +576,10 @@ class ReportOrchestrator(
       companySiret = existingReport.companySiret,
       companyCountry = existingReport.companyAddress.country
     )
-
+    val isSameCompany = existingReport.companySiret.contains(reportCompany.siret)
     for {
-
+      _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
+      company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
       newExpirationDate <-
         if (newReportStatus.isNotFinal) {
           companiesVisibilityOrchestrator
@@ -1047,5 +1049,5 @@ class ReportOrchestrator(
 }
 
 object ReportOrchestrator {
-  val ReportCompanyChangeThresholdInDays: Long = 30L
+  val ReportCompanyChangeThresholdInDays: Long = 90L
 }

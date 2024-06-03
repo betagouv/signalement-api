@@ -270,8 +270,8 @@ class WebsitesOrchestrator(
       establishmentCommercialName = company.establishmentCommercialName
     )
     for {
-      reportIds <- reportRepository.getForWebsiteWithoutCompany(websiteHost)
-      updates = reportIds.map(reportId => reportOrchestrator.updateReportCompany(reportId, reportCompany, userId))
+      reports <- reportRepository.getForWebsiteWithoutCompany(websiteHost)
+      updates = reports.map(reportId => reportOrchestrator.updateReportCompany(reportId, reportCompany, userId))
       _ <- Future.sequence(updates)
     } yield ()
   }
