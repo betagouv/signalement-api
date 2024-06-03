@@ -129,7 +129,7 @@ class EmailValidationOrchestrator(
       case None =>
         logger.debug(s"Unknown email , creating validation entry")
         for {
-          _      <- validateValidationSpamToday(email)
+          _      <- if (emailConfiguration.extendedComparison) validateValidationSpamToday(email) else Future.unit
           result <- emailValidationRepository.create(EmailValidation(email = email))
         } yield result
       case Some(foundEmail) =>
