@@ -7,6 +7,7 @@ import models.report.EventWithUser
 import models.report.Report
 import repositories.CRUDRepositoryInterface
 import utils.Constants.ActionEvent
+import utils.Constants.ActionEvent.ActionEventValue
 
 import java.sql.Timestamp
 import java.time.Duration
@@ -34,6 +35,11 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]]
 
+  def fetchEventFromActionEvents(
+      companyId: UUID,
+      action: ActionEventValue
+  ): Future[List[Event]]
+
   def getAvgTimeUntilEvent(
       action: ActionEvent.ActionEventValue,
       companyId: Option[UUID] = None,
@@ -48,7 +54,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
       actions: NonEmptyList[ActionEvent.ActionEventValue]
   ): Future[Vector[(Timestamp, Int)]]
 
-  def fetchAdminActionEvents(
+  def fetchEventCountFromActionEvents(
       companyId: UUID,
       action: ActionEvent.ActionEventValue
   ): Future[Int]

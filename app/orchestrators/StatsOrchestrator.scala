@@ -80,7 +80,7 @@ class StatsOrchestrator(
       case ReportAdminActionType.RefundBlackMail          => REFUND_BLACKMAIL
       case ReportAdminActionType.OtherReasonDeleteRequest => OTHER_REASON_DELETE_REQUEST
     }
-    eventRepository.fetchAdminActionEvents(companyId, action)
+    eventRepository.fetchEventCountFromActionEvents(companyId, action)
 
   }
 
