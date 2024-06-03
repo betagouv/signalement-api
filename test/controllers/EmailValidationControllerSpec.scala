@@ -67,7 +67,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           skipReportEmailValidation = skipValidation,
           emailProvidersBlocklist = emailProviderBlocklist,
           outboundEmailFilterRegex = ".*".r,
-          maxRecipientsPerEmail = 40
+          maxRecipientsPerEmail = 40,
+          extendedComparison = true
         )
 
       }

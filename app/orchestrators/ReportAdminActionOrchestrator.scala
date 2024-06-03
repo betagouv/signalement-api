@@ -1,9 +1,11 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import cats.implicits.catsSyntaxOptionId
 import cats.implicits.toTraverseOps
 import controllers.error.AppError
 import controllers.error.AppError.CannotReopenReport
+import controllers.error.AppError.SpamReportDeletionLimitedToUniqueSiren
 import io.scalaland.chimney.dsl._
 import models._
 import models.company.Company
@@ -26,6 +28,8 @@ import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompl
 import services.emails.MailService
 import utils.Constants
 import utils.Constants.ActionEvent._
+import utils.Logs.RichLogger
+import utils.SIREN.fromSIRET
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -39,7 +43,6 @@ class ReportAdminActionOrchestrator(
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     engagementOrchestrator: EngagementOrchestrator,
     reportRepository: ReportRepositoryInterface,
-    reportOrchestrator: ReportOrchestrator,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -93,11 +96,11 @@ class ReportAdminActionOrchestrator(
         case ReportAdminActionType.SolvedContractualDispute =>
           handleAdminReportCompletion(report, reportAdminCompletionDetails, user)
         case ReportAdminActionType.ConsumerThreatenByPro =>
-          deleteReport(id, report, user, CONSUMER_THREATEN_BY_PRO, reportAdminCompletionDetails)
+          deleteReportFromConsumerRequest(id, report, user, CONSUMER_THREATEN_BY_PRO, reportAdminCompletionDetails)
         case ReportAdminActionType.RefundBlackMail =>
-          deleteReport(id, report, user, REFUND_BLACKMAIL, reportAdminCompletionDetails)
+          deleteReportFromConsumerRequest(id, report, user, REFUND_BLACKMAIL, reportAdminCompletionDetails)
         case ReportAdminActionType.OtherReasonDeleteRequest =>
-          deleteReport(id, report, user, OTHER_REASON_DELETE_REQUEST, reportAdminCompletionDetails)
+          deleteReportFromConsumerRequest(id, report, user, OTHER_REASON_DELETE_REQUEST, reportAdminCompletionDetails)
       }
     }
 
@@ -117,6 +120,25 @@ class ReportAdminActionOrchestrator(
         Constants.EventType.ADMIN,
         event,
         Json.toJson(reportAdminCompletionDetails)
+      )
+    )
+
+  private def createAdminSpamDeletionReportEvent(
+      maybeCompanyId: Option[UUID],
+      user: User,
+      event: ActionEventValue,
+      count: Int
+  ) =
+    eventRepository.create(
+      Event(
+        UUID.randomUUID(),
+        None,
+        maybeCompanyId,
+        Some(user.id),
+        OffsetDateTime.now(),
+        Constants.EventType.ADMIN,
+        event,
+        Json.obj("Nombre de signalements concernés" -> count)
       )
     )
 
@@ -140,7 +162,7 @@ class ReportAdminActionOrchestrator(
       )
     )
 
-  private def deleteReport(
+  private def deleteReportFromConsumerRequest(
       id: UUID,
       report: Report,
       user: User,
@@ -148,16 +170,55 @@ class ReportAdminActionOrchestrator(
       reportAdminCompletionDetails: ReportAdminCompletionDetails
   ) =
     for {
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _            <- eventRepository.deleteByReportId(id)
-      _            <- reportFileOrchestrator.removeFromReportId(id)
-      _            <- reportConsumerReviewOrchestrator.remove(id)
-      _            <- engagementOrchestrator.removeEngagement(id)
-      _            <- reportRepository.delete(id)
-      _ <- report.companyId.map(id => reportOrchestrator.removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
-      _ <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
-      _ <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
+      _            <- deleteReport(id)
+      _            <- createAdminDeletionReportEvent(report.companyId, user, event, reportAdminCompletionDetails)
+      _            <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
     } yield report
+
+  def deleteSpammedReport(
+      reportIds: Seq[UUID],
+      user: User
+  ): Future[List[UUID]] = {
+    val uniqueReportIds = reportIds.distinct
+    for {
+      reports <- reportRepository.getReportsByIds(uniqueReportIds.toList)
+      diff = uniqueReportIds.diff(reports.map(_.id))
+      _    = logger.debug(s"Unknown reports : $diff")
+      _ <-
+        if (diff.nonEmpty) {
+          Future.failed(AppError.ReportsNotFound(diff))
+        } else Future.unit
+      sirens = reports.flatMap(_.companySiret).map(fromSIRET).distinctBy(_.value)
+      companies <- sirens.distinctBy(_.value) match {
+        case siren :: Nil =>
+          companyRepository
+            .findBySiren(List(siren))
+
+        case Nil => Future.successful(List.empty)
+        case _   => Future.failed(SpamReportDeletionLimitedToUniqueSiren)
+      }
+      _ = logger
+        .infoWithTitle(
+          "spam_report_deletion",
+          s"Removing ${reports.size} reports for companies ${companies.map(c => s" ${c.siret}").mkString(", ")} "
+        )
+
+      _ <- uniqueReportIds.traverse(deleteReport)
+      _ <- companies.traverse(c => createAdminSpamDeletionReportEvent(c.id.some, user, REPORT_SPAM, reports.size))
+    } yield reports.map(_.id)
+  }
+
+  private def deleteReport(
+      id: UUID
+  ) =
+    for {
+      _ <- eventRepository.deleteByReportId(id)
+      _ <- reportFileOrchestrator.removeFromReportId(id)
+      _ <- reportConsumerReviewOrchestrator.remove(id)
+      _ <- engagementOrchestrator.removeEngagement(id)
+      _ <- reportRepository.delete(id)
+    } yield ()
 
   private def getCompanyWithUsers(report: Report): Future[(Option[Company], Option[List[User]])] = for {
     maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence

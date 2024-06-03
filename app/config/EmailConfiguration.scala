@@ -10,5 +10,6 @@ case class EmailConfiguration(
     skipReportEmailValidation: Boolean,
     emailProvidersBlocklist: List[String],
     outboundEmailFilterRegex: Regex,
-    maxRecipientsPerEmail: Int
+    maxRecipientsPerEmail: Int,
+    extendedComparison: Boolean
 )

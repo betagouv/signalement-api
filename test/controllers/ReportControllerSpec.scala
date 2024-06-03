@@ -330,7 +330,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 skipValidation,
                 List("yopmail.com"),
                 ".*".r,
-                40
+                40,
+                extendedComparison = true
               )
 
           }

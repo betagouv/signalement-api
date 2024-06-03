@@ -229,6 +229,17 @@ class ReportController(
       } yield NoContent
     }
 
+  def deleteSpamReport() =
+    SecuredAction.andThen(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+      for {
+        reportsIds <- request.parseBody[List[UUID]]()
+        deleted <- reportAdminActionOrchestrator.deleteSpammedReport(
+          reportsIds,
+          request.identity
+        )
+      } yield Ok(Json.toJson(deleted))
+    }
+
   def reopenReport(uuid: UUID) =
     SecuredAction.andThen(WithPermission(UserPermission.deleteReport)).async(parse.empty) { request =>
       for {

@@ -471,7 +471,6 @@ class SignalConsoComponents(
     reportConsumerReviewOrchestrator,
     engagementOrchestrator,
     reportRepository,
-    reportOrchestrator,
     reportFileOrchestrator,
     companyRepository,
     eventRepository,

@@ -224,7 +224,7 @@ class ReportOrchestrator(
     val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY  = 2
 
     reportRepository
-      .findSimilarReportList(draftReport, after = startOfWeek)
+      .findSimilarReportList(draftReport, after = startOfWeek, emailConfiguration.extendedComparison)
       .map { reportList =>
         val exactSameReportList =
           reportList
