@@ -3,12 +3,12 @@ package actors
 import actors.antivirus.AntivirusScanExitCode._
 import actors.antivirus.AntivirusScanExecution
 import actors.antivirus.AntivirusScanExitCode
-import akka.Done
-import akka.actor.typed._
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
 import config.UploadConfiguration
 import models.report.ReportFile
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface

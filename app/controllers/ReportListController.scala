@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ReportsExtractActor
-import akka.actor.typed
+import org.apache.pekko.actor.typed
 import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
@@ -30,8 +30,8 @@ class ReportListController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger                      = Logger(this.getClass)
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
+  val logger: Logger                                  = Logger(this.getClass)
 
   def getReports() = SecuredAction.async { implicit request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)

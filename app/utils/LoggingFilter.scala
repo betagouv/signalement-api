@@ -1,9 +1,10 @@
 package utils
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import play.api.Logging
 import play.api.mvc._
 import utils.Logs.RichLogger
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

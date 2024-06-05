@@ -29,7 +29,7 @@ class AuthController(
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   def authenticate: Action[JsValue] = Action.async(parse.json) { implicit request =>
     for {

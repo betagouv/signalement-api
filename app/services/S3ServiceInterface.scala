@@ -1,12 +1,12 @@
 package services
-import akka.Done
-import akka.stream.IOResult
-import akka.stream.alpakka.s3.MultipartUploadResult
-import akka.stream.alpakka.s3.ObjectMetadata
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
 import com.amazonaws.HttpMethod
+import org.apache.pekko.Done
+import org.apache.pekko.stream.connectors.s3.MultipartUploadResult
+import org.apache.pekko.stream.connectors.s3.ObjectMetadata
+import org.apache.pekko.util.ByteString
 
 import scala.concurrent.Future
 

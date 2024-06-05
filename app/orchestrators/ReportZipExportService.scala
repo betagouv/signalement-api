@@ -1,10 +1,10 @@
 package orchestrators
 
-import akka.actor.ActorSystem
-import akka.stream.IOResult
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.report.ReportFile

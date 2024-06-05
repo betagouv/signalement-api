@@ -61,9 +61,9 @@ class AdminController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  val logger: Logger                        = Logger(this.getClass)
-  implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
-  implicit val timeout: akka.util.Timeout   = 5.seconds
+  val logger: Logger                                  = Logger(this.getClass)
+  implicit val contactAddress: EmailAddress           = emailConfiguration.contactAddress
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   implicit val messagesProvider: Messages = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   private val availablePdfs = Seq[(String, Html)](

@@ -3,7 +3,7 @@ package controllers
 import actors.ReportedPhonesExtractActor
 import actors.ReportedPhonesExtractActor.RawFilters
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
-import akka.actor.typed
+import org.apache.pekko.actor.typed
 import authentication.Authenticator
 import models._
 import play.api.Logger
@@ -28,8 +28,8 @@ class ReportedPhoneController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  implicit val timeout: akka.util.Timeout = 5.seconds
-  val logger: Logger                      = Logger(this.getClass)
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
+  val logger: Logger                                  = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>

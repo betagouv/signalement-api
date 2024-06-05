@@ -1,6 +1,6 @@
 package tasks.account
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
 import play.api.Logger
 import repositories.tasklock.TaskRepositoryInterface

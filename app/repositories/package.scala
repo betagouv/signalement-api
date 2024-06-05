@@ -12,7 +12,7 @@ package object repositories {
   implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq])(implicit executionContext: ExecutionContext) {
 
     def withPagination(
-        db: JdbcBackend#DatabaseDef
+        db: JdbcBackend#Database
     )(
         maybeOffset: Option[Long],
         maybeLimit: Option[Int],

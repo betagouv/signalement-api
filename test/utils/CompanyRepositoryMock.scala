@@ -5,6 +5,8 @@ import models.PaginatedSearch
 import models.UserRole
 import models.company.Company
 import models.company.CompanyRegisteredSearch
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.company.CompanyRepositoryInterface
 
 import java.util.UUID
@@ -52,4 +54,6 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
   ): Future[SIRET] = ???
 
   override def getInactiveCompanies: Future[List[(Company, Int)]] = ???
+
+  override def streamCompanies: Source[Company, NotUsed] = ???
 }

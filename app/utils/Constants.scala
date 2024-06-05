@@ -55,15 +55,15 @@ object Constants {
       implicit val actionEventValueWriter: OWrites[ActionEventValue] = Json.writes[ActionEventValue]
     }
 
-    @Deprecated
+    // deprecated
     object A_CONTACTER extends ActionEventValue("À contacter")
-    @Deprecated
+    // deprecated
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
-    @Deprecated
+    // deprecated
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    @Deprecated
+    // deprecated
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
-    @Deprecated
+    // deprecated
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
 
     object POST_ACCOUNT_ACTIVATION_DOC extends ActionEventValue("Envoi du courrier d'activation")

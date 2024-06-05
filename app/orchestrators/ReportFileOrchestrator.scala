@@ -1,12 +1,12 @@
 package orchestrators
 
 import actors.AntivirusScanActor
-import akka.actor.typed.ActorRef
-import akka.stream.IOResult
-import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps

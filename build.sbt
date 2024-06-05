@@ -5,7 +5,7 @@ organization := "fr.gouv.beta"
 
 version := "1.3.13"
 
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.14"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
@@ -54,10 +54,9 @@ routesImport ++= Seq(
 
 semanticdbVersion := scalafixSemanticdb.revision
 scalafixOnCompile := true
-// Required by scalafix to use ExplicitResultTypes
-ThisBuild / scalafixScalaBinaryVersion := "2.13"
 
 Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement
+Test / tpolecatExcludeOptions += ScalacOptions.lintMissingInterpolator
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
@@ -66,7 +65,7 @@ Universal / mappings ++=
     (x => x -> ("appfiles/" + x.getName))
 
 Test / javaOptions += "-Dconfig.resource=test.application.conf"
-javaOptions += "-Dakka.http.parsing.max-uri-length=16k"
+javaOptions += "-Dpekko.http.parsing.max-uri-length=16k"
 
 javaOptions += s"-Dtextlogs=${sys.env.getOrElse("USE_TEXT_LOGS", "false")}"
 

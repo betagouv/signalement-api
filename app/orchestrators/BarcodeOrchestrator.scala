@@ -1,10 +1,10 @@
 package orchestrators
 
 import actors.GS1AuthTokenActor
-import akka.actor.typed.ActorRef
-import akka.actor.typed.Scheduler
-import akka.actor.typed.scaladsl.AskPattern.Askable
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.Scheduler
+import org.apache.pekko.actor.typed.scaladsl.AskPattern.Askable
+import org.apache.pekko.util.Timeout
 import models.barcode.BarcodeProduct
 import models.barcode.gs1.OAuthAccessToken
 import play.api.Logger
