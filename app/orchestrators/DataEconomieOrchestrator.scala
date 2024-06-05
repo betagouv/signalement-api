@@ -1,24 +1,23 @@
 package orchestrators
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import io.scalaland.chimney.dsl._
 import models.dataeconomie.ReportDataEconomie
 import models.report.ReportTag.ReportTagTranslationOps
 import play.api.Logger
-import repositories.dataeconomie.DataEconomieRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 
 import scala.concurrent.ExecutionContext
 
 class DataEconomieOrchestrator(
-    reportRepository: DataEconomieRepositoryInterface
+    reportRepository: ReportRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
 
   def getReportDataEconomie(): Source[ReportDataEconomie, NotUsed] =
-    reportRepository
-      .reports()
+    reportRepository.streamReports
       .map(
         _.into[ReportDataEconomie]
           .withFieldComputed(_.companyNumber, _.companyAddress.number)

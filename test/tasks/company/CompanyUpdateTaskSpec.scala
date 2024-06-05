@@ -1,6 +1,6 @@
 package tasks.company
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import models.company.CompanySync
 import org.scalacheck.Gen
 import org.specs2.concurrent.ExecutionEnv

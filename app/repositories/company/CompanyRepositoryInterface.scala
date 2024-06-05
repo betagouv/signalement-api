@@ -1,5 +1,7 @@
 package repositories.company
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import models.PaginatedResult
 import models.PaginatedSearch
 import models.UserRole
@@ -14,6 +16,8 @@ import java.util.UUID
 import scala.concurrent.Future
 
 trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
+
+  def streamCompanies: Source[Company, NotUsed]
 
   def searchWithReportsCount(
       search: CompanyRegisteredSearch,

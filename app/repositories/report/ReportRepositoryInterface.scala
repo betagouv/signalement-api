@@ -1,5 +1,7 @@
 package repositories.report
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import models.report._
 import models.CountByDate
 import models.PaginatedResult
@@ -18,6 +20,8 @@ import scala.collection.SortedMap
 import scala.concurrent.Future
 
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
+
+  def streamReports: Source[Report, NotUsed]
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])]
 

@@ -3,9 +3,9 @@ package loader
 import _root_.controllers._
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
-import akka.actor.typed
-import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
-import akka.util.Timeout
+import org.apache.pekko.actor.typed
+import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
+import org.apache.pekko.util.Timeout
 import authentication._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -56,8 +56,6 @@ import repositories.companyactivationattempt.CompanyActivationAttemptRepository
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
-import repositories.dataeconomie.DataEconomieRepository
-import repositories.dataeconomie.DataEconomieRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.engagement.EngagementRepository
@@ -202,7 +200,6 @@ class SignalConsoComponents(
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
-  val dataEconomieRepository: DataEconomieRepositoryInterface       = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
@@ -237,8 +234,8 @@ class SignalConsoComponents(
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
   implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
-    keyId = configuration.get[String]("alpakka.s3.aws.credentials.access-key-id"),
-    secretKey = configuration.get[String]("alpakka.s3.aws.credentials.secret-access-key"),
+    keyId = configuration.get[String]("pekko.connectors.s3.aws.credentials.access-key-id"),
+    secretKey = configuration.get[String]("pekko.connectors.s3.aws.credentials.secret-access-key"),
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
@@ -338,7 +335,7 @@ class SignalConsoComponents(
     tokenConfiguration
   )
 
-  val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)
+  val dataEconomieOrchestrator = new DataEconomieOrchestrator(reportRepository)
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
 

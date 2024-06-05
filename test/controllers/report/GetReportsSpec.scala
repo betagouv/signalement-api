@@ -1,6 +1,6 @@
 package controllers.report
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import models._
 import models.company.AccessLevel
 import models.report.Report

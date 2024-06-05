@@ -1,17 +1,14 @@
 package tasks.company
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.stream.alpakka.slick.scaladsl.Slick
-import akka.stream.alpakka.slick.scaladsl.SlickSession
-import akka.stream.scaladsl.Sink
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.company.CompanySync
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepositoryInterface
-import repositories.company.CompanyTable
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 
@@ -35,12 +32,6 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
-  implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
-
-  actorSystem.registerOnTermination(() => session.close())
-
-  import session.profile.api._
-
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = LocalTime.of(3, 0)
   override val interval: FiniteDuration = 1.day
@@ -49,8 +40,7 @@ class CompanyUpdateTask(
   // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database
   override def runTask(): Future[Unit] = for {
     companySync <- getCompanySync()
-    res <- Slick
-      .source(CompanyTable.table.result)
+    res <- companyRepository.streamCompanies
       .grouped(300)
       .throttle(1, 1.second)
       .mapAsync(1) { companies =>

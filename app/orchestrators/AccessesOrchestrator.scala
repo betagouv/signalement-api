@@ -42,8 +42,8 @@ class AccessesOrchestrator(
     tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
-  val logger                              = Logger(this.getClass)
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  val logger                                          = Logger(this.getClass)
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   private def tokenKindToUserRole(tokenKind: TokenKind) = tokenKind match {
     case TokenKind.DGALAccount   => Some(UserRole.DGAL)

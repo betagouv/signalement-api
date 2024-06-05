@@ -1,6 +1,6 @@
 package tasks.probe
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
 import models.UserRole
 import play.api.Logger

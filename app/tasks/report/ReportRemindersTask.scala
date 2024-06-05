@@ -1,6 +1,6 @@
 package tasks.report
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
 import models._
 import models.event.Event

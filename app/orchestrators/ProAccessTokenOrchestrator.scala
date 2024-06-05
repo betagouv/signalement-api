@@ -66,8 +66,8 @@ class ProAccessTokenOrchestrator(
 )(implicit val executionContext: ExecutionContext)
     extends ProAccessTokenOrchestratorInterface {
 
-  val logger                              = Logger(this.getClass)
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  val logger                                          = Logger(this.getClass)
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]] =
     for {

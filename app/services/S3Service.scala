@@ -1,15 +1,12 @@
 package services
 
-import akka.Done
-import akka.stream.IOResult
-import akka.stream.Materializer
-import akka.stream.alpakka.s3.MultipartUploadResult
-import akka.stream.alpakka.s3.ObjectMetadata
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.scaladsl.FileIO
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 import java.nio.file.Path
 import com.amazonaws.HttpMethod
@@ -20,6 +17,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import config.BucketConfiguration
+import org.apache.pekko.stream.connectors.s3.MultipartUploadResult
+import org.apache.pekko.stream.connectors.s3.ObjectMetadata
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext
@@ -33,7 +33,7 @@ class S3Service(implicit
   val logger: Logger           = Logger(this.getClass)
   private[this] val bucketName = bucketConfiguration.amazonBucketName
 
-  private val alpakkaS3Client = S3
+  private val pekkoS3Client = S3
   private val awsS3Client = AmazonS3ClientBuilder
     .standard()
     .withEndpointConfiguration(
@@ -50,7 +50,7 @@ class S3Service(implicit
     .build()
 
   override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
-    alpakkaS3Client.multipartUpload(bucketName, bucketKey)
+    pekkoS3Client.multipartUpload(bucketName, bucketKey)
 
   override def download(bucketKey: String): Future[ByteString] =
     downloadFromBucket(bucketKey).runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b))
@@ -59,7 +59,7 @@ class S3Service(implicit
     downloadFromBucket(bucketKey).runWith(FileIO.toPath(Path.of(filePath)))
 
   def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] =
-    alpakkaS3Client
+    pekkoS3Client
       .getObject(bucketName, bucketKey)
 
   def exists(bucketKey: String): Future[Boolean] =
@@ -68,7 +68,7 @@ class S3Service(implicit
     }
 
   override def delete(bucketKey: String): Future[Done] =
-    alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
+    pekkoS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
   override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
     val headerOverrides = new ResponseHeaderOverrides()

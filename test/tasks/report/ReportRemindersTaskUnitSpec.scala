@@ -1,6 +1,6 @@
 package tasks.report
 
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import config.ExportReportsToSFTPConfiguration
 import config.ProbeConfiguration
 import config.ReportRemindersTaskConfiguration

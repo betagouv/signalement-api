@@ -1,9 +1,9 @@
 package actors
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
-import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
 import spoiwo.model._
 import spoiwo.model.enums.CellFill
 import spoiwo.model.enums.CellHorizontalAlignment

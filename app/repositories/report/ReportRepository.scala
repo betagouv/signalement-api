@@ -1,5 +1,7 @@
 package repositories.report
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import com.github.tminglei.slickpg.TsVector
 import models._
 import models.barcode.BarcodeProduct
@@ -41,6 +43,21 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
   override val table: TableQuery[ReportTable] = ReportTable.table
   import dbConfig._
+
+  // To stream PG properly, some parameters are required, see https://scala-slick.org/doc/stable/dbio.html
+  def streamReports: Source[Report, NotUsed] = Source
+    .fromPublisher(
+      db.stream(
+        table.result
+          .withStatementParameters(
+            rsType = ResultSetType.ForwardOnly,
+            rsConcurrency = ResultSetConcurrency.ReadOnly,
+            fetchSize = 10000
+          )
+          .transactionally
+      )
+    )
+    .log("user")
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = db.stream(
     table

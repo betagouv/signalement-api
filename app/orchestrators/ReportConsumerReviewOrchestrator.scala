@@ -1,6 +1,6 @@
 package orchestrators
 
-import akka.Done
+import org.apache.pekko.Done
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ServerError
 import models.report.ReportStatus.hasResponse
