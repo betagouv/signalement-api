@@ -758,13 +758,18 @@ class ReportOrchestrator(
 
   private def sendMailsAfterProAcknowledgment(
       report: Report,
-      reportResponse: ReportResponse,
+      reportResponse: IncomingReportResponse,
       user: User,
       maybeCompany: Option[Company]
-  ) = for {
-    _ <- mailService.send(ProResponseAcknowledgment.Email(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification.Email(report, reportResponse, maybeCompany, messagesApi))
-  } yield ()
+  ) = {
+    val existingReportResponse = reportResponse.toExisting
+    for {
+      _ <- mailService.send(ProResponseAcknowledgment.Email(report, existingReportResponse, user))
+      _ <- mailService.send(
+        ConsumerProResponseNotification.Email(report, existingReportResponse, maybeCompany, messagesApi)
+      )
+    } yield ()
+  }
 
   // dead code ?
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
@@ -808,7 +813,7 @@ class ReportOrchestrator(
       newEvent
     }
 
-  def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
+  def handleReportResponse(report: Report, reportResponse: IncomingReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     val now = OffsetDateTime.now()
     for {

@@ -85,7 +85,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
           .reportToConsumerAcknowledgmentPro(
             report,
             Some(company),
-            reportResponseAccepted,
+            reportResponseAccepted.toExisting,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -94,7 +94,9 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
         "Votre réponse au signalement",
-        views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString
+        views.html.mails.professional
+          .reportAcknowledgmentPro(reportResponseAccepted.toExisting, concernedProUser)
+          .toString
       )}
     """
 }
@@ -132,7 +134,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
           .reportToConsumerAcknowledgmentPro(
             report,
             Some(company),
-            reportResponseAccepted,
+            reportResponseAccepted.toExisting,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -142,7 +144,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
         concernedHeadOfficeProUser.email,
         "Votre réponse au signalement",
         views.html.mails.professional
-          .reportAcknowledgmentPro(reportResponseAccepted, concernedHeadOfficeProUser)
+          .reportAcknowledgmentPro(reportResponseAccepted.toExisting, concernedHeadOfficeProUser)
           .toString
       )}
     """
@@ -179,7 +181,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
           .reportToConsumerAcknowledgmentPro(
             report,
             Some(company),
-            reportResponseRejected,
+            reportResponseRejected.toExisting,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -188,7 +190,9 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
         "Votre réponse au signalement",
-        views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString
+        views.html.mails.professional
+          .reportAcknowledgmentPro(reportResponseRejected.toExisting, concernedProUser)
+          .toString
       )}
     """
 }
@@ -224,7 +228,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
           .reportToConsumerAcknowledgmentPro(
             report,
             Some(company),
-            reportResponseNotConcerned,
+            reportResponseNotConcerned.toExisting,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -233,7 +237,9 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
         "Votre réponse au signalement",
-        views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString
+        views.html.mails.professional
+          .reportAcknowledgmentPro(reportResponseNotConcerned.toExisting, concernedProUser)
+          .toString
       )}
     """
 }
@@ -286,31 +292,28 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     None
   )
 
-  val reportResponseAccepted = ReportResponse(
+  val reportResponseAccepted = IncomingReportResponse(
     ReportResponseType.ACCEPTED,
     "details for consumer",
     Some("details for dgccrf"),
     List(reportResponseFile.id),
-    responseDetails = Some(ResponseDetails.REMBOURSEMENT_OU_AVOIR),
-    otherResponseDetails = None
+    responseDetails = Some(ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR)
   )
   val reportResponseRejected =
-    ReportResponse(
+    IncomingReportResponse(
       ReportResponseType.REJECTED,
       "details for consumer",
       Some("details for dgccrf"),
       List.empty,
-      responseDetails = Some(ResponseDetails.REMBOURSEMENT_OU_AVOIR),
-      otherResponseDetails = None
+      responseDetails = Some(ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR)
     )
   val reportResponseNotConcerned =
-    ReportResponse(
+    IncomingReportResponse(
       ReportResponseType.NOT_CONCERNED,
       "details for consumer",
       Some("details for dgccrf"),
       List.empty,
-      responseDetails = Some(ResponseDetails.REMBOURSEMENT_OU_AVOIR),
-      otherResponseDetails = None
+      responseDetails = Some(ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR)
     )
 
   override def setupData() = {
@@ -343,7 +346,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val (app, components) = TestApp.buildApp(
   )
 
-  def postReportResponse(reportResponse: ReportResponse) =
+  def postReportResponse(reportResponse: IncomingReportResponse) =
     Await.result(
       components.reportController
         .reportResponse(reportFixture.id)

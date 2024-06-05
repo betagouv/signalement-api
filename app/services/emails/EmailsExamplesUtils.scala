@@ -67,9 +67,9 @@ object EmailsExamplesUtils {
     avOutput = None
   )
 
-  def genReportResponse = ReportResponse(
+  def genReportResponse = ExistingReportResponse(
     responseType = ReportResponseType.ACCEPTED,
-    responseDetails = Some(ResponseDetails.REMBOURSEMENT_OU_AVOIR),
+    responseDetails = Some(ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR),
     otherResponseDetails = None,
     consumerDetails = "blablabla",
     dgccrfDetails = Some("ouplalalala"),

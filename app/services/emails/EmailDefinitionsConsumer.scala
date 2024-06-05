@@ -286,7 +286,7 @@ object EmailDefinitionsConsumer {
 
     final case class Email(
         report: Report,
-        reportResponse: ReportResponse,
+        reportResponse: ExistingReportResponse,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
     ) extends BaseEmail {
@@ -325,7 +325,7 @@ object EmailDefinitionsConsumer {
     final case class Email(
         report: Report,
         maybeCompany: Option[Company],
-        reportResponse: ReportResponse,
+        reportResponse: ExistingReportResponse,
         isResolved: Boolean,
         messagesApi: MessagesApi
     ) extends BaseEmail {

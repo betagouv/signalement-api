@@ -111,7 +111,7 @@ class ReportController(
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
       for {
-        reportResponse            <- request.parseBody[ReportResponse]()
+        reportResponse            <- request.parseBody[IncomingReportResponse]()
         visibleReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         visibleReport = visibleReportWithMetadata.map(_.report)
         updatedReport <- visibleReport
