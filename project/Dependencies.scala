@@ -5,11 +5,11 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    lazy val playSlickVersion = "6.1.0"
-    lazy val slickPgVersion    = "0.22.2"
-    lazy val playMailerVersion = "10.0.0"
-    lazy val pekkoHttpVersion = "1.0.1"
-    lazy val pekkoVersion = "1.0.2"
+    lazy val playSlickVersion          = "6.1.0"
+    lazy val slickPgVersion            = "0.22.2"
+    lazy val playMailerVersion         = "10.0.0"
+    lazy val pekkoHttpVersion          = "1.0.1"
+    lazy val pekkoVersion              = "1.0.2"
     lazy val enumeratumVersion         = "1.8.0"
     lazy val sentryVersion             = "6.34.0"
     lazy val jbcrypt                   = "0.4"
@@ -53,23 +53,23 @@ object Dependencies {
     val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logstashLogbackEncoder
     val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json"                        % Versions.sttpPlayJson
     val sttp         = "com.softwaremill.sttp.client3" %% "core"                             % Versions.sttp
-    val asyncSttp         = "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % Versions.sttp
+    val asyncSttp    = "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % Versions.sttp
     val sentry       = "io.sentry"                      % "sentry-logback"                   % Versions.sentryVersion
     val catsCore     = "org.typelevel"                 %% "cats-core"                        % Versions.catsCoreVersion
-    val pureConfig         = "com.github.pureconfig" %% "pureconfig"                % Versions.pureConfigVersion
-    val playJsonExtensions = "ai.x"                  %% "play-json-extensions"      % Versions.playJsonExtensionsVersion
-    val playSlick          = "org.playframework"     %% "play-slick"                % Versions.playSlickVersion
-    val slickPg            = "com.github.tminglei"   %% "slick-pg"                  % Versions.slickPgVersion
-    val slickPgPlayJson    = "com.github.tminglei"   %% "slick-pg_play-json"        % Versions.slickPgVersion
-    val playMailer         = "org.playframework"     %% "play-mailer"               % Versions.playMailerVersion
-    val pekkoConnectorS3          = "org.apache.pekko"    %% "pekko-connectors-s3"    % Versions.pekkoVersion
-    val pekkoConnectorCSV         = "org.apache.pekko"    %% "pekko-connectors-csv"   % Versions.pekkoVersion
-    val pekkoConnectorFile        = "org.apache.pekko"    %% "pekko-connectors-file"  % Versions.pekkoVersion
-    val pekkoHttp           = "org.apache.pekko"     %% "pekko-http"                 % Versions.pekkoHttpVersion
-    val pekkoHttpXml        = "org.apache.pekko"     %% "pekko-http-xml"             % Versions.pekkoHttpVersion
-    val jbcrypt            = "org.mindrot"            % "jbcrypt"                   % "0.4"
-    val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"           % Versions.enumeratumVersion
-    val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"           % Versions.awsJavaSdkS3Version
+    val pureConfig         = "com.github.pureconfig" %% "pureconfig"            % Versions.pureConfigVersion
+    val playJsonExtensions = "ai.x"                  %% "play-json-extensions"  % Versions.playJsonExtensionsVersion
+    val playSlick          = "org.playframework"     %% "play-slick"            % Versions.playSlickVersion
+    val slickPg            = "com.github.tminglei"   %% "slick-pg"              % Versions.slickPgVersion
+    val slickPgPlayJson    = "com.github.tminglei"   %% "slick-pg_play-json"    % Versions.slickPgVersion
+    val playMailer         = "org.playframework"     %% "play-mailer"           % Versions.playMailerVersion
+    val pekkoConnectorS3   = "org.apache.pekko"      %% "pekko-connectors-s3"   % Versions.pekkoVersion
+    val pekkoConnectorCSV  = "org.apache.pekko"      %% "pekko-connectors-csv"  % Versions.pekkoVersion
+    val pekkoConnectorFile = "org.apache.pekko"      %% "pekko-connectors-file" % Versions.pekkoVersion
+    val pekkoHttp          = "org.apache.pekko"      %% "pekko-http"            % Versions.pekkoHttpVersion
+    val pekkoHttpXml       = "org.apache.pekko"      %% "pekko-http-xml"        % Versions.pekkoHttpVersion
+    val jbcrypt            = "org.mindrot"            % "jbcrypt"               % "0.4"
+    val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"       % Versions.enumeratumVersion
+    val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"       % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql" % "postgresql"  % Versions.postgresqlVersion
