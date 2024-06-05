@@ -1,6 +1,6 @@
 package orchestrators
 
-import akka.Done
+import org.apache.pekko.Done
 import controllers.error.AppError.CannotReportPublicAdministration
 import controllers.error.AppError.DuplicateReportCreation
 import io.scalaland.chimney.dsl._

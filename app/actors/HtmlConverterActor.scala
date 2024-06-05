@@ -1,8 +1,8 @@
 package actors
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.DispatcherSelector
-import akka.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
 import play.api.Logger

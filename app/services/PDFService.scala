@@ -1,10 +1,10 @@
 package services
 
 import actors.HtmlConverterActor
-import akka.actor.typed.ActorRef
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.StreamConverters
-import akka.util.ByteString
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.StreamConverters
+import org.apache.pekko.util.ByteString
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
@@ -37,7 +37,7 @@ class PDFService(
     val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
 
     val pipedOutputStream = new PipedOutputStream()
-    val pipeSize          = 8192 // To match the akka stream chunk size
+    val pipeSize          = 8192 // To match the pekko stream chunk size
     val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
 
     actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)

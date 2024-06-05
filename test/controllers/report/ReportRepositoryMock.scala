@@ -7,6 +7,8 @@ import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.report.ReportRepositoryInterface
 import slick.basic.DatabasePublisher
 import utils.CRUDRepositoryMock
@@ -100,4 +102,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   }
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???
+
+  override def streamReports: Source[Report, NotUsed] = ???
 }

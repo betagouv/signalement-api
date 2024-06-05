@@ -1,6 +1,6 @@
 package services.emails
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.data.NonEmptyList
 import com.sun.mail.smtp.SMTPSendFailedException
 import play.api.Logger

@@ -5,36 +5,31 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    // Cannot be updated to "5.1.0" compatibility issues with current version of alpakka slick (using slick 3.3.3, next is 3.4.1)
-    lazy val playSlickVersion = "5.0.2"
-    // Cannot be updated to "0.21.1" compatibility issues with current version of alpakka slick (using slick 3.3.3, next is 3.4.1)
-    lazy val slickPgVersion    = "0.20.4"
+    lazy val playSlickVersion = "6.1.0"
+    lazy val slickPgVersion    = "0.22.2"
     lazy val playMailerVersion = "10.0.0"
-    // Cannot be updated to "10.4.0+" (current is 10.5.2). Compatibility issues with play  2.8.20 (using akka 2.6.21)
-    lazy val akkaHttpVersion = "10.2.10"
-    // Cannot be updated to "5.0.0+" (current is 6.0.2). Compatibility issues with play 2.8.20 (still using akka 2.6.21)
-    lazy val alpakkaVersion = "4.0.0"
-    // Cannot be updated to "1.8.0" (it's based on play 3.0.0 / Pekko)
-    lazy val enumeratumVersion         = "1.7.3"
+    lazy val pekkoHttpVersion = "1.0.1"
+    lazy val pekkoVersion = "1.0.2"
+    lazy val enumeratumVersion         = "1.8.0"
     lazy val sentryVersion             = "6.34.0"
     lazy val jbcrypt                   = "0.4"
-    lazy val specs2MatcherExtraVersion = "4.20.3"
-    lazy val scalaCheckVersion         = "1.17.0"
-    lazy val catsCoreVersion           = "2.10.0"
-    lazy val pureConfigVersion         = "0.17.4"
+    lazy val specs2MatcherExtraVersion = "4.20.6"
+    lazy val scalaCheckVersion         = "1.18.0"
+    lazy val catsCoreVersion           = "2.12.0"
+    lazy val pureConfigVersion         = "0.17.6"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version       = "1.12.603"
-    lazy val jacksonModuleScalaVersion = "2.16.0"
-    lazy val postgresqlVersion         = "42.5.5"
-    lazy val refinedVersion            = "0.11.0"
+    lazy val awsJavaSdkS3Version       = "1.12.736"
+    lazy val jacksonModuleScalaVersion = "2.17.1"
+    lazy val postgresqlVersion         = "42.7.3"
+    lazy val refinedVersion            = "0.11.2"
     lazy val spoiwoVersion             = "2.2.1"
-    lazy val itext7CoreVersion         = "8.0.2"
-    lazy val html2pdfVersion           = "5.0.2"
-    lazy val chimneyVersion            = "0.8.3"
-    lazy val sttp                      = "3.9.1"
-    lazy val sttpPlayJson              = "3.9.1"
-    lazy val flyWayVersion             = "10.0.1"
-    lazy val janino                    = "3.1.11"
+    lazy val itext7CoreVersion         = "8.0.4"
+    lazy val html2pdfVersion           = "5.0.4"
+    lazy val chimneyVersion            = "0.8.5"
+    lazy val sttp                      = "3.9.7"
+    lazy val sttpPlayJson              = "3.9.7"
+    lazy val flyWayVersion             = "10.14.0"
+    lazy val janino                    = "3.1.12"
     // Cannot be updated to "7.4" because of the following error when logging as JSON:
     // java.lang.NoSuchMethodError: 'java.time.Instant ch.qos.logback.classic.spi.ILoggingEvent.getInstant()'
     // If we want to upgrade, we MUST check json logs (env var USE_TEXT_LOGS set to false) to see if this error still happen
@@ -46,7 +41,7 @@ object Dependencies {
     val specs2Import       = specs2            % "test"
     val specs2MatcherExtra = "org.specs2"     %% "specs2-matcher-extra" % Versions.specs2MatcherExtraVersion % "test"
     val scalaCheck         = "org.scalacheck" %% "scalacheck"           % Versions.scalaCheckVersion         % "test"
-    val akkaTestKit = "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.21" % "test"
+    val pekkoTestKit = "org.apache.pekko" %% "pekko-actor-testkit-typed" % Versions.pekkoVersion % "test"
 
   }
 
@@ -63,18 +58,16 @@ object Dependencies {
     val catsCore     = "org.typelevel"                 %% "cats-core"                        % Versions.catsCoreVersion
     val pureConfig         = "com.github.pureconfig" %% "pureconfig"                % Versions.pureConfigVersion
     val playJsonExtensions = "ai.x"                  %% "play-json-extensions"      % Versions.playJsonExtensionsVersion
-    val playSlick          = "com.typesafe.play"     %% "play-slick"                % Versions.playSlickVersion
+    val playSlick          = "org.playframework"     %% "play-slick"                % Versions.playSlickVersion
     val slickPg            = "com.github.tminglei"   %% "slick-pg"                  % Versions.slickPgVersion
     val slickPgPlayJson    = "com.github.tminglei"   %% "slick-pg_play-json"        % Versions.slickPgVersion
-    val alpakkaSlick       = "com.lightbend.akka"    %% "akka-stream-alpakka-slick" % Versions.alpakkaVersion
     val playMailer         = "org.playframework"     %% "play-mailer"               % Versions.playMailerVersion
-    val alpakkaS3          = "com.lightbend.akka"    %% "akka-stream-alpakka-s3"    % Versions.alpakkaVersion
-    val alpakkaCSV         = "com.lightbend.akka"    %% "akka-stream-alpakka-csv"   % Versions.alpakkaVersion
-    val alpakkaFile        = "com.lightbend.akka"    %% "akka-stream-alpakka-file"  % Versions.alpakkaVersion
-    val akkaHttp           = "com.typesafe.akka"     %% "akka-http"                 % Versions.akkaHttpVersion
-    val akkaHttpXml        = "com.typesafe.akka"     %% "akka-http-xml"             % Versions.akkaHttpVersion
+    val pekkoConnectorS3          = "org.apache.pekko"    %% "pekko-connectors-s3"    % Versions.pekkoVersion
+    val pekkoConnectorCSV         = "org.apache.pekko"    %% "pekko-connectors-csv"   % Versions.pekkoVersion
+    val pekkoConnectorFile        = "org.apache.pekko"    %% "pekko-connectors-file"  % Versions.pekkoVersion
+    val pekkoHttp           = "org.apache.pekko"     %% "pekko-http"                 % Versions.pekkoHttpVersion
+    val pekkoHttpXml        = "org.apache.pekko"     %% "pekko-http-xml"             % Versions.pekkoHttpVersion
     val jbcrypt            = "org.mindrot"            % "jbcrypt"                   % "0.4"
-    val enumeratum         = "com.beachape"          %% "enumeratum"                % Versions.enumeratumVersion
     val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"           % Versions.enumeratumVersion
     val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"           % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
@@ -102,15 +95,13 @@ object Dependencies {
     Compile.playSlick,
     Compile.slickPg,
     Compile.slickPgPlayJson,
-    Compile.alpakkaSlick,
     Compile.playMailer,
-    Compile.alpakkaS3,
-    Compile.alpakkaCSV,
-    Compile.alpakkaFile,
-    Compile.akkaHttp,
-    Compile.akkaHttpXml,
+    Compile.pekkoConnectorS3,
+    Compile.pekkoConnectorCSV,
+    Compile.pekkoConnectorFile,
+    Compile.pekkoHttp,
+    Compile.pekkoHttpXml,
     Compile.jbcrypt,
-    Compile.enumeratum,
     Compile.enumeratumPlay,
     Compile.awsJavaSdkS3,
     Compile.jacksonModuleScala,
@@ -125,6 +116,6 @@ object Dependencies {
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,
-    Test.akkaTestKit
+    Test.pekkoTestKit
   )
 }

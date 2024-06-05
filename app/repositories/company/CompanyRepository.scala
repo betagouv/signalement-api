@@ -1,5 +1,7 @@
 package repositories.company
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityName
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityRCS
@@ -15,6 +17,8 @@ import repositories.companyaccess.CompanyAccessTable
 import repositories.report.ReportTable
 import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
+import slick.jdbc.ResultSetConcurrency
+import slick.jdbc.ResultSetType
 import utils.Country
 import utils.EmailAddress
 import utils.SIREN
@@ -40,6 +44,19 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   override val table: TableQuery[CompanyTable] = CompanyTable.table
   import dbConfig._
+
+  // To stream PG properly, some parameters are required, see https://scala-slick.org/doc/stable/dbio.html
+  def streamCompanies: Source[Company, NotUsed] = Source.fromPublisher(
+    db.stream(
+      CompanyTable.table.result
+        .withStatementParameters(
+          rsType = ResultSetType.ForwardOnly,
+          rsConcurrency = ResultSetConcurrency.ReadOnly,
+          fetchSize = 10000
+        )
+        .transactionally
+    )
+  )
 
   private def least(elements: Rep[Option[Double]]*): Rep[Option[Double]] =
     SimpleFunction[Option[Double]]("least").apply(elements)

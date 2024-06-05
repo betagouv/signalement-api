@@ -1,13 +1,13 @@
 package controllers
 
-import akka.NotUsed
-import akka.stream.alpakka.file.ArchiveMetadata
-import akka.stream.alpakka.file.scaladsl.Archive
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import authentication.Authenticator
 import models.Consumer
 import orchestrators.DataEconomieOrchestrator
+import org.apache.pekko.stream.connectors.file.ArchiveMetadata
+import org.apache.pekko.stream.connectors.file.scaladsl.Archive
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents

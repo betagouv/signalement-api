@@ -21,7 +21,7 @@ object SIRET {
       throw MalformedSIRET(value)
     }
 
-  @Deprecated(since = "use safer version instead")
+  // deprecated
   def fromUnsafe(value: String) = new SIRET(if (value != null) value.replaceAll("\\s", "") else value)
 
   def pattern = s"[0-9]{$length}"

@@ -1,7 +1,7 @@
 package orchestrators
 
 import actors.GS1AuthTokenActor
-import akka.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import models.barcode.gs1.OAuthAccessToken
 import org.mockito.Mockito.when
 import org.specs2.matcher.FutureMatchers
@@ -12,10 +12,10 @@ import services.GS1Service
 import services.GS1ServiceInterface
 import services.OpenBeautyFactsServiceInterface
 import services.OpenFoodFactsServiceInterface
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.Scheduler
-import akka.util.Timeout
+import org.apache.pekko.actor.typed.Scheduler
+import org.apache.pekko.util.Timeout
 import models.barcode.BarcodeProduct
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.mockito.ArgumentMatchers.argThat
 import org.specs2.specification.BeforeAfterAll
 import play.api.libs.json.Json

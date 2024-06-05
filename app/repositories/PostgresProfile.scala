@@ -16,21 +16,23 @@ trait PostgresProfile
     with PgSearchSupport
     with PgDate2Support
     with PgAggFuncSupport
-    with PgTrgmSupport {
+    with PgTrgmSupport
+    with PgRangeSupport {
 
   def pgjson = "jsonb"
 
   override val api = MyAPI
 
   object MyAPI
-      extends API
+      extends ExtPostgresAPI
       with ArrayImplicits
       with JsonImplicits
-      with DateTimeImplicits
+      with Date2DateTimeImplicitsDuration
       with PgTrgmImplicits
       with SimpleSearchPlainImplicits
       with SearchImplicits
-      with SearchAssistants {
+      with SearchAssistants
+      with RangeImplicits {
 
     implicit val strListTypeMapper: DriverJdbcType[List[String]] = new SimpleArrayJdbcType[String]("text").to(_.toList)
 

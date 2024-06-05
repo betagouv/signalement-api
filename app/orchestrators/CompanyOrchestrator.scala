@@ -1,7 +1,7 @@
 package orchestrators
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import config.EmailConfiguration
 import config.TaskConfiguration
 import config.TokenConfiguration

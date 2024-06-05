@@ -1,6 +1,6 @@
 package utils
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import config.ApplicationConfiguration
 import config.EmailConfiguration
 import config.SignalConsoConfiguration

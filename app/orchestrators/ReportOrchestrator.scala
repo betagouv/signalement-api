@@ -1,6 +1,6 @@
 package orchestrators
 
-import akka.Done
+import org.apache.pekko.Done
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
@@ -97,7 +97,7 @@ class ReportOrchestrator(
   private val SncfVoyageursSIRET: SIRET = SIRET("51903758408747")
   private val TrenitaliaSIRET: SIRET    = SIRET("52028700400078")
 
-  implicit val timeout: akka.util.Timeout = 5.seconds
+  implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   private def genActivationToken(companyId: UUID, validity: Option[TemporalAmount]): Future[String] =
     for {

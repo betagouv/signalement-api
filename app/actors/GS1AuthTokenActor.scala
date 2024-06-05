@@ -7,18 +7,18 @@ import actors.GS1AuthTokenActor.GetToken
 import actors.GS1AuthTokenActor.GotToken
 import actors.GS1AuthTokenActor.RenewToken
 import actors.GS1AuthTokenActor.TokenError
-import akka.actor.Scheduler
-import akka.actor.typed.ActorRef
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl._
-import akka.pattern.retry
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.scaladsl._
 import services.GS1ServiceInterface
 
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
-import akka.actor.typed.scaladsl.adapter._
+import org.apache.pekko.actor.typed.scaladsl.adapter._
 import models.barcode.gs1.OAuthAccessToken
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.pattern.retry
 import play.api.Logger
 
 object GS1AuthTokenActor {

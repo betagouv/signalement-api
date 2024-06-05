@@ -1,6 +1,6 @@
 package controllers
 
-import akka.Done
+import org.apache.pekko.Done
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import config.SignalConsoConfiguration
