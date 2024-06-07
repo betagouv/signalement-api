@@ -67,7 +67,7 @@ object EmailDefinitionsDggcrf {
         recipients: Seq[EmailAddress],
         report: Report
     ) extends BaseEmail {
-      override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] "))
+      override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, "[Produits dangereux] ")
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
         views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
@@ -100,7 +100,11 @@ object EmailDefinitionsDggcrf {
     ) extends BaseEmail {
       override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
         reports.length,
-        subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
+        subscription.withTags
+          .collect {
+            case tag if tag == ReportTag.ProduitDangereux || tag == ReportTag.BauxPrecaire => s"[${tag.translate()}] "
+          }
+          .mkString(",")
       )
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>

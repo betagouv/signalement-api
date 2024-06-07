@@ -266,7 +266,7 @@ class AdminController(
 
   private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
     ddEmails <-
-      if (report.tags.contains(ReportTag.ProduitDangereux)) {
+      if (report.shouldNotifyDgccrf()) {
         report.companyAddress.postalCode
           .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
           .getOrElse(Future(Seq()))

@@ -68,6 +68,8 @@ case class Report(
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
+  def shouldNotifyDgccrf() = tags.exists(tag => tag == ReportTag.ProduitDangereux || tag == ReportTag.BauxPrecaire)
+
   def isContractualDispute() = tags.contains(ReportTag.LitigeContractuel)
 
   def needWorkflowAttachment() = visibleToPro &&
