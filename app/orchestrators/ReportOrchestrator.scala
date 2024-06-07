@@ -262,9 +262,15 @@ class ReportOrchestrator(
       // Small optimisation to only computed the splitted email once
       // Instead of multiple times in the exists loop
       val splittedEmailAddress = emailAddress.split
-      if (fullBlacklist.exists(blacklistedEmail => splittedEmailAddress.isEquivalentTo(blacklistedEmail)))
+
+      if (
+        emailConfiguration.extendedComparison &&
+        fullBlacklist.exists(blacklistedEmail => splittedEmailAddress.isEquivalentTo(blacklistedEmail))
+      ) {
         throw SpammerEmailBlocked(emailAddress)
-      else ()
+      } else if (fullBlacklist.contains(emailAddress.value)) {
+        throw SpammerEmailBlocked(emailAddress)
+      } else ()
     }
 
   private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] =
