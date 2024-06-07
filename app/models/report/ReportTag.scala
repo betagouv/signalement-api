@@ -67,6 +67,7 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object AppelCommercial             extends ReportTag
   case object Prix                        extends ReportTag
   case object AlimentationMaterielAnimaux extends ReportTag
+  case object BauxPrecaire                extends ReportTag
 
   implicit class ReportTagTranslationOps(reportTag: ReportTag) {
 
@@ -96,6 +97,7 @@ object ReportTag extends PlayEnum[ReportTag] {
       case AppelCommercial             => "Appel commercial"
       case Prix                        => "Prix"
       case AlimentationMaterielAnimaux => "Alimentation matériel animaux"
+      case BauxPrecaire                => "Baux Précaire"
     }
   }
 

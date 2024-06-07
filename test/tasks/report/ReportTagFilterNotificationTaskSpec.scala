@@ -25,7 +25,7 @@ class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends Rep
       }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(EmailAddress("tag.abo.546438@example.com")),
-        "[SignalConso] [Produits dangereux] Un nouveau signalement",
+        "[SignalConso] [Produit dangereux] Un nouveau signalement",
         views.html.mails.dgccrf
           .reportNotification(tagSubscription, Seq((reportProduitDangereux, List.empty)), runningDate.minusDays(1))
           .toString

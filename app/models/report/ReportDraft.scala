@@ -110,7 +110,7 @@ case class ReportDraft(
       station = station
     )
 
-  def shouldBeVisibleToPro(): Boolean =
+  private def shouldBeVisibleToPro(): Boolean =
     !employeeConsumer && tags
       .intersect(ReportTagHiddenToProfessionnel)
       .isEmpty

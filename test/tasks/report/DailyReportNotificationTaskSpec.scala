@@ -32,7 +32,7 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNoti
       )}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(tagEmail),
-        s"[SignalConso] [Produits dangereux] Un nouveau signalement",
+        s"[SignalConso] [Produit dangereux] Un nouveau signalement",
         views.html.mails.dgccrf
           .reportNotification(tagSubscription, Seq((tagReport, List.empty)), runningDate.minusDays(1))
           .toString

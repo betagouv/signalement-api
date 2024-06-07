@@ -83,7 +83,7 @@ object EmailDefinitionsConsumer {
             Email(
               genReport.copy(
                 status = ReportStatus.TraitementEnCours,
-                tags = List(ReportTag.ProduitDangereux),
+                tags = List(ReportTag.ProduitDangereux, ReportTag.BauxPrecaire),
                 email = recipient
               ),
               Some(genCompany),
