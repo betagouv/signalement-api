@@ -142,7 +142,7 @@ class EventRepository(
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
-  override def fetchAdminActionEvents(
+  override def fetchEventCountFromActionEvents(
       companyId: UUID,
       action: ActionEventValue
   ): Future[Int] =
@@ -151,6 +151,19 @@ class EventRepository(
         .filter(_.companyId === companyId)
         .filter(e => e.action === action.value)
         .length
+        .result
+    )
+
+  override def fetchEventFromActionEvents(
+      companyId: UUID,
+      action: ActionEventValue
+  ): Future[List[Event]] =
+    db.run(
+      table
+        .filter(_.companyId === companyId)
+        .filter(e => e.action === action.value)
+        .sortBy(_.creationDate.desc.nullsLast)
+        .to[List]
         .result
     )
 
