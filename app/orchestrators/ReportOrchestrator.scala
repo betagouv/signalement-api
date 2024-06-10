@@ -125,12 +125,13 @@ class ReportOrchestrator(
       maybeCompanyUsers <- companiesVisibilityOrchestrator
         .fetchUsersWithHeadOffices(company.siret)
         .map(NonEmptyList.fromList)
-
       updatedReport <- maybeCompanyUsers match {
+
         case Some(companyUsers) =>
           logger.debug("Found user, sending notification")
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
+
             _ <- mailService.send(ProNewReportNotification.Email(companyUserEmails, report))
             reportWithUpdatedStatus <- reportRepository.update(
               report.id,
@@ -369,7 +370,23 @@ class ReportOrchestrator(
   private def notifyProfessionalIfNeeded(maybeCompany: Option[Company], report: Report) =
     (report.status, maybeCompany) match {
       case (ReportStatus.TraitementEnCours, Some(company)) =>
-        notifyProfessionalOfNewReportAndUpdateStatus(report, company)
+        val reportNotificationThresholdPeriod = OffsetDateTime.now().minusHours(1)
+        val maxReportNotificationThreshold    = 10
+        for {
+          events <- eventRepository
+            .fetchEventFromActionEvents(company.id, EMAIL_PRO_NEW_REPORT)
+          companyNotificationWithinPeriod = events.count(_.creationDate.isAfter(reportNotificationThresholdPeriod))
+          report <-
+            if (companyNotificationWithinPeriod > maxReportNotificationThreshold) {
+              logger.debug(
+                "Do not send notification email, company users have been notified about 1 hour ago for another report we don't want to spam the company users."
+              )
+              Future.successful(report)
+            } else {
+              notifyProfessionalOfNewReportAndUpdateStatus(report, company)
+            }
+        } yield report
+
       case _ => Future.successful(report)
     }
 
