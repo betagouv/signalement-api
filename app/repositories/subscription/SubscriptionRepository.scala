@@ -54,7 +54,6 @@ class SubscriptionRepository(override val dbConfig: DatabaseConfig[JdbcProfile])
         .filter(_.email.isDefined)
         .filter(_.userId.isEmpty)
         .filter(x => x.departments @> List(department))
-        .filter(x => x.email.map(_.asColumnOf[String]) like s"dd%")
         .result
     ).map(_.map(_.email.get).distinct)
 
