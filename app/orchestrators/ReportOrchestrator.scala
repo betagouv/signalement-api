@@ -370,12 +370,12 @@ class ReportOrchestrator(
   private def notifyProfessionalIfNeeded(maybeCompany: Option[Company], report: Report) =
     (report.status, maybeCompany) match {
       case (ReportStatus.TraitementEnCours, Some(company)) =>
-        val oneHourAgo                     = OffsetDateTime.now().minusHours(1)
-        val maxReportNotificationThreshold = 10
+        val reportNotificationThresholdPeriod = OffsetDateTime.now().minusHours(1)
+        val maxReportNotificationThreshold    = 10
         for {
           events <- eventRepository
             .fetchEventFromActionEvents(company.id, EMAIL_PRO_NEW_REPORT)
-          companyNotificationWithinPeriod = events.count(_.creationDate.isAfter(oneHourAgo))
+          companyNotificationWithinPeriod = events.count(_.creationDate.isAfter(reportNotificationThresholdPeriod))
           report <-
             if (companyNotificationWithinPeriod > maxReportNotificationThreshold) {
               logger.debug(
