@@ -63,7 +63,7 @@
           <br />
           <strong>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
       </p>
-      <p>@Messages("ConsumerReportAckProEmail.email8DaysLater")</p>
+      <p>@Messages("ConsumerReportAckProEmail.engagementReminderEmailPeriodLater",models.engagement.Engagement.EngagementReminderPeriod)</p>
   }
 
     <p>

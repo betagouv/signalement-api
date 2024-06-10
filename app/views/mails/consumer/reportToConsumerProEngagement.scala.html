@@ -29,7 +29,7 @@
     </p>
 
     <p>
-        @Messages("ConsumerReportProEngagementEmail.eightDaysAgo")
+        @Messages("ConsumerReportProEngagementEmail.engagementReminderPeriodAgo",models.engagement.Engagement.EngagementReminderPeriod)
         <br />
         <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
     </p>

@@ -10,3 +10,7 @@ case class Engagement(
     resolutionEventId: Option[UUID],
     expirationDate: OffsetDateTime
 )
+
+object Engagement {
+  val EngagementReminderPeriod = 21
+}
