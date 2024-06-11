@@ -6,10 +6,10 @@ import controllers.error.AppError.EngagementNotFound
 import controllers.error.AppError.ReportNotFound
 import controllers.error.AppError.ServerError
 import models.User
-import models.event.Event
 import models.engagement.EngagementApi
 import models.engagement.EngagementId
-import models.report.ReportResponse
+import models.event.Event
+import models.report.ExistingReportResponse
 import models.report.ReportStatus.hasResponse
 import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReviewApi
@@ -17,8 +17,8 @@ import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories.event.EventRepositoryInterface
 import repositories.engagement.EngagementRepositoryInterface
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
 import utils.Constants.ActionEvent
@@ -53,7 +53,7 @@ class EngagementOrchestrator(
           case None        => Some(())
           case Some(event) => if (event.creationDate.toLocalDate.plusDays(1).isBefore(today)) None else Some(())
         }
-        reportResponse  <- promiseEvent.details.asOpt[ReportResponse]
+        reportResponse  <- promiseEvent.details.asOpt[ExistingReportResponse]
         responseDetails <- reportResponse.responseDetails
       } yield EngagementApi(
         engagement.id,

@@ -1,9 +1,9 @@
-@import models.report.ReportResponse
+@import models.report.ExistingReportResponse
 @import models.report.Report
 @import java.net.URI
 @import models.report.review.ResponseEvaluation
 @import models.company.Company
-@(report: Report, maybeCompany: Option[Company], reportResponse: ReportResponse, isResolved: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
+@(report: Report, maybeCompany: Option[Company], reportResponse: ExistingReportResponse, isResolved: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
 
 @views.html.mails.layout(Messages("ConsumerReportProEngagementEmail.title")) {
     <p>
@@ -31,7 +31,7 @@
     <p>
         @Messages("ConsumerReportProEngagementEmail.eightDaysAgo")
         <br />
-        <b>@ReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
+        <b>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
     </p>
 
     @if(isResolved) {

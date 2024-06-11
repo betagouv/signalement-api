@@ -4,8 +4,8 @@ import org.apache.pekko.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.event.Event
+import models.report.ExistingReportResponse
 import models.report.Report
-import models.report.ReportResponse
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.JsResult
@@ -17,10 +17,10 @@ import services.emails.MailService
 
 import java.time.LocalDate
 import java.time.LocalTime
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 
 class EngagementEmailTask(
     mailService: MailService,
@@ -45,7 +45,7 @@ class EngagementEmailTask(
   ) =
     for {
       maybeCompany   <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      reportResponse <- Future.fromTry(JsResult.toTry(promiseEvent.details.validate[ReportResponse]))
+      reportResponse <- Future.fromTry(JsResult.toTry(promiseEvent.details.validate[ExistingReportResponse]))
       _ <- mailService.send(
         ConsumerProEngagementReview.Email(
           report,

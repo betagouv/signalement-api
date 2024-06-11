@@ -3,8 +3,8 @@ package services.emails
 import cats.data.NonEmptyList
 import models.User
 import models.company.Company
+import models.report.ExistingReportResponse
 import models.report.Report
-import models.report.ReportResponse
 import services.emails.EmailCategory.Pro
 import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
@@ -116,7 +116,7 @@ object EmailDefinitionsPro {
         "report_ack_pro" -> ((recipient, _) => Email(genReport, genReportResponse, genUser.copy(email = recipient)))
       )
 
-    final case class Email(report: Report, reportResponse: ReportResponse, user: User)
+    final case class Email(report: Report, reportResponse: ExistingReportResponse, user: User)
         extends ProFilteredEmailSingleReport {
       override val recipients: List[EmailAddress] = List(user.email)
       override val subject: String                = EmailSubjects.REPORT_ACK_PRO

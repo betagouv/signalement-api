@@ -4,9 +4,9 @@ import cats.implicits.toTraverseOps
 import models.User
 import models.company.Company
 import models.event.Event
+import models.report.ExistingReportResponse
 import models.report.Report
 import models.report.ReportFile
-import models.report.ReportResponse
 import models.report.review.ResponseConsumerReview
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
@@ -24,7 +24,7 @@ case class ReportWithData(
     report: Report,
     maybeCompany: Option[Company],
     events: Seq[(Event, Option[User])],
-    responseOption: Option[ReportResponse],
+    responseOption: Option[ExistingReportResponse],
     consumerReviewOption: Option[ResponseConsumerReview],
     companyEvents: Seq[(Event, Option[User])],
     files: Seq[ReportFile]
@@ -58,7 +58,7 @@ class ReportWithDataOrchestrator(
               .map(_._1)
               .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
               .map(_.details)
-              .map(_.as[ReportResponse])
+              .map(_.as[ExistingReportResponse])
             ReportWithData(
               report,
               maybeCompany,
