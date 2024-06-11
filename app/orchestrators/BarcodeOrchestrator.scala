@@ -69,26 +69,25 @@ class BarcodeOrchestrator(
           Future.successful(maybeExistingProductInDB)
         case None =>
           logger.debug(s"Product with gtin $gtin not in DB, fetching from GS1 API")
-          Future.successful(None) // TEMPORARY TO STOP QUERYING OFF AND GS1
-//          for {
-//            maybeProductFromAPI             <- getFromGS1API(gtin)
-//            maybeProductFromOpenFoodFacts   <- openFoodFactsService.getProductByBarcode(gtin)
-//            maybeProductFromOpenBeautyFacts <- openBeautyFactsService.getProductByBarcode(gtin)
-//            createdProduct <- maybeProductFromAPI match {
-//              case Some(product) =>
-//                barcodeRepository
-//                  .create(
-//                    BarcodeProduct(
-//                      gtin = gtin,
-//                      gs1Product = product,
-//                      openFoodFactsProduct = maybeProductFromOpenFoodFacts,
-//                      openBeautyFactsProduct = maybeProductFromOpenBeautyFacts
-//                    )
-//                  )
-//                  .map(Some(_))
-//              case None => Future.successful(None)
-//            }
-//          } yield createdProduct
+          for {
+            maybeProductFromAPI             <- getFromGS1API(gtin)
+            maybeProductFromOpenFoodFacts   <- openFoodFactsService.getProductByBarcode(gtin)
+            maybeProductFromOpenBeautyFacts <- openBeautyFactsService.getProductByBarcode(gtin)
+            createdProduct <- maybeProductFromAPI match {
+              case Some(product) =>
+                barcodeRepository
+                  .create(
+                    BarcodeProduct(
+                      gtin = gtin,
+                      gs1Product = product,
+                      openFoodFactsProduct = maybeProductFromOpenFoodFacts,
+                      openBeautyFactsProduct = maybeProductFromOpenBeautyFacts
+                    )
+                  )
+                  .map(Some(_))
+              case None => Future.successful(None)
+            }
+          } yield createdProduct
       }
     } yield product
 
