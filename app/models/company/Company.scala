@@ -60,8 +60,8 @@ object CompanyRegisteredSearch {
     CompanyRegisteredSearch(
       departments = mapper.seq("departments"),
       activityCodes = mapper.seq("activityCodes"),
-      emailsWithAccess = mapper.string("emailsWithAccess"),
-      identity = mapper.nonEmptyString("identity").map(SearchCompanyIdentity.fromString)
+      emailsWithAccess = mapper.string("emailsWithAccess", trimmed = true),
+      identity = mapper.nonEmptyString("identity", trimmed = true).map(SearchCompanyIdentity.fromString)
     )
   }
 }
