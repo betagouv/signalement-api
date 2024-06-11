@@ -53,11 +53,11 @@ object ReportFilter {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
-      email = mapper.string("email"),
-      websiteURL = hostFromWebsiteFilter(mapper.string("websiteURL")),
-      phone = mapper.string("phone"),
-      siretSirenList = mapper.seq("siretSirenList"),
-      companyName = mapper.string("companyName"),
+      email = mapper.string("email", trimmed = true),
+      websiteURL = hostFromWebsiteFilter(mapper.string("websiteURL", trimmed = true)),
+      phone = mapper.string("phone", trimmed = true),
+      siretSirenList = mapper.seq("siretSirenList", cleanAllWhitespaces = true),
+      companyName = mapper.string("companyName", trimmed = true),
       companyCountries = mapper.seq("companyCountries"),
       // temporary retrocompat, so we can mep the API safely
       start = mapper.timeWithLocalDateRetrocompatStartOfDay("start"),
@@ -68,8 +68,8 @@ object ReportFilter {
         val statuses = mapper.seq("status").map(ReportStatus.withName)
         if (statuses.isEmpty) ReportStatus.values else statuses
       },
-      details = mapper.string("details"),
-      description = mapper.string("description"),
+      details = mapper.string("details", trimmed = true),
+      description = mapper.string("description", trimmed = true),
       hasForeignCountry = mapper.boolean("hasForeignCountry"),
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),
@@ -81,7 +81,7 @@ object ReportFilter {
       activityCodes = mapper.seq("activityCodes"),
       hasEvaluation = mapper.boolean("hasEvaluation"),
       evaluation = mapper.seq("evaluation").map(ResponseEvaluation.withName),
-      fullText = mapper.string("fullText"),
+      fullText = mapper.string("fullText", trimmed = true),
       isForeign = mapper.boolean("isForeign"),
       hasBarcode = mapper.boolean("hasBarcode")
     )
@@ -149,4 +149,5 @@ object ReportFilter {
       hasBarcode = hasBarcode
     )
   }
+
 }
