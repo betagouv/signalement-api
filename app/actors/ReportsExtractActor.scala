@@ -279,6 +279,16 @@ object ReportsExtractActor {
             .getOrElse("")
       ),
       ReportColumn(
+        "Réponse du professionnel (détails)",
+        leftAlignmentColumn,
+        (_, _, events, _, _) =>
+          events
+            .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .flatMap(_.event.details.validate[ExistingReportResponse].asOpt)
+            .flatMap(response => ExistingReportResponse.translateResponseDetails(response))
+            .getOrElse("")
+      ),
+      ReportColumn(
         "Réponse au consommateur",
         leftAlignmentColumn,
         (report, _, events, _, _) =>
