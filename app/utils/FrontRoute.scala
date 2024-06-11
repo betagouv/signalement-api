@@ -2,6 +2,8 @@ package utils
 
 import config.SignalConsoConfiguration
 import models.auth.AuthToken
+import models.report.Report
+import models.report.ReportTag.Telecom
 import models.report.review.ResponseEvaluation
 
 import java.net.URI
@@ -10,8 +12,11 @@ import java.util.UUID
 class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
   object website {
-    val url    = signalConsoConfiguration.websiteURL
-    def litige = url.resolve(s"/litige")
+    val url = signalConsoConfiguration.websiteURL
+    def litige(report: Report) = url.resolve(
+      if (report.tags.contains(Telecom)) "/litige/telecom"
+      else "/litige"
+    )
 
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
       s"/avis/$id?evaluation=${evaluation.entryName}"

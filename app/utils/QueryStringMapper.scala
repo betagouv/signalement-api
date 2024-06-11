@@ -1,13 +1,10 @@
 package utils
 
-import models.extractUUID
-
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.UUID
 
 class QueryStringMapper(q: Map[String, Seq[String]]) {
 
@@ -15,13 +12,17 @@ class QueryStringMapper(q: Map[String, Seq[String]]) {
 
   def int(k: String): Option[Int] = string(k).map(_.toInt)
 
-  def string(k: String): Option[String] = q.get(k).flatMap(_.headOption)
+  def string(k: String, trimmed: Boolean = false): Option[String] =
+    q.get(k).flatMap(_.headOption).map(s => if (trimmed) s.trim else s)
 
-  def nonEmptyString(k: String): Option[String] = q.get(k).flatMap(_.headOption).filter(_.nonEmpty)
+  def nonEmptyString(k: String, trimmed: Boolean = false): Option[String] =
+    string(k, trimmed).filter(_.nonEmpty)
 
-  def UUID(k: String): Option[UUID] = q.get(k).flatMap(_.headOption).map(extractUUID)
-
-  def seq(k: String): Seq[String] = q.getOrElse(k, Nil)
+  def seq(k: String, cleanAllWhitespaces: Boolean = false): Seq[String] = q
+    .getOrElse(k, Nil)
+    .map { s =>
+      if (cleanAllWhitespaces) s.replaceAll("\\s+", "") else s
+    }
 
   def localDate(k: String): Option[LocalDate] = DateUtils.parseDate(string(k))
 

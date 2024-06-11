@@ -48,7 +48,7 @@ object EmailValidationFilter {
   def fromQueryString(q: Map[String, Seq[String]]): Try[EmailValidationFilter] = Try {
     val mapper = new QueryStringMapper(q)
     EmailValidationFilter(
-      email = mapper.string("email").map(EmailAddress(_)),
+      email = mapper.string("email", trimmed = true).map(EmailAddress(_)),
       validated = mapper.boolean("validated")
     )
   }

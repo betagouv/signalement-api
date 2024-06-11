@@ -4,25 +4,11 @@ import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.FileIO
-import spoiwo.model._
-import spoiwo.model.enums.CellFill
-import spoiwo.model.enums.CellHorizontalAlignment
-import spoiwo.model.enums.CellStyleInheritance
-import spoiwo.model.enums.CellVerticalAlignment
-import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
 import models.company.AccessLevel
-import models.report.EventWithUser
-import models.report.Report
-import models.report.ReportCategory
-import models.report.ReportFile
-import models.report.ReportFileOrigin
-import models.report.ReportFilter
-import models.report.ReportResponse
-import models.report.ReportResponseType
-import models.report.ReportStatus
+import models.report._
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseEvaluation
 import orchestrators.ReportConsumerReviewOrchestrator
@@ -34,6 +20,12 @@ import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
+import spoiwo.model._
+import spoiwo.model.enums.CellFill
+import spoiwo.model.enums.CellHorizontalAlignment
+import spoiwo.model.enums.CellStyleInheritance
+import spoiwo.model.enums.CellVerticalAlignment
+import spoiwo.natures.xlsx.Model2XlsxConversions._
 import utils.Constants
 import utils.Constants.Departments
 import utils.DateUtils.frenchFormatDate
@@ -41,14 +33,14 @@ import utils.DateUtils.frenchFormatDateAndTime
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Random
 import scala.util.Success
-import java.time.ZoneId
-import java.time.OffsetDateTime
 
 object ReportsExtractActor {
   sealed trait ReportsExtractCommand
@@ -282,7 +274,7 @@ object ReportsExtractActor {
         (_, _, events, _, _) =>
           events
             .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-            .flatMap(_.event.details.validate[ReportResponse].asOpt)
+            .flatMap(_.event.details.validate[ExistingReportResponse].asOpt)
             .map(response => ReportResponseType.translate(response.responseType))
             .getOrElse("")
       ),
@@ -301,7 +293,7 @@ object ReportsExtractActor {
             .flatMap(_ =>
               events
                 .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .flatMap(_.event.details.asOpt[ReportResponse].map(_.consumerDetails))
+                .flatMap(_.event.details.asOpt[ExistingReportResponse].map(_.consumerDetails))
             )
             .getOrElse("")
       ),
@@ -320,7 +312,7 @@ object ReportsExtractActor {
             .flatMap(_ =>
               events
                 .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-                .flatMap(_.event.details.asOpt[ReportResponse].flatMap(_.dgccrfDetails))
+                .flatMap(_.event.details.asOpt[ExistingReportResponse].flatMap(_.dgccrfDetails))
             )
             .getOrElse("")
       ),

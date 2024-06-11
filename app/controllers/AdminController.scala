@@ -25,13 +25,13 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.PDFService
+import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.EmailDefinitionsConsumer._
 import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailsExamplesUtils._
 import services.emails.BaseEmail
 import services.emails.EmailDefinition
-import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent
@@ -174,7 +174,7 @@ class AdminController(
         mailService.send(
           ConsumerProResponseNotification.Email(
             report,
-            responseEvent.details.as[ReportResponse],
+            responseEvent.details.as[ExistingReportResponse],
             maybeCompany,
             controllerComponents.messagesApi
           )
