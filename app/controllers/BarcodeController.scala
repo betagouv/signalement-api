@@ -17,7 +17,7 @@ class BarcodeController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def getProductByGTIN(gtin: String) = Action.async { _ =>
+  def getProductByGTIN(gtin: String) = IpRateLimitedAction.async { _ =>
     gs11Orchestrator
       .getByGTIN(gtin)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
