@@ -5,7 +5,7 @@ import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ServerError
 import models.report.ReportStatus.hasResponse
 import models.report.review.ResponseConsumerReview
-import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import play.api.Logger
@@ -51,7 +51,7 @@ class ReportConsumerReviewOrchestrator(
 
   def handleReviewOnReportResponse(
       reportId: UUID,
-      reviewApi: ResponseConsumerReviewApi
+      reviewApi: ConsumerReviewApi
   ): Future[Unit] = {
 
     logger.info(s"Report ${reportId} - the consumer give a review on response")
