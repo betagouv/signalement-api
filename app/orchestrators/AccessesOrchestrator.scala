@@ -162,7 +162,7 @@ class AccessesOrchestrator(
         Future.failed(CantPerformAction)
     }
 
-  def activateAdminOrAgentUser(draftUser: DraftUser, token: String) = for {
+  def activateAdminOrAgentUser(draftUser: DraftUser, token: String): Future[User] = for {
     _                <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
@@ -173,11 +173,11 @@ class AccessesOrchestrator(
       }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
     _ = logger.debug(s"Token $token found, creating user with role $userRole")
-    _ <- userOrchestrator.createUser(draftUser, accessToken, userRole)
+    user <- userOrchestrator.createUser(draftUser, accessToken, userRole)
     _ = logger.debug(s"User created successfully, invalidating token")
     _ <- accessTokenRepository.invalidateToken(accessToken)
     _ = logger.debug(s"Token has been revoked")
-  } yield ()
+  } yield user
 
   def fetchDGCCRFUserActivationToken(token: String): Future[DGCCRFUserActivationToken] = for {
     maybeAccessToken <- accessTokenRepository
