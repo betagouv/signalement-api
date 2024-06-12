@@ -9,6 +9,7 @@
 @import java.time.temporal.ChronoUnit
 @import models.report.review.ResponseConsumerReview
 @import models.report.review.ResponseEvaluation
+@import models.report.ExistingReportResponse
 @(
         report: Report,
         maybeCompany: Option[Company],
@@ -88,7 +89,13 @@
                                 @Messages("reportPDF.report.responseNotConcerned")
                             }
                         }
+
                         </b>
+                        <div>
+                         <b>
+                             @ExistingReportResponse.translateResponseDetails(response).getOrElse("")
+                         </b>
+                        </div>
                         <div>@response.consumerDetails</div>
                     @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
                         <br/>
