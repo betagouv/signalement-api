@@ -144,7 +144,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           )
 
         val result = route(app, request).get
-        Helpers.status(result) must beEqualTo(204)
+        Helpers.status(result) must beEqualTo(200)
 
         companyAccessRepository.fetchAdmins(company.id).map(_.length) must beEqualTo(1).await
         companyAccessRepository.fetchAdmins(otherCompany.id).map(_.length) must beEqualTo(1).await
@@ -203,7 +203,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
             )
           )
         val result = route(app, request).get
-        Helpers.status(result) must beEqualTo(204)
+        Helpers.status(result) must beEqualTo(200)
 
         val createdUser = Await.result(userRepository.findByEmail("user@dgccrf.gouv.fr"), Duration.Inf)
         createdUser.get.userRole must beEqualTo(UserRole.DGCCRF)
