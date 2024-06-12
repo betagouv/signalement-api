@@ -72,13 +72,13 @@ object Dependencies {
     val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"       % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
-    val postgresql = "org.postgresql" % "postgresql"  % Versions.postgresqlVersion
-    val refinded   = "eu.timepit"    %% "refined"     % Versions.refinedVersion
-    val spoiwo     = "com.norbitltd" %% "spoiwo"      % Versions.spoiwoVersion
-    val itext7Core = "com.itextpdf"   % "itext7-core" % Versions.itext7CoreVersion
-    val html2pdf   = "com.itextpdf"   % "html2pdf"    % Versions.html2pdfVersion
-    val chimney    = "io.scalaland"  %% "chimney"     % Versions.chimneyVersion
-
+    val postgresql = "org.postgresql"       % "postgresql"  % Versions.postgresqlVersion
+    val refinded   = "eu.timepit"          %% "refined"     % Versions.refinedVersion
+    val spoiwo     = "com.norbitltd"       %% "spoiwo"      % Versions.spoiwoVersion
+    val itext7Core = "com.itextpdf"         % "itext7-core" % Versions.itext7CoreVersion
+    val html2pdf   = "com.itextpdf"         % "html2pdf"    % Versions.html2pdfVersion
+    val chimney    = "io.scalaland"        %% "chimney"     % Versions.chimneyVersion
+    val playGuard  = "com.digitaltangible" %% "play-guard"  % "3.0.0"
   }
 
   val AppDependencies = Seq(
@@ -113,6 +113,7 @@ object Dependencies {
     Compile.chimney,
     Compile.flywayCore,
     Compile.flywayPostgres,
+    Compile.playGuard,
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,
