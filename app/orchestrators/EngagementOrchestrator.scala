@@ -12,7 +12,7 @@ import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.ReportStatus.hasResponse
 import models.report.review.EngagementReview
-import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import play.api.Logger
@@ -124,7 +124,7 @@ class EngagementOrchestrator(
 
   def handleEngagementReview(
       reportId: UUID,
-      reviewApi: ResponseConsumerReviewApi
+      reviewApi: ConsumerReviewApi
   ): Future[Unit] = {
 
     logger.info(s"Engagement for report $reportId - the consumer give a review on engagement")
