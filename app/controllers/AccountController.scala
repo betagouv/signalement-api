@@ -47,13 +47,17 @@ class AccountController(
   def activateAccount = Action.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()
-      _ <- activationRequest.companySiret match {
+      createdUser <- activationRequest.companySiret match {
         case Some(siret) =>
           proAccessTokenOrchestrator.activateProUser(activationRequest.draftUser, activationRequest.token, siret)
         case None =>
           accessesOrchestrator.activateAdminOrAgentUser(activationRequest.draftUser, activationRequest.token)
       }
-    } yield NoContent
+      cookie <- authenticator.init(createdUser.email) match {
+        case Right(value) => Future.successful(value)
+        case Left(error)  => Future.failed(error)
+      }
+    } yield authenticator.embed(cookie, Ok(Json.toJson(createdUser)))
 
   }
 

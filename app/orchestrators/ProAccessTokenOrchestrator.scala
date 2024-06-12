@@ -35,7 +35,7 @@ import scala.concurrent.duration._
 trait ProAccessTokenOrchestratorInterface {
   def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]]
   def proFirstActivationCount(ticks: Option[Int]): Future[Seq[CountByDate]]
-  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit]
+  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[User]
   def fetchCompanyUserActivationToken(siret: SIRET, token: String): Future[CompanyUserActivationToken]
   def addUserOrInvite(
       company: Company,
@@ -82,7 +82,7 @@ class ProAccessTokenOrchestrator(
       .proFirstActivationCount(ticks.getOrElse(12))
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
-  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit] = for {
+  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[User] = for {
     _     <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     token <- fetchCompanyToken(token, siret)
     user  <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
@@ -99,7 +99,7 @@ class ProAccessTokenOrchestrator(
         stringToDetailsJsValue(s"Email du compte : ${token.emailedTo.getOrElse("")}")
       )
     )
-  } yield ()
+  } yield user
 
   private def bindPendingTokens(user: User) =
     accessTokenRepository
