@@ -4,7 +4,8 @@ import authentication.Authenticator
 import io.scalaland.chimney.dsl._
 import models.User
 import models.report.review.ConsumerReviewExistApi
-import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ConsumerReviewApi
+import models.report.review.ConsumerReviewApi._
 import orchestrators.ReportConsumerReviewOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsValue
@@ -27,18 +28,21 @@ class ReportConsumerReviewController(
 
   def reviewOnReportResponse(reportUUID: UUID): Action[JsValue] = Action.async(parse.json) { implicit request =>
     for {
-      review <- request.parseBody[ResponseConsumerReviewApi]()
+      review <- request.parseBody[ConsumerReviewApi]()
       _      <- reportConsumerReviewOrchestrator.handleReviewOnReportResponse(reportUUID, review)
     } yield Ok
   }
 
-  def getReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { _ =>
+  def getReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report response review for report id : ${reportUUID}")
     for {
       maybeResponseConsumerReview <- reportConsumerReviewOrchestrator.find(reportUUID)
-      maybeResponseConsumerReviewApi = maybeResponseConsumerReview.map(_.into[ResponseConsumerReviewApi].transform)
+      maybeResponseConsumerReviewApi = maybeResponseConsumerReview.map(_.into[ConsumerReviewApi].transform)
     } yield maybeResponseConsumerReviewApi
-      .map(responseConsumerReviewApi => Ok(Json.toJson(responseConsumerReviewApi)))
+      .map { responseConsumerReviewApi =>
+        val writes = consumerReviewApiWrites(request.identity.userRole)
+        Ok(Json.toJson(responseConsumerReviewApi)(writes))
+      }
       .getOrElse(NotFound)
 
   }

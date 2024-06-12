@@ -7,7 +7,8 @@ import models.User
 import models.UserRole
 import models.engagement.EngagementId
 import models.report.review.ConsumerReviewExistApi
-import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ConsumerReviewApi
+import models.report.review.ConsumerReviewApi.consumerReviewApiWrites
 import orchestrators.EngagementOrchestrator
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
@@ -44,18 +45,21 @@ class EngagementController(
     implicit request =>
       logger.debug(s"Push report engagement review for report id : $reportUUID")
       for {
-        review <- request.parseBody[ResponseConsumerReviewApi]()
+        review <- request.parseBody[ConsumerReviewApi]()
         _      <- engagementOrchestrator.handleEngagementReview(reportUUID, review)
       } yield Ok
   }
 
-  def getEngagementReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { _ =>
+  def getEngagementReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report engagement review for report id : $reportUUID")
     for {
       maybeEngagementReview <- engagementOrchestrator.findEngagementReview(reportUUID)
-      maybeResponseConsumerReviewApi = maybeEngagementReview.map(_.into[ResponseConsumerReviewApi].transform)
+      maybeResponseConsumerReviewApi = maybeEngagementReview.map(_.into[ConsumerReviewApi].transform)
     } yield maybeResponseConsumerReviewApi
-      .map(responseConsumerReviewApi => Ok(Json.toJson(responseConsumerReviewApi)))
+      .map { responseConsumerReviewApi =>
+        val writes = consumerReviewApiWrites(request.identity.userRole)
+        Ok(Json.toJson(responseConsumerReviewApi)(writes))
+      }
       .getOrElse(NotFound)
   }
 

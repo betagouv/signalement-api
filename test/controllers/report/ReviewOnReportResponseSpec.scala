@@ -1,10 +1,12 @@
 package controllers.report
 
 import controllers.routes
+import models.UserRole.Admin
 import models.report.Report
 import models.report.ReportStatus
 import models.report.review.ResponseConsumerReview
-import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ConsumerReviewApi
+import models.report.review.ConsumerReviewApi.consumerReviewApiWrites
 import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import org.specs2.Specification
@@ -79,7 +81,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
     ).get
 
     status(result) must beEqualTo(OK)
-    val responseConsumerReviewApi = Helpers.contentAsJson(result).as[ResponseConsumerReviewApi]
+    val responseConsumerReviewApi = Helpers.contentAsJson(result).as[ConsumerReviewApi]
     responseConsumerReviewApi.evaluation mustEqual consumerReview.evaluation
     responseConsumerReviewApi.details mustEqual consumerReview.details
   }
@@ -101,7 +103,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
   lazy val companyRepository                = components.companyRepository
 
-  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, Some("Response Details..."))
+  val review = ConsumerReviewApi(ResponseEvaluation.Positive, Some("Response Details..."))
 
   val company = Fixtures.genCompany.sample.get
 
@@ -156,12 +158,13 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def postReview(reviewOnReportResponse: ResponseConsumerReviewApi) =
+  def postReview(reviewOnReportResponse: ConsumerReviewApi) =
     Await.result(
       components.reportConsumerReviewController
         .reviewOnReportResponse(reportId)
         .apply(
-          FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
+          FakeRequest("POST", s"/api/reports/${reportId}/response/review")
+            .withBody(Json.toJson(reviewOnReportResponse)(consumerReviewApiWrites(Admin)))
         ),
       Duration.Inf
     )
