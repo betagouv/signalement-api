@@ -13,6 +13,7 @@ import models.event.Event
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import models.report.reportmetadata.ReportMetadata
+import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -184,6 +185,7 @@ case class ReportWithFilesAndResponses(
     assignedUser: Option[MinimalUser],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
+    engagementReview: Option[EngagementReview],
     professionalResponse: Option[EventWithUser]
 )
 

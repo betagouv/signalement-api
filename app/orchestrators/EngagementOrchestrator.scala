@@ -122,6 +122,9 @@ class EngagementOrchestrator(
       case _             => throw ServerError(s"More than one engagement review for report id $reportId")
     }
 
+  def findEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
+    reportEngagementReviewRepository.findByReportIds(reportIds)
+
   def handleEngagementReview(
       reportId: UUID,
       reviewApi: ConsumerReviewApi
