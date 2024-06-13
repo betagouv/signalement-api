@@ -43,7 +43,7 @@ ConsumerReportAckProEmail.negative=Negative
 ConsumerReportAckProEmail.signalementInfonde=The company deemed this report unfounded:
 ConsumerReportAckProEmail.signalementNonConcerne=The company stated that this report does not concern their business:
 ConsumerReportAckProEmail.signalementAccepte=With its response, the company committed to considering your report. It made the following commitment:
-ConsumerReportAckProEmail.email8DaysLater=You will receive a new email in 8 days to ask if the company has fulfilled its commitment.
+ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=You will receive a new email in {0} days to ask if the company has fulfilled its commitment.
 
 ConsumerReportProEngagementEmail.subject=Your feedback on the company''s commitment regarding your report
 ConsumerReportProEngagementEmail.title=Your feedback on the company''s commitment regarding your report
@@ -51,11 +51,11 @@ ConsumerReportProEngagementEmail.greeting=Hello {0} {1},
 ConsumerReportProEngagementEmail.reportDescription=You reported on {0} regarding a company:
 ConsumerReportProEngagementEmail.companySiret=SIRET: <b>{0}</b>
 ConsumerReportProEngagementEmail.responseContent=As a reminder, here is their response:
-ConsumerReportProEngagementEmail.eightDaysAgoOther=8 days ago, the company acknowledged your report and made the following commitment:
-ConsumerReportProEngagementEmail.eightDaysAgo=8 days ago, the company acknowledged your report and committed to
+ConsumerReportProEngagementEmail.engagementReminderPeriodAgoOther={0} days ago, the company acknowledged your report and made the following commitment:
+ConsumerReportProEngagementEmail.engagementReminderPeriodAgo={0} days ago, the company acknowledged your report and committed to
 ConsumerReportProEngagementEmail.proDidHonoured=The professional informed us that they fulfilled their commitment. We would like your feedback on this.
 ConsumerReportProEngagementEmail.proMayHaveHonoured=To date, the professional has not informed us of fulfilling their commitment. However, it is possible that they fulfilled their commitment directly with you without informing us. We would like your feedback.
-ConsumerReportProEngagementEmail.satisfactionQuestion=Did the company fulfill its commitments?
+ConsumerReportProEngagementEmail.satisfactionQuestion=Did the company fulfill its commitments? (Your feedback will be visible by the professional and the Fraud control )
 ConsumerReportProEngagementEmail.clickYourChoice=Click on your choice:
 ConsumerReportProEngagementEmail.satisfactionRequest=If you are happy with SignalConso, please share your experience on <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> and <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
 ConsumerReportProEngagementEmail.serviceImprovement=Feel free to share your feedback about your SignalConso experience and let us know about your satisfaction, any issues you encountered, or your suggestions for improvement on <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, the government platform dedicated to improving public services.
