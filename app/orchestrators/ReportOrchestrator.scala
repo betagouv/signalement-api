@@ -18,6 +18,7 @@ import models.company.Company
 import models.event.Event
 import models.event.Event._
 import models.engagement.Engagement
+import models.engagement.Engagement.EngagementReminderPeriod
 import models.engagement.EngagementId
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
@@ -868,7 +869,7 @@ class ReportOrchestrator(
               reportId = report.id,
               promiseEventId = responseEvent.id,
               resolutionEventId = None,
-              expirationDate = now.plusDays(8) // We fix to 8 days at the moment
+              expirationDate = now.plusDays(EngagementReminderPeriod.toLong)
             )
           )
         case _ => Future.unit
