@@ -4,6 +4,7 @@ import enumeratum._
 
 sealed trait UserRole extends EnumEntry {
   val permissions: Seq[UserPermission.Value]
+  final def hasPermission(permission: UserPermission.Value) = permissions.contains(permission)
 }
 
 object UserRole extends PlayEnum[UserRole] {
@@ -17,7 +18,8 @@ object UserRole extends PlayEnum[UserRole] {
       UserPermission.listReports,
       UserPermission.createReportAction,
       UserPermission.subscribeReports,
-      UserPermission.crudUserReportsFilters
+      UserPermission.crudUserReportsFilters,
+      UserPermission.viewConsumerReviewDetails
     )
   }
 
@@ -26,7 +28,8 @@ object UserRole extends PlayEnum[UserRole] {
       UserPermission.listReports,
       UserPermission.createReportAction,
       UserPermission.subscribeReports,
-      UserPermission.crudUserReportsFilters
+      UserPermission.crudUserReportsFilters,
+      UserPermission.viewConsumerReviewDetails
     )
   }
 
