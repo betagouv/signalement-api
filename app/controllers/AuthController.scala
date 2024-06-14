@@ -23,15 +23,16 @@ import scala.concurrent.duration._
 class AuthController(
     authOrchestrator: AuthOrchestrator,
     authenticator: CookieAuthenticator,
-    controllerComponents: ControllerComponents
+    controllerComponents: ControllerComponents,
+    enableRateLimit: Boolean
 )(implicit val ec: ExecutionContext)
-    extends BaseController(authenticator, controllerComponents) {
+    extends BaseController(authenticator, controllerComponents, enableRateLimit) {
 
   val logger: Logger = Logger(this.getClass)
 
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
-  def authenticate: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def authenticate: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userLogin   <- request.parseBody[UserCredentials]()
       userSession <- authOrchestrator.login(userLogin, request)
@@ -53,14 +54,14 @@ class AuthController(
         .map(authAttempts => Ok(Json.toJson(authAttempts)))
     }
 
-  def forgotPassword: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def forgotPassword: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userLogin <- request.parseBody[UserLogin]()
       _         <- authOrchestrator.forgotPassword(userLogin)
     } yield Ok
   }
 
-  def resetPassword(token: UUID): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def resetPassword(token: UUID): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userPassword <- request.parseBody[UserPassword]()
       _            <- authOrchestrator.resetPassword(token, userPassword)

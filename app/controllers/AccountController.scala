@@ -44,7 +44,7 @@ class AccountController(
       .getOrElse(NotFound)
   }
 
-  def activateAccount = Action.async(parse.json) { implicit request =>
+  def activateAccount = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()
       createdUser <- activationRequest.companySiret match {
@@ -123,13 +123,13 @@ class AccountController(
     } yield Ok(Json.toJson(users))
   }
 
-  def fetchTokenInfo(token: String) = Action.async { _ =>
+  def fetchTokenInfo(token: String) = IpRateLimitedAction2.async { _ =>
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def validateEmail() = Action.async(parse.json) { implicit request =>
+  def validateEmail() = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       token <- request.parseBody[String](JsPath \ "token")
       user  <- accessesOrchestrator.validateAgentEmail(token)

@@ -74,13 +74,13 @@ class CompanyController(
 
   }
 
-  def searchCompanyByWebsite(url: String) = Action.async { _ =>
+  def searchCompanyByWebsite(url: String) = IpRateLimitedAction2.async { _ =>
     companyOrchestrator
       .searchCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def searchCompanyOrSimilarWebsite(url: String) = Action.async { _ =>
+  def searchCompanyOrSimilarWebsite(url: String) = IpRateLimitedAction2.async { _ =>
     companyOrchestrator
       .searchSimilarCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
@@ -98,7 +98,7 @@ class CompanyController(
       .map(result => Ok(Json.toJson(result)))
   }
 
-  def inactiveCompanies() = Action.async { _ =>
+  def inactiveCompanies() = SecuredAction.async { _ =>
     companyOrchestrator.getInactiveCompanies
       .map(_.sortBy(_.ignoredReportCount)(Ordering.Int.reverse))
       .map(result => Ok(Json.toJson(result)))

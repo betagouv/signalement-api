@@ -65,15 +65,15 @@ abstract class ApiKeyBaseController(
 
 abstract class BaseController(
     authenticator: Authenticator[User],
-    override val controllerComponents: ControllerComponents
+    override val controllerComponents: ControllerComponents,
+    enableRateLimit: Boolean = true
 ) extends AbstractController(controllerComponents) {
   implicit val ec: ExecutionContext
 
-  // allow 3 requests immediately and get a new token every 5 seconds
-  private def ipRateLimitFilter[F[_] <: Request[_]]: IpRateLimitFilter[F] =
-    new IpRateLimitFilter[F](new RateLimiter(3, 1f / 5, "Rate limit by IP address")) {
+  private def ipRateLimitFilter[F[_] <: Request[_]](size: Long, rate: Double): IpRateLimitFilter[F] =
+    new IpRateLimitFilter[F](new RateLimiter(size, rate, "Rate limit by IP address")) {
       override def rejectResponse[A](implicit request: F[A]): Future[Result] =
-        Future.successful(TooManyRequests(s"""Rate limit for ${request.remoteAddress} exceeded"""))
+        Future.successful(TooManyRequests(s"""Rate limit exceeded"""))
     }
 
   // We should always use our wrappers, to get our error handling
@@ -92,9 +92,12 @@ abstract class BaseController(
     authenticator
   ) andThen new ErrorHandlerActionFunction[MaybeUserRequest]()
 
-  val IpRateLimitedAction: ActionBuilder[Request, AnyContent] = Action andThen ipRateLimitFilter[Request]
-  def IpRateLimitedSecuredAction: ActionBuilder[UserRequest, AnyContent] =
-    SecuredAction andThen ipRateLimitFilter[UserRequest]
+  val IpRateLimitedAction1: ActionBuilder[Request, AnyContent] =
+    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](36, 1f / 5) else Action
+  val IpRateLimitedAction2: ActionBuilder[Request, AnyContent] =
+    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](9, 1f / 5) else Action
+  val IpRateLimitedAction3: ActionBuilder[Request, AnyContent] =
+    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](3, 1f / 5) else Action
 }
 
 abstract class BaseCompanyController(

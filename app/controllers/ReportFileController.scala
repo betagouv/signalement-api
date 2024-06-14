@@ -41,13 +41,13 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
-  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = Action.async { _ =>
+  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = IpRateLimitedAction1.async { _ =>
     reportFileOrchestrator
       .downloadReportAttachment(uuid, filename)
       .map(signedUrl => Redirect(signedUrl))
   }
 
-  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Action.async { _ =>
+  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = IpRateLimitedAction1.async { _ =>
     for {
       report <- reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
       stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
@@ -68,7 +68,7 @@ class ReportFileController(
   }
 
   def uploadReportFile: Action[MultipartFormData[Files.TemporaryFile]] =
-    Action.async(parse.multipartFormData) { request =>
+    IpRateLimitedAction1.async(parse.multipartFormData) { request =>
       for {
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
         dataPart = request.body.dataParts

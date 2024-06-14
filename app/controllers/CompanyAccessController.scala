@@ -116,13 +116,13 @@ class CompanyAccessController(
       } yield if (token.isDefined) Ok else NotFound
   }
 
-  def fetchTokenInfo(siret: String, token: String) = Action.async { _ =>
+  def fetchTokenInfo(siret: String, token: String) = IpRateLimitedAction2.async { _ =>
     accessesOrchestrator
       .fetchCompanyUserActivationToken(SIRET.fromUnsafe(siret), token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def sendActivationLink(siret: String) = Action.async(parse.json) { implicit request =>
+  def sendActivationLink(siret: String) = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
       _ <- companyAccessOrchestrator.sendActivationLink(SIRET.fromUnsafe(siret), activationLinkRequest)

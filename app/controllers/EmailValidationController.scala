@@ -29,7 +29,7 @@ class EmailValidationController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def check(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def check(): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     logger.debug("Calling checking email API")
     for {
       validateEmail <- request.parseBody[ValidateEmail]()
@@ -40,7 +40,7 @@ class EmailValidationController(
     } yield Ok(Json.toJson(validationResult))
   }
 
-  def checkAndValidate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def checkAndValidate(): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()

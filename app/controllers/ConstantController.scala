@@ -17,15 +17,15 @@ class ConstantController(authenticator: Authenticator[User], controllerComponent
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getCountries = Action.async {
+  def getCountries = IpRateLimitedAction2.async {
     Future(Ok(Json.toJson(Country.countries)))
   }
 
-  def getCategories = Action.async {
+  def getCategories = IpRateLimitedAction2.async {
     Future(Ok(Json.toJson(ReportCategory.values.filter(_.status != ReportCategoryStatus.Legacy))))
   }
 
-  def getCategoriesByStatus() = Action.async {
+  def getCategoriesByStatus() = IpRateLimitedAction2.async {
     val legacy   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Legacy)
     val closed   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Closed)
     val inactive = ReportCategory.values.filter(_.status == ReportCategoryStatus.Inactive)
