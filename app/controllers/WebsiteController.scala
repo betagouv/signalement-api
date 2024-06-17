@@ -95,7 +95,7 @@ class WebsiteController(
       Future.successful(Ok)
     }
 
-  def searchByHost(url: String) = Action.async {
+  def searchByHost(url: String) = IpRateLimitedAction2.async {
     websitesOrchestrator
       .searchByHost(url)
       .map(countries => Ok(Json.toJson(countries)))

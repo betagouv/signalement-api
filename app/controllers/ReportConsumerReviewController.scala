@@ -26,11 +26,12 @@ class ReportConsumerReviewController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def reviewOnReportResponse(reportUUID: UUID): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    for {
-      review <- request.parseBody[ConsumerReviewApi]()
-      _      <- reportConsumerReviewOrchestrator.handleReviewOnReportResponse(reportUUID, review)
-    } yield Ok
+  def reviewOnReportResponse(reportUUID: UUID): Action[JsValue] = IpRateLimitedAction2.async(parse.json) {
+    implicit request =>
+      for {
+        review <- request.parseBody[ConsumerReviewApi]()
+        _      <- reportConsumerReviewOrchestrator.handleReviewOnReportResponse(reportUUID, review)
+      } yield Ok
   }
 
   def getReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
@@ -47,7 +48,7 @@ class ReportConsumerReviewController(
 
   }
 
-  def reviewExists(reportUUID: UUID): Action[AnyContent] = Action.async { _ =>
+  def reviewExists(reportUUID: UUID): Action[AnyContent] = IpRateLimitedAction2.async { _ =>
     logger.debug(s"Check if review exists for report id : ${reportUUID}")
     reportConsumerReviewOrchestrator.find(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))
