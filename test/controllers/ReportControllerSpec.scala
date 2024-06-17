@@ -320,7 +320,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 uploadConfiguration,
                 mobileAppConfiguration,
                 reportFileMaxSize = 5,
-                reportMaxNumberOfAttachments = 20
+                reportMaxNumberOfAttachments = 20,
+                enableRateLimit = false
               )
 
             override def emailConfiguration: EmailConfiguration =

@@ -54,7 +54,7 @@ class ReportController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def createReport: Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def createReport: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
     for {
       draftReport <- request.parseBody[ReportDraft]()
@@ -211,7 +211,7 @@ class ReportController(
         )
     }
 
-  def cloudWord(companyId: UUID) = Action.async(parse.empty) { _ =>
+  def cloudWord(companyId: UUID) = IpRateLimitedAction2.async(parse.empty) { _ =>
     reportOrchestrator
       .getCloudWord(companyId)
       .map(cloudword => Ok(Json.toJson(cloudword)))

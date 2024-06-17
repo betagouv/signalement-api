@@ -41,7 +41,7 @@ class EngagementController(
       engagementOrchestrator.uncheck(request.identity, id).map(_ => NoContent)
     }
 
-  def reviewEngagementOnReportResponse(reportUUID: UUID): Action[JsValue] = Action.async(parse.json) {
+  def reviewEngagementOnReportResponse(reportUUID: UUID): Action[JsValue] = IpRateLimitedAction2.async(parse.json) {
     implicit request =>
       logger.debug(s"Push report engagement review for report id : $reportUUID")
       for {
@@ -63,7 +63,7 @@ class EngagementController(
       .getOrElse(NotFound)
   }
 
-  def engagementReviewExists(reportUUID: UUID): Action[AnyContent] = Action.async { _ =>
+  def engagementReviewExists(reportUUID: UUID): Action[AnyContent] = IpRateLimitedAction2.async { _ =>
     logger.debug(s"Check if engagement review exists for report id : $reportUUID")
     engagementOrchestrator.findEngagementReview(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))

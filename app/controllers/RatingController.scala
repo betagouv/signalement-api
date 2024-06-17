@@ -24,7 +24,7 @@ class RatingController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def rate = Action.async(parse.json) { implicit request =>
+  def rate = IpRateLimitedAction2.async(parse.json) { implicit request =>
     request.body
       .validate[Rating]
       .fold(

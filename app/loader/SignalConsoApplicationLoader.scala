@@ -603,7 +603,12 @@ class SignalConsoComponents(
   val asyncFileController =
     new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
-  val authController = new AuthController(authOrchestrator, cookieAuthenticator, controllerComponents)
+  val authController = new AuthController(
+    authOrchestrator,
+    cookieAuthenticator,
+    controllerComponents,
+    applicationConfiguration.app.enableRateLimit
+  )
 
   val companyAccessController =
     new CompanyAccessController(
