@@ -17,7 +17,7 @@
         events: Seq[(Event, Option[User])],
         responseOption: Option[ExistingReportResponse],
         consumerReviewOption: Option[ResponseConsumerReview],
-        engagementReview: Option[EngagementReview],
+        engagementReviewOption: Option[EngagementReview],
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(
@@ -109,27 +109,50 @@
                     @consumerReviewOption.map { review =>
                         <h2>@Messages("reportPDF.report.responseReviewHeader")</h2>
                         <p>
-                            <b>@Messages("reportPDF.report.responseReviewDetailHeader")</b>
+                            <b>@Messages("reportPDF.report.reviewDetailHeader")</b>
                             @review.evaluation match {
                                 case ResponseEvaluation.Positive => {
-                                    @Messages("reportPDF.report.responseReviewPositive")
+                                    @Messages("reportPDF.report.reviewPositive")
                                 }
                                 case ResponseEvaluation.Negative => {
-                                    @Messages("reportPDF.report.responseReviewNegative")
+                                    @Messages("reportPDF.report.reviewNegative")
                                 }
                                 case ResponseEvaluation.Neutral => {
-                                    @Messages("reportPDF.report.responseReviewNeutral")
+                                    @Messages("reportPDF.report.reviewNeutral")
                                 }
                             }
                         </p>
                         @review.details.filter(_.nonEmpty).map { details =>
                             <p>
-                                <b>@Messages("reportPDF.report.responseReviewDetail")</b>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
                                 @details
                             </p>
                         }
                     }
 
+                    @engagementReviewOption.map { review =>
+                        <h2>@Messages("reportPDF.report.engagementReviewHeader")</h2>
+                        <p>
+                            <b>@Messages("reportPDF.report.reviewDetailHeader")</b>
+                            @review.evaluation match {
+                                case ResponseEvaluation.Positive => {
+                                    @Messages("reportPDF.report.reviewPositive")
+                                }
+                                case ResponseEvaluation.Negative => {
+                                    @Messages("reportPDF.report.reviewNegative")
+                                }
+                                case ResponseEvaluation.Neutral => {
+                                    @Messages("reportPDF.report.reviewNeutral")
+                                }
+                            }
+                        </p>
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
+                                @details
+                            </p>
+                        }
+                    }
 
                     <h2>@Messages("reportPDF.report.companyHeader")</h2>
                     @report.companySiret.map { siret =>
