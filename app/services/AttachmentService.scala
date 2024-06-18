@@ -82,7 +82,7 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
         AttachmentData(
           "Signalement.pdf",
           pdfService.getPdfData(
-            views.html.pdfs.report(report, maybeCompany, Seq((event, None)), None, None, Seq.empty, files)(
+            views.html.pdfs.report(report, maybeCompany, Seq((event, None)), None, None, None, Seq.empty, files)(
               frontRoute,
               None,
               messagesProvider

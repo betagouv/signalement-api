@@ -9,6 +9,7 @@
 @import java.time.temporal.ChronoUnit
 @import models.report.review.ResponseConsumerReview
 @import models.report.review.ResponseEvaluation
+@import models.report.review.EngagementReview
 @import models.report.ExistingReportResponse
 @(
         report: Report,
@@ -16,6 +17,7 @@
         events: Seq[(Event, Option[User])],
         responseOption: Option[ExistingReportResponse],
         consumerReviewOption: Option[ResponseConsumerReview],
+        engagementReview: Option[EngagementReview],
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(

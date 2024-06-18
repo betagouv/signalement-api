@@ -408,7 +408,8 @@ class SignalConsoComponents(
       companyRepository,
       eventRepository,
       reportFileRepository,
-      responseConsumerReviewRepository
+      responseConsumerReviewRepository,
+      reportEngagementReviewRepository
     )
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)

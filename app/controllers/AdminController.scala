@@ -96,6 +96,7 @@ class AdminController(
       Nil,
       None,
       None,
+      None,
       Nil,
       Nil
     )(frontRoute = frontRoute, None, messagesProvider),
