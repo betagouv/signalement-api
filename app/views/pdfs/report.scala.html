@@ -107,29 +107,27 @@
                     }
 
                     @consumerReviewOption.map { review =>
-                        <h2>@Messages("reportPDF.report.consumerResponseHeader")</h2>
-
-                        <b>@Messages("reportPDF.report.consumerResponseDetailHeader")</b>
-
-                    @review.evaluation match {
-                        case ResponseEvaluation.Positive => {
-                            @Messages("reportPDF.report.consumerResponsePositive")
+                        <h2>@Messages("reportPDF.report.responseReviewHeader")</h2>
+                        <p>
+                            <b>@Messages("reportPDF.report.responseReviewDetailHeader")</b>
+                            @review.evaluation match {
+                                case ResponseEvaluation.Positive => {
+                                    @Messages("reportPDF.report.responseReviewPositive")
+                                }
+                                case ResponseEvaluation.Negative => {
+                                    @Messages("reportPDF.report.responseReviewNegative")
+                                }
+                                case ResponseEvaluation.Neutral => {
+                                    @Messages("reportPDF.report.responseReviewNeutral")
+                                }
+                            }
+                        </p>
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.responseReviewDetail")</b>
+                                @details
+                            </p>
                         }
-                        case ResponseEvaluation.Negative => {
-                            @Messages("reportPDF.report.consumerResponseNegative")
-                        }
-                        case ResponseEvaluation.Neutral => {
-                            @Messages("reportPDF.report.consumerResponseNeutral")
-                        }
-                    }
-                        <br/>
-                    @review.details.filter(_.nonEmpty).map { details =>
-                        <br/>
-                        <b>@Messages("reportPDF.report.consumerResponseDetail")</b>
-                        <p>@details</p>
-                    }
-
-
                     }
 
 
