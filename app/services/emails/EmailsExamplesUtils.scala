@@ -8,9 +8,15 @@ import models.company.Address
 import models.company.Company
 import models.event.Event
 import models.report.DetailInputValue.toDetailInputValue
+import models.report.ExistingResponseDetails.ME_CONFORMER_A_LA_REGLEMENTATION
 import models.report.ReportFileOrigin.Consumer
 import models.report._
 import models.report.reportfile.ReportFileId
+import models.report.review.EngagementReview
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation.Negative
+import models.report.review.ResponseEvaluation.Neutral
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.EventType
 import utils.EmailAddress
@@ -18,8 +24,10 @@ import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
+import java.time.OffsetDateTime.now
 import java.util.Locale
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 object EmailsExamplesUtils {
 
@@ -137,4 +145,29 @@ object EmailsExamplesUtils {
 
   def genAuthToken =
     AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now().plusDays(10))
+
+  def genExistingReportResponse = ExistingReportResponse(
+    ReportResponseType.ACCEPTED,
+    "Un texte écrit par le pro à l'attention du consommateur",
+    Some("Un texte écrit par le pro à l'attention de la DGCCRF uniquement"),
+    Nil,
+    Some(ME_CONFORMER_A_LA_REGLEMENTATION),
+    None
+  )
+
+  def genResponseConsumerReview = ResponseConsumerReview(
+    id = ResponseConsumerReviewId(randomUUID()),
+    reportId = randomUUID(),
+    evaluation = Negative,
+    creationDate = now(),
+    details = Some("Texte écrit par le consommateur pour la DGGCRF uniquement")
+  )
+
+  def genEngagementReview = EngagementReview(
+    id = ResponseConsumerReviewId(randomUUID()),
+    reportId = randomUUID(),
+    evaluation = Neutral,
+    creationDate = now(),
+    details = Some("Texte écrit par le consommateur pour la DGGCRF uniquement")
+  )
 }

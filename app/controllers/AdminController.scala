@@ -94,9 +94,9 @@ class AdminController(
       genReport,
       Some(genCompany),
       Nil,
-      None,
-      None,
-      None,
+      Some(genExistingReportResponse),
+      Some(genResponseConsumerReview),
+      Some(genEngagementReview),
       Nil,
       Nil
     )(frontRoute = frontRoute, None, messagesProvider),
