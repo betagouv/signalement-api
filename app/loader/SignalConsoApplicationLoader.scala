@@ -418,6 +418,7 @@ class SignalConsoComponents(
     actorSystem.spawn(
       ReportsExtractActor.create(
         reportConsumerReviewOrchestrator,
+        engagementOrchestrator,
         reportFileRepository,
         companyAccessRepository,
         reportOrchestrator,
