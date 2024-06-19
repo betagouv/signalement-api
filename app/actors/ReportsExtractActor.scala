@@ -6,6 +6,8 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.FileIO
 import config.SignalConsoConfiguration
 import controllers.routes
+import models.UserRole.Admin
+import models.UserRole.DGCCRF
 import models._
 import models.company.AccessLevel
 import models.report._
@@ -154,6 +156,8 @@ object ReportsExtractActor {
       requestedBy: User,
       zone: ZoneId
   ): List[ReportColumn] = {
+    val userRole       = requestedBy.userRole
+    val isAgentOrAdmin = userRole.isAgentOrAdmin
     List(
       ReportColumn(
         "Date de création",
@@ -169,13 +173,13 @@ object ReportsExtractActor {
         "Code postal",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Siret",
@@ -186,37 +190,37 @@ object ReportsExtractActor {
         "Nom de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.companyName.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.companyAddress.toString,
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
         (_, _, _, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
-        available = requestedBy.userRole == UserRole.Admin
+        available = userRole == Admin
       ),
       ReportColumn(
         "Site web de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.phone.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.vendor.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Catégorie",
@@ -246,13 +250,13 @@ object ReportsExtractActor {
                   .url}"
             )
             .mkString("\n"),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Influenceur ou influenceuse",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.influencer.map(_.name).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Plateforme (réseau social)",
@@ -263,13 +267,13 @@ object ReportsExtractActor {
             .map(_.entryName)
             .orElse(report.influencer.flatMap(_.otherSocialNetwork))
             .getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        (report, _, _, _, _, _) => ReportStatus.translate(report.status, userRole),
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Répondant",
@@ -348,13 +352,13 @@ object ReportsExtractActor {
         "Précisions de l'avis initial du consommateur",
         leftAlignmentColumn,
         (_, _, _, review, _, _) => review.flatMap(_.details).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Date de l'avis initial du consommateur",
         leftAlignmentColumn,
         (_, _, _, review, _, _) => review.map(r => frenchFormatDate(r.creationDate, zone)).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Avis ultérieur du consommateur",
@@ -366,50 +370,50 @@ object ReportsExtractActor {
         "Précisions de l'avis ultérieur du consommateur",
         leftAlignmentColumn,
         (_, _, _, _, engagementReview, _) => engagementReview.flatMap(_.details).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Date de l'avis ultérieur du consommateur",
         leftAlignmentColumn,
         (_, _, _, _, engagementReview, _) =>
           engagementReview.map(r => frenchFormatDate(r.creationDate, zone)).getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Identifiant",
         centerAlignmentColumn,
         (report, _, _, _, _, _) => report.id.toString,
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.firstName,
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.lastName,
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.email.value,
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Téléphone",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.consumerPhone.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Numéro de référence dossier",
         leftAlignmentColumn,
         (report, _, _, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
-        available = List(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin) contains requestedBy.userRole
+        available = isAgentOrAdmin
       ),
       ReportColumn(
         "Accord pour contact",
@@ -426,7 +430,7 @@ object ReportsExtractActor {
               s"Le ${frenchFormatDate(eventWithUser.event.creationDate, zone)} : ${eventWithUser.event.action.value} - ${eventWithUser.event.getDescription}"
             )
             .mkString("\n"),
-        available = requestedBy.userRole == UserRole.DGCCRF
+        available = userRole == DGCCRF
       ),
       ReportColumn(
         "Contrôle effectué",
@@ -439,7 +443,7 @@ object ReportsExtractActor {
             _,
             _
         ) => if (events.exists(_.event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
-        available = requestedBy.userRole == UserRole.DGCCRF
+        available = userRole == DGCCRF
       )
     ).filter(_.available)
   }
