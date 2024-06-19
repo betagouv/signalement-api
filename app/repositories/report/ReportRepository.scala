@@ -610,17 +610,17 @@ object ReportRepository {
           .exists
         if (hasAttachment) exists else !exists
       }
-      .filterOpt(filter.hasEvaluation) { case (table, hasEvaluation) =>
+      .filterOpt(filter.hasResponseEvaluation) { case (table, hasEvaluation) =>
         val exists = ResponseConsumerReviewTable.table
           .filter(x => x.reportId === table.id)
           .map(_.reportId)
           .exists
         if (hasEvaluation) exists else !exists
       }
-      .filterIf(filter.evaluation.nonEmpty) { table =>
+      .filterIf(filter.responseEvaluation.nonEmpty) { table =>
         ResponseConsumerReviewTable.table
           .filter(_.reportId === table.id)
-          .filter(_.evaluation.inSet(filter.evaluation))
+          .filter(_.evaluation.inSet(filter.responseEvaluation))
           .exists
       }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
