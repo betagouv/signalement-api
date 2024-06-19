@@ -35,7 +35,7 @@ import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+import repositories.reportengagementreview.ReportEngagementReviewTable
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -624,14 +624,14 @@ object ReportRepository {
           .exists
       }
       .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
-        val exists = ResponseConsumerReviewTable.table
+        val exists = ReportEngagementReviewTable.table
           .filter(x => x.reportId === table.id)
           .map(_.reportId)
           .exists
         if (hasEngagementEvaluation) exists else !exists
       }
       .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
-        ResponseConsumerReviewTable.table
+        ReportEngagementReviewTable.table
           .filter(_.reportId === table.id)
           .filter(_.evaluation.inSet(filter.engagementEvaluation))
           .exists

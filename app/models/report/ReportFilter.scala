@@ -84,7 +84,7 @@ object ReportFilter {
       hasResponseEvaluation = mapper.boolean("hasEvaluation"),
       responseEvaluation = mapper.seq("evaluation").map(ResponseEvaluation.withName),
       hasEngagementEvaluation = mapper.boolean("hasEngagementEvaluation"),
-      engagementEvaluation = mapper.seq("engagemenEvaluation").map(ResponseEvaluation.withName),
+      engagementEvaluation = mapper.seq("engagementEvaluation").map(ResponseEvaluation.withName),
       fullText = mapper.string("fullText", trimmed = true),
       isForeign = mapper.boolean("isForeign"),
       hasBarcode = mapper.boolean("hasBarcode")
