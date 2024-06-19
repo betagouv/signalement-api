@@ -360,6 +360,14 @@ class SignalConsoComponents(
   val reportFileOrchestrator =
     new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service, reportZipExportService)
 
+  val engagementOrchestrator =
+    new EngagementOrchestrator(
+      engagementRepository,
+      companiesVisibilityOrchestrator,
+      eventRepository,
+      reportRepository,
+      reportEngagementReviewRepository
+    )
   val reportOrchestrator = new ReportOrchestrator(
     mailService,
     reportConsumerReviewOrchestrator,
@@ -381,17 +389,9 @@ class SignalConsoComponents(
     signalConsoConfiguration,
     companySyncService,
     engagementRepository,
+    engagementOrchestrator,
     messagesApi
   )
-
-  val engagementOrchestrator =
-    new EngagementOrchestrator(
-      engagementRepository,
-      companiesVisibilityOrchestrator,
-      eventRepository,
-      reportRepository,
-      reportEngagementReviewRepository
-    )
 
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     reportOrchestrator,
@@ -408,7 +408,8 @@ class SignalConsoComponents(
       companyRepository,
       eventRepository,
       reportFileRepository,
-      responseConsumerReviewRepository
+      responseConsumerReviewRepository,
+      reportEngagementReviewRepository
     )
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
@@ -418,6 +419,7 @@ class SignalConsoComponents(
     actorSystem.spawn(
       ReportsExtractActor.create(
         reportConsumerReviewOrchestrator,
+        engagementOrchestrator,
         reportFileRepository,
         companyAccessRepository,
         reportOrchestrator,

@@ -87,6 +87,7 @@ class ReportOrchestrator(
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
     engagementRepository: EngagementRepositoryInterface,
+    engagementOrchestrator: EngagementOrchestrator,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -978,16 +979,19 @@ class ReportOrchestrator(
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
       assignedUsers      <- userRepository.findByIds(assignedUsersIds)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reportsId)
+      engagementReviews  <- engagementOrchestrator.findEngagementReviews(reportsId)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
+        val reportId            = reportWithFiles.report.id
         ReportWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
           assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportWithFiles.files,
-          consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
-          reportEventsMap.get(reportWithFiles.report.id)
+          consumerReviewsMap.getOrElse(reportId, None),
+          engagementReviews.getOrElse(reportId, None),
+          reportEventsMap.get(reportId)
         )
       }
     )

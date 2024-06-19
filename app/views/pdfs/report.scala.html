@@ -9,6 +9,7 @@
 @import java.time.temporal.ChronoUnit
 @import models.report.review.ResponseConsumerReview
 @import models.report.review.ResponseEvaluation
+@import models.report.review.EngagementReview
 @import models.report.ExistingReportResponse
 @(
         report: Report,
@@ -16,6 +17,7 @@
         events: Seq[(Event, Option[User])],
         responseOption: Option[ExistingReportResponse],
         consumerReviewOption: Option[ResponseConsumerReview],
+        engagementReviewOption: Option[EngagementReview],
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(
@@ -105,31 +107,52 @@
                     }
 
                     @consumerReviewOption.map { review =>
-                        <h2>@Messages("reportPDF.report.consumerResponseHeader")</h2>
-
-                        <b>@Messages("reportPDF.report.consumerResponseDetailHeader")</b>
-
-                    @review.evaluation match {
-                        case ResponseEvaluation.Positive => {
-                            @Messages("reportPDF.report.consumerResponsePositive")
-                        }
-                        case ResponseEvaluation.Negative => {
-                            @Messages("reportPDF.report.consumerResponseNegative")
-                        }
-                        case ResponseEvaluation.Neutral => {
-                            @Messages("reportPDF.report.consumerResponseNeutral")
+                        <h2>@Messages("reportPDF.report.responseReviewHeader")</h2>
+                        <p>
+                            <b>@Messages("reportPDF.report.reviewDetailHeader")</b>
+                            @review.evaluation match {
+                                case ResponseEvaluation.Positive => {
+                                    @Messages("reportPDF.report.reviewPositive")
+                                }
+                                case ResponseEvaluation.Negative => {
+                                    @Messages("reportPDF.report.reviewNegative")
+                                }
+                                case ResponseEvaluation.Neutral => {
+                                    @Messages("reportPDF.report.reviewNeutral")
+                                }
+                            }
+                        </p>
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
+                                @details
+                            </p>
                         }
                     }
-                        <br/>
-                    @review.details.filter(_.nonEmpty).map { details =>
-                        <br/>
-                        <b>@Messages("reportPDF.report.consumerResponseDetail")</b>
-                        <p>@details</p>
+
+                    @engagementReviewOption.map { review =>
+                        <h2>@Messages("reportPDF.report.engagementReviewHeader")</h2>
+                        <p>
+                            <b>@Messages("reportPDF.report.reviewDetailHeader")</b>
+                            @review.evaluation match {
+                                case ResponseEvaluation.Positive => {
+                                    @Messages("reportPDF.report.reviewPositive")
+                                }
+                                case ResponseEvaluation.Negative => {
+                                    @Messages("reportPDF.report.reviewNegative")
+                                }
+                                case ResponseEvaluation.Neutral => {
+                                    @Messages("reportPDF.report.reviewNeutral")
+                                }
+                            }
+                        </p>
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
+                                @details
+                            </p>
+                        }
                     }
-
-
-                    }
-
 
                     <h2>@Messages("reportPDF.report.companyHeader")</h2>
                     @report.companySiret.map { siret =>

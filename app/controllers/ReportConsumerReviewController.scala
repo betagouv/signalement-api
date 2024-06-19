@@ -1,8 +1,8 @@
 package controllers
 
 import authentication.Authenticator
-import io.scalaland.chimney.dsl._
 import models.User
+import models.report.review.ResponseConsumerReview.responseConsumerReviewWrites
 import models.report.review.ConsumerReviewExistApi
 import models.report.review.ConsumerReviewApi
 import models.report.review.ConsumerReviewApi._
@@ -37,12 +37,11 @@ class ReportConsumerReviewController(
   def getReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report response review for report id : ${reportUUID}")
     for {
-      maybeResponseConsumerReview <- reportConsumerReviewOrchestrator.find(reportUUID)
-      maybeResponseConsumerReviewApi = maybeResponseConsumerReview.map(_.into[ConsumerReviewApi].transform)
-    } yield maybeResponseConsumerReviewApi
-      .map { responseConsumerReviewApi =>
-        val writes = consumerReviewApiWrites(request.identity.userRole)
-        Ok(Json.toJson(responseConsumerReviewApi)(writes))
+      maybeReview <- reportConsumerReviewOrchestrator.find(reportUUID)
+    } yield maybeReview
+      .map { review =>
+        val writes = responseConsumerReviewWrites(Some(request.identity.userRole))
+        Ok(Json.toJson(review)(writes))
       }
       .getOrElse(NotFound)
 

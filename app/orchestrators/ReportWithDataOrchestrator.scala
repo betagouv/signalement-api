@@ -7,12 +7,14 @@ import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.Report
 import models.report.ReportFile
+import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReview
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import utils.Constants
 
@@ -26,6 +28,7 @@ case class ReportWithData(
     events: Seq[(Event, Option[User])],
     responseOption: Option[ExistingReportResponse],
     consumerReviewOption: Option[ResponseConsumerReview],
+    engagementReviewOption: Option[EngagementReview],
     companyEvents: Seq[(Event, Option[User])],
     files: Seq[ReportFile]
 )
@@ -35,7 +38,8 @@ class ReportWithDataOrchestrator(
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
-    reviewRepository: ResponseConsumerReviewRepositoryInterface
+    reviewRepository: ResponseConsumerReviewRepositoryInterface,
+    engagementReviewRepository: ReportEngagementReviewRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -51,8 +55,9 @@ class ReportWithDataOrchestrator(
             companyEvents <- report.companyId
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
               .getOrElse(Future(List.empty))
-            reportFiles          <- reportFileRepository.retrieveReportFiles(uuid)
-            consumerReviewOption <- reviewRepository.findByReportId(uuid).map(_.headOption)
+            reportFiles            <- reportFileRepository.retrieveReportFiles(uuid)
+            consumerReviewOption   <- reviewRepository.findByReportId(uuid).map(_.headOption)
+            engagementReviewOption <- engagementReviewRepository.findByReportId(uuid).map(_.headOption)
           } yield {
             val responseOption = events
               .map(_._1)
@@ -65,6 +70,7 @@ class ReportWithDataOrchestrator(
               events,
               responseOption,
               consumerReviewOption,
+              engagementReviewOption,
               companyEvents,
               reportFiles
             )

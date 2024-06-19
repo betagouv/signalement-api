@@ -2,13 +2,12 @@ package controllers
 
 import authentication.Authenticator
 import authentication.actions.UserAction.WithRole
-import io.scalaland.chimney.dsl.TransformationOps
 import models.User
 import models.UserRole
 import models.engagement.EngagementId
+import models.report.review.EngagementReview.engagementReviewWrites
 import models.report.review.ConsumerReviewExistApi
 import models.report.review.ConsumerReviewApi
-import models.report.review.ConsumerReviewApi.consumerReviewApiWrites
 import orchestrators.EngagementOrchestrator
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
@@ -53,12 +52,11 @@ class EngagementController(
   def getEngagementReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report engagement review for report id : $reportUUID")
     for {
-      maybeEngagementReview <- engagementOrchestrator.findEngagementReview(reportUUID)
-      maybeResponseConsumerReviewApi = maybeEngagementReview.map(_.into[ConsumerReviewApi].transform)
-    } yield maybeResponseConsumerReviewApi
-      .map { responseConsumerReviewApi =>
-        val writes = consumerReviewApiWrites(request.identity.userRole)
-        Ok(Json.toJson(responseConsumerReviewApi)(writes))
+      maybeReview <- engagementOrchestrator.findEngagementReview(reportUUID)
+    } yield maybeReview
+      .map { review =>
+        val writes = engagementReviewWrites(Some(request.identity.userRole))
+        Ok(Json.toJson(review)(writes))
       }
       .getOrElse(NotFound)
   }
