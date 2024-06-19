@@ -623,6 +623,19 @@ object ReportRepository {
           .filter(_.evaluation.inSet(filter.responseEvaluation))
           .exists
       }
+      .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
+        val exists = ResponseConsumerReviewTable.table
+          .filter(x => x.reportId === table.id)
+          .map(_.reportId)
+          .exists
+        if (hasEngagementEvaluation) exists else !exists
+      }
+      .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
+        ResponseConsumerReviewTable.table
+          .filter(_.reportId === table.id)
+          .filter(_.evaluation.inSet(filter.engagementEvaluation))
+          .exists
+      }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
         val departmentsFilter: Rep[Boolean] = filter.departments
           .flatMap(toPostalCode)

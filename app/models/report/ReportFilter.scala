@@ -37,6 +37,8 @@ case class ReportFilter(
     activityCodes: Seq[String] = Seq.empty,
     hasResponseEvaluation: Option[Boolean] = None,
     responseEvaluation: Seq[ResponseEvaluation] = Seq.empty,
+    hasEngagementEvaluation: Option[Boolean] = None,
+    engagementEvaluation: Seq[ResponseEvaluation] = Seq.empty,
     fullText: Option[String] = None,
     visibleToPro: Option[Boolean] = None,
     isForeign: Option[Boolean] = None,
@@ -81,6 +83,8 @@ object ReportFilter {
       activityCodes = mapper.seq("activityCodes"),
       hasResponseEvaluation = mapper.boolean("hasEvaluation"),
       responseEvaluation = mapper.seq("evaluation").map(ResponseEvaluation.withName),
+      hasEngagementEvaluation = mapper.boolean("hasEngagementEvaluation"),
+      engagementEvaluation = mapper.seq("engagemenEvaluation").map(ResponseEvaluation.withName),
       fullText = mapper.string("fullText", trimmed = true),
       isForeign = mapper.boolean("isForeign"),
       hasBarcode = mapper.boolean("hasBarcode")
