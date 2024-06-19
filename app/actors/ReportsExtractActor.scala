@@ -99,10 +99,8 @@ object ReportsExtractActor {
       }
     }
 
-  // Columns definition
   case class ReportColumn(
       name: String,
-      column: Column,
       extract: (
           Report,
           List[ReportFile],
@@ -111,7 +109,8 @@ object ReportsExtractActor {
           Option[EngagementReview],
           List[User]
       ) => String,
-      available: Boolean = true
+      available: Boolean = true,
+      column: Column = leftAlignmentColumn
   ) {
     def extractStringValue(
         report: Report,
