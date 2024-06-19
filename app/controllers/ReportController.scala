@@ -181,6 +181,7 @@ class ReportController(
               reportData.events,
               reportData.responseOption,
               reportData.consumerReviewOption,
+              reportData.engagementReviewOption,
               reportData.companyEvents,
               reportData.files
             )(frontRoute = frontRoute, None, messagesProvider)

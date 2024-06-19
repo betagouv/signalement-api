@@ -24,6 +24,7 @@ class HtmlFromTemplateGenerator(messagesApi: MessagesApi, frontRoute: FrontRoute
         reportData.events,
         reportData.responseOption,
         reportData.consumerReviewOption,
+        reportData.engagementReviewOption,
         reportData.companyEvents,
         reportData.files
       )(frontRoute = frontRoute, None, messagesProvider)
