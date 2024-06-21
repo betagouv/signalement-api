@@ -21,10 +21,6 @@ class EmailValidationRepository(
     extends CRUDRepository[EmailValidationTable, EmailValidation]
     with EmailValidationRepositoryInterface {
 
-  val SplitPartEmail     = SimpleFunction.ternary[EmailAddress, String, Int, String]("split_part")
-  val SplitPartString    = SimpleFunction.ternary[String, String, Int, String]("split_part")
-  val ReplaceSQLFunction = SimpleFunction.ternary[String, String, String, String]("replace")
-
   val logger: Logger                                   = Logger(this.getClass)
   override val table: TableQuery[EmailValidationTable] = EmailValidationTable.table
   import dbConfig._
@@ -40,9 +36,9 @@ class EmailValidationRepository(
       table
         .filter(_.creationDate >= createdAfter)
         .filter(emailValidation =>
-          Case If SplitPartEmail(emailValidation.email, "@", 2) === "gmail.com"
+          Case If SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 2) === "gmail.com"
             Then ReplaceSQLFunction(
-              SplitPartString(SplitPartEmail(emailValidation.email, "@", 1), "+", 1),
+              SplitPartSQLFunction(SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 1), "+", 1),
               ".",
               ""
             ) ++ "@gmail.com" === rootGmailAddress

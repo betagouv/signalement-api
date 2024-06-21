@@ -1019,7 +1019,7 @@ class ReportOrchestrator(
       toApi: (ReportWithMetadata, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
 
-    val maxResults = signalConsoConfiguration.reportsExportLimitMax
+    val maxResults = signalConsoConfiguration.reportsListLimitMax
     for {
       _ <- limit match {
         case Some(limitValue) if limitValue > maxResults =>

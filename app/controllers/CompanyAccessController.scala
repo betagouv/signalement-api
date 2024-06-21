@@ -99,8 +99,6 @@ class CompanyAccessController(
         )
   }
 
-  case class AccessInvitationList(email: EmailAddress, level: AccessLevel, sirets: List[SIRET])
-
   def listPendingTokens(siret: String) = withCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
     accessesOrchestrator
       .listProPendingToken(request.company, request.identity)
