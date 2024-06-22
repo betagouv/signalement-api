@@ -63,6 +63,7 @@ import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
+import repositories.ipblacklist.IpBlackListRepository
 import repositories.probe.ProbeRepository
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
@@ -107,6 +108,7 @@ import tasks.probe.LowRateReponseConsoTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
+import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
@@ -222,6 +224,8 @@ class SignalConsoComponents(
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
   val engagementRepository = new EngagementRepository(dbConfig)
+
+  val ipBlackListRepository = new IpBlackListRepository(dbConfig)
 
   val crypter              = new JcaCrypter(applicationConfiguration.crypter)
   val signer               = new JcaSigner(applicationConfiguration.signer)
@@ -837,7 +841,13 @@ class SignalConsoComponents(
   override def config: Config = ConfigFactory.load()
 
   override def httpFilters: Seq[EssentialFilter] =
-    Seq(new LoggingFilter(), securityHeadersFilter, allowedHostsFilter, corsFilter)
+    Seq(
+      new LoggingFilter(),
+      new CustomIpFilter(ipBlackListRepository),
+      securityHeadersFilter,
+      allowedHostsFilter,
+      corsFilter
+    )
 
   override lazy val requestFactory: RequestFactory = new DefaultRequestFactory(httpConfiguration) {
     override val cookieHeaderEncoding: CookieHeaderEncoding = new CustomCookieHeaderEncoding(
