@@ -25,8 +25,6 @@ class CustomIpFilter(ipBlackListRepository: IpBlackListRepositoryInterface)(impl
   private lazy val blackListedIps =
     rawBlackListedIps.map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress -> blackListIp.critical)
 
-  logger.debug(s"Black listed ips : $rawBlackListedIps")
-
   @inline private def allowIP(req: RequestHeader): Boolean =
     blackListedIps.forall(t => !JArrays.equals(t._1, req.connection.remoteAddress.getAddress))
 
