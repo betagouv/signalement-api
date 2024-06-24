@@ -7,12 +7,14 @@ import repositories.PostgresProfile.api._
 
 class IpBlackListTable(tag: Tag) extends TypedDatabaseTable[BlackListedIp, String](tag, "ip_black_list") {
 
-  def ip      = column[String]("ip")
-  def comment = column[String]("comment")
+  def ip       = column[String]("ip", O.PrimaryKey)
+  def comment  = column[String]("comment")
+  def critical = column[Boolean]("critical")
 
   override def * : ProvenShape[BlackListedIp] = (
     ip,
-    comment
+    comment,
+    critical
   ) <> ((BlackListedIp.apply _).tupled, BlackListedIp.unapply)
 }
 

@@ -22,20 +22,28 @@ class CustomIpFilter(ipBlackListRepository: IpBlackListRepositoryInterface)(impl
 
   private val rawBlackListedIps = Try(Await.result(ipBlackListRepository.list(), 1.second)).getOrElse(Seq.empty)
 
-  private val blackListedIps = rawBlackListedIps.map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress)
+  private val blackListedIps =
+    rawBlackListedIps.map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress -> blackListIp.critical)
 
   logger.debug(s"Black listed ips : $rawBlackListedIps")
 
-  @inline def allowIP(req: RequestHeader): Boolean =
-    if (blackListedIps.isEmpty) true
-    else blackListedIps.forall(!JArrays.equals(_, req.connection.remoteAddress.getAddress))
+  @inline private def allowIP(req: RequestHeader): Boolean =
+    blackListedIps.forall(t => !JArrays.equals(t._1, req.connection.remoteAddress.getAddress))
+
+  @inline private def isCritical(req: RequestHeader): Boolean =
+    blackListedIps.exists { case (ip, critical) =>
+      critical && JArrays.equals(ip, req.connection.remoteAddress.getAddress)
+    }
 
   override def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] =
     if (allowIP(requestHeader)) {
       logger.debug(s"IP ${requestHeader.remoteAddress} is not blacklisted.")
       nextFilter(requestHeader)
     } else {
-      logger.warn(s"Access denied to ${requestHeader.path} for IP ${requestHeader.remoteAddress}.")
+      logger.info(s"Access denied to ${requestHeader.path} for IP ${requestHeader.remoteAddress}.")
+      if (isCritical(requestHeader)) {
+        logger.warn(s"A critical ip tried to connect and has been rejected: ${requestHeader.remoteAddress}")
+      }
       Future.successful(Results.Forbidden)
     }
 }

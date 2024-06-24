@@ -30,7 +30,7 @@ class IpBlackListFilterSpec(implicit ee: ExecutionEnv)
   override def setupData(): Unit =
     Await.result(
       for {
-        _ <- ipBlackListRepository.create(BlackListedIp("1.2.3.4", "local test"))
+        _ <- ipBlackListRepository.create(BlackListedIp("1.2.3.4", "local test", critical = true))
       } yield (),
       Duration.Inf
     )

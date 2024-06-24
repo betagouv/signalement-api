@@ -13,4 +13,5 @@ class IpBlackListRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(
     with IpBlackListRepositoryInterface {
 
   override val table = IpBlackListTable.table
+
 }
