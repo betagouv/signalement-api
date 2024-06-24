@@ -20,9 +20,9 @@ class CustomIpFilter(ipBlackListRepository: IpBlackListRepositoryInterface)(impl
 
   private val logger = Logger(getClass)
 
-  private val rawBlackListedIps = Try(Await.result(ipBlackListRepository.list(), 1.second)).getOrElse(Seq.empty)
+  private lazy val rawBlackListedIps = Try(Await.result(ipBlackListRepository.list(), 1.second)).getOrElse(Seq.empty)
 
-  private val blackListedIps =
+  private lazy val blackListedIps =
     rawBlackListedIps.map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress -> blackListIp.critical)
 
   logger.debug(s"Black listed ips : $rawBlackListedIps")
