@@ -112,8 +112,13 @@ abstract class BaseCompanyController(
     def identity = request.identity
   }
 
-  def withCompany(siret: String, authorizedLevels: Seq[AccessLevel]) =
+  def withCompanyAccess(siret: String, adminLevelOnly: Boolean = false) =
     SecuredAction andThen new ActionRefiner[UserRequest, CompanyRequest] {
+      val authorizedLevels =
+        if (adminLevelOnly)
+          Seq(AccessLevel.ADMIN)
+        else
+          Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
       def executionContext = ec
       def refine[A](request: UserRequest[A]) =
         for {
@@ -133,6 +138,6 @@ abstract class BaseCompanyController(
           .flatMap(c => accessLevel.map((c, _)))
           .filter { case (_, l) => authorizedLevels.contains(l) }
           .map { case (c, l) => Right(new CompanyRequest[A](c, l, request)) }
-          .getOrElse(Left(NotFound))
+          .getOrElse(Left(Forbidden))
     }
 }

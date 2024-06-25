@@ -37,18 +37,17 @@ class CompanyAccessController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+  def listAccesses(siret: String) = withCompanyAccess(siret).async { implicit request =>
     companyAccessOrchestrator
       .listAccesses(request.company, request.identity)
       .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
   }
 
-  def countAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN, AccessLevel.MEMBER)).async {
-    implicit request =>
-      companyAccessOrchestrator
-        .listAccesses(request.company, request.identity)
-        .map(_.length)
-        .map(count => Ok(Json.toJson(count)))
+  def countAccesses(siret: String) = withCompanyAccess(siret).async { implicit request =>
+    companyAccessOrchestrator
+      .listAccesses(request.company, request.identity)
+      .map(_.length)
+      .map(count => Ok(Json.toJson(count)))
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
@@ -57,7 +56,7 @@ class CompanyAccessController(
       .map(companies => Ok(Json.toJson(companies)))
   }
 
-  def updateAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async {
+  def updateAccess(siret: String, userId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
     implicit request =>
       request.body.asJson
         .map(json => (json \ "level").as[AccessLevel])
@@ -72,7 +71,7 @@ class CompanyAccessController(
         .getOrElse(Future(NotFound))
   }
 
-  def removeAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async {
+  def removeAccess(siret: String, userId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
     implicit request =>
       for {
         user <- userRepository.get(userId)
@@ -86,7 +85,7 @@ class CompanyAccessController(
 
   case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
-  def sendInvitation(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async(parse.json) {
+  def sendInvitation(siret: String) = withCompanyAccess(siret, adminLevelOnly = true).async(parse.json) {
     implicit request =>
       implicit val reads = Json.reads[AccessInvitation]
       request.body
@@ -102,13 +101,13 @@ class CompanyAccessController(
 
   case class AccessInvitationList(email: EmailAddress, level: AccessLevel, sirets: List[SIRET])
 
-  def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+  def listPendingTokens(siret: String) = withCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
     accessesOrchestrator
       .listProPendingToken(request.company, request.identity)
       .map(tokens => Ok(Json.toJson(tokens)))
   }
 
-  def removePendingToken(siret: String, tokenId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async {
+  def removePendingToken(siret: String, tokenId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
     implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)

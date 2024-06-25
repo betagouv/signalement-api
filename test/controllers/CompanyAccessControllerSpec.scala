@@ -29,8 +29,9 @@ import utils.AuthHelpers._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  val proAdminUser  = Fixtures.genProUser.sample.get
-  val proMemberUser = Fixtures.genProUser.sample.get
+  val proAdminUser     = Fixtures.genProUser.sample.get
+  val proMemberUser    = Fixtures.genProUser.sample.get
+  val proUnrelatedUser = Fixtures.genProUser.sample.get
 
   val (app, components) = TestApp.buildApp(
   )
@@ -52,6 +53,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
       for {
         admin  <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
+        _      <- userRepository.create(proUnrelatedUser)
         c      <- companyRepository.getOrCreate(company.siret, company)
         _      <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
         _      <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
@@ -66,45 +68,55 @@ class ListAccessSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec
 
 The listAccesses endpoint should
   list accesses for an admin                        $e1
-  be denied for a non admin                         $e2
+  list accesses for a member                        $e1
+  be denied for an unrelated user                         $e3
                                                     """
+
   def e1 = {
     val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
       .withAuthCookie(proAdminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    contentAsJson(result) must beEqualTo(
-      Json.parse(
-        s"""
-        [
-          {
-            "userId":"${proAdminUser.id}",
-            "email":"${proAdminUser.email}",
-            "firstName":"${proAdminUser.firstName}",
-            "lastName":"${proAdminUser.lastName}",
-            "level":"admin",
-            "editable": false,
-            "isHeadOffice" : true
-          },
-          {
-            "userId":"${proMemberUser.id}",
-            "email":"${proMemberUser.email}",
-            "firstName":"${proMemberUser.firstName}",
-            "lastName":"${proMemberUser.lastName}",
-            "level":"member",
-            "editable": true,
-            "isHeadOffice" : true
-          }]
-        """
-      )
-    )
+    contentAsJson(result) must beEqualTo(listAccessesJson)
   }
+
   def e2 = {
     val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
       .withAuthCookie(proMemberUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
-    status(result) must beEqualTo(NOT_FOUND)
+    status(result) must beEqualTo(OK)
+    contentAsJson(result) must beEqualTo(listAccessesJson)
   }
+  def e3 = {
+    val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
+      .withAuthCookie(proUnrelatedUser.email, components.cookieAuthenticator)
+    val result = route(app, request).get
+    status(result) must beEqualTo(FORBIDDEN)
+  }
+
+  private val listAccessesJson = Json.parse(
+    s"""
+    [
+      {
+        "userId":"${proAdminUser.id}",
+        "email":"${proAdminUser.email}",
+        "firstName":"${proAdminUser.firstName}",
+        "lastName":"${proAdminUser.lastName}",
+        "level":"admin",
+        "editable": false,
+        "isHeadOffice" : true
+      },
+      {
+        "userId":"${proMemberUser.id}",
+        "email":"${proMemberUser.email}",
+        "firstName":"${proMemberUser.firstName}",
+        "lastName":"${proMemberUser.lastName}",
+        "level":"member",
+        "editable": true,
+        "isHeadOffice" : true
+      }]
+    """
+  )
 }
 
 class MyCompaniesSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
