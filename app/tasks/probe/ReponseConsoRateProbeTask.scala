@@ -3,6 +3,7 @@ package tasks.probe
 import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
 import orchestrators.ProbeOrchestrator
+import orchestrators.ProbeOrchestrator.ExpectedRange
 import play.api.Logger
 import repositories.probe.ProbeRepository
 import repositories.tasklock.TaskRepositoryInterface
@@ -29,12 +30,11 @@ class ReponseConsoRateProbeTask(
 
   override def runTask(): Future[Unit] =
     for {
-      maybeRate <- probeRepository.getReponseConsoRate(interval)
+      maybeRate <- probeRepository.getReponseConsoPercentage(interval)
       _ <- probeOrchestrator.handleProbeResult(
         maybeRate,
-        _ < 1.0d,
-        "Taux de signalements 'Réponse conso'",
-        "bas"
+        ExpectedRange(min = Some(1), max = Some(40)),
+        "Pourcentage de signalements 'Réponse conso'"
       )
     } yield ()
 

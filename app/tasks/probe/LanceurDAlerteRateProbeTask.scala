@@ -3,6 +3,7 @@ package tasks.probe
 import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
 import orchestrators.ProbeOrchestrator
+import orchestrators.ProbeOrchestrator.ExpectedRange
 import play.api.Logger
 import repositories.probe.ProbeRepository
 import repositories.tasklock.TaskRepositoryInterface
@@ -14,7 +15,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
-class LanceurDAlerteRateProbTask(
+class LanceurDAlerteRateProbeTask(
     actorSystem: ActorSystem,
     taskConfiguration: TaskConfiguration,
     probeOrchestrator: ProbeOrchestrator,
@@ -29,12 +30,11 @@ class LanceurDAlerteRateProbTask(
 
   override def runTask(): Future[Unit] =
     for {
-      maybeRate <- probeRepository.getLancerDalerteRate(interval)
+      maybeRate <- probeRepository.getLanceurDalertePercentage(interval)
       _ <- probeOrchestrator.handleProbeResult(
         maybeRate,
-        _ < 0.1d,
-        "Taux de signalements 'Lanceur d'alerte'",
-        "bas"
+        ExpectedRange(min = Some(0.1), max = Some(5)),
+        "Pourcentage de signalements 'Lanceur d'alerte'"
       )
     } yield ()
 

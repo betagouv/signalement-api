@@ -1,6 +1,7 @@
 package orchestrators
 
 import models.UserRole
+import orchestrators.ProbeOrchestrator.ExpectedRange
 import play.api.Logger
 import repositories.user.UserRepositoryInterface
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
@@ -19,13 +20,11 @@ class ProbeOrchestrator(
 
   def handleProbeResult(
       maybeRate: Option[Double],
-      rateIsProblematicCriterion: Double => Boolean,
-      probeName: String,
-      issueAdjective: String
-  )(implicit
-      executionContext: ExecutionContext
+      expectedRange: ExpectedRange,
+      probeName: String
   ) = maybeRate match {
-    case Some(r) if rateIsProblematicCriterion(r) =>
+    case Some(r) if expectedRange.isProblematic(r) =>
+      val issueAdjective = if (expectedRange.isTooHigh(r)) "trop haut" else "trop bas"
       logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $r%")
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
@@ -38,7 +37,22 @@ class ProbeOrchestrator(
     case rate =>
       logger.info(s"$probeName est correct: $rate%")
       Future.unit
+  }
 
+}
+
+object ProbeOrchestrator {
+
+  case class ExpectedRange(
+      min: Option[Double],
+      max: Option[Double]
+  ) {
+    def isProblematic(rate: Double): Boolean =
+      isTooHigh(rate) || isTooLow(rate)
+    def isTooHigh(rate: Double): Boolean =
+      max.exists(rate > _)
+    private def isTooLow(rate: Double): Boolean =
+      min.exists(rate < _)
   }
 
 }

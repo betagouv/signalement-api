@@ -103,7 +103,7 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.LanceurDAlerteRateProbTask
+import tasks.probe.LanceurDAlerteRateProbeTask
 import tasks.probe.ReponseConsoRateProbeTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
@@ -789,7 +789,7 @@ class SignalConsoComponents(
       taskRepository,
       probeRepository
     ).schedule()
-    new LanceurDAlerteRateProbTask(
+    new LanceurDAlerteRateProbeTask(
       actorSystem,
       applicationConfiguration.task,
       probeOrchestrator,

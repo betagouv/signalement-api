@@ -11,7 +11,7 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
 
   import dbConfig._
 
-  def getReponseConsoRate(interval: FiniteDuration): Future[Option[Double]] = db.run(
+  def getReponseConsoPercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
     sql"""
           SELECT (CAST(SUM(CASE
                                                           WHEN forward_to_reponseconso = true THEN 1
@@ -21,7 +21,7 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
         """.as[Double].headOption
   )
 
-  def getLancerDalerteRate(interval: FiniteDuration): Future[Option[Double]] = db.run(
+  def getLanceurDalertePercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
     sql"""
           SELECT (CAST(SUM(CASE
                      WHEN status = 'LanceurAlerte' THEN 1
