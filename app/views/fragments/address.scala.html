@@ -1,11 +1,11 @@
 @import models.company.Company
+@import utils.letter.ImprimFipMail.CompanyImprimFitOps
+
 @(company: Company, includeSiret: Boolean = false)
 
-<b>@company.name</b> <br/>
-<i>@company.brand</i> <br/>
-@company.address.toArray.map { ligne =>
-    <span>@ligne</span> <br/>
+@company.toRecipientLines.map { line =>
+    <span>@line</span><br/>
 }
-@if(includeSiret){
-    <span>SIRET : @company.siret</span> <br/>
+@if(includeSiret) {
+    <span>SIRET: @company.siret</span><br/>
 }
