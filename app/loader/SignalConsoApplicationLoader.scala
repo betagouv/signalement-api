@@ -481,6 +481,8 @@ class SignalConsoComponents(
     messagesApi
   )
 
+  val probeOrchestrator = new ProbeOrchestrator(userRepository, mailService)
+
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
@@ -783,18 +785,16 @@ class SignalConsoComponents(
     new ReponseConsoRateProbeTask(
       actorSystem,
       applicationConfiguration.task,
+      probeOrchestrator,
       taskRepository,
-      probeRepository,
-      userRepository,
-      mailService
+      probeRepository
     ).schedule()
     new LanceurDAlerteRateProbTask(
       actorSystem,
       applicationConfiguration.task,
+      probeOrchestrator,
       taskRepository,
-      probeRepository,
-      userRepository,
-      mailService
+      probeRepository
     ).schedule()
   } else {
     logger.debug("Probes are disabled")
