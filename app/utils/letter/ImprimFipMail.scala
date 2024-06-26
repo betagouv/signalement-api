@@ -3,23 +3,17 @@ package utils.letter
 import models.company.Address
 import models.company.Company
 
-
-/**
- * La nouvelle norme du cadre adresse impose l’utilisation des polices suivantes en
- * MAJUSCULES sans caractères spéciaux ou accentués :
- * Expéditeur : Arial, taille 8, style normal, alignée à gauche (dans le cadre réservé à
- * l’adresse expéditeur) ;
- * Destinataire : OCR-B 10 BT, taille 10, style normal, alignée à gauche (dans le cadre
- * réservé à l’adresse destinataire).
- * Remarques :
- * La police OCR-B 10 BT à utiliser peut vous être transmise par le Bureau SI2. En cas de difficulté avec la police OCR-B 10 BT,
- * la police ARIAL pourra être utilisée en concertation avec le Bureau SI2.
- * La taille 9 de la police OCR-B 10 BT pourra être utilisée si le nombre de caractères sur une ligne d’adresse est compris entre
- * 36 et 38, 38 étant le nombre maximal de caractères pour une ligne d’adresse.
- * L’adresse du destinataire doit être écrite en continu avec un saut de ligne à chaque ligne adresse.
- * Une adresse doit être comprise entre trois et six lignes, soit avec un code postal (sans séparateur), soit un pays avec
- * uniquement le nom du pays sur la dernière ligne
- */
+/** La nouvelle norme du cadre adresse impose l’utilisation des polices suivantes en MAJUSCULES sans caractères spéciaux
+  * ou accentués : Expéditeur : Arial, taille 8, style normal, alignée à gauche (dans le cadre réservé à l’adresse
+  * expéditeur) ; Destinataire : OCR-B 10 BT, taille 10, style normal, alignée à gauche (dans le cadre réservé à
+  * l’adresse destinataire). Remarques : La police OCR-B 10 BT à utiliser peut vous être transmise par le Bureau SI2. En
+  * cas de difficulté avec la police OCR-B 10 BT, la police ARIAL pourra être utilisée en concertation avec le Bureau
+  * SI2. La taille 9 de la police OCR-B 10 BT pourra être utilisée si le nombre de caractères sur une ligne d’adresse
+  * est compris entre 36 et 38, 38 étant le nombre maximal de caractères pour une ligne d’adresse. L’adresse du
+  * destinataire doit être écrite en continu avec un saut de ligne à chaque ligne adresse. Une adresse doit être
+  * comprise entre trois et six lignes, soit avec un code postal (sans séparateur), soit un pays avec uniquement le nom
+  * du pays sur la dernière ligne
+  */
 object ImprimFipMail {
 
   private[letter] val RecipientLineLength = 36
