@@ -103,8 +103,8 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.LowRateLanceurDAlerteTask
-import tasks.probe.LowRateReponseConsoTask
+import tasks.probe.LanceurDAlerteRateProbTask
+import tasks.probe.ReponseConsoRateProbeTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
@@ -780,7 +780,7 @@ class SignalConsoComponents(
   if (applicationConfiguration.task.probe.active) {
     logger.debug("Probes are enabled")
     val probeRepository = new ProbeRepository(dbConfig)
-    new LowRateReponseConsoTask(
+    new ReponseConsoRateProbeTask(
       actorSystem,
       applicationConfiguration.task,
       taskRepository,
@@ -788,7 +788,7 @@ class SignalConsoComponents(
       userRepository,
       mailService
     ).schedule()
-    new LowRateLanceurDAlerteTask(
+    new LanceurDAlerteRateProbTask(
       actorSystem,
       applicationConfiguration.task,
       taskRepository,

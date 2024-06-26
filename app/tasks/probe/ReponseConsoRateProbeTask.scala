@@ -18,7 +18,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
-class LowRateLanceurDAlerteTask(
+class ReponseConsoRateProbeTask(
     actorSystem: ActorSystem,
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface,
@@ -26,21 +26,21 @@ class LowRateLanceurDAlerteTask(
     userRepository: UserRepositoryInterface,
     mailService: MailService
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(101, "low_rate_lanceur_dalerte", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(100, "low_rate_reponse_conso", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = LocalTime.of(2, 0)
   override val interval: FiniteDuration = 12.hours
 
-  override def runTask(): Future[Unit] = probeRepository.getLancerDalerteRate(interval).flatMap {
-    case Some(rate) if rate < 0.1d =>
-      logger.warnWithTitle("probe_triggered", s"Taux de signalements 'Lanceur d'alerte' faible : $rate%")
+  override def runTask(): Future[Unit] = probeRepository.getReponseConsoRate(interval).flatMap {
+    case Some(rate) if rate < 1.0d =>
+      logger.warnWithTitle("probe_triggered", s"Taux de signalements 'Réponse conso' faible : $rate%")
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
           .send(
             AdminProbeTriggered
-              .Email(users.map(_.email), "Taux de signalements 'Lanceur d'alerte' faible", rate, "bas")
+              .Email(users.map(_.email), "Taux de signalements 'Réponse conso' faible", rate, "bas")
           )
       } yield ()
     case rate =>
