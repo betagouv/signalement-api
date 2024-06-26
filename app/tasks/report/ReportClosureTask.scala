@@ -19,6 +19,7 @@ import services.emails.BaseEmail
 import services.emails.MailService
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
+import tasks.model.TaskSettings.DailyTaskSettings
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
@@ -31,7 +32,6 @@ import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 
@@ -47,9 +47,8 @@ class ReportClosureTask(
 )(implicit val executionContext: ExecutionContext)
     extends ScheduledTask(2, "report_closure_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = taskConfiguration.reportClosure.startTime
-  override val interval: FiniteDuration = 1.day
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.reportClosure.startTime)
 
   override def runTask(): Future[Unit] = runTask(taskRunDate = getTodayAtStartOfDayParis())
 

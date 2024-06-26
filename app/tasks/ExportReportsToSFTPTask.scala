@@ -10,12 +10,10 @@ import models.report.Report
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
+import tasks.model.TaskSettings.DailyTaskSettings
 
 import java.io.File
 import java.io.FileWriter
-import java.time.LocalTime
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -29,9 +27,8 @@ class ExportReportsToSFTPTask(
     materializer: Materializer
 ) extends ScheduledTask(7, "export_reports_to_sftp_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = taskConfiguration.exportReportsToSFTP.startTime
-  override val interval: FiniteDuration = 1.day
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.exportReportsToSFTP.startTime)
 
   val batchSize = 10000
   val csvHeader = List(

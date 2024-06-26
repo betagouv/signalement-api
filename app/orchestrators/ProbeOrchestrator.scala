@@ -23,7 +23,7 @@ class ProbeOrchestrator(
       probeName: String,
       maybePercentage: Option[Double],
       expectedRange: ExpectedRange,
-      interval: FiniteDuration
+      evaluationPeriod: FiniteDuration
   ) = maybePercentage match {
     case Some(p) if expectedRange.isProblematic(p) =>
       val issueAdjective = if (expectedRange.isTooHigh(p)) "trop haut" else "trop bas"
@@ -33,7 +33,7 @@ class ProbeOrchestrator(
         _ <- mailService
           .send(
             AdminProbeTriggered
-              .Email(users.map(_.email), probeName, p, issueAdjective, interval)
+              .Email(users.map(_.email), probeName, p, issueAdjective, evaluationPeriod)
           )
       } yield ()
     case other =>

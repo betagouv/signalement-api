@@ -5,13 +5,11 @@ import config.TaskConfiguration
 import play.api.Logger
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
+import tasks.model.TaskSettings.DailyTaskSettings
 
-import java.time.LocalTime
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import utils.Logs.RichLogger
 
 class InactiveAccountTask(
@@ -23,9 +21,8 @@ class InactiveAccountTask(
 )(implicit executionContext: ExecutionContext)
     extends ScheduledTask(1, "inactive_account_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = taskConfiguration.inactiveAccounts.startTime
-  override val interval: FiniteDuration = 1.day
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.inactiveAccounts.startTime)
 
   override def runTask(): Future[Unit] = runTask(OffsetDateTime.now())
 
@@ -46,7 +43,7 @@ class InactiveAccountTask(
       .recoverWith { case err =>
         logger.errorWithTitle(
           "task_remove_inactive_accounts_failed",
-          s"Unexpected failure, cannot run inactive accounts task ( task date : $now, startTime : $startTime )",
+          s"Unexpected failure, cannot run inactive accounts task ( task date : $now, startTime : ${taskSettings.startTime} )",
           err
         )
         Future.failed(err)

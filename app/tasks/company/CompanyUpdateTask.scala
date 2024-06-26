@@ -11,13 +11,13 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
+import tasks.model.TaskSettings.DailyTaskSettings
 
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import utils.Logs.RichLogger
 
 class CompanyUpdateTask(
@@ -32,11 +32,10 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = LocalTime.of(3, 0)
-  override val interval: FiniteDuration = 1.day
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings   = DailyTaskSettings(startTime = LocalTime.of(3, 0))
 
-  // Be carefull on how much stress you can put to the database, database task are queued into 1000 slot queue.
+  // Be careful on how much stress you can put to the database, database task are queued into 1000 slot queue.
   // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database
   override def runTask(): Future[Unit] = for {
     companySync <- getCompanySync()

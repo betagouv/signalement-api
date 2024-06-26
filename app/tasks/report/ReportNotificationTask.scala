@@ -19,12 +19,12 @@ import services.emails.EmailDefinitionsDggcrf.DgccrfReportNotification
 import services.emails.MailService
 import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
 import tasks.ScheduledTask
+import tasks.model.TaskSettings.DailyTaskSettings
 import utils.Constants.Departments
 
 import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 import utils.Logs.RichLogger
@@ -42,9 +42,8 @@ class ReportNotificationTask(
 )(implicit executionContext: ExecutionContext)
     extends ScheduledTask(3, "report_notification_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = taskConfiguration.subscription.startTime
-  override val interval: FiniteDuration = 1.day
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.subscription.startTime)
 
   override def runTask(): Future[Unit] = {
     val now                      = OffsetDateTime.now()

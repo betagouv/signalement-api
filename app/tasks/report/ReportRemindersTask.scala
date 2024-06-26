@@ -18,6 +18,7 @@ import services.emails.BaseEmail
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.getTodayAtStartOfDayParis
+import tasks.model.TaskSettings.DailyTaskSettings
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.SYSTEM
 import utils.EmailAddress
@@ -27,7 +28,6 @@ import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
 import scala.util.Success
 class ReportRemindersTask(
@@ -41,9 +41,10 @@ class ReportRemindersTask(
 )(implicit val executionContext: ExecutionContext)
     extends ScheduledTask(4, "report_reminders_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = taskConfiguration.reportReminders.startTime
-  override val interval: FiniteDuration = taskConfiguration.reportReminders.intervalInHours
+  override val logger: Logger = Logger(this.getClass)
+  override val taskSettings = DailyTaskSettings(
+    startTime = taskConfiguration.reportReminders.startTime
+  )
 
   // In practice, since we require 7 full days between the previous email and the next one,
   // the email will fire at J+8

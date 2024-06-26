@@ -4,7 +4,7 @@ import java.time.LocalTime
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
-trait TaskSettings
+sealed trait TaskSettings
 
 object TaskSettings {
 
