@@ -22,7 +22,7 @@ class LanceurDAlerteRateProbeTask(
     taskRepository: TaskRepositoryInterface,
     probeRepository: ProbeRepository
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(101, "low_rate_lanceur_dalerte", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(101, "lanceur_dalerte_probe", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = LocalTime.of(2, 0)
@@ -30,11 +30,12 @@ class LanceurDAlerteRateProbeTask(
 
   override def runTask(): Future[Unit] =
     for {
-      maybeRate <- probeRepository.getLanceurDalertePercentage(interval)
+      maybePercentage <- probeRepository.getLanceurDalertePercentage(interval)
       _ <- probeOrchestrator.handleProbeResult(
-        maybeRate,
+        "Pourcentage de signalements 'Lanceur d'alerte'",
+        maybePercentage,
         ExpectedRange(min = Some(0.1), max = Some(5)),
-        "Pourcentage de signalements 'Lanceur d'alerte'"
+        interval
       )
     } yield ()
 

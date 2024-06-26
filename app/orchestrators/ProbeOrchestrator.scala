@@ -10,6 +10,7 @@ import utils.Logs.RichLogger
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class ProbeOrchestrator(
     userRepository: UserRepositoryInterface,
@@ -19,23 +20,24 @@ class ProbeOrchestrator(
   val logger = Logger(getClass)
 
   def handleProbeResult(
-      maybeRate: Option[Double],
+      probeName: String,
+      maybePercentage: Option[Double],
       expectedRange: ExpectedRange,
-      probeName: String
-  ) = maybeRate match {
-    case Some(r) if expectedRange.isProblematic(r) =>
-      val issueAdjective = if (expectedRange.isTooHigh(r)) "trop haut" else "trop bas"
-      logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $r%")
+      interval: FiniteDuration
+  ) = maybePercentage match {
+    case Some(p) if expectedRange.isProblematic(p) =>
+      val issueAdjective = if (expectedRange.isTooHigh(p)) "trop haut" else "trop bas"
+      logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $p%")
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
           .send(
             AdminProbeTriggered
-              .Email(users.map(_.email), probeName, r, issueAdjective)
+              .Email(users.map(_.email), probeName, p, issueAdjective, interval)
           )
       } yield ()
-    case rate =>
-      logger.info(s"$probeName est correct: $rate%")
+    case other =>
+      logger.info(s"$probeName est correct: $other%")
       Future.unit
   }
 

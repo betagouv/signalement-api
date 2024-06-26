@@ -22,7 +22,7 @@ class ReponseConsoRateProbeTask(
     taskRepository: TaskRepositoryInterface,
     probeRepository: ProbeRepository
 )(implicit executionContext: ExecutionContext)
-    extends ScheduledTask(100, "low_rate_reponse_conso", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(100, "reponseconso_probe", taskRepository, actorSystem, taskConfiguration) {
 
   override val logger: Logger           = Logger(this.getClass)
   override val startTime: LocalTime     = LocalTime.of(2, 0)
@@ -30,11 +30,12 @@ class ReponseConsoRateProbeTask(
 
   override def runTask(): Future[Unit] =
     for {
-      maybeRate <- probeRepository.getReponseConsoPercentage(interval)
+      maybePercentage <- probeRepository.getReponseConsoPercentage(interval)
       _ <- probeOrchestrator.handleProbeResult(
-        maybeRate,
+        "Pourcentage de signalements 'Réponse conso'",
+        maybePercentage,
         ExpectedRange(min = Some(1), max = Some(40)),
-        "Pourcentage de signalements 'Réponse conso'"
+        interval
       )
     } yield ()
 
