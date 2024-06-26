@@ -39,7 +39,7 @@ package object tasks {
         (elementId, taskType).invalidNel[Task]
     }
 
-  def computeStartingTime(startTime: LocalTime): FiniteDuration = {
+  def computeInitialDelay(startTime: LocalTime): FiniteDuration = {
 
     val startDate: LocalDateTime =
       if (LocalTime.now().isAfter(startTime))
@@ -48,6 +48,9 @@ package object tasks {
 
     (LocalDateTime.now().until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
   }
+
+  def computeDateTimeCorrespondingToDelay(delay: FiniteDuration): OffsetDateTime =
+    OffsetDateTime.now().plusSeconds(delay.toSeconds)
 
   def getTodayAtStartOfDayParis() =
     OffsetDateTime

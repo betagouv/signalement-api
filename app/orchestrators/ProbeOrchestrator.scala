@@ -46,8 +46,8 @@ class ProbeOrchestrator(
 object ProbeOrchestrator {
 
   case class ExpectedRange(
-      min: Option[Double],
-      max: Option[Double]
+      min: Option[Double] = None,
+      max: Option[Double] = None
   ) {
     def isProblematic(rate: Double): Boolean =
       isTooHigh(rate) || isTooLow(rate)

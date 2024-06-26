@@ -12,12 +12,12 @@ import scala.jdk.DurationConverters._
 class TaskDetailsTable(tag: Tag) extends TypedDatabaseTable[TaskDetails, Int](tag, "task_details") {
 
   def name         = column[String]("name")
-  def startTime    = column[LocalTime]("start_time")
+  def startTime    = column[Option[LocalTime]]("start_time")
   def interval     = column[Duration]("interval")
   def lastRunDate  = column[OffsetDateTime]("last_run_date")
   def lastRunError = column[Option[String]]("last_run_error")
 
-  type TaskData = (Int, String, LocalTime, Duration, OffsetDateTime, Option[String])
+  type TaskData = (Int, String, Option[LocalTime], Duration, OffsetDateTime, Option[String])
 
   def constructTaskDetails: TaskData => TaskDetails = {
     case (id, name, startTime, interval, lastRunDate, lastRunError) =>
