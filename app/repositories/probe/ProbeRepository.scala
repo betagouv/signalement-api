@@ -46,4 +46,5 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
       .as[Double]
       .headOption
   )
+
 }

@@ -39,7 +39,7 @@ class ProbeOrchestrator(
           val evaluationPeriod = 12.hours
           for {
             maybePercentage <- probeRepository.getReponseConsoPercentage(evaluationPeriod)
-            _ <- handleProbeResult(
+            _ <- handleResult(
               "Pourcentage de signalements 'Réponse conso'",
               maybePercentage,
               ExpectedRange(min = Some(1), max = Some(40)),
@@ -56,7 +56,7 @@ class ProbeOrchestrator(
           val evaluationPeriod = 12.hours
           for {
             maybePercentage <- probeRepository.getLanceurDalertePercentage(evaluationPeriod)
-            _ <- handleProbeResult(
+            _ <- handleResult(
               "Pourcentage de signalements 'Lanceur d'alerte'",
               maybePercentage,
               ExpectedRange(min = Some(0.1), max = Some(5)),
@@ -72,7 +72,7 @@ class ProbeOrchestrator(
           val evaluationPeriod = 1.hour
           for {
             maybePercentage <- probeRepository.getValidatedEmailsPercentage(evaluationPeriod)
-            _ <- handleProbeResult(
+            _ <- handleResult(
               "Pourcentage d'emails que les consos ont validés avec succès",
               maybePercentage,
               ExpectedRange(min = Some(50)),
@@ -85,7 +85,7 @@ class ProbeOrchestrator(
     tasks.foreach(_.schedule())
   }
 
-  private def handleProbeResult(
+  private def handleResult(
       probeName: String,
       maybeNumber: Option[Double],
       expectedRange: ExpectedRange,

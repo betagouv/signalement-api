@@ -32,13 +32,13 @@ object EmailDefinitionsAdmin {
     final case class Email(
         recipients: Seq[EmailAddress],
         probeName: String,
-        rate: Double,
+        number: Double,
         issueAdjective: String,
         evaluationPeriod: FiniteDuration
     ) extends BaseEmail {
       override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
       override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-        views.html.mails.admin.probetriggered(probeName, rate, issueAdjective, evaluationPeriod).toString()
+        views.html.mails.admin.probetriggered(probeName, number, issueAdjective, evaluationPeriod).toString()
     }
     override def examples =
       Seq(
