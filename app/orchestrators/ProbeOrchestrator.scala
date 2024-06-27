@@ -2,10 +2,13 @@ package orchestrators
 
 import config.TaskConfiguration
 import models.UserRole
+import models.UserRole.Admin
+import models.report.ReportFilter
 import orchestrators.ProbeOrchestrator.ExpectedRange
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.probe.ProbeRepository
+import repositories.report.ReportRepository
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
@@ -14,6 +17,7 @@ import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
 import utils.Logs.RichLogger
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -24,6 +28,7 @@ class ProbeOrchestrator(
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface,
     probeRepository: ProbeRepository,
+    reportRepository: ReportRepository,
     userRepository: UserRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
@@ -76,6 +81,26 @@ class ProbeOrchestrator(
               "Pourcentage d'emails que les consos ont validés avec succès",
               maybePercentage,
               ExpectedRange(min = Some(50)),
+              evaluationPeriod
+            )
+          } yield ()
+        }
+      },
+      new ScheduledTask(103, "number_reports_probe", taskRepository, actorSystem, taskConfiguration) {
+        override val logger       = _Logger
+        override val taskSettings = FrequentTaskSettings(interval = 2.hour)
+
+        override def runTask(): Future[Unit] = {
+          val evaluationPeriod = 3.hour
+          for {
+            maybeNumber <- reportRepository.count(
+              Some(Admin),
+              ReportFilter(start = Some(OffsetDateTime.now().minusSeconds(evaluationPeriod.toSeconds)))
+            )
+            _ <- handleResult(
+              "Nombre de signalements effectués (de tous types)",
+              Some(maybeNumber.toDouble),
+              ExpectedRange(min = Some(1)),
               evaluationPeriod
             )
           } yield ()
