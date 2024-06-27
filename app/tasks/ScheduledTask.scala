@@ -27,7 +27,7 @@ abstract class ScheduledTask(
     taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
 
-  val logger: Logger
+  final val logger = Logger(getClass)
   val taskSettings: TaskSettings
 
   private def createOrUpdateTaskDetails(taskDetails: TaskDetails) =

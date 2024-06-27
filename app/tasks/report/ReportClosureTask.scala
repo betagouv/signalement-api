@@ -7,7 +7,6 @@ import models.event.Event
 import models.event.Event.stringToDetailsJsValue
 import models.report.Report
 import models.report.ReportStatus
-import play.api.Logger
 import play.api.i18n.MessagesApi
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
@@ -47,8 +46,7 @@ class ReportClosureTask(
 )(implicit val executionContext: ExecutionContext)
     extends ScheduledTask(2, "report_closure_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
-  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.reportClosure.startTime)
+  override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.reportClosure.startTime)
 
   override def runTask(): Future[Unit] = runTask(taskRunDate = getTodayAtStartOfDayParis())
 

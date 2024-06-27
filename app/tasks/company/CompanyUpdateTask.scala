@@ -6,7 +6,6 @@ import org.apache.pekko.stream.scaladsl.Sink
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.company.CompanySync
-import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
@@ -32,8 +31,7 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
-  override val taskSettings   = DailyTaskSettings(startTime = LocalTime.of(3, 0))
+  override val taskSettings = DailyTaskSettings(startTime = LocalTime.of(3, 0))
 
   // Be careful on how much stress you can put to the database, database task are queued into 1000 slot queue.
   // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database

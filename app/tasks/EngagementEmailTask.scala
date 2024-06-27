@@ -6,7 +6,6 @@ import config.TaskConfiguration
 import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.Report
-import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.JsResult
 import repositories.company.CompanyRepositoryInterface
@@ -33,8 +32,7 @@ class EngagementEmailTask(
     executionContext: ExecutionContext
 ) extends ScheduledTask(6, "engagement_email_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
-  override val taskSettings   = DailyTaskSettings(startTime = LocalTime.of(2, 0))
+  override val taskSettings = DailyTaskSettings(startTime = LocalTime.of(2, 0))
 
   private def sendEmail(
       report: Report,

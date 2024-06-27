@@ -8,7 +8,6 @@ import models.event.Event.stringToDetailsJsValue
 import models.report.Report
 import models.report.ReportStatus
 import orchestrators.CompaniesVisibilityOrchestrator
-import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
@@ -41,7 +40,6 @@ class ReportRemindersTask(
 )(implicit val executionContext: ExecutionContext)
     extends ScheduledTask(4, "report_reminders_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
   override val taskSettings = DailyTaskSettings(
     startTime = taskConfiguration.reportReminders.startTime
   )

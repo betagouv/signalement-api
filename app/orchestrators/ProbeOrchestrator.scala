@@ -74,7 +74,6 @@ class ProbeOrchestrator(
   def scheduleProbeTasks(): Unit = {
     val tasks = Seq(
       new ScheduledTask(100, "reponseconso_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 6.hours)
         override def runTask(): Future[Unit] = {
           val evaluationPeriod = 12.hours
@@ -91,8 +90,7 @@ class ProbeOrchestrator(
 
       },
       new ScheduledTask(101, "lanceur_dalerte_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger: Logger = _Logger
-        override val taskSettings   = FrequentTaskSettings(interval = 6.hour)
+        override val taskSettings = FrequentTaskSettings(interval = 6.hour)
         override def runTask(): Future[Unit] = {
           val evaluationPeriod = 12.hours
           for {
@@ -107,7 +105,6 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(102, "email_validations_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
         override def runTask(): Future[Unit] = {
           val evaluationPeriod = 1.hour
@@ -123,7 +120,6 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(103, "number_reports_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
@@ -147,9 +143,7 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(104, "number_reports_with_website_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 1.hour)
-
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {
@@ -172,7 +166,6 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(105, "number_reports_with_company_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 12.hour)
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
@@ -196,9 +189,7 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(106, "number_reports_with_attachement", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 1.hour)
-
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {
@@ -221,9 +212,7 @@ class ProbeOrchestrator(
         }
       },
       new ScheduledTask(107, "number_reports_produit_dangereux", taskRepository, actorSystem, taskConfiguration) {
-        override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 3.hours)
-
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {

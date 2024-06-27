@@ -7,7 +7,6 @@ import config.TaskConfiguration
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report.Report
-import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.model.TaskSettings.DailyTaskSettings
@@ -27,8 +26,7 @@ class ExportReportsToSFTPTask(
     materializer: Materializer
 ) extends ScheduledTask(7, "export_reports_to_sftp_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
-  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.exportReportsToSFTP.startTime)
+  override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.exportReportsToSFTP.startTime)
 
   val batchSize = 10000
   val csvHeader = List(

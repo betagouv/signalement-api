@@ -2,7 +2,6 @@ package tasks.account
 
 import org.apache.pekko.actor.ActorSystem
 import config.TaskConfiguration
-import play.api.Logger
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.DailyTaskSettings
@@ -21,8 +20,7 @@ class InactiveAccountTask(
 )(implicit executionContext: ExecutionContext)
     extends ScheduledTask(1, "inactive_account_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger = Logger(this.getClass)
-  override val taskSettings   = DailyTaskSettings(startTime = taskConfiguration.inactiveAccounts.startTime)
+  override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.inactiveAccounts.startTime)
 
   override def runTask(): Future[Unit] = runTask(OffsetDateTime.now())
 
