@@ -5,6 +5,7 @@ import models.UserRole
 import models.UserRole.Admin
 import models.report.ReportFilter
 import orchestrators.ProbeOrchestrator.ExpectedRange
+import orchestrators.ProbeOrchestrator.atLeastOne
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.probe.ProbeRepository
@@ -39,28 +40,26 @@ class ProbeOrchestrator(
   val _Logger = Logger(getClass)
 
   def evaluate() = {
-    println("@@@@@@@ LOCAL TIME PARIS" + OffsetDateTime.now.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime)
-    println("@@@@@@@ LOCAL TIME NY" + OffsetDateTime.now.atZoneSameInstant(ZoneId.of("America/New_York")).toLocalTime)
 
-    val step = 30.minutes
+    val step = 1.hour
     iterateDates(start = OffsetDateTime.now.minusDays(10), end = OffsetDateTime.now, step = step)
       .foldLeft(Future.unit) { (previous, offsetDateTime) =>
         if (isDuringTypicalBusyHours(offsetDateTime)) {
           for {
             _ <- previous
-            count <- reportRepository.count(
+            cpt <- reportRepository.count(
               Some(Admin),
               ReportFilter(
                 start = Some(offsetDateTime),
-                end = Some(offsetDateTime.plusSeconds(step.toSeconds))
+                end = Some(offsetDateTime.plusSeconds(step.toSeconds)),
+                hasAttachment = Some(true)
               )
             )
-            _ = println(s"@@@@ $offsetDateTime => $count ${if (count < 3) "ATTENTION" else ""}")
+            _ = println(s"@@@@ $offsetDateTime => $cpt")
           } yield ()
         } else {
           for {
             _ <- previous
-            _ = println(s"@@@@ $offsetDateTime => discarded")
           } yield ()
         }
 
@@ -124,7 +123,6 @@ class ProbeOrchestrator(
       new ScheduledTask(103, "number_reports_probe", taskRepository, actorSystem, taskConfiguration) {
         override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
-
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {
@@ -137,14 +135,86 @@ class ProbeOrchestrator(
               _ <- handleResult(
                 "Nombre de signalements effectués (de tous types)",
                 Some(maybeNumber.toDouble),
-                ExpectedRange(min = Some(1)),
+                atLeastOne,
                 evaluationPeriod
               )
             } yield ()
           } else {
             Future.unit
           }
+        }
+      },
+      new ScheduledTask(104, "number_reports_with_website_probe", taskRepository, actorSystem, taskConfiguration) {
+        override val logger       = _Logger
+        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
 
+        override def runTask(): Future[Unit] = {
+          val now = OffsetDateTime.now
+          if (isDuringTypicalBusyHours(now)) {
+            val evaluationPeriod = 1.hour
+            for {
+              maybeNumber <- reportRepository.count(
+                Some(Admin),
+                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasWebsite = Some(true))
+              )
+              _ <- handleResult(
+                "Nombre de signalements sur des sites webs",
+                Some(maybeNumber.toDouble),
+                atLeastOne,
+                evaluationPeriod
+              )
+            } yield ()
+          } else {
+            Future.unit
+          }
+        }
+      },
+      new ScheduledTask(105, "number_reports_with_company_probe", taskRepository, actorSystem, taskConfiguration) {
+        override val logger       = _Logger
+        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
+        override def runTask(): Future[Unit] = {
+          val now = OffsetDateTime.now
+          if (isDuringTypicalBusyHours(now)) {
+            val evaluationPeriod = 1.hour
+            for {
+              maybeNumber <- reportRepository.count(
+                Some(Admin),
+                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasCompany = Some(true))
+              )
+              _ <- handleResult(
+                "Nombre de signalements avec une société identifiée",
+                Some(maybeNumber.toDouble),
+                atLeastOne,
+                evaluationPeriod
+              )
+            } yield ()
+          } else {
+            Future.unit
+          }
+        }
+      },
+      new ScheduledTask(105, "number_reports_with_attachement", taskRepository, actorSystem, taskConfiguration) {
+        override val logger       = _Logger
+        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
+        override def runTask(): Future[Unit] = {
+          val now = OffsetDateTime.now
+          if (isDuringTypicalBusyHours(now)) {
+            val evaluationPeriod = 1.hour
+            for {
+              maybeNumber <- reportRepository.count(
+                Some(Admin),
+                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasAttachment = Some(true))
+              )
+              _ <- handleResult(
+                "Nombre de signalements avec une pièce jointe",
+                Some(maybeNumber.toDouble),
+                atLeastOne,
+                evaluationPeriod
+              )
+            } yield ()
+          } else {
+            Future.unit
+          }
         }
       }
     )
@@ -194,5 +264,7 @@ object ProbeOrchestrator {
     private def isTooLow(rate: Double): Boolean =
       min.exists(rate < _)
   }
+
+  val atLeastOne = ExpectedRange(min = Some(1))
 
 }
