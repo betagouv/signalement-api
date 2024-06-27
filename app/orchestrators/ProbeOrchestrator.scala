@@ -8,7 +8,7 @@ import orchestrators.ProbeOrchestrator.ExpectedRange
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.probe.ProbeRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
@@ -17,9 +17,12 @@ import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
 import utils.Logs.RichLogger
 
+import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,12 +31,44 @@ class ProbeOrchestrator(
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface,
     probeRepository: ProbeRepository,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     userRepository: UserRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
   val _Logger = Logger(getClass)
+
+  def evaluate() = {
+    println("@@@@@@@ LOCAL TIME PARIS" + OffsetDateTime.now.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime)
+    println("@@@@@@@ LOCAL TIME NY" + OffsetDateTime.now.atZoneSameInstant(ZoneId.of("America/New_York")).toLocalTime)
+
+    val step = 30.minutes
+    iterateDates(start = OffsetDateTime.now.minusDays(10), end = OffsetDateTime.now, step = step)
+      .foldLeft(Future.unit) { (previous, offsetDateTime) =>
+        if (isDuringTypicalBusyHours(offsetDateTime)) {
+          for {
+            _ <- previous
+            count <- reportRepository.count(
+              Some(Admin),
+              ReportFilter(
+                start = Some(offsetDateTime),
+                end = Some(offsetDateTime.plusSeconds(step.toSeconds))
+              )
+            )
+            _ = println(s"@@@@ $offsetDateTime => $count ${if (count < 3) "ATTENTION" else ""}")
+          } yield ()
+        } else {
+          for {
+            _ <- previous
+            _ = println(s"@@@@ $offsetDateTime => discarded")
+          } yield ()
+        }
+
+      }
+  }
+
+  private def iterateDates(start: OffsetDateTime, end: OffsetDateTime, step: Duration): Seq[OffsetDateTime] =
+    Iterator.iterate(start)(_.plusSeconds(step.toSeconds)).takeWhile(!_.isAfter(end)).toSeq
 
   def scheduleProbeTasks(): Unit = {
     val tasks = Seq(
@@ -88,22 +123,28 @@ class ProbeOrchestrator(
       },
       new ScheduledTask(103, "number_reports_probe", taskRepository, actorSystem, taskConfiguration) {
         override val logger       = _Logger
-        override val taskSettings = FrequentTaskSettings(interval = 2.hour)
+        override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
 
         override def runTask(): Future[Unit] = {
-          val evaluationPeriod = 3.hour
-          for {
-            maybeNumber <- reportRepository.count(
-              Some(Admin),
-              ReportFilter(start = Some(OffsetDateTime.now().minusSeconds(evaluationPeriod.toSeconds)))
-            )
-            _ <- handleResult(
-              "Nombre de signalements effectués (de tous types)",
-              Some(maybeNumber.toDouble),
-              ExpectedRange(min = Some(1)),
-              evaluationPeriod
-            )
-          } yield ()
+          val now = OffsetDateTime.now
+          if (isDuringTypicalBusyHours(now)) {
+            val evaluationPeriod = 1.hour
+            for {
+              maybeNumber <- reportRepository.count(
+                Some(Admin),
+                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)))
+              )
+              _ <- handleResult(
+                "Nombre de signalements effectués (de tous types)",
+                Some(maybeNumber.toDouble),
+                ExpectedRange(min = Some(1)),
+                evaluationPeriod
+              )
+            } yield ()
+          } else {
+            Future.unit
+          }
+
         }
       }
     )
@@ -130,6 +171,12 @@ class ProbeOrchestrator(
     case other =>
       _Logger.info(s"$probeName est correct: $other%")
       Future.unit
+  }
+
+  private def isDuringTypicalBusyHours(offsetDateTime: OffsetDateTime) = {
+    val parisLocalTime = offsetDateTime.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime
+    parisLocalTime.isAfter(LocalTime.of(6, 0)) &&
+    parisLocalTime.isBefore(LocalTime.of(22, 0))
   }
 
 }

@@ -482,14 +482,17 @@ class SignalConsoComponents(
   if (applicationConfiguration.task.probe.active) {
     logger.debug("Probes are enabled")
     val probeRepository = new ProbeRepository(dbConfig)
-    new ProbeOrchestrator(
+    val probeOrchestrator = new ProbeOrchestrator(
       actorSystem,
       applicationConfiguration.task,
       taskRepository,
       probeRepository,
+      reportRepository,
       userRepository,
       mailService
-    ).scheduleProbeTasks()
+    )
+//    probeOrchestrator.scheduleProbeTasks()
+    probeOrchestrator.evaluate(): Unit
   } else {
     logger.debug("Probes are disabled")
   }
