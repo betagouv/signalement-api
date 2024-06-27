@@ -87,7 +87,6 @@ class ProbeOrchestrator(
             )
           } yield ()
         }
-
       },
       new ScheduledTask(101, "lanceur_dalerte_probe", taskRepository, actorSystem, taskConfiguration) {
         override val taskSettings = FrequentTaskSettings(interval = 6.hour)
@@ -119,53 +118,22 @@ class ProbeOrchestrator(
           } yield ()
         }
       },
-      new ScheduledTask(103, "number_reports_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
-        override def runTask(): Future[Unit] = {
-          val now = OffsetDateTime.now
-          if (isDuringTypicalBusyHours(now)) {
-            val evaluationPeriod = 1.hour
-            for {
-              maybeNumber <- reportRepository.count(
-                Some(Admin),
-                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)))
-              )
-              _ <- handleResult(
-                "Nombre de signalements effectués (de tous types)",
-                Some(maybeNumber.toDouble),
-                atLeastOne,
-                evaluationPeriod
-              )
-            } yield ()
-          } else {
-            Future.unit
-          }
-        }
-      },
-      new ScheduledTask(104, "number_reports_with_website_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
-        override def runTask(): Future[Unit] = {
-          val now = OffsetDateTime.now
-          if (isDuringTypicalBusyHours(now)) {
-            val evaluationPeriod = 1.hour
-            for {
-              maybeNumber <- reportRepository.count(
-                Some(Admin),
-                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasWebsite = Some(true))
-              )
-              _ <- handleResult(
-                "Nombre de signalements sur des sites webs",
-                Some(maybeNumber.toDouble),
-                atLeastOne,
-                evaluationPeriod
-              )
-            } yield ()
-          } else {
-            Future.unit
-          }
-        }
-      },
-      buildTaskAtLeastOneReportOfType(
+      buildTaskAtLeastOneReport(
+        103,
+        "number_reports_probe",
+        "Nombre de signalements",
+        runInterval = 30.minutes,
+        evaluationPeriod = 1.hour
+      ),
+      buildTaskAtLeastOneReport(
+        104,
+        "number_reports_with_website_probe",
+        "Nombre de signalements sur des sites webs",
+        runInterval = 1.hour,
+        evaluationPeriod = 1.hour,
+        ReportFilter(hasWebsite = Some(true))
+      ),
+      buildTaskAtLeastOneReport(
         105,
         "number_reports_with_company_probe",
         "Nombre de signalements avec une société identifiée",
@@ -173,7 +141,7 @@ class ProbeOrchestrator(
         evaluationPeriod = 1.hour,
         ReportFilter(hasCompany = Some(true))
       ),
-      buildTaskAtLeastOneReportOfType(
+      buildTaskAtLeastOneReport(
         106,
         "number_reports_with_attachement",
         "Nombre de signalements avec une pièce jointe",
@@ -181,7 +149,7 @@ class ProbeOrchestrator(
         evaluationPeriod = 1.hour,
         ReportFilter(hasAttachment = Some(true))
       ),
-      buildTaskAtLeastOneReportOfType(
+      buildTaskAtLeastOneReport(
         107,
         "number_reports_produit_dangereux",
         "Nombre de signalements avec tag ProduitDangereux",
@@ -195,13 +163,13 @@ class ProbeOrchestrator(
     tasks.foreach(_.schedule())
   }
 
-  private def buildTaskAtLeastOneReportOfType(
+  private def buildTaskAtLeastOneReport(
       taskId: Int,
       taskName: String,
       description: String,
       runInterval: FiniteDuration,
       evaluationPeriod: FiniteDuration,
-      reportFilter: ReportFilter
+      reportFilter: ReportFilter = ReportFilter()
   ): ScheduledTask = new ScheduledTask(taskId, taskName, taskRepository, actorSystem, taskConfiguration) {
     override val taskSettings = FrequentTaskSettings(runInterval)
 
