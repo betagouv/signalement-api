@@ -65,10 +65,9 @@ class ProbeOrchestrator(
           } yield ()
         }
       },
-      new ScheduledTask(102, "email_validate_probe", taskRepository, actorSystem, taskConfiguration) {
+      new ScheduledTask(102, "email_validations_probe", taskRepository, actorSystem, taskConfiguration) {
         override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 30.minutes)
-
         override def runTask(): Future[Unit] = {
           val evaluationPeriod = 1.hour
           for {
