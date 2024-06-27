@@ -4,6 +4,7 @@ import config.TaskConfiguration
 import models.UserRole
 import models.UserRole.Admin
 import models.report.ReportFilter
+import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
 import orchestrators.ProbeOrchestrator.atLeastOne
 import org.apache.pekko.actor.ActorSystem
@@ -171,7 +172,7 @@ class ProbeOrchestrator(
       },
       new ScheduledTask(105, "number_reports_with_company_probe", taskRepository, actorSystem, taskConfiguration) {
         override val logger       = _Logger
-        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
+        override val taskSettings = FrequentTaskSettings(interval = 12.hour)
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {
@@ -193,9 +194,10 @@ class ProbeOrchestrator(
           }
         }
       },
-      new ScheduledTask(105, "number_reports_with_attachement", taskRepository, actorSystem, taskConfiguration) {
+      new ScheduledTask(106, "number_reports_with_attachement", taskRepository, actorSystem, taskConfiguration) {
         override val logger       = _Logger
         override val taskSettings = FrequentTaskSettings(interval = 1.hour)
+
         override def runTask(): Future[Unit] = {
           val now = OffsetDateTime.now
           if (isDuringTypicalBusyHours(now)) {
@@ -207,6 +209,34 @@ class ProbeOrchestrator(
               )
               _ <- handleResult(
                 "Nombre de signalements avec une pièce jointe",
+                Some(maybeNumber.toDouble),
+                atLeastOne,
+                evaluationPeriod
+              )
+            } yield ()
+          } else {
+            Future.unit
+          }
+        }
+      },
+      new ScheduledTask(107, "number_reports_produit_dangereux", taskRepository, actorSystem, taskConfiguration) {
+        override val logger       = _Logger
+        override val taskSettings = FrequentTaskSettings(interval = 3.hours)
+
+        override def runTask(): Future[Unit] = {
+          val now = OffsetDateTime.now
+          if (isDuringTypicalBusyHours(now)) {
+            val evaluationPeriod = 1.day
+            for {
+              maybeNumber <- reportRepository.count(
+                Some(Admin),
+                ReportFilter(
+                  start = Some(now.minusSeconds(evaluationPeriod.toSeconds)),
+                  withTags = Seq(ProduitDangereux)
+                )
+              )
+              _ <- handleResult(
+                "Nombre de signalements avec tag ProduitDangereux",
                 Some(maybeNumber.toDouble),
                 atLeastOne,
                 evaluationPeriod
