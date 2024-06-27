@@ -7,6 +7,7 @@ import models.report.ReportFilter
 import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
 import orchestrators.ProbeOrchestrator.atLeastOne
+import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.probe.ProbeRepository
@@ -273,12 +274,6 @@ class ProbeOrchestrator(
       Future.unit
   }
 
-  private def isDuringTypicalBusyHours(offsetDateTime: OffsetDateTime) = {
-    val parisLocalTime = offsetDateTime.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime
-    parisLocalTime.isAfter(LocalTime.of(6, 0)) &&
-    parisLocalTime.isBefore(LocalTime.of(22, 0))
-  }
-
 }
 
 object ProbeOrchestrator {
@@ -296,5 +291,11 @@ object ProbeOrchestrator {
   }
 
   val atLeastOne = ExpectedRange(min = Some(1))
+
+  def isDuringTypicalBusyHours(offsetDateTime: OffsetDateTime) = {
+    val parisLocalTime = offsetDateTime.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime
+    parisLocalTime.isAfter(LocalTime.of(6, 0)) &&
+    parisLocalTime.isBefore(LocalTime.of(22, 0))
+  }
 
 }
