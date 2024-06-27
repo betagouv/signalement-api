@@ -39,7 +39,7 @@ class ProbeOrchestrator(
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
-  val _Logger = Logger(getClass)
+  val logger = Logger(getClass)
 
   def evaluate() = {
 
@@ -165,80 +165,65 @@ class ProbeOrchestrator(
           }
         }
       },
-      new ScheduledTask(105, "number_reports_with_company_probe", taskRepository, actorSystem, taskConfiguration) {
-        override val taskSettings = FrequentTaskSettings(interval = 12.hour)
-        override def runTask(): Future[Unit] = {
-          val now = OffsetDateTime.now
-          if (isDuringTypicalBusyHours(now)) {
-            val evaluationPeriod = 1.hour
-            for {
-              maybeNumber <- reportRepository.count(
-                Some(Admin),
-                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasCompany = Some(true))
-              )
-              _ <- handleResult(
-                "Nombre de signalements avec une société identifiée",
-                Some(maybeNumber.toDouble),
-                atLeastOne,
-                evaluationPeriod
-              )
-            } yield ()
-          } else {
-            Future.unit
-          }
-        }
-      },
-      new ScheduledTask(106, "number_reports_with_attachement", taskRepository, actorSystem, taskConfiguration) {
-        override val taskSettings = FrequentTaskSettings(interval = 1.hour)
-        override def runTask(): Future[Unit] = {
-          val now = OffsetDateTime.now
-          if (isDuringTypicalBusyHours(now)) {
-            val evaluationPeriod = 1.hour
-            for {
-              maybeNumber <- reportRepository.count(
-                Some(Admin),
-                ReportFilter(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)), hasAttachment = Some(true))
-              )
-              _ <- handleResult(
-                "Nombre de signalements avec une pièce jointe",
-                Some(maybeNumber.toDouble),
-                atLeastOne,
-                evaluationPeriod
-              )
-            } yield ()
-          } else {
-            Future.unit
-          }
-        }
-      },
-      new ScheduledTask(107, "number_reports_produit_dangereux", taskRepository, actorSystem, taskConfiguration) {
-        override val taskSettings = FrequentTaskSettings(interval = 3.hours)
-        override def runTask(): Future[Unit] = {
-          val now = OffsetDateTime.now
-          if (isDuringTypicalBusyHours(now)) {
-            val evaluationPeriod = 1.day
-            for {
-              maybeNumber <- reportRepository.count(
-                Some(Admin),
-                ReportFilter(
-                  start = Some(now.minusSeconds(evaluationPeriod.toSeconds)),
-                  withTags = Seq(ProduitDangereux)
-                )
-              )
-              _ <- handleResult(
-                "Nombre de signalements avec tag ProduitDangereux",
-                Some(maybeNumber.toDouble),
-                atLeastOne,
-                evaluationPeriod
-              )
-            } yield ()
-          } else {
-            Future.unit
-          }
-        }
-      }
+      buildTaskAtLeastOneReportOfType(
+        105,
+        "number_reports_with_company_probe",
+        "Nombre de signalements avec une société identifiée",
+        runInterval = 1.hour,
+        evaluationPeriod = 1.hour,
+        ReportFilter(hasCompany = Some(true))
+      ),
+      buildTaskAtLeastOneReportOfType(
+        106,
+        "number_reports_with_attachement",
+        "Nombre de signalements avec une pièce jointe",
+        runInterval = 1.hour,
+        evaluationPeriod = 1.hour,
+        ReportFilter(hasAttachment = Some(true))
+      ),
+      buildTaskAtLeastOneReportOfType(
+        107,
+        "number_reports_produit_dangereux",
+        "Nombre de signalements avec tag ProduitDangereux",
+        runInterval = 3.hours,
+        evaluationPeriod = 1.day,
+        ReportFilter(
+          withTags = Seq(ProduitDangereux)
+        )
+      )
     )
     tasks.foreach(_.schedule())
+  }
+
+  private def buildTaskAtLeastOneReportOfType(
+      taskId: Int,
+      taskName: String,
+      description: String,
+      runInterval: FiniteDuration,
+      evaluationPeriod: FiniteDuration,
+      reportFilter: ReportFilter
+  ): ScheduledTask = new ScheduledTask(taskId, taskName, taskRepository, actorSystem, taskConfiguration) {
+    override val taskSettings = FrequentTaskSettings(runInterval)
+
+    override def runTask() = {
+      val now = OffsetDateTime.now
+      if (isDuringTypicalBusyHours(now)) {
+        for {
+          maybeNumber <- reportRepository.count(
+            Some(Admin),
+            reportFilter.copy(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)))
+          )
+          _ <- handleResult(
+            description,
+            Some(maybeNumber.toDouble),
+            atLeastOne,
+            evaluationPeriod
+          )
+        } yield ()
+      } else {
+        Future.unit
+      }
+    }
   }
 
   private def handleResult(
@@ -249,7 +234,7 @@ class ProbeOrchestrator(
   ) = maybeNumber match {
     case Some(p) if expectedRange.isProblematic(p) =>
       val issueAdjective = if (expectedRange.isTooHigh(p)) "trop haut" else "trop bas"
-      _Logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $p%")
+      logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $p%")
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
@@ -259,7 +244,7 @@ class ProbeOrchestrator(
           )
       } yield ()
     case other =>
-      _Logger.info(s"$probeName est correct: $other%")
+      logger.info(s"$probeName est correct: $other%")
       Future.unit
   }
 
