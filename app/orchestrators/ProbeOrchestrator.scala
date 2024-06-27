@@ -42,7 +42,6 @@ class ProbeOrchestrator(
   val logger = Logger(getClass)
 
   def evaluate() = {
-
     val step = 1.hour
     iterateDates(start = OffsetDateTime.now.minusDays(10), end = OffsetDateTime.now, step = step)
       .foldLeft(Future.unit) { (previous, offsetDateTime) =>
