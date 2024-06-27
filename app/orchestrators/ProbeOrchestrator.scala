@@ -118,43 +118,48 @@ class ProbeOrchestrator(
           } yield ()
         }
       },
-      buildTaskAtLeastOneReport(
+      buildProbeAtLeastOneReport(
         103,
         "number_reports_probe",
         "Nombre de signalements",
         runInterval = 30.minutes,
-        evaluationPeriod = 1.hour
+        evaluationPeriod = 1.hour,
+        onlyRunInBusyHours = true
       ),
-      buildTaskAtLeastOneReport(
+      buildProbeAtLeastOneReport(
         104,
         "number_reports_with_website_probe",
         "Nombre de signalements sur des sites webs",
         runInterval = 1.hour,
         evaluationPeriod = 1.hour,
+        onlyRunInBusyHours = true,
         ReportFilter(hasWebsite = Some(true))
       ),
-      buildTaskAtLeastOneReport(
+      buildProbeAtLeastOneReport(
         105,
         "number_reports_with_company_probe",
         "Nombre de signalements avec une société identifiée",
         runInterval = 1.hour,
         evaluationPeriod = 1.hour,
+        onlyRunInBusyHours = true,
         ReportFilter(hasCompany = Some(true))
       ),
-      buildTaskAtLeastOneReport(
+      buildProbeAtLeastOneReport(
         106,
         "number_reports_with_attachement",
         "Nombre de signalements avec une pièce jointe",
         runInterval = 1.hour,
         evaluationPeriod = 1.hour,
+        onlyRunInBusyHours = true,
         ReportFilter(hasAttachment = Some(true))
       ),
-      buildTaskAtLeastOneReport(
+      buildProbeAtLeastOneReport(
         107,
         "number_reports_produit_dangereux",
         "Nombre de signalements avec tag ProduitDangereux",
         runInterval = 3.hours,
         evaluationPeriod = 1.day,
+        onlyRunInBusyHours = false,
         ReportFilter(
           withTags = Seq(ProduitDangereux)
         )
@@ -163,28 +168,51 @@ class ProbeOrchestrator(
     tasks.foreach(_.schedule())
   }
 
-  private def buildTaskAtLeastOneReport(
+  private def buildProbeAtLeastOneReport(
       taskId: Int,
       taskName: String,
       description: String,
       runInterval: FiniteDuration,
       evaluationPeriod: FiniteDuration,
+      onlyRunInBusyHours: Boolean,
       reportFilter: ReportFilter = ReportFilter()
+  ): ScheduledTask = buildProbe(
+    taskId,
+    taskName,
+    description,
+    runInterval,
+    evaluationPeriod,
+    query = dateTime =>
+      reportRepository
+        .count(
+          Some(Admin),
+          reportFilter.copy(start = Some(dateTime.minusSeconds(evaluationPeriod.toSeconds)))
+        )
+        .map(n => Some(n.toDouble)),
+    expectedRange = atLeastOne,
+    onlyRunInBusyHours
+  )
+
+  private def buildProbe(
+      taskId: Int,
+      taskName: String,
+      description: String,
+      runInterval: FiniteDuration,
+      evaluationPeriod: FiniteDuration,
+      query: OffsetDateTime => Future[Option[Double]],
+      expectedRange: ExpectedRange,
+      onlyRunInBusyHours: Boolean
   ): ScheduledTask = new ScheduledTask(taskId, taskName, taskRepository, actorSystem, taskConfiguration) {
     override val taskSettings = FrequentTaskSettings(runInterval)
-
     override def runTask() = {
       val now = OffsetDateTime.now
-      if (isDuringTypicalBusyHours(now)) {
+      if (!onlyRunInBusyHours || isDuringTypicalBusyHours(now)) {
         for {
-          maybeNumber <- reportRepository.count(
-            Some(Admin),
-            reportFilter.copy(start = Some(now.minusSeconds(evaluationPeriod.toSeconds)))
-          )
+          maybeNumber <- query(now)
           _ <- handleResult(
             description,
-            Some(maybeNumber.toDouble),
-            atLeastOne,
+            maybeNumber,
+            expectedRange,
             evaluationPeriod
           )
         } yield ()
