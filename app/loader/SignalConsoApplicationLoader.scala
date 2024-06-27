@@ -103,8 +103,6 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.LanceurDAlerteRateProbeTask
-import tasks.probe.ReponseConsoRateProbeTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
@@ -481,7 +479,20 @@ class SignalConsoComponents(
     messagesApi
   )
 
-  val probeOrchestrator = new ProbeOrchestrator(userRepository, mailService)
+  if (applicationConfiguration.task.probe.active) {
+    logger.debug("Probes are enabled")
+    val probeRepository = new ProbeRepository(dbConfig)
+    new ProbeOrchestrator(
+      actorSystem,
+      applicationConfiguration.task,
+      taskRepository,
+      probeRepository,
+      userRepository,
+      mailService
+    ).scheduleProbeTasks()
+  } else {
+    logger.debug("Probes are disabled")
+  }
 
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
@@ -777,28 +788,6 @@ class SignalConsoComponents(
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
-
-  // Probes
-  if (applicationConfiguration.task.probe.active) {
-    logger.debug("Probes are enabled")
-    val probeRepository = new ProbeRepository(dbConfig)
-    new ReponseConsoRateProbeTask(
-      actorSystem,
-      applicationConfiguration.task,
-      probeOrchestrator,
-      taskRepository,
-      probeRepository
-    ).schedule()
-    new LanceurDAlerteRateProbeTask(
-      actorSystem,
-      applicationConfiguration.task,
-      probeOrchestrator,
-      taskRepository,
-      probeRepository
-    ).schedule()
-  } else {
-    logger.debug("Probes are disabled")
-  }
 
   // Routes
   lazy val router: Router =
