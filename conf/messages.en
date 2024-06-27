@@ -43,7 +43,7 @@ ConsumerReportAckProEmail.negative=Negative
 ConsumerReportAckProEmail.signalementInfonde=The company deemed this report unfounded:
 ConsumerReportAckProEmail.signalementNonConcerne=The company stated that this report does not concern their business:
 ConsumerReportAckProEmail.signalementAccepte=With its response, the company committed to considering your report. It made the following commitment:
-ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=You will receive a new email in {0} days to ask if the company has fulfilled its commitment.
+ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=You will receive a new email in {0} days to ask if the company has fulfilled its commitment. Thank you for your patience and please refrain from submitting another report or contacting support before the end of this period.
 
 ConsumerReportProEngagementEmail.subject=Your feedback on the company''s commitment regarding your report
 ConsumerReportProEngagementEmail.title=Your feedback on the company''s commitment regarding your report
