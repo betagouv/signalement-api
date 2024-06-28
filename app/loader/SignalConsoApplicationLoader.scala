@@ -103,7 +103,7 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
-import tasks.probe.LowRateLanceurDAlerteTask
+import tasks.probe.LowRateInformateurInterneTask
 import tasks.probe.LowRateReponseConsoTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
@@ -788,7 +788,7 @@ class SignalConsoComponents(
       userRepository,
       mailService
     ).schedule()
-    new LowRateLanceurDAlerteTask(
+    new LowRateInformateurInterneTask(
       actorSystem,
       applicationConfiguration.task,
       taskRepository,

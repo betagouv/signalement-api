@@ -15,7 +15,7 @@
     @Messages("ReportAckEmail.hello", report.firstName, report.lastName)
     </p>
 @report.status match {
-    case ReportStatus.LanceurAlerte => {
+    case ReportStatus.InformateurInterne => {
         <p>
             <b>@Messages("ReportAckEmail.reportSubmitted")</b>
         </p>

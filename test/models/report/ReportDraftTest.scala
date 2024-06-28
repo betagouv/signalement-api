@@ -81,7 +81,7 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.creationDate, creationDate)
         .withFieldConst(_.expirationDate, expirationDate)
         .withFieldConst(_.visibleToPro, false)
-        .withFieldConst(_.status, ReportStatus.LanceurAlerte)
+        .withFieldConst(_.status, ReportStatus.InformateurInterne)
         .withFieldConst(_.influencer, None)
         .withFieldConst(_.reopenDate, None)
         .transform
@@ -181,13 +181,13 @@ class ReportDraftTest extends Specification {
         report.status shouldEqual NA
       }
 
-      s"initialStatus should be LanceurAlerte if the draft had employeeCustomer set to true" in {
+      s"initialStatus should be InformateurInterne if the draft had employeeCustomer set to true" in {
         val report = generateReportFromDraft(
           typicalDraftReport.copy(
             employeeConsumer = true
           )
         )
-        report.status shouldEqual ReportStatus.LanceurAlerte
+        report.status shouldEqual ReportStatus.InformateurInterne
       }
 
       s"initialStatus should be NA when there is tag ReponseConso" in {
