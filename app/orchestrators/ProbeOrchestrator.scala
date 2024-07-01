@@ -10,6 +10,7 @@ import orchestrators.ProbeOrchestrator.atLeastOne
 import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
+import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
@@ -35,6 +36,7 @@ class ProbeOrchestrator(
     probeRepository: ProbeRepository,
     reportRepository: ReportRepositoryInterface,
     userRepository: UserRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 

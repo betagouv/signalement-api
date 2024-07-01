@@ -489,6 +489,7 @@ class SignalConsoComponents(
       probeRepository,
       reportRepository,
       userRepository,
+      eventRepository,
       mailService
     )
     probeOrchestrator.scheduleProbeTasks()
