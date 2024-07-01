@@ -201,7 +201,7 @@ class ProbeOrchestrator(
   ) = maybeNumber match {
     case Some(p) if expectedRange.isProblematic(p) =>
       val issueAdjective = if (expectedRange.isTooHigh(p)) "trop haut" else "trop bas"
-      logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $p%")
+      logger.warnWithTitle("probe_triggered", s"$probeName est $issueAdjective : $p sur $evaluationPeriod")
       for {
         users <- userRepository.listForRoles(Seq(UserRole.Admin))
         _ <- mailService
