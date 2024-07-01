@@ -144,7 +144,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte, visibleToPro = false)
+    .copy(employeeConsumer = true, status = ReportStatus.InformateurInterne, visibleToPro = false)
   val reportNAOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
