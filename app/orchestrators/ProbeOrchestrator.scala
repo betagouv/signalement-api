@@ -10,6 +10,7 @@ import orchestrators.ProbeOrchestrator.atLeastOne
 import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
+import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
 import repositories.report.ReportRepositoryInterface
@@ -19,6 +20,8 @@ import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
+import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Logs.RichLogger
 
 import java.time.LocalTime
@@ -136,6 +139,15 @@ class ProbeOrchestrator(
         ReportFilter(
           withTags = Seq(ProduitDangereux)
         )
+      ),
+      buildProbe(
+        108,
+        "courrieractivation_probe",
+        "Nombre d'envois de courriers d'activation",
+        runInterval = 24.hour,
+        evaluationPeriod = 4.days,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // To refine
+        query = (dateTime, evaluationPeriod) => countEvents(POST_ACCOUNT_ACTIVATION_DOC, dateTime, evaluationPeriod)
       )
     )
     tasks.foreach(_.schedule())
@@ -194,6 +206,21 @@ class ProbeOrchestrator(
       }
     }
   }
+
+  private def countEvents(
+      action: ActionEventValue,
+      dateTime: OffsetDateTime,
+      evaluationPeriod: FiniteDuration
+  ): Future[Option[Double]] =
+    eventRepository
+      .countEvents(
+        EventFilter(
+          action = Some(action),
+          start = Some(dateTime.minusSeconds(evaluationPeriod.toSeconds)),
+          end = Some(dateTime)
+        )
+      )
+      .map(n => Some(n.toDouble))
 
   private def handleResult(
       probeName: String,
