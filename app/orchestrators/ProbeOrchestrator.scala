@@ -20,8 +20,18 @@ import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
+import utils.Constants.ActionEvent.ACCOUNT_ACTIVATION
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
+import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
+import utils.Constants.ActionEvent.REPORT_PRO_ENGAGEMENT_HONOURED
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
+import utils.Constants.ActionEvent.REPORT_REVIEW_ON_ENGAGEMENT
+import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Logs.RichLogger
 
 import java.time.LocalTime
@@ -146,8 +156,98 @@ class ProbeOrchestrator(
         "Nombre d'envois de courriers d'activation",
         runInterval = 24.hour,
         evaluationPeriod = 4.days,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
         query = (dateTime, evaluationPeriod) => countEvents(POST_ACCOUNT_ACTIVATION_DOC, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        109,
+        "courrierrelance_probe",
+        "Nombre d'envois de courriers de relance",
+        runInterval = 24.hour,
+        evaluationPeriod = 4.days,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(POST_FOLLOW_UP_DOC, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        110,
+        "accountactivation_probe",
+        "Nombre d'activations de compte des pros",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(ACCOUNT_ACTIVATION, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        111,
+        "reportreading_probe",
+        "Nombre de premières lectures d'un signalement par les pros",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_READING_BY_PRO, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        112,
+        "reportresponses_probe",
+        "Nombre de réponses des pros",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_PRO_RESPONSE, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        113,
+        "engagementhonoured_probe",
+        "Nombre d'engagements marqués comme honoré par les pros",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_PRO_ENGAGEMENT_HONOURED, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        114,
+        "responsereview_probe",
+        "Nombre de reviews initiale des consos sur la réponse des pros",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_RESPONSE, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        115,
+        "engagementreview_probe",
+        "Nombre de reviews ultérieure des consos sur la tenue des engagements",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_ENGAGEMENT, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        116,
+        "reportclosednoreading_probe",
+        "Nombre de signalements fermés en 'non consulté'",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_CLOSED_BY_NO_ACTION, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        117,
+        "reportclosednoaction_probe",
+        "Nombre de signalements fermés en 'consulté ignoré'",
+        runInterval = 1.hour,                                         // TODO To refine
+        evaluationPeriod = 2.hours,                                   // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_CLOSED_BY_NO_READING, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        118,
+        "emailinactiveagentaccount_probe",
+        "Nombre d'emails \"compte inactive\" envoyés aux agents",
+        runInterval = 1.day,                                          // TODO To refine
+        evaluationPeriod = 8.days,                                    // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => countEvents(EMAIL_INACTIVE_AGENT_ACCOUNT, dateTime, evaluationPeriod)
       )
     )
     tasks.foreach(_.schedule())
