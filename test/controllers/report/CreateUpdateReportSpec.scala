@@ -95,7 +95,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
       }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-        ReportStatus.LanceurAlerte
+        ReportStatus.InformateurInterne
       )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
         draftReport.email,

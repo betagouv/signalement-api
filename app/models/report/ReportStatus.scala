@@ -9,8 +9,8 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   val values = findValues
 
-  case object NA            extends ReportStatus
-  case object LanceurAlerte extends ReportStatus
+  case object NA                 extends ReportStatus
+  case object InformateurInterne extends ReportStatus
 
   /** Not read by pro status
     */
@@ -47,7 +47,9 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   implicit class ReportStatusOps(reportStatus: ReportStatus) {
     def isFinal: Boolean =
-      Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(reportStatus)
+      Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, InformateurInterne, NA).contains(
+        reportStatus
+      )
 
     def isNotFinal = !isFinal
   }
@@ -55,15 +57,15 @@ object ReportStatus extends PlayEnum[ReportStatus] {
   def translate(status: ReportStatus, userRole: UserRole): String = {
     def isPro = userRole == UserRole.Professionnel
     status match {
-      case NA                => if (isPro) "" else "Non transmis"
-      case LanceurAlerte     => if (isPro) "" else "Lanceur d'alerte"
-      case TraitementEnCours => if (isPro) "Non consulté" else "Traitement en cours"
-      case Transmis          => if (isPro) "À répondre" else "Signalement transmis"
-      case PromesseAction    => if (isPro) "Clôturé" else "Promesse action"
-      case Infonde           => if (isPro) "Clôturé" else "Signalement infondé"
-      case NonConsulte       => if (isPro) "Clôturé" else "Signalement non consulté"
-      case ConsulteIgnore    => if (isPro) "Clôturé" else "Signalement consulté ignoré"
-      case MalAttribue       => if (isPro) "Clôturé" else "Signalement mal attribué"
+      case NA                 => if (isPro) "" else "Non transmis"
+      case InformateurInterne => if (isPro) "" else "Informateur interne"
+      case TraitementEnCours  => if (isPro) "Non consulté" else "Traitement en cours"
+      case Transmis           => if (isPro) "À répondre" else "Signalement transmis"
+      case PromesseAction     => if (isPro) "Clôturé" else "Promesse action"
+      case Infonde            => if (isPro) "Clôturé" else "Signalement infondé"
+      case NonConsulte        => if (isPro) "Clôturé" else "Signalement non consulté"
+      case ConsulteIgnore     => if (isPro) "Clôturé" else "Signalement consulté ignoré"
+      case MalAttribue        => if (isPro) "Clôturé" else "Signalement mal attribué"
     }
   }
 

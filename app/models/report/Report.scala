@@ -89,7 +89,7 @@ object Report {
       companySiret: Option[SIRET],
       companyCountry: Option[Country]
   ): ReportStatus =
-    if (employeeConsumer) ReportStatus.LanceurAlerte
+    if (employeeConsumer) ReportStatus.InformateurInterne
     else if (!visibleToPro) ReportStatus.NA
     else if (companySiret.isEmpty) ReportStatus.NA
     else if (companySiret.nonEmpty && companyCountry.isDefined)

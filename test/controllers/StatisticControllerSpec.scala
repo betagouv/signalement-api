@@ -132,7 +132,7 @@ abstract class StatisticControllerSpec extends Specification with AppSpec with F
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
+      .genReportsForCompanyWithStatus(company, ReportStatus.InformateurInterne)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
@@ -173,7 +173,7 @@ abstract class StatisticControllerSpec extends Specification with AppSpec with F
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
+      .genReportsForCompanyWithStatus(company, ReportStatus.InformateurInterne)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
@@ -196,7 +196,7 @@ abstract class StatisticControllerSpec extends Specification with AppSpec with F
     Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore).sample.get
   val currentMonthReportsNotForwarded =
     Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.NA).sample.get ::: Fixtures
-      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
+      .genReportsForCompanyWithStatus(company, ReportStatus.InformateurInterne)
       .sample
       .get
 
