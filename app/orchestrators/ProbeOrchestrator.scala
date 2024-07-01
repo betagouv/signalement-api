@@ -25,7 +25,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
@@ -41,34 +40,26 @@ class ProbeOrchestrator(
 
   val logger = Logger(getClass)
 
-  def evaluate() = {
-    val step = 1.hour
-    iterateDates(start = OffsetDateTime.now.minusDays(10), end = OffsetDateTime.now, step = step)
-      .foldLeft(Future.unit) { (previous, offsetDateTime) =>
-        if (isDuringTypicalBusyHours(offsetDateTime)) {
-          for {
-            _ <- previous
-            cpt <- reportRepository.count(
-              Some(Admin),
-              ReportFilter(
-                start = Some(offsetDateTime),
-                end = Some(offsetDateTime.plusSeconds(step.toSeconds)),
-                hasAttachment = Some(true)
-              )
-            )
-            _ = println(s"@@@@ $offsetDateTime => $cpt")
-          } yield ()
-        } else {
-          for {
-            _ <- previous
-          } yield ()
-        }
-
-      }
+  // Helper to evaluate the results of a given query on historical data on DB anon.
+  // Might be helpful when creating new probe or adjusting their parameters
+  @scala.annotation.nowarn
+  private def evaluateProbeQuery(
+      runInterval: FiniteDuration,
+      evaluationPeriod: FiniteDuration,
+      query: (OffsetDateTime, FiniteDuration) => Future[Option[Double]]
+  ): Unit = {
+    val now       = OffsetDateTime.now
+    val start     = now.minusDays(10)
+    val dateTimes = Iterator.iterate(start)(_.plusSeconds(runInterval.toSeconds)).takeWhile(!_.isAfter(now)).toSeq
+    dateTimes.foldLeft(Future.unit) { (previous, dateTime) =>
+      for {
+        _   <- previous
+        cpt <- query(dateTime, evaluationPeriod)
+        busyLabel = if (isDuringTypicalBusyHours(dateTime)) " [busy hours]" else ""
+        _         = logger.info(s"Evaluating probe query at $dateTime$busyLabel => $cpt")
+      } yield ()
+    }: Unit
   }
-
-  private def iterateDates(start: OffsetDateTime, end: OffsetDateTime, step: Duration): Seq[OffsetDateTime] =
-    Iterator.iterate(start)(_.plusSeconds(step.toSeconds)).takeWhile(!_.isAfter(end)).toSeq
 
   def scheduleProbeTasks(): Unit = {
     val tasks = Seq(
