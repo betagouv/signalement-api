@@ -3,13 +3,16 @@ package orchestrators
 import config.TaskConfiguration
 import models.UserRole
 import models.UserRole.Admin
+import models.auth.AuthAttemptFilter
 import models.report.ReportFilter
 import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
+import orchestrators.ProbeOrchestrator.OffsetDateTimeOps
 import orchestrators.ProbeOrchestrator.atLeastOne
 import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
+import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
@@ -20,18 +23,7 @@ import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
-import utils.Constants.ActionEvent.ACCOUNT_ACTIVATION
-import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT
-import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
-import utils.Constants.ActionEvent.REPORT_PRO_ENGAGEMENT_HONOURED
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
-import utils.Constants.ActionEvent.REPORT_REVIEW_ON_ENGAGEMENT
-import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
+import utils.Constants.ActionEvent._
 import utils.Logs.RichLogger
 
 import java.time.LocalTime
@@ -50,6 +42,7 @@ class ProbeOrchestrator(
     reportRepository: ReportRepositoryInterface,
     userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
+    authAttemptRepository: AuthAttemptRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
@@ -248,6 +241,22 @@ class ProbeOrchestrator(
         evaluationPeriod = 8.days,                                    // TODO To refine
         expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
         query = (dateTime, evaluationPeriod) => countEvents(EMAIL_INACTIVE_AGENT_ACCOUNT, dateTime, evaluationPeriod)
+      ),
+      buildProbe(
+        119,
+        "authattempts_successrate_probe",
+        "Pourcentage de tentatives de connexion ayant réussies",
+        runInterval = 30.minutes,                                     // TODO To refine
+        evaluationPeriod = 1.hour,                                    // TODO To refine
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        query = (dateTime, evaluationPeriod) => {
+          val filter = AuthAttemptFilter(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
+          for {
+            nbSuccesses <- authAttemptRepository.countAuthAttempts(filter.copy(isSuccess = Some(true)))
+            nbTotal     <- authAttemptRepository.countAuthAttempts(filter)
+            percentage = (nbSuccesses.toDouble / nbTotal) * 100
+          } yield Some(percentage)
+        }
       )
     )
     tasks.foreach(_.schedule())
@@ -271,7 +280,7 @@ class ProbeOrchestrator(
       reportRepository
         .count(
           Some(Admin),
-          reportFilter.copy(start = Some(dateTime.minusSeconds(evaluationPeriod.toSeconds)))
+          reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)))
         )
         .map(n => Some(n.toDouble)),
     expectedRange = atLeastOne,
@@ -316,7 +325,7 @@ class ProbeOrchestrator(
       .countEvents(
         EventFilter(
           action = Some(action),
-          start = Some(dateTime.minusSeconds(evaluationPeriod.toSeconds)),
+          start = Some(dateTime.minusDuration(evaluationPeriod)),
           end = Some(dateTime)
         )
       )
@@ -366,6 +375,12 @@ object ProbeOrchestrator {
     val parisLocalTime = offsetDateTime.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime
     parisLocalTime.isAfter(LocalTime.of(6, 0)) &&
     parisLocalTime.isBefore(LocalTime.of(22, 0))
+  }
+
+  implicit class OffsetDateTimeOps(dt: OffsetDateTime) {
+    def minusDuration(finiteDuration: FiniteDuration) =
+      dt.minusNanos(finiteDuration.toNanos)
+
   }
 
 }

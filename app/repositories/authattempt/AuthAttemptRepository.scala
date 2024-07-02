@@ -1,6 +1,7 @@
 package repositories.authattempt
 
 import models.auth.AuthAttempt
+import models.auth.AuthAttemptFilter
 import play.api.Logger
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
@@ -30,6 +31,21 @@ class AuthAttemptRepository(
         .length
         .result
     )
+
+  override def countAuthAttempts(filter: AuthAttemptFilter): Future[Int] = db.run(
+    table
+      .filterOpt(filter.isSuccess) { case (table, isSuccess) =>
+        table.isSuccess.map(_ === isSuccess)
+      }
+      .filterOpt(filter.start) { case (table, start) =>
+        table.timestamp >= start
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.timestamp <= end
+      }
+      .length
+      .result
+  )
 
   override def listAuthAttempts(login: Option[String]): Future[Seq[AuthAttempt]] = db
     .run(
