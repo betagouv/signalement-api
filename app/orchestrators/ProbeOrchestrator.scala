@@ -62,8 +62,9 @@ class ProbeOrchestrator(
       query: (OffsetDateTime, FiniteDuration) => Future[Option[Double]]
   ): Unit = {
     val now       = OffsetDateTime.now
-    val start     = now.minusDays(10)
-    val dateTimes = Iterator.iterate(start)(_.plusSeconds(runInterval.toSeconds)).takeWhile(!_.isAfter(now)).toSeq
+    val start     = now.minusDays(20)
+    val end       = now.minusDays(2)
+    val dateTimes = Iterator.iterate(start)(_.plusSeconds(runInterval.toSeconds)).takeWhile(!_.isAfter(end)).toSeq
     dateTimes.foldLeft(Future.unit) { (previous, dateTime) =>
       for {
         _   <- previous
@@ -153,8 +154,8 @@ class ProbeOrchestrator(
         "courrieractivation_probe",
         "Nombre d'envois de courriers d'activation",
         runInterval = 24.hour,
-        evaluationPeriod = 4.days,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        evaluationPeriod = 7.days,
+        expectedRange = ExpectedRange(min = Some(100), max = Some(3000)),
         query = (dateTime, evaluationPeriod) => countEvents(POST_ACCOUNT_ACTIVATION_DOC, dateTime, evaluationPeriod)
       ),
       buildProbe(
