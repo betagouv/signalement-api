@@ -4,6 +4,8 @@ import config.TaskConfiguration
 import models.UserRole
 import models.UserRole.Admin
 import models.auth.AuthAttemptFilter
+import models.report.ReportFileOrigin.Consumer
+import models.report.ReportFileOrigin.Professional
 import models.report.ReportFilter
 import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
@@ -17,6 +19,8 @@ import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
 import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileFilter
+import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.emails.EmailDefinitionsAdmin.AdminProbeTriggered
@@ -43,6 +47,7 @@ class ProbeOrchestrator(
     userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     authAttemptRepository: AuthAttemptRepositoryInterface,
+    reportFileRepository: ReportFileRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
@@ -257,6 +262,42 @@ class ProbeOrchestrator(
             percentage = (nbSuccesses.toDouble / nbTotal) * 100
           } yield Some(percentage)
         }
+      ),
+      buildProbe(
+        120,
+        "reportfiles_pro_probe",
+        "Nombre d'uploads de fichiers par des pros",
+        runInterval = 12.hours,
+        evaluationPeriod = 1.day,
+        expectedRange = ExpectedRange(min = Some(2), max = Some(200)),
+        query = (dateTime, evaluationPeriod) =>
+          reportFileRepository
+            .count(
+              ReportFileFilter(
+                start = Some(dateTime.minusDuration(evaluationPeriod)),
+                end = Some(dateTime),
+                origin = Some(Professional)
+              )
+            )
+            .map(n => Some(n.toDouble))
+      ),
+      buildProbe(
+        121,
+        "reportfiles_consumer_probe",
+        "Nombre d'uploads de fichiers par des consos",
+        runInterval = 1.hour,
+        evaluationPeriod = 2.hours,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(500)),
+        query = (dateTime, evaluationPeriod) =>
+          reportFileRepository
+            .count(
+              ReportFileFilter(
+                start = Some(dateTime.minusDuration(evaluationPeriod)),
+                end = Some(dateTime),
+                origin = Some(Consumer)
+              )
+            )
+            .map(n => Some(n.toDouble))
       )
     )
     tasks.foreach(_.schedule())
