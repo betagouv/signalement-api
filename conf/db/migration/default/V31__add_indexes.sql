@@ -7,6 +7,10 @@ DROP INDEX companies_commercial_name_trgm_idx;
 DROP INDEX companies_establishment_commercial_name_trgm_idx;
 DROP INDEX companies_brand_trgm_idx;
 
+CREATE OR REPLACE FUNCTION immutable_array_to_string(text[], text, text)
+    RETURNS text as $$ SELECT array_to_string($1, $2, $3); $$
+LANGUAGE sql IMMUTABLE;
+
 ALTER TABLE companies
     ADD search_column_trgm TEXT GENERATED ALWAYS AS (
         name
@@ -24,14 +28,14 @@ CREATE INDEX IF NOT EXISTS companies_siren_idx ON companies (substr(siret, 0, 10
 ALTER TABLE reports
     ADD admin_search_column tsvector GENERATED ALWAYS AS (to_tsvector(
             CASE lang
-                WHEN 'en' THEN 'english'
-                ELSE 'french'
+                WHEN 'en' THEN 'english'::regconfig
+                ELSE 'french'::regconfig
                 END,
             category
                 || ' '
-                || array_to_string(subcategories, ',', '')
+                || immutable_array_to_string(subcategories, ',', '')
                 || ' '
-                || array_to_string(details, ',', '')
+                || immutable_array_to_string(details, ',', '')
                 || ' '
                 || coalesce(social_network, '')
                 || ' '
@@ -65,10 +69,10 @@ ALTER TABLE reports
 ALTER TABLE reports
     ADD pro_search_column tsvector GENERATED ALWAYS AS (to_tsvector(
             CASE lang
-                WHEN 'en' THEN 'english'
-                ELSE 'french'
+                WHEN 'en' THEN 'english'::regconfig
+                ELSE 'french'::regconfig
                 END,
-            array_to_string(details, ',', '')
+            immutable_array_to_string(details, ',', '')
                 || ' '
                 || coalesce(first_name, '')
                 || ' '
@@ -80,8 +84,8 @@ ALTER TABLE reports
 ALTER TABLE reports
     ADD pro_search_column_without_consumer tsvector GENERATED ALWAYS AS (to_tsvector(
             CASE lang
-                WHEN 'en' THEN 'english'
-                ELSE 'french'
+                WHEN 'en' THEN 'english'::regconfig
+                ELSE 'french'::regconfig
                 END,
-            array_to_string(details, ',', '')
+            immutable_array_to_string(details, ',', '')
                                                         )) STORED;
