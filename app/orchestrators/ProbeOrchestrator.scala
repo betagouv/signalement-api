@@ -62,7 +62,7 @@ class ProbeOrchestrator(
       query: (OffsetDateTime, FiniteDuration) => Future[Option[Double]]
   ): Unit = {
     val now       = OffsetDateTime.now
-    val start     = now.minusDays(20)
+    val start     = now.minusDays(10)
     val end       = now.minusDays(2)
     val dateTimes = Iterator.iterate(start)(_.plusSeconds(runInterval.toSeconds)).takeWhile(!_.isAfter(end)).toSeq
     dateTimes.foldLeft(Future.unit) { (previous, dateTime) =>
@@ -171,96 +171,97 @@ class ProbeOrchestrator(
         110,
         "accountactivation_probe",
         "Nombre d'activations de compte des pros",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 6.hour,
+        evaluationPeriod = 1.day,
+        expectedRange = ExpectedRange(min = Some(3), max = Some(300)),
         query = (dateTime, evaluationPeriod) => countEvents(ACCOUNT_ACTIVATION, dateTime, evaluationPeriod)
       ),
       buildProbe(
         111,
         "reportreading_probe",
         "Nombre de premières lectures d'un signalement par les pros",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
-        query = (dateTime, evaluationPeriod) => countEvents(REPORT_READING_BY_PRO, dateTime, evaluationPeriod)
+        runInterval = 1.hour,
+        evaluationPeriod = 6.hours,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(40)),
+        query = (dateTime, evaluationPeriod) => countEvents(REPORT_READING_BY_PRO, dateTime, evaluationPeriod),
+        onlyRunInBusyHours = true
       ),
       buildProbe(
         112,
         "reportresponses_probe",
         "Nombre de réponses des pros",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 6.hour,
+        evaluationPeriod = 12.hours,
+        expectedRange = ExpectedRange(min = Some(5), max = Some(1000)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_PRO_RESPONSE, dateTime, evaluationPeriod)
       ),
       buildProbe(
         113,
         "engagementhonoured_probe",
         "Nombre d'engagements marqués comme honoré par les pros",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 1.day,
+        evaluationPeriod = 7.days,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(500)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_PRO_ENGAGEMENT_HONOURED, dateTime, evaluationPeriod)
       ),
       buildProbe(
         114,
         "responsereview_probe",
         "Nombre de reviews initiale des consos sur la réponse des pros",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 4.hours,
+        evaluationPeriod = 8.hours,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(300)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_RESPONSE, dateTime, evaluationPeriod)
       ),
       buildProbe(
         115,
         "engagementreview_probe",
-        "Nombre de reviews ultérieure des consos sur la tenue des engagements",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        "Nombre de reviews ultérieures des consos sur la tenue des engagements",
+        runInterval = 6.hours,
+        evaluationPeriod = 1.day,
+        expectedRange = ExpectedRange(min = Some(3), max = Some(100)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_ENGAGEMENT, dateTime, evaluationPeriod)
       ),
       buildProbe(
         116,
         "reportclosednoreading_probe",
-        "Nombre de signalements fermés en 'non consulté'",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        "Nombre de signalements fermés en 'consulté ignoré'",
+        runInterval = 12.hours,
+        evaluationPeriod = 1.day,
+        expectedRange = ExpectedRange(min = Some(10), max = Some(200)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_CLOSED_BY_NO_ACTION, dateTime, evaluationPeriod)
       ),
       buildProbe(
         117,
         "reportclosednoaction_probe",
-        "Nombre de signalements fermés en 'consulté ignoré'",
-        runInterval = 1.hour,                                         // TODO To refine
-        evaluationPeriod = 2.hours,                                   // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        "Nombre de signalements fermés en 'non consulté'",
+        runInterval = 12.hours,
+        evaluationPeriod = 1.day,
+        expectedRange = ExpectedRange(min = Some(10), max = Some(300)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_CLOSED_BY_NO_READING, dateTime, evaluationPeriod)
       ),
       buildProbe(
         118,
         "emailinactiveagentaccount_probe",
         "Nombre d'emails \"compte inactive\" envoyés aux agents",
-        runInterval = 1.day,                                          // TODO To refine
-        evaluationPeriod = 8.days,                                    // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 12.hours,
+        evaluationPeriod = 2.day,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(30)),
         query = (dateTime, evaluationPeriod) => countEvents(EMAIL_INACTIVE_AGENT_ACCOUNT, dateTime, evaluationPeriod)
       ),
       buildProbe(
         119,
         "authattempts_successrate_probe",
         "Pourcentage de tentatives de connexion ayant réussies",
-        runInterval = 30.minutes,                                     // TODO To refine
-        evaluationPeriod = 1.hour,                                    // TODO To refine
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)), // TODO To refine
+        runInterval = 30.minutes,
+        evaluationPeriod = 1.hour,
+        expectedRange = ExpectedRange(min = Some(50)),
         query = (dateTime, evaluationPeriod) => {
           val filter = AuthAttemptFilter(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
           for {
             nbSuccesses <- authAttemptRepository.countAuthAttempts(filter.copy(isSuccess = Some(true)))
             nbTotal     <- authAttemptRepository.countAuthAttempts(filter)
-            percentage = (nbSuccesses.toDouble / nbTotal) * 100
+            percentage = if (nbTotal == 0) 100 else (nbSuccesses.toDouble / nbTotal) * 100
           } yield Some(percentage)
         }
       ),
@@ -268,9 +269,9 @@ class ProbeOrchestrator(
         120,
         "reportfiles_pro_probe",
         "Nombre d'uploads de fichiers par des pros",
-        runInterval = 12.hours,
+        runInterval = 6.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(2), max = Some(200)),
+        expectedRange = ExpectedRange(min = Some(1), max = Some(250)),
         query = (dateTime, evaluationPeriod) =>
           reportFileRepository
             .count(
