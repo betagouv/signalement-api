@@ -30,6 +30,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def commercialName              = column[Option[String]]("commercial_name")
   def establishmentCommercialName = column[Option[String]]("establishment_commercial_name")
   def country                     = column[Option[Country]]("country")
+  def searchColumnTrgm            = column[String]("search_column_trgm")
 
   type CompanyTuple = (
       UUID,

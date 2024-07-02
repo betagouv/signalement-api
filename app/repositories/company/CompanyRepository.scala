@@ -58,9 +58,6 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
     )
   )
 
-  private def least(elements: Rep[Option[Double]]*): Rep[Option[Double]] =
-    SimpleFunction[Option[Double]]("least").apply(elements)
-
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
@@ -72,7 +69,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .filter(_._2.email === emailWithAccess)
       .map(_._1.companyId)
 
-    val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.similarity_threshold = 0.32"""
+    val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.word_similarity_threshold = 0.5"""
 
     val query = table
       .joinLeft(ReportTable.table(Some(userRole)))
@@ -88,7 +85,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         departmentsFilter && report.flatMap(_.companyCountry).isEmpty
       }
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
-        company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
+        company.activityCode.inSetBind(search.activityCodes)
       }
       .groupBy(_._1)
       .map { case (grouped, all) =>
@@ -125,20 +122,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case SearchCompanyIdentityName(q) =>
           query
-            .filter(tuple =>
-              tuple._1.name.?                        % q ||
-                tuple._1.brand                       % q ||
-                tuple._1.commercialName              % q ||
-                tuple._1.establishmentCommercialName % q
-            )
-            .sortBy(tuple =>
-              least(
-                tuple._1.name.? <-> q,
-                tuple._1.brand <-> q,
-                tuple._1.commercialName <-> q,
-                tuple._1.establishmentCommercialName <-> q
-              )
-            )
+            .filter(tuple => tuple._1.searchColumnTrgm %> q)
+            .sortBy(tuple => tuple._1.searchColumnTrgm <->> q)
         case id: SearchCompanyIdentityId => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
@@ -182,7 +167,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   def findHeadOffices(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] =
     db.run(
       table
-        .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0, 10) inSetBind siren.map(_.value))
         .filterIf(openOnly) { case (table) => table.isOpen }
         .filter(_.isHeadOffice)
         .result
@@ -198,7 +183,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def findBySiren(siren: List[SIREN]): Future[List[Company]] =
     db.run(
       table
-        .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0, 10) inSetBind siren.map(_.value))
         .to[List]
         .result
     )

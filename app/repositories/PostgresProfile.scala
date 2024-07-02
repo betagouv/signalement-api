@@ -36,7 +36,12 @@ trait PostgresProfile
 
     implicit val strListTypeMapper: DriverJdbcType[List[String]] = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
-    val SubstrSQLFunction = SimpleFunction.ternary[String, Int, Int, String]("substr")
+    val SubstrSQLFunction    = SimpleFunction.ternary[String, Int, Int, String]("substr")
+    val SubstrOptSQLFunction = SimpleFunction.ternary[Option[String], Int, Int, Option[String]]("substr")
+
+    val SplitPartSQLFunction = SimpleFunction.ternary[String, String, Int, String]("split_part")
+
+    val ReplaceSQLFunction = SimpleFunction.ternary[String, String, String, String]("replace")
 
     val DatePartSQLFunction = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
