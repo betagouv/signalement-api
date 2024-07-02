@@ -22,6 +22,7 @@ case class ReportFilter(
     start: Option[OffsetDateTime] = None,
     end: Option[OffsetDateTime] = None,
     category: Option[String] = None,
+    subcategories: Option[List[String]] = None,
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
     description: Option[String] = None,
@@ -109,6 +110,7 @@ object ReportFilter {
       companyName       <- (jsValue \ "companyName").validateOpt[String]
       companyCountries  <- (jsValue \ "companyCountries").validateOpt[Seq[String]]
       category          <- (jsValue \ "category").validateOpt[String]
+      subcategories     <- (jsValue \ "subcategories").validateOpt[List[String]]
       status            <- (jsValue \ "status").validateOpt[Seq[String]]
       details           <- (jsValue \ "details").validateOpt[String]
       description       <- (jsValue \ "description").validateOpt[String]
@@ -136,6 +138,7 @@ object ReportFilter {
       start = None,
       end = None,
       category = category,
+      subcategories = subcategories,
       status = status.getOrElse(Seq.empty).map(ReportStatus.withName),
       details = details,
       description = description,

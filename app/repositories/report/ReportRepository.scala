@@ -572,6 +572,9 @@ object ReportRepository {
           table.category === category
         }
       }
+      .filterOpt(filter.subcategories) { case (table, subcategories) =>
+        table.subcategories @> subcategories.bind
+      }
       .filterIf(filter.status.nonEmpty)(table => table.status.inSetBind(filter.status.map(_.entryName)))
       .filterIf(filter.withTags.nonEmpty) { table =>
         table.tags @& filter.withTags.toList.bind
