@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 case class TaskDetails(
     id: Int,
     name: String,
-    startTime: LocalTime,
+    startTime: Option[LocalTime],
     interval: FiniteDuration,
     lastRunDate: OffsetDateTime,
     lastRunError: Option[String]

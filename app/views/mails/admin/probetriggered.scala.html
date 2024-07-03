@@ -1,14 +1,15 @@
 @import java.net.URI
 @import utils.FrontRoute
+@import scala.concurrent.duration.FiniteDuration
 
-@(probeName: String, rate: Double, issue: String)
+@(probeName: String, number: Double, issueAdjective: String, evaluationPeriod: FiniteDuration)
 
 @views.html.mails.layout("Sonde déclenchée") {
   <p>
-      Cet email a été envoyée car la sonde @probeName a été déclenchée.
+    Cet email a été envoyée car la sonde <b>"@probeName"</b> a été déclenchée.
   </p>
 
-  <p>Le taux détecté (@rate %) est anormalement @issue.
+  <p>Le taux détecté (<b>@number</b>) est @issueAdjective sur le dernier intervalle de temps (<b>@evaluationPeriod</b>).
   </p>
 
   <p>Contactez un développeur pour investiguer.</p>

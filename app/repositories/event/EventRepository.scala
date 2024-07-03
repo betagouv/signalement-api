@@ -61,6 +61,15 @@ class EventRepository(
       .filterOpt(filter.action) { case (table, action) =>
         table.action === action.value
       }
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= start
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate <= end
+      }
+
+  override def countEvents(filter: EventFilter): Future[Int] =
+    db.run(getRawEvents(filter).length.result)
 
   override def getEvents(reportId: UUID, filter: EventFilter = EventFilter()): Future[List[Event]] = db.run {
     getRawEvents(filter)

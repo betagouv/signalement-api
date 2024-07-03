@@ -61,4 +61,18 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .update("")
     )
 
+  override def count(filter: ReportFileFilter): Future[Int] = db.run(
+    table
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= start
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate <= end
+      }
+      .filterOpt(filter.origin) { case (table, origin) =>
+        table.origin === origin
+      }
+      .length
+      .result
+  )
 }
