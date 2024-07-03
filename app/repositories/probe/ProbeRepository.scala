@@ -11,23 +11,40 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
 
   import dbConfig._
 
-  def getReponseConsoRate(interval: FiniteDuration): Future[Option[Double]] = db.run(
+  def getReponseConsoPercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
     sql"""
-          SELECT (CAST(SUM(CASE
-                                                          WHEN forward_to_reponseconso = true THEN 1
-                                                          ELSE 0
-    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '#${interval
-        .toString()}');
-        """.as[Double].headOption
+      SELECT (CAST(SUM(
+        CASE
+          WHEN forward_to_reponseconso = true THEN 1 ELSE 0
+        END) AS FLOAT) / count(*)) * 100 ratio
+      FROM reports
+      WHERE creation_date > (now() - INTERVAL '#${interval.toString()}');"""
+      .as[Double]
+      .headOption
   )
 
-  def getInformateurInterneRate(interval: FiniteDuration): Future[Option[Double]] = db.run(
+  def getInformateurInternePercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
     sql"""
-          SELECT (CAST(SUM(CASE
-                     WHEN status = 'InformateurInterne' THEN 1
-                     ELSE 0
-    END) AS FLOAT) / count(*)) * 100 ratio FROM reports WHERE reports.creation_date < (now() - INTERVAL '#${interval
-        .toString()}');
-       """.as[Double].headOption
+      SELECT (CAST(SUM(
+        CASE
+          WHEN status = 'InformateurInterne' THEN 1 ELSE 0
+        END) AS FLOAT) / count(*)) * 100 ratio
+      FROM reports
+      WHERE creation_date > (now() - INTERVAL '#${interval.toString()}');"""
+      .as[Double]
+      .headOption
   )
+
+  def getValidatedEmailsPercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
+    sql"""
+      SELECT (CAST(SUM(
+        CASE
+          WHEN last_validation_date IS NOT NULL THEN 1 ELSE 0
+        END) AS FLOAT) / count(*)) * 100 ratio
+      FROM emails_validation
+      WHERE creation_date > (now() - INTERVAL '#${interval.toString()}');"""
+      .as[Double]
+      .headOption
+  )
+
 }
