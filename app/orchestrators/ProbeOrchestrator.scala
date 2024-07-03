@@ -182,7 +182,7 @@ class ProbeOrchestrator(
         "Nombre de premières lectures d'un signalement par les pros",
         runInterval = 1.hour,
         evaluationPeriod = 6.hours,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(40)),
+        expectedRange = ExpectedRange(min = Some(1), max = Some(700)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_READING_BY_PRO, dateTime, evaluationPeriod),
         onlyRunInBusyHours = true
       ),
