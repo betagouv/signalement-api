@@ -85,7 +85,6 @@ abstract class ScheduledTask(
       case DailyTaskSettings(startTime)   => (computeInitialDelay(startTime), 24.hours, Some(startTime))
       case FrequentTaskSettings(interval) => (frequentTasksInitialDelay, interval, None)
     }
-    logger.info(s"Scheduling a task ($taskName) in $initialDelay, and then every $interval")
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
       interval
@@ -96,6 +95,6 @@ abstract class ScheduledTask(
       } else logger.info(s"$taskName not launched, tasks are disabled")
     }: Unit
     val nextRunApproximateTime = computeDateTimeCorrespondingToDelay(initialDelay)
-    logger.info(s"$taskName scheduled for $nextRunApproximateTime (in $initialDelay) and then every $interval")
+    logger.info(s"Task $taskName scheduled for $nextRunApproximateTime (in $initialDelay) and then every $interval")
   }
 }

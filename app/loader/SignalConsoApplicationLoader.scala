@@ -124,6 +124,7 @@ class SignalConsoApplicationLoader() extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader).foreach {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
+    components.scheduleTasks()
     components.application
   }
 }
@@ -479,25 +480,19 @@ class SignalConsoComponents(
     messagesApi
   )
 
-  if (applicationConfiguration.task.probe.active) {
-    logger.debug("Probes are enabled")
-    val probeRepository = new ProbeRepository(dbConfig)
-    val probeOrchestrator = new ProbeOrchestrator(
-      actorSystem,
-      applicationConfiguration.task,
-      taskRepository,
-      probeRepository,
-      reportRepository,
-      userRepository,
-      eventRepository,
-      authAttemptRepository,
-      reportFileRepository,
-      mailService
-    )
-    probeOrchestrator.scheduleProbeTasks()
-  } else {
-    logger.debug("Probes are disabled")
-  }
+  val probeRepository = new ProbeRepository(dbConfig)
+  val probeOrchestrator = new ProbeOrchestrator(
+    actorSystem,
+    applicationConfiguration.task,
+    taskRepository,
+    probeRepository,
+    reportRepository,
+    userRepository,
+    eventRepository,
+    authAttemptRepository,
+    reportFileRepository,
+    mailService
+  )
 
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
@@ -512,7 +507,6 @@ class SignalConsoComponents(
     taskRepository,
     messagesApi
   )
-  reportClosureTask.schedule()
 
   val reportReminderTask = new ReportRemindersTask(
     actorSystem,
@@ -523,14 +517,13 @@ class SignalConsoComponents(
     taskConfiguration,
     taskRepository
   )
-  reportReminderTask.schedule()
 
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
   )
 
   val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
-  val companyUpdateTask = new CompanyUpdateTask(
+  private val companyUpdateTask = new CompanyUpdateTask(
     actorSystem,
     companyRepository,
     companySyncService,
@@ -538,9 +531,6 @@ class SignalConsoComponents(
     taskConfiguration,
     taskRepository
   )
-  companyUpdateTask.schedule()
-
-  logger.debug("Starting App and sending sentry alert")
 
   val reportNotificationTask =
     new ReportNotificationTask(
@@ -552,7 +542,6 @@ class SignalConsoComponents(
       taskConfiguration,
       taskRepository
     )
-  reportNotificationTask.schedule()
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
@@ -570,7 +559,6 @@ class SignalConsoComponents(
     applicationConfiguration.task,
     taskRepository
   )
-  inactiveAccountTask.schedule()
 
   val engagementEmailTask = new EngagementEmailTask(
     mailService,
@@ -581,16 +569,13 @@ class SignalConsoComponents(
     taskRepository,
     messagesApi
   )
-  engagementEmailTask.schedule()
 
-  val test = new ExportReportsToSFTPTask(
+  val exportReportsToSFTPTask = new ExportReportsToSFTPTask(
     actorSystem,
     taskConfiguration,
     taskRepository,
     reportRepository
   )
-
-  test.schedule()
 
   // Controller
 
@@ -831,6 +816,19 @@ class SignalConsoComponents(
       engagementController,
       assets
     )
+
+  def scheduleTasks() = {
+    companyUpdateTask.schedule()
+    reportNotificationTask.schedule()
+    inactiveAccountTask.schedule()
+    engagementEmailTask.schedule()
+    exportReportsToSFTPTask.schedule()
+    reportClosureTask.schedule()
+    reportReminderTask.schedule()
+    if (applicationConfiguration.task.probe.active) {
+      probeOrchestrator.scheduleProbeTasks()
+    }
+  }
 
   override def config: Config = ConfigFactory.load()
 
