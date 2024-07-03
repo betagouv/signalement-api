@@ -6,7 +6,6 @@ import config.TaskConfiguration
 import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.Report
-import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.JsResult
 import repositories.company.CompanyRepositoryInterface
@@ -14,13 +13,12 @@ import repositories.engagement.EngagementRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProEngagementReview
 import services.emails.MailService
+import tasks.model.TaskSettings.DailyTaskSettings
 
 import java.time.LocalDate
 import java.time.LocalTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 
 class EngagementEmailTask(
     mailService: MailService,
@@ -34,9 +32,7 @@ class EngagementEmailTask(
     executionContext: ExecutionContext
 ) extends ScheduledTask(6, "engagement_email_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val logger: Logger           = Logger(this.getClass)
-  override val startTime: LocalTime     = LocalTime.of(2, 0)
-  override val interval: FiniteDuration = 1.day
+  override val taskSettings = DailyTaskSettings(startTime = LocalTime.of(2, 0))
 
   private def sendEmail(
       report: Report,
