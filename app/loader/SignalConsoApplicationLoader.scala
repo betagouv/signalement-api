@@ -495,7 +495,6 @@ class SignalConsoComponents(
       mailService
     )
     probeOrchestrator.scheduleProbeTasks()
-//    probeOrchestrator.evaluate(): Unit
   } else {
     logger.debug("Probes are disabled")
   }
