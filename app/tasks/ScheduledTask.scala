@@ -85,6 +85,7 @@ abstract class ScheduledTask(
       case DailyTaskSettings(startTime)   => (computeInitialDelay(startTime), 24.hours, Some(startTime))
       case FrequentTaskSettings(interval) => (frequentTasksInitialDelay, interval, None)
     }
+    logger.info(s"Scheduling a task ($taskName) in $initialDelay, and then every $interval")
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
       interval
