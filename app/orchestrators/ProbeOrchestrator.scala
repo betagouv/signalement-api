@@ -88,12 +88,12 @@ class ProbeOrchestrator(
       ),
       buildProbe(
         101,
-        "lanceur_dalerte_probe",
-        "Pourcentage de signalements 'Lanceur d'alerte'",
+        "informateurinterne_probe",
+        "Pourcentage de signalements 'Informateur interne'",
         runInterval = 6.hour,
         evaluationPeriod = 12.hour,
         expectedRange = ExpectedRange(min = Some(0.1), max = Some(5)),
-        query = (_, evaluationPeriod) => probeRepository.getLanceurDalertePercentage(evaluationPeriod)
+        query = (_, evaluationPeriod) => probeRepository.getInformateurInternePercentage(evaluationPeriod)
       ),
       buildProbe(
         102,

@@ -23,11 +23,11 @@ class ProbeRepository(dbConfig: DatabaseConfig[JdbcProfile]) {
       .headOption
   )
 
-  def getLanceurDalertePercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
+  def getInformateurInternePercentage(interval: FiniteDuration): Future[Option[Double]] = db.run(
     sql"""
       SELECT (CAST(SUM(
         CASE
-          WHEN status = 'LanceurAlerte' THEN 1 ELSE 0
+          WHEN status = 'InformateurInterne' THEN 1 ELSE 0
         END) AS FLOAT) / count(*)) * 100 ratio
       FROM reports
       WHERE creation_date > (now() - INTERVAL '#${interval.toString()}');"""
