@@ -562,4 +562,12 @@ object AppError {
     override val titleForLogs: String = "similar_email_spam"
   }
 
+  final case class FileNameTooLong(maxSize: Int, filename: String) extends BadRequestError {
+    override val `type`: String = "SC-0060"
+    override val title: String  = s"File name too long, cannot exceed $maxSize "
+    override val details: String =
+      s"Le fichier nom du fichier $filename dépasse la limite autorisée de $maxSize caractères"
+    override val titleForLogs: String = "file_too_long"
+  }
+
 }
