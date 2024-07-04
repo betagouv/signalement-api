@@ -28,4 +28,5 @@ case class ReportFile(
 )
 object ReportFile {
   implicit val fileFormat: OFormat[ReportFile] = Json.format[ReportFile]
+  val MaxFileNameLength                        = 200
 }
