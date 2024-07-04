@@ -5,10 +5,12 @@ import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import config.SignalConsoConfiguration
 import controllers.error.AppError
+import controllers.error.AppError.FileNameTooLong
 import controllers.error.AppError.FileTooLarge
 import controllers.error.AppError.InvalidFileExtension
 import controllers.error.AppError.MalformedFileKey
 import models.User
+import models.report.ReportFile.MaxFileNameLength
 import models.report._
 import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator
@@ -71,6 +73,10 @@ class ReportFileController(
     IpRateLimitedAction1.async(parse.multipartFormData) { request =>
       for {
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
+        _ <-
+          if (filePart.filename.length > MaxFileNameLength) {
+            Future.failed(FileNameTooLong(MaxFileNameLength, filePart.filename))
+          } else Future.unit
         dataPart = request.body.dataParts
           .get("reportFileOrigin")
           .flatMap(o => ReportFileOrigin.withNameInsensitiveOption(o.head))
