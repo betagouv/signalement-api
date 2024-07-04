@@ -11,6 +11,7 @@ import models._
 import models.report._
 import models.report.delete.ReportAdminAction
 import orchestrators._
+import org.slf4j.MDC
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl

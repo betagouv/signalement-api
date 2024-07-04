@@ -106,7 +106,7 @@ import tasks.company._
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
-import utils.CustomIpFilter
+import utils.CorrelationIdFilter
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.LoggingFilter
@@ -834,11 +834,12 @@ class SignalConsoComponents(
 
   override def httpFilters: Seq[EssentialFilter] =
     Seq(
-      new LoggingFilter(),
-      new CustomIpFilter(ipBlackListRepository),
-      securityHeadersFilter,
-      allowedHostsFilter,
-      corsFilter
+      new CorrelationIdFilter(),
+      new LoggingFilter()
+//      new CustomIpFilter(ipBlackListRepository),
+//      securityHeadersFilter,
+//      allowedHostsFilter,
+//      corsFilter,
     )
 
   override lazy val requestFactory: RequestFactory = new DefaultRequestFactory(httpConfiguration) {

@@ -19,10 +19,14 @@ class LoggingFilter(implicit val mat: Materializer, ec: ExecutionContext) extend
     nextFilter(requestHeader).map { res =>
       val endTime  = System.currentTimeMillis
       val duration = endTime - startTime
+
+//      val correlationId = requestHeader.headers.get(CorrelationIdHeader)
+//      correlationId.foreach(MDC.put(CorrelationIdLabel, _))
       logger.infoWithTitle(
         "res",
         s"${requestHeader.remoteAddress} - ${requestHeader.method} ${requestHeader.uri} - ${res.header.status} ${duration}ms"
       )
+//      correlationId.foreach(_ => MDC.remove(CorrelationIdLabel))
       res
     }
   }

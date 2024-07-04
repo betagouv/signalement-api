@@ -12,7 +12,7 @@
         <if condition='property("textlogs").contains("true")'>
             <then>
                 <encoder>
-                    <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
+                    <pattern>%level %logger{15} %X{correlationId} - %message%n%xException{10}</pattern>
                 </encoder>
             </then>
             <else>
@@ -26,11 +26,12 @@
                         <level>logLevel</level>
                         <logger>loggerName</logger>
                         <!-- remove these useless fields -->
-                        <thread>[ignore]</thread>
+<!--                        <thread>[ignore]</thread>-->
                         <levelValue>[ignore]</levelValue>
                     </fieldNames>
                     <!-- remove application.home passed by Play -->
                     <includeContext>false</includeContext>
+                    <customFields>{"correlationId": %X{correlationId} }</customFields>
                 </encoder>
             </else>
         </if>

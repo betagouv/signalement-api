@@ -27,6 +27,7 @@ import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
 import play.api.Logger
+import play.api.MarkerContext
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
@@ -703,7 +704,10 @@ class ReportOrchestrator(
       }
     } yield updatedReport
 
-  def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
+  def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] = {
+    val c = implicitly[MarkerContext]
+    logger.info("------------------------------------------")
+    println(s"------------------ c.toString = ${c.toString} ------------------")
     if (user.userRole == UserRole.Professionnel) {
       val report = reportWithMetadata.report
       eventRepository
@@ -721,6 +725,7 @@ class ReportOrchestrator(
     } else {
       Future(reportWithMetadata)
     }
+  }
 
   def removeAccessTokenWhenNoMoreReports(companyId: UUID) =
     for {
