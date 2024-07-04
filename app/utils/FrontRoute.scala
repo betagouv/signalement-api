@@ -34,6 +34,10 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
       s"/suivi-des-signalements/report/${reportId.toString}?mtm_campaign=subscription&anchor=attachment"
     )
 
+    def report(reportId: UUID) = url(
+      s"/suivi-des-signalements/report/${reportId.toString}"
+    )
+
     def validateEmail(token: String)        = url(s"/connexion/validation-email?token=${token}")
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
     def activation                          = url("/activation")

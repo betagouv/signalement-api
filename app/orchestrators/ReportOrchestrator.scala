@@ -38,13 +38,11 @@ import repositories.engagement.EngagementRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
-import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
-import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import services.emails.MailService
@@ -79,7 +77,7 @@ class ReportOrchestrator(
     userRepository: UserRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    subscriptionRepository: SubscriptionRepositoryInterface,
+    emailNotificationOrchestrator: EmailNotificationOrchestrator,
     blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     emailConfiguration: EmailConfiguration,
@@ -307,7 +305,7 @@ class ReportOrchestrator(
       _             <- createReportMetadata(draftReport, report)
       files         <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
-      _             <- notifyDgccrfIfNeeded(updatedReport)
+      _             <- emailNotificationOrchestrator.notifyDgccrfIfNeeded(updatedReport)
       _             <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
@@ -335,21 +333,6 @@ class ReportOrchestrator(
     val delay                    = if (companyHasUsers) delayIfCompanyHasUsers else delayIfCompanyHasNoUsers
     baseDate.plus(delay)
   }
-
-  private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
-    ddEmails <-
-      if (report.shouldNotifyDgccrf()) {
-        report.companyAddress.postalCode
-          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-          .getOrElse(Future(Seq()))
-      } else Future(Seq())
-    _ <-
-      if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification.Email(ddEmails, report))
-      } else {
-        Future.unit
-      }
-  } yield ()
 
   private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) = {
     val event = Event(
