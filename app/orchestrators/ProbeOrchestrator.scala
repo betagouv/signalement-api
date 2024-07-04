@@ -255,7 +255,7 @@ class ProbeOrchestrator(
         "Pourcentage de tentatives de connexion ayant réussies",
         runInterval = 30.minutes,
         evaluationPeriod = 1.hour,
-        expectedRange = ExpectedRange(min = Some(50)),
+        expectedRange = ExpectedRange(min = Some(10)),
         query = (dateTime, evaluationPeriod) => {
           val filter = AuthAttemptFilter(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
           for {
