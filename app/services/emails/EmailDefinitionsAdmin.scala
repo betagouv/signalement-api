@@ -33,17 +33,17 @@ object EmailDefinitionsAdmin {
         recipients: Seq[EmailAddress],
         probeName: String,
         number: Double,
-        issueAdjective: String,
+        issueAdjectiveFeminine: String,
         evaluationPeriod: FiniteDuration
     ) extends BaseEmail {
       override val subject: String = EmailSubjects.ADMIN_PROBE_TRIGGERED
       override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-        views.html.mails.admin.probetriggered(probeName, number, issueAdjective, evaluationPeriod).toString()
+        views.html.mails.admin.probetriggered(probeName, number, issueAdjectiveFeminine, evaluationPeriod).toString()
     }
     override def examples =
       Seq(
         "probe_triggered" -> ((recipient, _) =>
-          Email(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "trop bas", 12.hours)
+          Email(Seq(recipient), "Taux de schtroumpfs pas assez schtroumpfés", 0.2, "trop basse", 12.hours)
         )
       )
 
