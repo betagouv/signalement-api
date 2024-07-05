@@ -25,7 +25,7 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
 
     A mail is sent to the subscribed user                     ${mailMustHaveBeenSent(
         Seq(user.email),
-        s"[SignalConso] 3 nouveaux signalements",
+        s"[SignalConso] 3 nouveaux signalements ont été déposés",
         views.html.mails.dgccrf
           .reportNotification(
             userSubscription,
@@ -36,14 +36,14 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
       )}
     A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
         Seq(user.email),
-        s"[SignalConso] Un nouveau signalement",
+        s"[SignalConso] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(userSubscriptionCountries, Seq((reportArgentine, List.empty)), runningDate.minusDays(7))
           .toString
       )}
         And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
         Seq(officeEmail),
-        s"[SignalConso] 3 nouveaux signalements",
+        s"[SignalConso] 3 nouveaux signalements ont été déposés",
         views.html.mails.dgccrf
           .reportNotification(
             officeSubscription,
