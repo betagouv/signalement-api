@@ -16,9 +16,9 @@ object EmailSubjects {
   val REPORT_ASSIGNED                    = "Signalement affecté"
   val REPORT_UNREAD_REMINDER             = "Nouveau(x) signalement(s)"
   val REPORT_TRANSMITTED_REMINDER        = "Signalement(s) en attente de réponse"
-  val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: String) =>
-    s"[SignalConso] ${additional}${if (cnt > 1) s"${cnt} nouveaux signalements"
-      else "Un nouveau signalement"}"
+  val REPORT_NOTIF_DGCCRF = (count: Int, additional: String) =>
+    s"[SignalConso] $additional${if (count > 1) s"$count nouveaux signalements ont été déposés"
+      else "Un nouveau signalement a été déposé"}"
   val INACTIVE_DGCCRF_ACCOUNT_REMINDER = "Votre compte SignalConso est inactif"
   val PRO_NEW_COMPANIES_ACCESSES = (siren: SIREN) => s"Vous avez maintenant accès à l'entreprise $siren sur SignalConso"
   val PRO_COMPANIES_ACCESSES_INVITATIONS = (siren: SIREN) => s"Rejoignez l'entreprise $siren sur SignalConso"

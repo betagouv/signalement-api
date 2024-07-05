@@ -371,6 +371,8 @@ class SignalConsoComponents(
       reportRepository,
       reportEngagementReviewRepository
     )
+
+  val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
   val reportOrchestrator = new ReportOrchestrator(
     mailService,
     reportConsumerReviewOrchestrator,
@@ -384,7 +386,7 @@ class SignalConsoComponents(
     userRepository,
     websiteRepository,
     companiesVisibilityOrchestrator,
-    subscriptionRepository,
+    emailNotificationOrchestrator,
     blacklistedEmailsRepository,
     emailValidationOrchestrator,
     emailConfiguration,
@@ -601,7 +603,7 @@ class SignalConsoComponents(
     emailConfiguration,
     reportFileOrchestrator,
     companyRepository,
-    subscriptionRepository,
+    emailNotificationOrchestrator,
     frontRoute,
     cookieAuthenticator,
     controllerComponents

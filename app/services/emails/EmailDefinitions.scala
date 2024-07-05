@@ -16,6 +16,7 @@ import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotificat
 import services.emails.EmailDefinitionsConsumer.ConsumerValidateEmail
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
+import services.emails.EmailDefinitionsDggcrf.DgccrfPriorityReportNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfInactiveAccount
 import services.emails.EmailDefinitionsDggcrf.DgccrfReportNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
@@ -56,6 +57,7 @@ object EmailDefinitions {
     DgccrfAgentAccessLink,
     DgccrfInactiveAccount,
     DgccrfDangerousProductReportNotification,
+    DgccrfPriorityReportNotification,
     DgccrfReportNotification,
     DgccrfValidateEmail,
     // Pro

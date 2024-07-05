@@ -5,7 +5,7 @@
 
 @import models.report.Report
 @import models.report.ReportCategory
-@(report: Report)(frontRoute: FrontRoute, contactAddress: EmailAddress)
+@(report: Report, label: String)(frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
 
@@ -74,10 +74,9 @@
     </div>
 
     <p>
-        Pour consulter l'intégralité du signalement de produit dangereux, notamment les pièces jointes :
+        Pour consulter l'intégralité du signalement '@label', notamment les pièces jointes :
     </p>
     <ul>
-        <li>Vous devez suivre la procédure mentionnée à l'instruction IN-2D-PIL-004</li>
         <li>si vous possédez un compte sur SignalConso, <a href="@frontRoute.dashboard.report(report.id)">cliquez ici</a> pour accéder au signalement ou connectez-vous sur <a href="@frontRoute.dashboard.login">@frontRoute.dashboard.login</a></li>
         <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:@contactAddress">@contactAddress</a></li>
     </ul>

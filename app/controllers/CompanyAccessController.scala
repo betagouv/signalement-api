@@ -65,10 +65,10 @@ class CompanyAccessController(
             user <- userRepository.get(userId)
             _ <- user
               .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, level))
-              .getOrElse(Future(()))
+              .getOrElse(Future.unit)
           } yield if (user.isDefined) Ok else NotFound
         )
-        .getOrElse(Future(NotFound))
+        .getOrElse(Future.successful(NotFound))
   }
 
   def removeAccess(siret: String, userId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
@@ -77,7 +77,7 @@ class CompanyAccessController(
         user <- userRepository.get(userId)
         _ <- user
           .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
-          .getOrElse(Future(()))
+          .getOrElse(Future.unit)
         // this operation may leave some reports assigned to this user, to which he doesn't have access anymore
         // in theory here we should find these reports and de-assign them
       } yield if (user.isDefined) Ok else NotFound
@@ -111,7 +111,7 @@ class CompanyAccessController(
     implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)
-        _     <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(()))
+        _     <- token.map(accessTokenRepository.invalidateToken).getOrElse(Future.unit)
       } yield if (token.isDefined) Ok else NotFound
   }
 
@@ -146,17 +146,17 @@ class CompanyAccessController(
                   .findValidToken(_, acceptTokenRequest.token)
                   .map(
                     _.filter(
-                      _.emailedTo.filter(_ != request.identity.email).isEmpty
+                      !_.emailedTo.exists(_ != request.identity.email)
                     )
                   )
               )
-              .getOrElse(Future(None))
+              .getOrElse(Future.successful(None))
             applied <- token
               .map(t =>
                 accessTokenRepository
                   .createCompanyAccessAndRevokeToken(t, request.identity)
               )
-              .getOrElse(Future(false))
+              .getOrElse(Future.successful(false))
           } yield if (applied) Ok else NotFound
       )
   }

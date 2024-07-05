@@ -25,21 +25,21 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNoti
       }}
          And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
         Seq(covidEmail),
-        s"[SignalConso] Un nouveau signalement",
+        s"[SignalConso] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(covidSubscription, Seq((covidReport, List.empty)), runningDate.minusDays(1))
           .toString
       )}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(tagEmail),
-        s"[SignalConso] [Produit dangereux] Un nouveau signalement",
+        s"[SignalConso] [Produit dangereux] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(tagSubscription, Seq((tagReport, List.empty)), runningDate.minusDays(1))
           .toString
       )}
          And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
         Seq(countryEmail),
-        s"[SignalConso] Un nouveau signalement",
+        s"[SignalConso] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(countrySubscription, Seq((countryReport, List.empty)), runningDate.minusDays(1))
           .toString

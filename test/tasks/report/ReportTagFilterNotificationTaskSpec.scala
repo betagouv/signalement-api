@@ -25,7 +25,7 @@ class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends Rep
       }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(EmailAddress("tag.abo.546438@example.com")),
-        "[SignalConso] [Produit dangereux] Un nouveau signalement",
+        "[SignalConso] [Produit dangereux] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(tagSubscription, Seq((reportProduitDangereux, List.empty)), runningDate.minusDays(1))
           .toString
@@ -42,7 +42,7 @@ class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends
       }}
          And a mail is sent to the user subscribed without tag                                ${mailMustHaveBeenSent(
         Seq(EmailAddress("notag.abo.263682@example.com")),
-        "[SignalConso] Un nouveau signalement",
+        "[SignalConso] Un nouveau signalement a été déposé",
         views.html.mails.dgccrf
           .reportNotification(noTagSubscription, Seq((reportNoTag, List.empty)), runningDate.minusDays(1))
           .toString
