@@ -125,7 +125,7 @@ abstract class BaseCompanyController(
           company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
           accessLevel <-
             if (Seq(UserRole.Admin, UserRole.DGCCRF).contains(request.identity.userRole))
-              Future(Some(AccessLevel.ADMIN))
+              Future.successful(Some(AccessLevel.ADMIN))
             else
               company
                 .map(c =>
@@ -133,7 +133,7 @@ abstract class BaseCompanyController(
                     .fetchVisibleCompanies(request.identity)
                     .map(_.find(_.company.id == c.id).map(_.level))
                 )
-                .getOrElse(Future(None))
+                .getOrElse(Future.successful(None))
         } yield company
           .flatMap(c => accessLevel.map((c, _)))
           .filter { case (_, l) => authorizedLevels.contains(l) }

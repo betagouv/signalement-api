@@ -9,6 +9,7 @@ import models._
 import models.admin.ReportInputList
 import models.event.Event
 import models.report._
+import orchestrators.EmailNotificationOrchestrator
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
@@ -23,11 +24,9 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.subscription.SubscriptionRepositoryInterface
 import services.PDFService
 import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.EmailDefinitionsConsumer._
-import services.emails.EmailDefinitionsDggcrf._
 import services.emails.EmailDefinitionsPro._
 import services.emails.EmailsExamplesUtils._
 import services.emails.BaseEmail
@@ -54,7 +53,7 @@ class AdminController(
     emailConfiguration: EmailConfiguration,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
-    subscriptionRepository: SubscriptionRepositoryInterface,
+    emailNotificationOrchestrator: EmailNotificationOrchestrator,
     implicit val frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -121,7 +120,7 @@ class AdminController(
 
   def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     val keys = allEmailExamples.map(_._1)
-    Future(Ok(Json.toJson(keys)))
+    Future.successful(Ok(Json.toJson(keys)))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
     val maybeEmail = allEmailExamples
@@ -265,21 +264,6 @@ class AdminController(
 
   }
 
-  private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
-    ddEmails <-
-      if (report.shouldNotifyDgccrf()) {
-        report.companyAddress.postalCode
-          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-          .getOrElse(Future(Seq()))
-      } else Future(Seq())
-    _ <-
-      if (ddEmails.nonEmpty) {
-        mailService.send(DgccrfDangerousProductReportNotification.Email(ddEmails, report))
-      } else {
-        Future.unit
-      }
-  } yield ()
-
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
     SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
       for {
@@ -290,8 +274,9 @@ class AdminController(
         _ <- emailType match {
           case ResendEmailType.NewReportAckToConsumer => _sendReportAckToConsumer(reports.toMap)
           case ResendEmailType.NewReportAckToPro      => _sendNewReportToPro(reports.keys.toList)
-          case ResendEmailType.NotifyDGCCRF           => Future.sequence(reports.keys.map(notifyDgccrfIfNeeded))
-          case ResendEmailType.ReportProResponse      => _sendProAckToConsumer(reports.keys.toList)
+          case ResendEmailType.NotifyDGCCRF =>
+            Future.sequence(reports.keys.map(emailNotificationOrchestrator.notifyDgccrfIfNeeded))
+          case ResendEmailType.ReportProResponse => _sendProAckToConsumer(reports.keys.toList)
         }
       } yield NoContent
     }
