@@ -74,13 +74,13 @@ object EmailDefinitionsDggcrf {
     }
   }
 
-  case object DgccrfImportantReportNotification extends EmailDefinition {
+  case object DgccrfPriorityReportNotification extends EmailDefinition {
     override val category = Dgccrf
 
     override def examples = {
       val report = genReport
       Seq(
-        "important_report_notification_notification" -> ((recipient, _) =>
+        "priority_report_notification" -> ((recipient, _) =>
           Email(Seq(recipient), report, report.tags.headOption.map(_.entryName).getOrElse(""))
         )
       )
@@ -94,7 +94,7 @@ object EmailDefinitionsDggcrf {
       override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, s"[$label] ")
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-        views.html.mails.dgccrf.importantReportNotification(report, label)(frontRoute, contact).toString
+        views.html.mails.dgccrf.priorityReportNotification(report, label)(frontRoute, contact).toString
     }
   }
 

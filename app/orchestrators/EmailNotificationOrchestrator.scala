@@ -5,7 +5,7 @@ import models.report.ReportTag
 import play.api.Logger
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
-import services.emails.EmailDefinitionsDggcrf.DgccrfImportantReportNotification
+import services.emails.EmailDefinitionsDggcrf.DgccrfPriorityReportNotification
 import services.emails.BaseEmail
 import services.emails.MailService
 import utils.EmailAddress
@@ -28,7 +28,7 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
 
     maybeTag match {
       case Some(ReportTag.ProduitDangereux) => Some(DgccrfDangerousProductReportNotification.Email(_, report))
-      case Some(tag)                        => Some(DgccrfImportantReportNotification.Email(_, report, tag.translate()))
+      case Some(tag)                        => Some(DgccrfPriorityReportNotification.Email(_, report, tag.translate()))
       case None                             => None
     }
   }
