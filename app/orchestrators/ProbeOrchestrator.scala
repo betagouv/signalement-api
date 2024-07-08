@@ -93,7 +93,7 @@ class ProbeOrchestrator(
         "Pourcentage de signalements 'Informateur interne'",
         runInterval = 6.hour,
         evaluationPeriod = 12.hour,
-        expectedRange = ExpectedRange(min = Some(0.1), max = Some(5)),
+        expectedRange = ExpectedRange(min = Some(0.1), max = Some(25)),
         query = (dateTime, evaluationPeriod) => {
           val filter = ReportFilter(
             start = Some(dateTime.minusDuration(evaluationPeriod)),
