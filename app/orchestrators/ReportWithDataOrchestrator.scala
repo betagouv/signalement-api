@@ -51,10 +51,10 @@ class ReportWithDataOrchestrator(
           val report = reportWithMetadata.report
           for {
             events       <- eventRepository.getEventsWithUsers(List(uuid), EventFilter())
-            maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+            maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
             companyEvents <- report.companyId
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-              .getOrElse(Future(List.empty))
+              .getOrElse(Future.successful(List.empty))
             reportFiles            <- reportFileRepository.retrieveReportFiles(uuid)
             consumerReviewOption   <- reviewRepository.findByReportId(uuid).map(_.headOption)
             engagementReviewOption <- engagementReviewRepository.findByReportId(uuid).map(_.headOption)

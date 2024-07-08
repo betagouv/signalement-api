@@ -53,10 +53,10 @@ class WebsiteRepository(
         }
         .result
         .headOption
-    ).flatMap(
-      _.map(Future(_))
-        .getOrElse(super.create(newWebsite))
-    )
+    ).flatMap {
+      case Some(website) => Future.successful(website)
+      case None          => create(newWebsite)
+    }
 
   override def searchValidAssociationByHost(host: String): Future[Seq[Website]] =
     db.run(
@@ -92,18 +92,18 @@ class WebsiteRepository(
     )
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
-    URL(host).getHost
-      .map { h =>
+    URL(host).getHost match {
+      case Some(host) =>
         db.run(
           table
-            .filter(_.host === h)
+            .filter(_.host === host)
             .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
             .join(CompanyTable.table)
             .on(_.companyId === _.id)
             .result
         )
-      }
-      .getOrElse(Future(Nil))
+      case None => Future.successful(Nil)
+    }
 
   override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
@@ -117,7 +117,10 @@ class WebsiteRepository(
   override def searchCompaniesByUrl(
       url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost).getOrElse(Future(Nil))
+    URL(url).getHost match {
+      case Some(host) => searchCompaniesByHost(host)
+      case None       => Future.successful(Nil)
+    }
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],

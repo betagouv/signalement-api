@@ -9,7 +9,6 @@ import play.api.libs.json.JsString
 import play.api.mvc.ControllerComponents
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class MobileAppController(
     val signalConsoConfiguration: SignalConsoConfiguration,
@@ -20,7 +19,7 @@ class MobileAppController(
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getRequirements = Action.async {
+  def getRequirements = Action {
     val json = JsObject(
       Seq(
         "minAppVersion" -> JsObject(
@@ -31,7 +30,7 @@ class MobileAppController(
         )
       )
     )
-    Future(Ok(json))
+    Ok(json)
   }
 
 }

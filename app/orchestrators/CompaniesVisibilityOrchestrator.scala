@@ -125,7 +125,7 @@ class CompaniesVisibilityOrchestrator(
         }
       }
     } else {
-      Future(siretSirenList)
+      Future.successful(siretSirenList)
     }
 
   private[this] def removeRedundantSirets(id: SiretsSirens): SiretsSirens =

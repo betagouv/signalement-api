@@ -134,7 +134,7 @@ class EmailValidationOrchestrator(
         } yield result
       case Some(foundEmail) =>
         logger.debug(s"Found email in validation email table ")
-        Future(foundEmail)
+        Future.successful(foundEmail)
     }
 
   private def validateValidationSpamToday(email: EmailAddress): Future[Unit] = {

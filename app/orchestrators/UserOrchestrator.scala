@@ -49,7 +49,7 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       userOpt <- userRepository.get(id)
       updatedUser <- userOpt
         .map(user => userRepository.update(user.id, update.mergeToUser(user)).map(Some(_)))
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
     } yield updatedUser
 
   def updateEmail(user: User, newEmail: EmailAddress): Future[User] =

@@ -10,22 +10,21 @@ import play.api.mvc.ControllerComponents
 import utils.Country
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class ConstantController(authenticator: Authenticator[User], controllerComponents: ControllerComponents)(implicit
     val ec: ExecutionContext
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getCountries = IpRateLimitedAction2.async {
-    Future(Ok(Json.toJson(Country.countries)))
+  def getCountries = IpRateLimitedAction2 {
+    Ok(Json.toJson(Country.countries))
   }
 
-  def getCategories = IpRateLimitedAction2.async {
-    Future(Ok(Json.toJson(ReportCategory.values.filter(_.status != ReportCategoryStatus.Legacy))))
+  def getCategories = IpRateLimitedAction2 {
+    Ok(Json.toJson(ReportCategory.values.filter(_.status != ReportCategoryStatus.Legacy)))
   }
 
-  def getCategoriesByStatus() = IpRateLimitedAction2.async {
+  def getCategoriesByStatus() = IpRateLimitedAction2 {
     val legacy   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Legacy)
     val closed   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Closed)
     val inactive = ReportCategory.values.filter(_.status == ReportCategoryStatus.Inactive)
@@ -36,7 +35,7 @@ class ConstantController(authenticator: Authenticator[User], controllerComponent
       "legacy"   -> legacy,
       "closed"   -> closed
     )
-    Future(Ok(json))
+    Ok(json)
   }
 
 }
