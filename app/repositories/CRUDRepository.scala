@@ -40,7 +40,6 @@ abstract class TypedCRUDRepository[T <: TypedDatabaseTable[E, ID], E, ID](implic
     .run(
       table returning table += element
     )
-    .map(_ => element)
 
   def createOrUpdate(element: E): Future[E] = db
     .run(

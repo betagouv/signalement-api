@@ -146,10 +146,10 @@ class ReportController(
         maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         viewedReportWithMetadata <- maybeReportWithMetadata
           .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
-          .getOrElse(Future(None))
+          .getOrElse(Future.successful(None))
         reportFiles <- viewedReportWithMetadata
           .map(r => reportFileRepository.retrieveReportFiles(r.report.id))
-          .getOrElse(Future(List.empty))
+          .getOrElse(Future.successful(List.empty))
         assignedUserId = viewedReportWithMetadata.flatMap(_.metadata.flatMap(_.assignedUserId))
         maybeAssignedUser <- assignedUserId
           .map(userId => userRepository.get(userId))

@@ -38,8 +38,10 @@ class ReportToExternalController(
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
-          report      <- reportRepository.get(id)
-          reportFiles <- report.map(r => reportFileRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+          report <- reportRepository.get(id)
+          reportFiles <- report
+            .map(r => reportFileRepository.retrieveReportFiles(r.id))
+            .getOrElse(Future.successful(List.empty))
         } yield report
           .map(report =>
             ReportWithFilesToExternal.fromReportAndFiles(

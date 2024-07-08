@@ -395,7 +395,7 @@ class CompanyOrchestrator(
       updatedCompany <-
         company
           .map(c => companyRepository.update(c.id, c.copy(address = companyAddressUpdate.address)).map(Some(_)))
-          .getOrElse(Future(None))
+          .getOrElse(Future.successful(None))
       _ <- updatedCompany
         .filter(c => !company.map(_.address).contains(c.address))
         .map(c =>
@@ -412,7 +412,7 @@ class CompanyOrchestrator(
             )
           )
         )
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
       _ <- updatedCompany
         .filter(_ => companyAddressUpdate.activationDocumentRequired)
         .map(c =>
@@ -428,7 +428,7 @@ class CompanyOrchestrator(
             )
           )
         )
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
     } yield updatedCompany
 
   def handleUndeliveredDocument(
@@ -456,7 +456,7 @@ class CompanyOrchestrator(
             )
             .map(Some(_))
         )
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
     } yield event
 
 }
