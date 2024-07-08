@@ -7,6 +7,7 @@ import models.auth.AuthAttemptFilter
 import models.report.ReportFileOrigin.Consumer
 import models.report.ReportFileOrigin.Professional
 import models.report.ReportFilter
+import models.report.ReportStatus.InformateurInterne
 import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
 import orchestrators.ProbeOrchestrator.OffsetDateTimeOps
@@ -93,7 +94,32 @@ class ProbeOrchestrator(
         runInterval = 6.hour,
         evaluationPeriod = 12.hour,
         expectedRange = ExpectedRange(min = Some(0.1), max = Some(5)),
-        query = (_, evaluationPeriod) => probeRepository.getInformateurInternePercentage(evaluationPeriod)
+        query = (dateTime, evaluationPeriod) => {
+          val filter = ReportFilter(
+            start = Some(dateTime.minusDuration(evaluationPeriod)),
+            end = Some(dateTime)
+          )
+          for {
+            nbInformateurInterne <- reportRepository
+              .count(
+                Some(Admin),
+                filter.copy(
+                  status = Seq(InformateurInterne)
+                )
+              )
+            nbTotal <- reportRepository
+              .count(
+                Some(Admin),
+                filter
+              )
+          } yield
+            if (nbTotal >= 20) {
+              Some((nbInformateurInterne.toDouble / nbTotal) * 100)
+            } else {
+              // Pas assez de données, le pourcentage ne sera pas pertinent.
+              None
+            }
+        }
       ),
       buildProbe(
         102,
@@ -328,7 +354,7 @@ class ProbeOrchestrator(
       reportRepository
         .count(
           Some(Admin),
-          reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)))
+          reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
         )
         .map(n => Some(n.toDouble)),
     expectedRange = atLeastOne,
