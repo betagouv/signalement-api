@@ -219,7 +219,7 @@ class ProbeOrchestrator(
         "Nombre de reviews ultérieures des consos sur la tenue des engagements",
         runInterval = 6.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(3), max = Some(100)),
+        expectedRange = ExpectedRange(min = Some(3)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_ENGAGEMENT, dateTime, evaluationPeriod)
       ),
       buildProbe(
