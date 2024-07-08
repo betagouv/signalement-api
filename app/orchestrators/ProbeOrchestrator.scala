@@ -261,8 +261,13 @@ class ProbeOrchestrator(
           for {
             nbSuccesses <- authAttemptRepository.countAuthAttempts(filter.copy(isSuccess = Some(true)))
             nbTotal     <- authAttemptRepository.countAuthAttempts(filter)
-            percentage = if (nbTotal == 0) 100 else (nbSuccesses.toDouble / nbTotal) * 100
-          } yield Some(percentage)
+          } yield
+            if (nbTotal >= 10) {
+              Some((nbSuccesses.toDouble / nbTotal) * 100)
+            } else {
+              // Pas assez de données, le pourcentage ne sera pas pertinent.
+              None
+            }
         }
       ),
       buildProbe(
