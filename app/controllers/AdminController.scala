@@ -141,8 +141,8 @@ class AdminController(
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }
 
-  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
-    Future(Ok(Json.toJson(availablePdfs.map(_._1))))
+  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
+    Ok(Json.toJson(availablePdfs.map(_._1)))
   }
   def sendTestPdf(templateRef: String) = SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
     availablePdfs.toMap

@@ -101,13 +101,14 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     implicit val ordering: ReportRepository.ReportFileOrdering.type = ReportRepository.ReportFileOrdering
 
-    mockReportRepository.getReports(eqTo(None), any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future(
-      PaginatedResult(0, false, List())
-    )
-    mockReportRepository.getReportsWithFiles(eqTo(None), any[ReportFilter]) returns Future(
+    mockReportRepository.getReports(eqTo(None), any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future
+      .successful(
+        PaginatedResult(0, false, List())
+      )
+    mockReportRepository.getReportsWithFiles(eqTo(None), any[ReportFilter]) returns Future.successful(
       SortedMap.empty[Report, List[ReportFile]]
     )
-    mockReportFileRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map())
+    mockReportFileRepository.prefetchReportsFiles(any[List[UUID]]) returns Future.successful(Map())
 
     class FakeApplicationLoader extends ApplicationLoader {
       var components: SignalConsoComponents = _

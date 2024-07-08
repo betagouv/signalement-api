@@ -60,7 +60,7 @@ class ReportAdminActionOrchestrator(
     for {
       report <- fetchStrict(reportId)
       isReopenable = report.status === ReportStatus.NonConsulte || report.status === ReportStatus.ConsulteIgnore
-      _             <- if (isReopenable) Future(()) else throw CannotReopenReport
+      _             <- if (isReopenable) Future.unit else throw CannotReopenReport
       updatedReport <- reOpenReport(report)
       _ <- eventRepository.create(
         Event(

@@ -236,15 +236,15 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def reportsMustBeRenderedForUser(user: User) =
     (user.userRole, user) match {
       case (UserRole.Admin, _) =>
-        contentAsJson(Future(someResult.get))(timeout).toString must
+        contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRole.DGCCRF, _) =>
-        contentAsJson(Future(someResult.get))(timeout).toString must
+        contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRole.Professionnel, pro) if pro == proUserWithAccessToHeadOffice =>
-        contentAsJson(Future(someResult.get))(timeout).toString must
+        contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
           not(
@@ -255,7 +255,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
             )
           )
       case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
-        contentAsJson(Future(someResult.get))(timeout).toString must
+        contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and
           not(
@@ -271,7 +271,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     }
 
   def noReportsMustBeRendered() =
-    Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
+    Helpers.contentAsJson(Future.successful(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
 

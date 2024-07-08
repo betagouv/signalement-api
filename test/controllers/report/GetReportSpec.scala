@@ -372,18 +372,18 @@ trait GetReportContext extends AppSpec {
   val mockUserRepository                  = mock[UserRepositoryInterface]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
-    Future(
+    Future.successful(
       if (pro.asInstanceOf[User].id == concernedProUser.id) List(CompanyWithAccess(company, AccessLevel.ADMIN))
       else List()
     )
   }
 
-  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
+  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future.successful(List.empty)
 
-  mockEventRepository.create(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
-  mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
+  mockEventRepository.create(any[Event]) answers { (event: Any) => Future.successful(event.asInstanceOf[Event]) }
+  mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future.successful(List.empty)
+  mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future.successful(List.empty)
+  mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future.successful(
     List(
       Event(
         UUID.randomUUID(),

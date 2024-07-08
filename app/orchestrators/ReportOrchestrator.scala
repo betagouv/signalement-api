@@ -104,7 +104,7 @@ class ReportOrchestrator(
       existingToken <- accessTokenRepository.fetchValidActivationToken(companyId)
       _ <- existingToken
         .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, validity))
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
       token <- existingToken
         .map(Future.successful)
         .getOrElse(
@@ -414,7 +414,7 @@ class ReportOrchestrator(
         }
       case None =>
         logger.debug("No company attached to report")
-        Future(None)
+        Future.successful(None)
     }
 
   private def searchCompanyOfSocialNetwork(socialNetworkSlug: SocialNetworkSlug): Future[Option[Company]] =
@@ -523,7 +523,7 @@ class ReportOrchestrator(
               )
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
 
       _ <- existingReport match {
@@ -545,9 +545,9 @@ class ReportOrchestrator(
               )
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future(()))
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future.unit)
     } yield reportWithNewData
 
   private def isReportTooOld(report: Report) =
@@ -660,7 +660,7 @@ class ReportOrchestrator(
               )
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
       _ <- existingReport match {
         case Some(report) =>
@@ -682,7 +682,7 @@ class ReportOrchestrator(
               )
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
     } yield updatedReport
 
@@ -698,11 +698,11 @@ class ReportOrchestrator(
               viewedReportWithMetadata = reportWithMetadata.copy(report = viewedReport)
             } yield viewedReportWithMetadata
           } else {
-            Future(reportWithMetadata)
+            Future.successful(reportWithMetadata)
           }
         )
     } else {
-      Future(reportWithMetadata)
+      Future.successful(reportWithMetadata)
     }
 
   def removeAccessTokenWhenNoMoreReports(companyId: UUID) =
@@ -710,8 +710,8 @@ class ReportOrchestrator(
       company <- companyRepository.get(companyId)
       reports <- company
         .map(c => reportRepository.getReports(None, ReportFilter(companyIds = Seq(c.id))).map(_.entities))
-        .getOrElse(Future(Nil))
-      cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
+        .getOrElse(Future.successful(Nil))
+      cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future.successful(0)
     } yield {
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
       ()
@@ -733,7 +733,7 @@ class ReportOrchestrator(
       isReportAlreadyClosed = report.status.isFinal
       updatedReport <-
         if (isReportAlreadyClosed) {
-          Future(report)
+          Future.successful(report)
         } else {
           updateReportAndEventuallyNotifyConsumer(report)
         }
@@ -796,7 +796,7 @@ class ReportOrchestrator(
               )
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
       _ <- (report, newEvent) match {
         case (Some(r), Some(event)) =>
@@ -809,7 +809,7 @@ class ReportOrchestrator(
               })
             )
             .map(Some(_))
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
     } yield {
       newEvent.foreach(event =>
@@ -924,7 +924,9 @@ class ReportOrchestrator(
       )
       paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
-          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
+          Future.successful(
+            PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles])
+          )
         } else {
           getReportsWithFile[ReportWithFiles](
             Some(connectedUser.userRole),
@@ -1036,7 +1038,7 @@ class ReportOrchestrator(
       )
       visibleReportWithMetadata <-
         if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
-          Future(reportWithMetadata)
+          Future.successful(reportWithMetadata)
         else {
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)

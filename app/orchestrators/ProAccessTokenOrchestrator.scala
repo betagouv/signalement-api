@@ -185,9 +185,9 @@ class ProAccessTokenOrchestrator(
           logger.debug("Found existing token for that user and company, updating existing token")
           accessTokenRepository.updateToken(existingToken, level, validity)
         }
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
       token <- existingToken
-        .map(Future(_))
+        .map(Future.successful)
         .getOrElse {
           logger.debug("Creating user invitation token")
           accessTokenRepository.create(

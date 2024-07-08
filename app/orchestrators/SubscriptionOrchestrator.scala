@@ -51,7 +51,7 @@ class SubscriptionOrchestrator(subscriptionRepository: SubscriptionRepositoryInt
             )
             .map(Some(_))
         )
-        .getOrElse(Future(None))
+        .getOrElse(Future.successful(None))
     } yield updatedSubscription
 
   def getSubscriptions(user: User) =
