@@ -31,6 +31,7 @@ import services.emails.MailServiceInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
 import utils.Constants.ActionEvent._
+import utils.EmailAddress
 import utils.Logs.RichLogger
 
 import java.time.LocalTime
@@ -406,16 +407,22 @@ class ProbeOrchestrator(
       val issueAdjective = if (expectedRange.isTooHigh(p)) "trop haut" else "trop bas"
       logger.warnWithTitle("probe_triggered", s"\"$probeName\" est $issueAdjective : $p sur $evaluationPeriod")
       for {
-        users <- userRepository.listForRoles(Seq(UserRole.Admin))
+        emailAddresses <- chooseRecipients()
         _ <- mailService
-          .send(
-            AdminProbeTriggered
-              .Email(users.map(_.email), probeName, p, issueAdjective, evaluationPeriod)
-          )
+          .send(AdminProbeTriggered.Email(emailAddresses, probeName, p, issueAdjective, evaluationPeriod))
       } yield ()
     case other =>
       logger.info(s"\"$probeName\" est acceptable: $other sur $evaluationPeriod")
       Future.unit
+  }
+
+  private def chooseRecipients(): Future[Seq[EmailAddress]] = {
+    val recipients = taskConfiguration.probe.recipients
+    if (recipients.isEmpty) {
+      for {
+        users <- userRepository.listForRoles(Seq(UserRole.Admin))
+      } yield users.map(_.email)
+    } else Future.successful(recipients.map(EmailAddress(_)))
   }
 
   private def computePercentage(nb: Int, nbTotal: Int) =
