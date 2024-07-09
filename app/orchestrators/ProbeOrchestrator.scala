@@ -178,7 +178,7 @@ class ProbeOrchestrator(
         "courrieractivation_probe",
         "Nombre d'envois de courriers d'activation",
         runInterval = 24.hour,
-        evaluationPeriod = 7.days,
+        evaluationPeriod = 14.days,
         expectedRange = ExpectedRange(min = Some(100), max = Some(3000)),
         query = (dateTime, evaluationPeriod) => countEvents(POST_ACCOUNT_ACTIVATION_DOC, dateTime, evaluationPeriod)
       ),
