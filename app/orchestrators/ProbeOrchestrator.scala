@@ -1,12 +1,14 @@
 package orchestrators
 
 import config.TaskConfiguration
+import models.EmailValidationFilter
 import models.UserRole
 import models.UserRole.Admin
 import models.auth.AuthAttemptFilter
 import models.report.ReportFileOrigin.Consumer
 import models.report.ReportFileOrigin.Professional
 import models.report.ReportFilter
+import models.report.ReportStatus.InformateurInterne
 import models.report.ReportTag.ProduitDangereux
 import orchestrators.ProbeOrchestrator.ExpectedRange
 import orchestrators.ProbeOrchestrator.OffsetDateTimeOps
@@ -15,6 +17,7 @@ import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.authattempt.AuthAttemptRepositoryInterface
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
@@ -48,6 +51,7 @@ class ProbeOrchestrator(
     eventRepository: EventRepositoryInterface,
     authAttemptRepository: AuthAttemptRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
+    emailValidationRepository: EmailValidationRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
@@ -92,8 +96,17 @@ class ProbeOrchestrator(
         "Pourcentage de signalements 'Informateur interne'",
         runInterval = 6.hour,
         evaluationPeriod = 12.hour,
-        expectedRange = ExpectedRange(min = Some(0.1), max = Some(5)),
-        query = (_, evaluationPeriod) => probeRepository.getInformateurInternePercentage(evaluationPeriod)
+        expectedRange = ExpectedRange(min = Some(0.1), max = Some(25)),
+        query = (dateTime, evaluationPeriod) => {
+          val filter = ReportFilter(
+            start = Some(dateTime.minusDuration(evaluationPeriod)),
+            end = Some(dateTime)
+          )
+          for {
+            nb      <- reportRepository.count(Some(Admin), filter.copy(status = Seq(InformateurInterne)))
+            nbTotal <- reportRepository.count(Some(Admin), filter)
+          } yield computePercentage(nb, nbTotal)
+        }
       ),
       buildProbe(
         102,
@@ -101,8 +114,18 @@ class ProbeOrchestrator(
         "Pourcentage d'emails que les consos ont validés avec succès",
         runInterval = 30.minutes,
         evaluationPeriod = 1.hour,
-        expectedRange = ExpectedRange(min = Some(50)),
-        query = (_, evaluationPeriod) => probeRepository.getValidatedEmailsPercentage(evaluationPeriod)
+        expectedRange = ExpectedRange(min = Some(60)),
+        query = (dateTime, evaluationPeriod) => {
+          val filter = EmailValidationFilter(
+            start = Some(dateTime.minusDuration(evaluationPeriod)),
+            end = Some(dateTime)
+          )
+          for {
+            nb      <- emailValidationRepository.count(filter.copy(validated = Some(true)))
+            nbTotal <- emailValidationRepository.count(filter)
+          } yield computePercentage(nb, nbTotal)
+
+        }
       ),
       buildProbeAtLeastOneReport(
         103,
@@ -219,7 +242,7 @@ class ProbeOrchestrator(
         "Nombre de reviews ultérieures des consos sur la tenue des engagements",
         runInterval = 6.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(3), max = Some(100)),
+        expectedRange = ExpectedRange(min = Some(3)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_REVIEW_ON_ENGAGEMENT, dateTime, evaluationPeriod)
       ),
       buildProbe(
@@ -261,8 +284,7 @@ class ProbeOrchestrator(
           for {
             nbSuccesses <- authAttemptRepository.countAuthAttempts(filter.copy(isSuccess = Some(true)))
             nbTotal     <- authAttemptRepository.countAuthAttempts(filter)
-            percentage = if (nbTotal == 0) 100 else (nbSuccesses.toDouble / nbTotal) * 100
-          } yield Some(percentage)
+          } yield computePercentage(nbSuccesses, nbTotal)
         }
       ),
       buildProbe(
@@ -323,7 +345,7 @@ class ProbeOrchestrator(
       reportRepository
         .count(
           Some(Admin),
-          reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)))
+          reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
         )
         .map(n => Some(n.toDouble)),
     expectedRange = atLeastOne,
@@ -395,6 +417,14 @@ class ProbeOrchestrator(
       logger.info(s"\"$probeName\" est acceptable: $other sur $evaluationPeriod")
       Future.unit
   }
+
+  private def computePercentage(nb: Int, nbTotal: Int) =
+    // Percentages are not significant if we don't have enough data
+    if (nbTotal >= 20) {
+      Some((nb.toDouble / nbTotal) * 100)
+    } else {
+      None
+    }
 
 }
 
