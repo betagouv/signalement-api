@@ -1,6 +1,7 @@
 package orchestrators
 
 import config.TaskConfiguration
+import models.EmailValidationFilter
 import models.UserRole
 import models.UserRole.Admin
 import models.auth.AuthAttemptFilter
@@ -16,6 +17,7 @@ import orchestrators.ProbeOrchestrator.isDuringTypicalBusyHours
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import repositories.authattempt.AuthAttemptRepositoryInterface
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.probe.ProbeRepository
@@ -49,6 +51,7 @@ class ProbeOrchestrator(
     eventRepository: EventRepositoryInterface,
     authAttemptRepository: AuthAttemptRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
+    emailValidationRepository: EmailValidationRepositoryInterface,
     mailService: MailServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
@@ -100,25 +103,9 @@ class ProbeOrchestrator(
             end = Some(dateTime)
           )
           for {
-            nbInformateurInterne <- reportRepository
-              .count(
-                Some(Admin),
-                filter.copy(
-                  status = Seq(InformateurInterne)
-                )
-              )
-            nbTotal <- reportRepository
-              .count(
-                Some(Admin),
-                filter
-              )
-          } yield
-            if (nbTotal >= 20) {
-              Some((nbInformateurInterne.toDouble / nbTotal) * 100)
-            } else {
-              // Pas assez de données, le pourcentage ne sera pas pertinent.
-              None
-            }
+            nb      <- reportRepository.count(Some(Admin), filter.copy(status = Seq(InformateurInterne)))
+            nbTotal <- reportRepository.count(Some(Admin), filter)
+          } yield computePercentage(nb, nbTotal)
         }
       ),
       buildProbe(
@@ -127,8 +114,18 @@ class ProbeOrchestrator(
         "Pourcentage d'emails que les consos ont validés avec succès",
         runInterval = 30.minutes,
         evaluationPeriod = 1.hour,
-        expectedRange = ExpectedRange(min = Some(50)),
-        query = (_, evaluationPeriod) => probeRepository.getValidatedEmailsPercentage(evaluationPeriod)
+        expectedRange = ExpectedRange(min = Some(60)),
+        query = (dateTime, evaluationPeriod) => {
+          val filter = EmailValidationFilter(
+            start = Some(dateTime.minusDuration(evaluationPeriod)),
+            end = Some(dateTime)
+          )
+          for {
+            nb      <- emailValidationRepository.count(filter.copy(validated = Some(true)))
+            nbTotal <- emailValidationRepository.count(filter)
+          } yield computePercentage(nb, nbTotal)
+
+        }
       ),
       buildProbeAtLeastOneReport(
         103,
@@ -287,13 +284,7 @@ class ProbeOrchestrator(
           for {
             nbSuccesses <- authAttemptRepository.countAuthAttempts(filter.copy(isSuccess = Some(true)))
             nbTotal     <- authAttemptRepository.countAuthAttempts(filter)
-          } yield
-            if (nbTotal >= 10) {
-              Some((nbSuccesses.toDouble / nbTotal) * 100)
-            } else {
-              // Pas assez de données, le pourcentage ne sera pas pertinent.
-              None
-            }
+          } yield computePercentage(nbSuccesses, nbTotal)
         }
       ),
       buildProbe(
@@ -426,6 +417,14 @@ class ProbeOrchestrator(
       logger.info(s"\"$probeName\" est acceptable: $other sur $evaluationPeriod")
       Future.unit
   }
+
+  private def computePercentage(nb: Int, nbTotal: Int) =
+    // Percentages are not significant if we don't have enough data
+    if (nbTotal >= 20) {
+      Some((nb.toDouble / nbTotal) * 100)
+    } else {
+      None
+    }
 
 }
 

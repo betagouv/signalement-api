@@ -38,8 +38,10 @@ object EmailValidation {
 }
 
 final case class EmailValidationFilter(
-    email: Option[EmailAddress],
-    validated: Option[Boolean]
+    start: Option[OffsetDateTime] = None,
+    end: Option[OffsetDateTime] = None,
+    email: Option[EmailAddress] = None,
+    validated: Option[Boolean] = None
 )
 
 object EmailValidationFilter {

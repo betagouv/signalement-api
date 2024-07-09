@@ -70,10 +70,22 @@ class EmailValidationRepository(
   override def exists(email: EmailAddress): Future[Boolean] =
     db.run(table.filter(_.email === email).result.headOption).map(_.isDefined)
 
-  def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
+  def search(filter: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
+    queryFilter(filter)
+      .sortBy(_.creationDate.desc)
+      .withPagination(db)(paginate.offset, paginate.limit)
+  override def count(filter: EmailValidationFilter) =
+    db.run(queryFilter(filter).length.result)
+  private def queryFilter(filter: EmailValidationFilter) =
     table
-      .filterOpt(search.email)(_.email === _)
-      .filterOpt(search.validated) { (emailValidationTable, searchValidated) =>
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= start
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate <= end
+      }
+      .filterOpt(filter.email)(_.email === _)
+      .filterOpt(filter.validated) { (emailValidationTable, searchValidated) =>
         val expiredValidations = emailValidationTable.lastValidationDate
           .filter(_ < EmailValidation.EmailValidationThreshold)
         if (searchValidated) {
@@ -83,5 +95,5 @@ class EmailValidationRepository(
         }
       }
       .sortBy(_.creationDate.desc)
-      .withPagination(db)(paginate.offset, paginate.limit)
+
 }

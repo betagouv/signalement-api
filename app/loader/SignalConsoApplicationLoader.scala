@@ -493,6 +493,7 @@ class SignalConsoComponents(
     eventRepository,
     authAttemptRepository,
     reportFileRepository,
+    emailValidationRepository,
     mailService
   )
 
