@@ -17,7 +17,9 @@ import models.report._
 import models.report.reportfile.ReportFileId
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
+import services.AntivirusServiceInterface
 import services.S3ServiceInterface
+import services.antivirus.FileData
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -28,7 +30,8 @@ class ReportFileOrchestrator(
     reportFileRepository: ReportFileRepositoryInterface,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3ServiceInterface,
-    reportZipExportService: ReportZipExportService
+    reportZipExportService: ReportZipExportService,
+    antivirusService: AntivirusServiceInterface
 )(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
@@ -59,8 +62,15 @@ class ReportFileOrchestrator(
         .run()
       _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
     } yield {
-      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
+      requestScan(reportFile, file)
       reportFile
+    }
+
+  private def requestScan(reportFile: ReportFile, file: java.io.File) =
+    if (antivirusService.isActive) {
+      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
+    } else {
+      antivirusService.scan(reportFile.id, reportFile.storageFilename)
     }
 
   def removeFromReportId(reportId: UUID): Future[List[Int]] =
@@ -99,13 +109,30 @@ class ReportFileOrchestrator(
       .get(reportFileId)
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
-          logger.info("Attachment has not been scan by antivirus, rescheduling scan")
-          antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
-          Future.failed(AttachmentNotReady(reportFileId))
+          rescheduleScan(reportFile).flatMap(_ => Future.successful(s3Service.getSignedUrl(reportFile.storageFilename)))
         case Some(file) if file.filename == filename && file.avOutput.isDefined =>
           Future.successful(s3Service.getSignedUrl(file.storageFilename))
         case _ => Future.failed(AttachmentNotFound(reportFileId, filename))
       }
+  }
+
+  private def rescheduleScan(reportFile: ReportFile): Future[String] = {
+    logger.info("Attachment has not been scan by antivirus, rescheduling scan")
+    if (antivirusService.isActive) {
+      antivirusService.fileStatus(reportFile.id).flatMap {
+        case Right(FileData(_, _, _, _, Some(0), Some(avOutput))) =>
+          reportFileRepository
+            .setAvOutput(reportFile.id, avOutput)
+            .map(_ => avOutput)
+        case _ =>
+          antivirusService
+            .reScan(List(reportFile.id))
+            .flatMap(_ => Future.failed(AttachmentNotReady(reportFile.id)))
+      }
+    } else {
+      antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
+      Future.failed(AttachmentNotReady(reportFile.id))
+    }
   }
 
   def downloadReportFilesArchive(
@@ -113,10 +140,9 @@ class ReportFileOrchestrator(
       origin: Option[ReportFileOrigin]
   ): Future[Source[ByteString, Future[IOResult]]] =
     for {
-      reportFiles <- reportFileRepository
-        .retrieveReportFiles(report.id)
+      reportFiles <- reportFileRepository.retrieveReportFiles(report.id)
       filteredFilesByOrigin = reportFiles.filter { f =>
-        origin.contains(f.origin) || origin.isEmpty
+        (origin.contains(f.origin) || origin.isEmpty) && f.avOutput.isDefined
       }
       _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
       res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
