@@ -62,7 +62,8 @@ object EmailsExamplesUtils {
     lang = Some(Locale.FRENCH),
     barcodeProductId = None,
     train = None,
-    station = None
+    station = None,
+    rappelConsoId = None
   )
 
   def genReportFile = ReportFile(

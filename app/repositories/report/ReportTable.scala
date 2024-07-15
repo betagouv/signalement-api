@@ -70,6 +70,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def ter                                = column[Option[String]]("ter")
   def nightTrain                         = column[Option[String]]("night_train")
   def station                            = column[Option[String]]("station")
+  def rappelConsoId                      = column[Option[Int]]("rappel_conso_id")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -125,6 +126,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         ter ::
         nightTrain ::
         station ::
+        rappelConsoId ::
         HNil =>
       report.Report(
         id = id,
@@ -171,7 +173,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         influencer =
           influencerName.map(influencerName => Influencer(socialNetwork, otherSocialNetwork, influencerName)),
         train = train.map(train => Train(train, ter, nightTrain)),
-        station = station
+        station = station,
+        rappelConsoId = rappelConsoId
       )
   }
 
@@ -223,6 +226,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.train.flatMap(_.ter) ::
       r.train.flatMap(_.nightTrain) ::
       r.station ::
+      r.rappelConsoId ::
       HNil
   )
 
@@ -274,6 +278,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[String] ::
       Option[String] ::
       Option[String] ::
+      Option[Int] ::
       HNil
 
   def * = (
@@ -324,6 +329,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ter ::
       nightTrain ::
       station ::
+      rappelConsoId ::
       HNil
   ) <> (constructReport, extractReport)
 }

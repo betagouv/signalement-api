@@ -263,7 +263,8 @@ object Fixtures {
     lang = None,
     barcodeProductId = None,
     train = None,
-    station = None
+    station = None,
+    rappelConsoId = None
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =

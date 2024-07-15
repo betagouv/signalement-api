@@ -54,7 +54,8 @@ case class ReportDraft(
     barcodeProductId: Option[UUID] = None,
     metadata: Option[ReportMetadataDraft] = None,
     train: Option[Train] = None,
-    station: Option[String] = None
+    station: Option[String] = None,
+    rappelConsoId: Option[Int] = None
 ) {
 
   def generateReport(
@@ -107,7 +108,8 @@ case class ReportDraft(
       lang = lang,
       barcodeProductId = barcodeProductId,
       train = train,
-      station = station
+      station = station,
+      rappelConsoId = rappelConsoId
     )
 
   private def shouldBeVisibleToPro(): Boolean =
