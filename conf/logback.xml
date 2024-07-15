@@ -9,31 +9,31 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <!-- allows to switch in dev between text or json logs -->
-        <if condition='property("textlogs").contains("true")'>
-            <then>
+<!--        <if condition='property("textlogs").contains("true")'>-->
+<!--            <then>-->
                 <encoder>
                     <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
                 </encoder>
-            </then>
-            <else>
-                <!--
-                 JSON logs
-                 Easiest way to get the stacktraces in New Relic (because otherwise they are on multiple lines)
-                -->
-                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                    <fieldNames>
-                        <!-- name retro compatible with what we did earlier -->
-                        <level>logLevel</level>
-                        <logger>loggerName</logger>
-                        <!-- remove these useless fields -->
-                        <thread>[ignore]</thread>
-                        <levelValue>[ignore]</levelValue>
-                    </fieldNames>
-                    <!-- remove application.home passed by Play -->
-                    <includeContext>false</includeContext>
-                </encoder>
-            </else>
-        </if>
+<!--            </then>-->
+<!--            <else>-->
+<!--                &lt;!&ndash;-->
+<!--                 JSON logs-->
+<!--                 Easiest way to get the stacktraces in New Relic (because otherwise they are on multiple lines)-->
+<!--                &ndash;&gt;-->
+<!--                <encoder class="net.logstash.logback.encoder.LogstashEncoder">-->
+<!--                    <fieldNames>-->
+<!--                        &lt;!&ndash; name retro compatible with what we did earlier &ndash;&gt;-->
+<!--                        <level>logLevel</level>-->
+<!--                        <logger>loggerName</logger>-->
+<!--                        &lt;!&ndash; remove these useless fields &ndash;&gt;-->
+<!--                        <thread>[ignore]</thread>-->
+<!--                        <levelValue>[ignore]</levelValue>-->
+<!--                    </fieldNames>-->
+<!--                    &lt;!&ndash; remove application.home passed by Play &ndash;&gt;-->
+<!--                    <includeContext>false</includeContext>-->
+<!--                </encoder>-->
+<!--            </else>-->
+<!--        </if>-->
     </appender>
 
     <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">

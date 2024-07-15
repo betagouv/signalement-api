@@ -1,14 +1,12 @@
-package services
+package services.antivirus
 
 import config.AntivirusServiceConfiguration
 import models.report.reportfile.ReportFileId
 import play.api.Logging
-import services.AntivirusService.AntivirusScanRequestFailed
-import services.AntivirusService.AntivirusServiceError
-import services.AntivirusService.AntivirusServiceFileStatusError
-import services.AntivirusService.AntivirusServiceUnexpectedError
-import services.antivirus.FileData
-import services.antivirus.ScanCommand
+import services.antivirus.AntivirusService.AntivirusScanRequestFailed
+import services.antivirus.AntivirusService.AntivirusServiceError
+import services.antivirus.AntivirusService.AntivirusServiceFileStatusError
+import services.antivirus.AntivirusService.AntivirusServiceUnexpectedError
 import sttp.capabilities
 import sttp.client3.SttpBackend
 import sttp.client3.UriContext
@@ -24,7 +22,7 @@ import scala.concurrent.Future
 
 trait AntivirusServiceInterface {
   def scan(reportFileId: ReportFileId, storageFileName: String): Future[Either[AntivirusServiceError, Unit]]
-  def reScan(reportFileId: List[ReportFileId]): Future[Either[AntivirusServiceError, Unit]]
+  def reScan(reportFileId: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]]
   def fileStatus(reportFileId: ReportFileId): Future[Either[AntivirusServiceError, FileData]]
 
   def isActive: Boolean
@@ -57,7 +55,7 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
     response
       .map { res =>
         res.code match {
-          case StatusCode.NoContent || StatusCode.Ok =>
+          case StatusCode.NoContent | StatusCode.Ok =>
             logger.debug("Scan request successful: No content returned as expected.")
             Right(())
           case _ =>
@@ -79,14 +77,14 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
 
   }
 
-  override def reScan(reportFileId: List[ReportFileId]): Future[Either[AntivirusServiceError, Unit]] = {
+  override def reScan(scanCommands: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]] = {
 
     val request = basicRequest
       .headers(Header("X-Api-Key", conf.antivirusApiKey))
       .post(
         uri"${conf.antivirusApiUrl}".withWholePath(ReScanEndPoint)
       )
-      .body(reportFileId.map(_.value.toString))
+      .body(scanCommands)
 
     val response =
       request.send(backend)
@@ -94,13 +92,13 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
     response
       .map { res =>
         res.code match {
-          case StatusCode.NoContent || StatusCode.Ok =>
+          case StatusCode.NoContent | StatusCode.Ok =>
             logger.debug("Scan request successful: No content returned as expected.")
             Right(())
           case _ =>
             logger.warnWithTitle(
               "antivirus_scan_request_error",
-              s"Unexpected response status for scan reportId  (${reportFileId.mkString(",")}): ${res.code}, body: ${res.body}"
+              s"Unexpected response status for scan reportId  (${scanCommands.mkString(",")}): ${res.code}, body: ${res.body}"
             )
             Left(AntivirusScanRequestFailed)
         }
@@ -108,7 +106,7 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
       .recover { case error: Throwable =>
         logger.warnWithTitle(
           "antivirus_scan_request_error",
-          s"Cannot send antivirus request for reportId :  (${reportFileId.mkString(",")})",
+          s"Cannot send antivirus request for reportId :  (${scanCommands.mkString(",")})",
           error
         )
         Left(AntivirusServiceUnexpectedError)
@@ -118,12 +116,10 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
 
   override def fileStatus(reportFileId: ReportFileId): Future[Either[AntivirusServiceError, FileData]] = {
 
-    val uri = uri"${conf.antivirusApiUrl}/${ScanStatusEndPoint}/${reportFileId.toString}"
-
     val request = basicRequest
       .headers(Header("X-Api-Key", conf.antivirusApiKey))
-      .post(
-        uri
+      .get(
+        uri"${conf.antivirusApiUrl}".withWholePath(s"$ScanStatusEndPoint/${reportFileId.value.toString}")
       )
       .response(asJson[FileData])
 
