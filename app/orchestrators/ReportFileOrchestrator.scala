@@ -20,6 +20,7 @@ import org.apache.pekko.util.ByteString
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
+import services.antivirus.AntivirusService.NoVirus
 import services.antivirus.AntivirusServiceInterface
 import services.antivirus.FileData
 import services.antivirus.ScanCommand
@@ -133,11 +134,12 @@ class ReportFileOrchestrator(
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
   ): Future[Either[AppError, ReportFile]] =
-    if (reportFile.avOutput.isEmpty) {
+    if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
         antivirusService.fileStatus(reportFile.id).flatMap {
-          case Right(FileData(_, _, _, _, Some(0), Some(avOutput))) =>
+          case Right(FileData(_, _, _, _, Some(NoVirus), Some(avOutput))) =>
+            // Updates AvOutput only when noVirus
             reportFileRepository
               .setAvOutput(reportFile.id, avOutput)
               .map(_ => Right(reportFile.copy(avOutput = Some(avOutput))))

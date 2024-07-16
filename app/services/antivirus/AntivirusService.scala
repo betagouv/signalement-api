@@ -151,4 +151,6 @@ object AntivirusService {
   case object AntivirusServiceUnexpectedError extends AntivirusServiceError
   case object AntivirusServiceFileStatusError extends AntivirusServiceError
 
+  val NoVirus = 0
+
 }

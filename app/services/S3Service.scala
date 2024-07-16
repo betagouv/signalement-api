@@ -49,9 +49,8 @@ class S3Service(implicit
     )
     .build()
 
-  override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] = {
+  override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
     pekkoS3Client.multipartUpload(bucketName, bucketKey)
-  }
 
   override def download(bucketKey: String): Future[ByteString] =
     downloadFromBucket(bucketKey).runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b))
@@ -59,10 +58,9 @@ class S3Service(implicit
   override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] =
     downloadFromBucket(bucketKey).runWith(FileIO.toPath(Path.of(filePath)))
 
-  def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] = {
+  def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] =
     pekkoS3Client
       .getObject(bucketName, bucketKey)
-  }
 
   def exists(bucketKey: String): Future[Boolean] =
     S3.getObjectMetadata(bucketName, bucketKey).runWith(Sink.headOption).map { b =>
