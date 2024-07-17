@@ -268,9 +268,9 @@ class ProbeOrchestrator(
         118,
         "emailinactiveagentaccount_probe",
         "Nombre d'emails \"compte inactive\" envoyés aux agents",
-        runInterval = 12.hours,
-        evaluationPeriod = 2.day,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(30)),
+        runInterval = 24.hours,
+        evaluationPeriod = 7.day,
+        expectedRange = ExpectedRange(min = Some(1), max = Some(300)),
         query = (dateTime, evaluationPeriod) => countEvents(EMAIL_INACTIVE_AGENT_ACCOUNT, dateTime, evaluationPeriod)
       ),
       buildProbe(
