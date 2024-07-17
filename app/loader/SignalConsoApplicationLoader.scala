@@ -93,10 +93,14 @@ import repositories.usersettings.UserReportsFiltersRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
 import services._
+import services.antivirus.AntivirusService
 import services.emails.MailRetriesService
 import services.emails.MailService
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import sttp.capabilities
+import sttp.client3.HttpClientFutureBackend
+import sttp.client3.SttpBackend
 import tasks.EngagementEmailTask
 import tasks.ExportReportsToSFTPTask
 import tasks.account.InactiveAccountTask
@@ -114,6 +118,7 @@ import utils.LoggingFilter
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import scala.annotation.nowarn
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class SignalConsoApplicationLoader() extends ApplicationLoader {
@@ -156,7 +161,7 @@ class SignalConsoComponents(
   }
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
-
+  private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
   // Run database migration scripts
   Flyway
     .configure()
@@ -360,8 +365,16 @@ class SignalConsoComponents(
   val reportZipExportService =
     new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
 
+  val antivirusService = new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
+
   val reportFileOrchestrator =
-    new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service, reportZipExportService)
+    new ReportFileOrchestrator(
+      reportFileRepository,
+      antivirusScanActor,
+      s3Service,
+      reportZipExportService,
+      antivirusService
+    )
 
   val engagementOrchestrator =
     new EngagementOrchestrator(
@@ -522,7 +535,8 @@ class SignalConsoComponents(
   )
 
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
-    applicationConfiguration.task.companyUpdate
+    applicationConfiguration.task.companyUpdate,
+    backend
   )
 
   val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
