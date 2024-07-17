@@ -1,5 +1,6 @@
 package controllers
 
+import config.AntivirusServiceConfiguration
 import config.EmailConfiguration
 import config.MobileAppConfiguration
 import config.SignalConsoConfiguration
@@ -310,6 +311,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               minimumAppVersionIos = "1.0.0",
               minimumAppVersionAndroid = "1.0.0"
             )
+
             override def signalConsoConfiguration: SignalConsoConfiguration =
               SignalConsoConfiguration(
                 "",
@@ -321,7 +323,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 mobileAppConfiguration,
                 reportFileMaxSize = 5,
                 reportMaxNumberOfAttachments = 20,
-                enableRateLimit = false
+                enableRateLimit = false,
+                antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true)
               )
 
             override def emailConfiguration: EmailConfiguration =

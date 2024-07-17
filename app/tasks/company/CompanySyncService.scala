@@ -4,12 +4,11 @@ import config.CompanyUpdateTaskConfiguration
 import models.company.Company
 import play.api.Logger
 import sttp.capabilities
-import sttp.client3.HttpClientFutureBackend
+import sttp.client3.playJson.asJson
+import sttp.client3.playJson.playJsonBodySerializer
 import sttp.client3.SttpBackend
 import sttp.client3.UriContext
 import sttp.client3.basicRequest
-import sttp.client3.playJson.asJson
-import sttp.client3.playJson.playJsonBodySerializer
 import sttp.model.Header
 import utils.SIREN
 import utils.SIRET
@@ -26,15 +25,16 @@ trait CompanySyncServiceInterface {
   def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]]
 }
 
-class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfiguration)(implicit
+class CompanySyncService(
+    companyUpdateConfiguration: CompanyUpdateTaskConfiguration,
+    backend: SttpBackend[Future, capabilities.WebSockets]
+)(implicit
     executionContext: ExecutionContext
 ) extends CompanySyncServiceInterface {
   val logger: Logger = Logger(this.getClass)
 
   val SearchEndpoint      = "/api/companies/search"
   val SirenSearchEndpoint = "/api/companies/siren/search"
-
-  private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
   override def syncCompanies(
       companies: Seq[Company],

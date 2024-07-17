@@ -15,7 +15,8 @@ case class SignalConsoConfiguration(
     reportsExportLimitMax: Int = 300000,
     reportFileMaxSize: Int,
     reportMaxNumberOfAttachments: Int,
-    enableRateLimit: Boolean
+    enableRateLimit: Boolean,
+    antivirusServiceConfiguration: AntivirusServiceConfiguration
 )
 
 case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean, downloadDirectory: String)
@@ -33,4 +34,10 @@ case class TokenConfiguration(
 case class MobileAppConfiguration(
     minimumAppVersionIos: String,
     minimumAppVersionAndroid: String
+)
+
+case class AntivirusServiceConfiguration(
+    antivirusApiUrl: String,
+    antivirusApiKey: String,
+    active: Boolean
 )
