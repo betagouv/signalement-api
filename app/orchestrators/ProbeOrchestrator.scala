@@ -140,8 +140,8 @@ class ProbeOrchestrator(
         104,
         "number_reports_with_website_probe",
         "Nombre de signalements sur des sites webs",
-        runInterval = 1.hour,
-        evaluationPeriod = 1.hour,
+        runInterval = 2.hour,
+        evaluationPeriod = 6.hour,
         ReportFilter(hasWebsite = Some(true)),
         onlyRunInBusyHours = true
       ),
