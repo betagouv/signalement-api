@@ -59,6 +59,7 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object CompagnieAerienne           extends ReportTag
   case object Resiliation                 extends ReportTag
   case object OpenFoodFacts               extends ReportTag
+  case object RappelConso                 extends ReportTag
   case object TransitionEcologique        extends ReportTag
   case object ProduitPerime               extends ReportTag
   case object CommandeEffectuee           extends ReportTag
@@ -91,6 +92,7 @@ object ReportTag extends PlayEnum[ReportTag] {
       case CompagnieAerienne           => "Compagnie aerienne"
       case Resiliation                 => "Résiliation"
       case OpenFoodFacts               => "OpenFoodFacts"
+      case RappelConso                 => "RappelConso"
       case TransitionEcologique        => "Transition écologique"
       case ProduitPerime               => "Produit périmé"
       case CommandeEffectuee           => "Commande effectuée"
