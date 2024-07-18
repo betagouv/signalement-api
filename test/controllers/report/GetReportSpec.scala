@@ -287,7 +287,8 @@ trait GetReportContext extends AppSpec {
     lang = None,
     barcodeProductId = None,
     train = None,
-    station = None
+    station = None,
+    rappelConsoId = None
   )
 
   val neverRequestedFinalReport = Report(
@@ -317,7 +318,8 @@ trait GetReportContext extends AppSpec {
     lang = None,
     barcodeProductId = None,
     train = None,
-    station = None
+    station = None,
+    rappelConsoId = None
   )
 
   val alreadyRequestedReport = Report(
@@ -347,7 +349,8 @@ trait GetReportContext extends AppSpec {
     lang = None,
     barcodeProductId = None,
     train = None,
-    station = None
+    station = None,
+    rappelConsoId = None
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
