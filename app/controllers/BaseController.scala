@@ -92,11 +92,12 @@ abstract class BaseController(
     authenticator
   ) andThen new ErrorHandlerActionFunction[MaybeUserRequest]()
 
-  def IpRateLimitedAction1: ActionBuilder[Request, AnyContent] =
-    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](36, 1f / 5) else Action
-  def IpRateLimitedAction2: ActionBuilder[Request, AnyContent] =
-    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](9, 1f / 5) else Action
-  def IpRateLimitedAction3: ActionBuilder[Request, AnyContent] =
+  // 72 = 12 pièces jointes * 3 pour la marge d'erreur * 2 car POST + GET systématique à chaque PJ
+  val IpRateLimitedAction1: ActionBuilder[Request, AnyContent] =
+    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](72, 1f / 5) else Action
+  val IpRateLimitedAction2: ActionBuilder[Request, AnyContent] =
+    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](16, 1f / 5) else Action
+  val IpRateLimitedAction3: ActionBuilder[Request, AnyContent] =
     if (enableRateLimit) Action andThen ipRateLimitFilter[Request](3, 1f / 5) else Action
 }
 
