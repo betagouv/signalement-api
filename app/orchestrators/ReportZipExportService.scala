@@ -8,6 +8,7 @@ import org.apache.pekko.util.ByteString
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.report.ReportFile
+import models.report.ReportFileApi
 import play.api.Logger
 import services.ZipBuilder.ReportZipEntryName
 import services.PDFService
@@ -48,7 +49,7 @@ class ReportZipExportService(
 
   private def buildReportAttachmentsSources(
       creationDate: OffsetDateTime,
-      reportFiles: Seq[ReportFile]
+      reportFiles: Seq[ReportFileApi]
   ) = for {
     existingFiles <- reportFiles.traverse(f =>
       s3Service.exists(f.storageFilename).map(exists => (f, exists))
@@ -70,7 +71,7 @@ class ReportZipExportService(
       file
     })
     reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
-      buildReportAttachmentSource(creationDate, file, i + 1)
+      buildReportAttachmentSource(creationDate, ReportFileApi.build(file), i + 1)
     }
   } yield ZipBuilder.buildZip(reportAttachmentSources)
 
@@ -88,7 +89,7 @@ class ReportZipExportService(
 
   private def buildReportAttachmentSource(
       creationDate: OffsetDateTime,
-      reportFile: ReportFile,
+      reportFile: ReportFileApi,
       index: Int
   ): (ReportZipEntryName, Source[ByteString, Unit]) = {
     val source = s3Service.downloadFromBucket(reportFile.storageFilename).mapMaterializedValue(_ => ())

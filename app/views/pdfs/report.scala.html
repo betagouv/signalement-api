@@ -19,7 +19,7 @@
         consumerReviewOption: Option[ResponseConsumerReview],
         engagementReviewOption: Option[EngagementReview],
         companyEvents: Seq[(Event, Option[User])],
-        files: Seq[ReportFile]
+        files: Seq[ReportFileApi]
 )(
         implicit frontRoute: FrontRoute, userRoleOpt: Option[UserRole] = None, messageProvider: MessagesProvider
 )
