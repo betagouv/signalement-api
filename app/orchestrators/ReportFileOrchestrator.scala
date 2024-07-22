@@ -11,6 +11,9 @@ import controllers.error.AppError._
 import models._
 import models.report._
 import models.report.reportfile.ReportFileId
+import orchestrators.ReportFileOrchestrator.NotScanned
+import orchestrators.ReportFileOrchestrator.ScanStatus
+import orchestrators.ReportFileOrchestrator.Scanned
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
@@ -41,12 +44,23 @@ class ReportFileOrchestrator(
   val logger = Logger(this.getClass)
 
   def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
-    reportFileRepository.prefetchReportsFiles(reportsIds)
+    for {
+      reportFiles <- reportFileRepository.prefetchReportsFiles(reportsIds)
+      allReportFiles = reportFiles.values.flatten.toList
+      _ <- allReportFiles.traverse(validateAntivirusScanAndRescheduleScanIfNecessary)
+    } yield reportFiles
 
   def attachFilesToReport(fileIds: List[ReportFileId], reportId: UUID): Future[List[ReportFile]] = for {
     _     <- reportFileRepository.attachFilesToReport(fileIds, reportId)
     files <- reportFileRepository.retrieveReportFiles(reportId)
+    _     <- files.traverse(validateAntivirusScanAndRescheduleScanIfNecessary)
   } yield files
+
+  def retrieveReportFiles(fileIds: List[ReportFileId]): Future[List[ReportFileApi]] =
+    for {
+      files <- reportFileRepository.reportsFiles(fileIds)
+      _     <- files.traverse(validateAntivirusScanAndRescheduleScanIfNecessary)
+    } yield files.map(ReportFileApi.build)
 
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
     for {
@@ -127,13 +141,16 @@ class ReportFileOrchestrator(
       .get(reportFileId)
       .flatMap {
         case Some(reportFile) =>
-          validateAntivirusScanAndRescheduleScanIfNecessary(reportFile)
+          validateAntivirusScanAndRescheduleScanIfNecessary(reportFile).map {
+            case (Scanned, file)    => Right(file)
+            case (NotScanned, file) => Left(AttachmentNotReady(file.id): AppError)
+          }
         case _ => Future.successful(Left(AttachmentNotFound(reportFileId, filename)))
       }
 
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
-  ): Future[Either[AppError, ReportFile]] =
+  ): Future[(ScanStatus, ReportFile)] =
     if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
@@ -142,18 +159,18 @@ class ReportFileOrchestrator(
             // Updates AvOutput only when noVirus
             reportFileRepository
               .setAvOutput(reportFile.id, avOutput)
-              .map(_ => Right(reportFile.copy(avOutput = Some(avOutput))))
+              .map(_ => (Scanned, reportFile.copy(avOutput = Some(avOutput))))
           case _ =>
             antivirusService
               .reScan(List(ScanCommand(reportFile.id.value.toString, reportFile.storageFilename)))
-              .map(_ => Left(AttachmentNotReady(reportFile.id): AppError))
+              .map(_ => (NotScanned, reportFile))
         }
       } else {
         antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
-        Left(AttachmentNotReady(reportFile.id): AppError).pure[Future]
+        (NotScanned, reportFile).pure[Future]
       }
     } else {
-      Future.successful(Right(reportFile))
+      Future.successful((Scanned, reportFile))
     }
 
   def downloadReportFilesArchive(
@@ -162,23 +179,31 @@ class ReportFileOrchestrator(
   ): Future[Source[ByteString, Future[IOResult]]] =
     for {
       reportFiles <- reportFileRepository.retrieveReportFiles(report.id)
+
       errorOrReportFiles <- reportFiles.traverse(validateAntivirusScanAndRescheduleScanIfNecessary).recover { e =>
         logger.warnWithTitle(
           "antivirus_scan_error",
           s"Cannot validate file scan status for files with report : ${report.id} ",
           e
         )
+        // Cannot validate file scan status from scan service, proceeding with files that have already been scanned
         reportFiles.collect {
-          case f if f.avOutput.nonEmpty => Right(f)
+          case file if file.avOutput.nonEmpty => (Scanned, file)
         }
-
       }
       filteredFilesByOrigin = errorOrReportFiles.collect {
-        case Right(value) if origin.contains(value.origin) || origin.isEmpty =>
+        case (Scanned, value) if origin.contains(value.origin) || origin.isEmpty =>
           value
       }
       _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
       res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
     } yield res
+
+}
+
+object ReportFileOrchestrator {
+  sealed trait ScanStatus
+  case object Scanned    extends ScanStatus
+  case object NotScanned extends ScanStatus
 
 }

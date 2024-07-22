@@ -8,6 +8,7 @@ import java.util.UUID
 import scala.concurrent.Future
 
 trait ReportFileRepositoryInterface extends TypedCRUDRepositoryInterface[ReportFile, ReportFileId] {
+  def reportsFiles(reportFiles: List[ReportFileId]): Future[List[ReportFile]]
 
   def attachFilesToReport(fileIds: List[ReportFileId], reportId: UUID): Future[Int]
 

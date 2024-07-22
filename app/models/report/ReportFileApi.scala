@@ -21,4 +21,7 @@ object ReportFileApi {
 
   def build(reportFile: ReportFile) =
     reportFile.into[ReportFileApi].withFieldComputed(_.isScanned, _.avOutput.isDefined).transform
+
+  def buildForFileOwner(reportFile: ReportFile) =
+    reportFile.into[ReportFileApi].withFieldConst(_.isScanned, true).transform
 }
