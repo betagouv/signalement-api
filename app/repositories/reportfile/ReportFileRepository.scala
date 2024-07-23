@@ -35,6 +35,16 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .result
     )
 
+  override def reportsFiles(reportFiles: List[ReportFileId]): Future[List[ReportFile]] =
+    db.run(
+      table
+        .filter(
+          _.id inSetBind reportFiles
+        )
+        .to[List]
+        .result
+    )
+
   override def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
     db.run(
       table

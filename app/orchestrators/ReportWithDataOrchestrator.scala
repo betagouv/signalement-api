@@ -6,7 +6,7 @@ import models.company.Company
 import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.Report
-import models.report.ReportFile
+import models.report.ReportFileApi
 import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReview
 import play.api.Logger
@@ -30,7 +30,7 @@ case class ReportWithData(
     consumerReviewOption: Option[ResponseConsumerReview],
     engagementReviewOption: Option[EngagementReview],
     companyEvents: Seq[(Event, Option[User])],
-    files: Seq[ReportFile]
+    files: Seq[ReportFileApi]
 )
 
 class ReportWithDataOrchestrator(
@@ -72,7 +72,7 @@ class ReportWithDataOrchestrator(
               consumerReviewOption,
               engagementReviewOption,
               companyEvents,
-              reportFiles
+              reportFiles.map(ReportFileApi.build(_))
             )
           }
         } match {

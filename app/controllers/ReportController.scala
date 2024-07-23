@@ -157,7 +157,16 @@ class ReportController(
         maybeAssignedMinimalUser = maybeAssignedUser.map(MinimalUser.fromUser)
       } yield viewedReportWithMetadata
         .map(r =>
-          Ok(Json.toJson(ReportWithFilesAndAssignedUser(r.report, r.metadata, maybeAssignedMinimalUser, reportFiles)))
+          Ok(
+            Json.toJson(
+              ReportWithFilesAndAssignedUser(
+                r.report,
+                r.metadata,
+                maybeAssignedMinimalUser,
+                reportFiles.map(ReportFileApi.build(_))
+              )
+            )
+          )
         )
         .getOrElse(NotFound)
     }
