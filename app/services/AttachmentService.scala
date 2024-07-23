@@ -4,6 +4,7 @@ import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
+import models.report.ReportFileApi
 import play.api.Environment
 import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
@@ -82,7 +83,16 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
         AttachmentData(
           "Signalement.pdf",
           pdfService.getPdfData(
-            views.html.pdfs.report(report, maybeCompany, Seq((event, None)), None, None, None, Seq.empty, files)(
+            views.html.pdfs.report(
+              report,
+              maybeCompany,
+              Seq((event, None)),
+              None,
+              None,
+              None,
+              Seq.empty,
+              files.map(ReportFileApi.build(_))
+            )(
               frontRoute,
               None,
               messagesProvider

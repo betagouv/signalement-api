@@ -16,6 +16,8 @@ import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.libs.Files
+import play.api.libs.json.JsError
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
@@ -47,6 +49,21 @@ class ReportFileController(
     reportFileOrchestrator
       .downloadReportAttachment(uuid, filename)
       .map(signedUrl => Redirect(signedUrl))
+  }
+
+  def retrieveReportFiles(): Action[JsValue] = UserAwareAction.async(parse.json) { request =>
+    // Validate the incoming JSON request body against the expected format
+    request.body
+      .validate[List[ReportFileId]]
+      .fold(
+        // If validation fails, return a BadRequest with the error details
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        // If validation succeeds, process the list and return the result
+        list =>
+          reportFileOrchestrator
+            .retrieveReportFiles(list)
+            .map(files => Ok(Json.toJson(files)))
+      )
   }
 
   def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = IpRateLimitedAction1.async { _ =>
@@ -91,7 +108,7 @@ class ReportFileController(
             tmpFile,
             dataPart
           )
-      } yield Ok(Json.toJson(reportFile))
+      } yield Ok(Json.toJson(ReportFileApi.buildForFileOwner(reportFile)))
     }
 
   private def validateMaxSize(file: File): Future[Unit] =

@@ -23,6 +23,7 @@ import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
+import services.antivirus.AntivirusServiceInterface
 import services.emails.MailRetriesService.EmailRequest
 import services.emails.MailRetriesService
 import tasks.company.CompanySyncServiceInterface
@@ -126,6 +127,8 @@ class DefaultApplicationLoader(
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
+
+      override def antivirusService: AntivirusServiceInterface = new AntivirusServiceMock()
 
       override def configuration: Configuration = maybeConfiguration.getOrElse(super.configuration)
 

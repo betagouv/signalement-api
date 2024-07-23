@@ -94,6 +94,7 @@ import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
 import services._
 import services.antivirus.AntivirusService
+import services.antivirus.AntivirusServiceInterface
 import services.emails.MailRetriesService
 import services.emails.MailService
 import slick.basic.DatabaseConfig
@@ -365,7 +366,8 @@ class SignalConsoComponents(
   val reportZipExportService =
     new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
 
-  val antivirusService = new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
+  def antivirusService: AntivirusServiceInterface =
+    new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
 
   val reportFileOrchestrator =
     new ReportFileOrchestrator(

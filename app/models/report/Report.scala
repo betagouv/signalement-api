@@ -170,7 +170,7 @@ case class ReportWithFilesAndAssignedUser(
     report: Report,
     metadata: Option[ReportMetadata],
     assignedUser: Option[MinimalUser],
-    files: List[ReportFile]
+    files: List[ReportFileApi]
 )
 object ReportWithFilesAndAssignedUser {
   implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
