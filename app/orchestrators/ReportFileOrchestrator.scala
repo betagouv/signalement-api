@@ -91,9 +91,12 @@ class ReportFileOrchestrator(
       reportFile
     }
 
-  private def requestScan(reportFile: ReportFile, file: java.io.File): Any =
-    if (antivirusService.isActive) {
+  private def requestScan(reportFile: ReportFile, file: java.io.File): Unit =
+    if (antivirusService.bypassScan) {
+      ()
+    } else if (antivirusService.isActive) {
       antivirusService.scan(reportFile.id, reportFile.storageFilename)
+      ()
     } else {
       antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
     }
@@ -151,7 +154,7 @@ class ReportFileOrchestrator(
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
   ): Future[(ScanStatus, ReportFile)] =
-    if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
+    if ((reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) || !antivirusService.bypassScan) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
         antivirusService.fileStatus(reportFile.id).flatMap {

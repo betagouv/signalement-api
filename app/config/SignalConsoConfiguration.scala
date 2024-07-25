@@ -39,5 +39,6 @@ case class MobileAppConfiguration(
 case class AntivirusServiceConfiguration(
     antivirusApiUrl: String,
     antivirusApiKey: String,
-    active: Boolean
+    active: Boolean,
+    bypassScan: Boolean
 )

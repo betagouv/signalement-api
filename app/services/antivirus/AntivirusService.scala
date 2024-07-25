@@ -25,6 +25,7 @@ trait AntivirusServiceInterface {
   def reScan(reportFileId: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]]
   def fileStatus(reportFileId: ReportFileId): Future[Either[AntivirusServiceError, FileData]]
 
+  def bypassScan: Boolean
   def isActive: Boolean
 }
 
@@ -142,6 +143,8 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
   }
 
   override def isActive: Boolean = conf.active
+
+  override def bypassScan: Boolean = conf.bypassScan
 }
 
 object AntivirusService {
