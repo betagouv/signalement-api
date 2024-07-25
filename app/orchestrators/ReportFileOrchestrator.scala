@@ -99,6 +99,7 @@ class ReportFileOrchestrator(
       ()
     } else {
       antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
+      ()
     }
 
   def removeFromReportId(reportId: UUID): Future[List[Int]] =
