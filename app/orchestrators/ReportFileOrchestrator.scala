@@ -4,6 +4,7 @@ import actors.AntivirusScanActor
 import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
+import cats.implicits.toFunctorOps
 import cats.implicits.toTraverseOps
 import cats.instances.future._
 import controllers.error.AppError
@@ -85,17 +86,19 @@ class ReportFileOrchestrator(
         .run()
 
       _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
-    } yield {
       // Fire and forget scan, if it fails for whatever reason (because external service) the file will be rescanned when user will request it
-      requestScan(reportFile, file)
-      reportFile
-    }
+      _ <- requestScan(reportFile, file)
+    } yield reportFile
 
-  private def requestScan(reportFile: ReportFile, file: java.io.File): Any =
-    if (antivirusService.isActive) {
-      antivirusService.scan(reportFile.id, reportFile.storageFilename)
+  private def requestScan(reportFile: ReportFile, file: java.io.File): Future[Unit] =
+    if (antivirusService.bypassScan) {
+      Future.unit
+    } else if (antivirusService.isActive) {
+      antivirusService.scan(reportFile.id, reportFile.storageFilename).void
+
     } else {
       antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
+      Future.unit
     }
 
   def removeFromReportId(reportId: UUID): Future[List[Int]] =
@@ -151,7 +154,7 @@ class ReportFileOrchestrator(
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
   ): Future[(ScanStatus, ReportFile)] =
-    if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
+    if ((reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) || !antivirusService.bypassScan) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
         antivirusService.fileStatus(reportFile.id).flatMap {

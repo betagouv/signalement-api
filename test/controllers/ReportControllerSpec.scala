@@ -324,7 +324,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 reportFileMaxSize = 5,
                 reportMaxNumberOfAttachments = 20,
                 enableRateLimit = false,
-                antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true)
+                antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true, false)
               )
 
             override def emailConfiguration: EmailConfiguration =

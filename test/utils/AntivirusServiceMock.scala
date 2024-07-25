@@ -35,4 +35,6 @@ class AntivirusServiceMock extends AntivirusServiceInterface {
   )
 
   override def isActive: Boolean = true
+
+  override def bypassScan: Boolean = false
 }
