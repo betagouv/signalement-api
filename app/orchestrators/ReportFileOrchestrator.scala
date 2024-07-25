@@ -154,7 +154,7 @@ class ReportFileOrchestrator(
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
   ): Future[(ScanStatus, ReportFile)] =
-    if ((reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) || !antivirusService.bypassScan) {
+    if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined && !antivirusService.bypassScan) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
         antivirusService.fileStatus(reportFile.id).flatMap {
