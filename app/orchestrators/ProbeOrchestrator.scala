@@ -179,7 +179,7 @@ class ProbeOrchestrator(
         "Nombre d'envois de courriers d'activation",
         runInterval = 24.hour,
         evaluationPeriod = 14.days,
-        expectedRange = ExpectedRange(min = Some(100), max = Some(3000)),
+        expectedRange = ExpectedRange(min = Some(100)),
         query = (dateTime, evaluationPeriod) => countEvents(POST_ACCOUNT_ACTIVATION_DOC, dateTime, evaluationPeriod)
       ),
       buildProbe(
@@ -197,7 +197,7 @@ class ProbeOrchestrator(
         "Nombre d'activations de compte des pros",
         runInterval = 6.hour,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(3), max = Some(300)),
+        expectedRange = ExpectedRange(min = Some(3)),
         query = (dateTime, evaluationPeriod) => countEvents(ACCOUNT_ACTIVATION, dateTime, evaluationPeriod)
       ),
       buildProbe(
@@ -453,7 +453,7 @@ object ProbeOrchestrator {
 
   def isDuringTypicalBusyHours(offsetDateTime: OffsetDateTime) = {
     val parisLocalTime = offsetDateTime.atZoneSameInstant(ZoneId.of("Europe/Paris")).toLocalTime
-    parisLocalTime.isAfter(LocalTime.of(6, 0)) &&
+    parisLocalTime.isAfter(LocalTime.of(8, 0)) &&
     parisLocalTime.isBefore(LocalTime.of(22, 0))
   }
 
