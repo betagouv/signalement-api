@@ -91,9 +91,7 @@ class ReportFileOrchestrator(
     } yield reportFile
 
   private def requestScan(reportFile: ReportFile, file: java.io.File): Future[Unit] =
-    if (antivirusService.bypassScan) {
-      Future.unit
-    } else if (antivirusService.isActive) {
+    if (antivirusService.isActive) {
       antivirusService.scan(reportFile.id, reportFile.storageFilename).void
 
     } else {
@@ -154,12 +152,10 @@ class ReportFileOrchestrator(
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
   ): Future[(ScanStatus, ReportFile)] =
-    if (antivirusService.bypassScan) {
-      Future.successful((Scanned, reportFile))
-    } else if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
+    if (reportFile.avOutput.isEmpty && reportFile.reportId.isDefined) {
       logger.info("Attachment has not been scan by antivirus, rescheduling scan")
       if (antivirusService.isActive) {
-        antivirusService.fileStatus(reportFile.id).flatMap {
+        antivirusService.fileStatus(reportFile).flatMap {
           case Right(FileData(_, _, _, _, Some(NoVirus), Some(avOutput))) =>
             // Updates AvOutput only when noVirus
             reportFileRepository
