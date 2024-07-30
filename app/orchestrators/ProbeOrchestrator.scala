@@ -310,8 +310,8 @@ class ProbeOrchestrator(
         121,
         "reportfiles_consumer_probe",
         "Nombre d'uploads de fichiers par des consos",
-        runInterval = 1.hour,
-        evaluationPeriod = 2.hours,
+        runInterval = 2.hour,
+        evaluationPeriod = 4.hours,
         expectedRange = ExpectedRange(min = Some(1), max = Some(1500)),
         query = (dateTime, evaluationPeriod) =>
           reportFileRepository
