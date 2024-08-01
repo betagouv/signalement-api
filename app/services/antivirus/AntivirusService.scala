@@ -1,6 +1,7 @@
 package services.antivirus
 
 import config.AntivirusServiceConfiguration
+import models.report.ReportFile
 import models.report.reportfile.ReportFileId
 import play.api.Logging
 import services.antivirus.AntivirusService.AntivirusScanRequestFailed
@@ -23,8 +24,9 @@ import scala.concurrent.Future
 trait AntivirusServiceInterface {
   def scan(reportFileId: ReportFileId, storageFileName: String): Future[Either[AntivirusServiceError, Unit]]
   def reScan(reportFileId: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]]
-  def fileStatus(reportFileId: ReportFileId): Future[Either[AntivirusServiceError, FileData]]
+  def fileStatus(reportFile: ReportFile): Future[Either[AntivirusServiceError, FileData]]
 
+  def bypassScan: Boolean
   def isActive: Boolean
 }
 
@@ -40,108 +42,124 @@ class AntivirusService(conf: AntivirusServiceConfiguration, backend: SttpBackend
   override def scan(
       reportFileId: ReportFileId,
       storageFileName: String
-  ): Future[Either[AntivirusServiceError, Unit]] = {
-
-    val request = basicRequest
-      .headers(Header("X-Api-Key", conf.antivirusApiKey))
-      .post(
-        uri"${conf.antivirusApiUrl}".withWholePath(ScanEndpoint)
-      )
-      .body(ScanCommand(reportFileId.value.toString, storageFileName))
-
-    val response =
-      request.send(backend)
-
-    response
-      .map { res =>
-        res.code match {
-          case StatusCode.NoContent | StatusCode.Ok =>
-            logger.debug("Scan request successful: No content returned as expected.")
-            Right(())
-          case _ =>
-            logger.warnWithTitle(
-              "antivirus_scan_request_error",
-              s"Unexpected response status for scan reportId : ${reportFileId.value} : ${res.code}, body: ${res.body}"
-            )
-            Left(AntivirusScanRequestFailed)
-        }
-      }
-      .recover { case error: Throwable =>
-        logger.warnWithTitle(
-          "antivirus_scan_request_error",
-          s"Cannot send antivirus request for reportId : ${reportFileId.value}",
-          error
+  ): Future[Either[AntivirusServiceError, Unit]] =
+    if (conf.bypassScan) { Future.successful(Right(())) }
+    else {
+      val request = basicRequest
+        .headers(Header("X-Api-Key", conf.antivirusApiKey))
+        .post(
+          uri"${conf.antivirusApiUrl}".withWholePath(ScanEndpoint)
         )
-        Left(AntivirusServiceUnexpectedError)
-      }
+        .body(ScanCommand(reportFileId.value.toString, storageFileName))
 
-  }
+      val response =
+        request.send(backend)
 
-  override def reScan(scanCommands: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]] = {
-
-    val request = basicRequest
-      .headers(Header("X-Api-Key", conf.antivirusApiKey))
-      .post(
-        uri"${conf.antivirusApiUrl}".withWholePath(ReScanEndPoint)
-      )
-      .body(scanCommands)
-
-    val response =
-      request.send(backend)
-
-    response
-      .map { res =>
-        res.code match {
-          case StatusCode.NoContent | StatusCode.Ok =>
-            logger.debug("Scan request successful: No content returned as expected.")
-            Right(())
-          case _ =>
-            logger.warnWithTitle(
-              "antivirus_scan_request_error",
-              s"Unexpected response status for scan reportId  (${scanCommands.mkString(",")}): ${res.code}, body: ${res.body}"
-            )
-            Left(AntivirusScanRequestFailed)
+      response
+        .map { res =>
+          res.code match {
+            case StatusCode.NoContent | StatusCode.Ok =>
+              logger.debug("Scan request successful: No content returned as expected.")
+              Right(())
+            case _ =>
+              logger.warnWithTitle(
+                "antivirus_scan_request_error",
+                s"Unexpected response status for scan reportId : ${reportFileId.value} : ${res.code}, body: ${res.body}"
+              )
+              Left(AntivirusScanRequestFailed)
+          }
         }
-      }
-      .recover { case error: Throwable =>
-        logger.warnWithTitle(
-          "antivirus_scan_request_error",
-          s"Cannot send antivirus request for reportId :  (${scanCommands.mkString(",")})",
-          error
-        )
-        Left(AntivirusServiceUnexpectedError)
-      }
-
-  }
-
-  override def fileStatus(reportFileId: ReportFileId): Future[Either[AntivirusServiceError, FileData]] = {
-
-    val request = basicRequest
-      .headers(Header("X-Api-Key", conf.antivirusApiKey))
-      .get(
-        uri"${conf.antivirusApiUrl}".withWholePath(s"$ScanStatusEndPoint/${reportFileId.value.toString}")
-      )
-      .response(asJson[FileData])
-
-    val response =
-      request.send(backend)
-    response
-      .map(_.body)
-      .map {
-        case Right(fileData) =>
-          Right(fileData)
-        case Left(error) =>
+        .recover { case error: Throwable =>
           logger.warnWithTitle(
-            "antivirus_scan_status_request_error",
-            s"Cannot get antivirus scan status for reportId :  $reportFileId",
+            "antivirus_scan_request_error",
+            s"Cannot send antivirus request for reportId : ${reportFileId.value}",
             error
           )
-          Left(AntivirusServiceFileStatusError)
-      }
+          Left(AntivirusServiceUnexpectedError)
+        }
 
-  }
+    }
+
+  override def reScan(scanCommands: List[ScanCommand]): Future[Either[AntivirusServiceError, Unit]] =
+    if (conf.bypassScan) { Future.successful(Right(())) }
+    else {
+      val request = basicRequest
+        .headers(Header("X-Api-Key", conf.antivirusApiKey))
+        .post(
+          uri"${conf.antivirusApiUrl}".withWholePath(ReScanEndPoint)
+        )
+        .body(scanCommands)
+
+      val response =
+        request.send(backend)
+
+      response
+        .map { res =>
+          res.code match {
+            case StatusCode.NoContent | StatusCode.Ok =>
+              logger.debug("Scan request successful: No content returned as expected.")
+              Right(())
+            case _ =>
+              logger.warnWithTitle(
+                "antivirus_scan_request_error",
+                s"Unexpected response status for scan reportId  (${scanCommands.mkString(",")}): ${res.code}, body: ${res.body}"
+              )
+              Left(AntivirusScanRequestFailed)
+          }
+        }
+        .recover { case error: Throwable =>
+          logger.warnWithTitle(
+            "antivirus_scan_request_error",
+            s"Cannot send antivirus request for reportId :  (${scanCommands.mkString(",")})",
+            error
+          )
+          Left(AntivirusServiceUnexpectedError)
+        }
+    }
+
+  override def fileStatus(reportFile: ReportFile): Future[Either[AntivirusServiceError, FileData]] =
+    if (conf.bypassScan) { bypassedScan(reportFile) }
+    else {
+      val request = basicRequest
+        .headers(Header("X-Api-Key", conf.antivirusApiKey))
+        .get(
+          uri"${conf.antivirusApiUrl}".withWholePath(s"$ScanStatusEndPoint/${reportFile.id.value.toString}")
+        )
+        .response(asJson[FileData])
+
+      val response =
+        request.send(backend)
+      response
+        .map(_.body)
+        .map {
+          case Right(fileData) =>
+            Right(fileData)
+          case Left(error) =>
+            logger.warnWithTitle(
+              "antivirus_scan_status_request_error",
+              s"Cannot get antivirus scan status for reportId :  ${reportFile.id.toString}",
+              error
+            )
+            Left(AntivirusServiceFileStatusError)
+        }
+    }
 
   override def isActive: Boolean = conf.active
+
+  override def bypassScan: Boolean = conf.bypassScan
+
+  def bypassedScan(reportFile: ReportFile) = Future.successful(
+    Right(
+      FileData(
+        reportFile.id.toString,
+        reportFile.id.toString,
+        reportFile.creationDate,
+        reportFile.storageFilename,
+        Some(1),
+        Some("Scanned bypassed")
+      )
+    )
+  )
 }
 
 object AntivirusService {

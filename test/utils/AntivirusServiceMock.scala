@@ -1,5 +1,6 @@
 package utils
 
+import models.report.ReportFile
 import models.report.reportfile.ReportFileId
 import services.antivirus.AntivirusService
 import services.antivirus.AntivirusServiceInterface
@@ -20,14 +21,14 @@ class AntivirusServiceMock extends AntivirusServiceInterface {
     Future.successful(Right(()))
 
   override def fileStatus(
-      reportFileId: ReportFileId
+      reportFile: ReportFile
   ): Future[Either[AntivirusService.AntivirusServiceError, FileData]] = Future.successful(
     Right(
       FileData(
-        reportFileId.value.toString,
-        reportFileId.value.toString,
+        reportFile.id.value.toString,
+        reportFile.id.value.toString,
         OffsetDateTime.now(),
-        reportFileId.value.toString,
+        reportFile.id.value.toString,
         Some(1),
         avOutput = Some("No virus")
       )
@@ -35,4 +36,6 @@ class AntivirusServiceMock extends AntivirusServiceInterface {
   )
 
   override def isActive: Boolean = true
+
+  override def bypassScan: Boolean = false
 }
