@@ -50,6 +50,7 @@ import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Logs.RichLogger
 import utils._
 
 import java.time.LocalDate
@@ -274,12 +275,40 @@ class ReportOrchestrator(
       } else ()
     }
 
-  private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] =
-    reportDraft.companyActivityCode match {
-      case Some(activityCode) if activityCode.startsWith("84.") =>
-        Future.failed(AppError.CannotReportPublicAdministration)
-      case _ => Future.successful(Done)
-    }
+  private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] = {
+
+    def validateSiretExistsOnEntrepriseApi(siret: SIRET) = companySyncService
+      .companyBySiret(siret)
+      .flatMap {
+        case Some(_) => Future.unit
+        case None    => Future.failed(CompanySiretNotFound(siret))
+      }
+      .recoverWith { case error =>
+        // We should accept the reports anyway if there is something wrong during the process
+        logger
+          .warnWithTitle("report_company_check_error", "Unable to check company siret on company service", error)
+        Future.unit
+      }
+
+    for {
+      _ <- reportDraft.companyActivityCode match {
+        case Some(activityCode) if activityCode.startsWith("84.") =>
+          Future.failed(AppError.CannotReportPublicAdministration)
+        case _ => Future.unit
+      }
+      _ <- reportDraft.companySiret match {
+        case Some(siret) =>
+          // Try to check if siret exist in signal conso database
+          companyRepository.findBySiret(siret).flatMap {
+            case Some(_) => Future.unit
+            case None    =>
+              // If not found we check using SignalConsoEntrepriseApi
+              validateSiretExistsOnEntrepriseApi(siret)
+          }
+        case None => Future.unit
+      }
+    } yield Done
+  }
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
