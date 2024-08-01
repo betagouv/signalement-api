@@ -283,13 +283,12 @@ class ReportOrchestrator(
         // We should accept the reports anyway if there is something wrong during the process
         logger
           .warnWithTitle("report_company_check_error", "Unable to check company siret on company service", error)
-        Future.unit
+        Future.successful(Some(()))
       }
       .flatMap {
         case Some(_) => Future.unit
         case None    => Future.failed(CompanySiretNotFound(siret))
       }
-
 
     for {
       _ <- reportDraft.companyActivityCode match {
