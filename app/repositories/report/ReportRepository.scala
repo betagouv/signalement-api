@@ -583,14 +583,10 @@ object ReportRepository {
         table.tags @& filter.withoutTags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        table.adminSearchColumn @@ plainToTsQuery(details)
-//        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ " " ++
-//          ArrayToStringSQLFunction(table.details, ",", "") ++ " " ++
-//          table.station.getOrElse("") ++ " " ++
-//          table.train.getOrElse("") ++ " " ++
-//          table.ter.getOrElse("") ++ " " ++
-//          table.nightTrain.getOrElse("") ++ " " ++
-//          table.influencerName.getOrElse("") regexLike s"$details"
+        val englishQuery = table.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
+        val frenchQuery  = table.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
+
+        Case If (table.lang) === Locale.ENGLISH Then englishQuery Else frenchQuery
       }
       .filterOpt(filter.description) { case (table, description) =>
         // unique separator use to match the string between  "Description :" et and separator
@@ -662,8 +658,14 @@ object ReportRepository {
         table.barcodeProductId.isDefined === barcodeRequired
       }
       .filterOpt(filter.fullText) { case (table, fullText) =>
-        (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText)) ||
-        table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+        val englishQuery =
+          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
+            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+
+        val frenchQuery =
+          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
+            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+        Case If (table.lang) === Locale.ENGLISH Then englishQuery Else frenchQuery
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
