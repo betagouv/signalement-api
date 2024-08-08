@@ -1063,14 +1063,7 @@ class ReportOrchestrator(
       reportWithMetadata <- reportRepository.getFor(Some(user.userRole), reportId)
       report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
-      address = Address(
-        number = company.flatMap(_.address.number),
-        street = company.flatMap(_.address.street),
-        addressSupplement = company.flatMap(_.address.addressSupplement),
-        postalCode = company.flatMap(_.address.postalCode).orElse(report.flatMap(_.companyAddress.postalCode)),
-        city = company.flatMap(_.address.city),
-        country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
-      )
+      address = Address.merge(company.map(_.address), report.map(_.companyAddress))
       visibleReportWithMetadata <-
         if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
           Future.successful(reportWithMetadata)
