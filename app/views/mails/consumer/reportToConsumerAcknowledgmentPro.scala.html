@@ -39,6 +39,8 @@
             @Messages("ConsumerReportAckProEmail.signalementInfonde")
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+            <br />
+            <span>@Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))</span>
         </p>
     }
 
@@ -47,6 +49,8 @@
             @Messages("ConsumerReportAckProEmail.signalementNonConcerne")
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+            <br />
+            <span>@Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))</span>
         </p>
     }
 

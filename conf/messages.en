@@ -42,6 +42,7 @@ ConsumerReportAckProEmail.neutral=Neutral
 ConsumerReportAckProEmail.negative=Negative
 ConsumerReportAckProEmail.signalementInfonde=The company deemed this report unfounded:
 ConsumerReportAckProEmail.signalementNonConcerne=The company stated that this report does not concern their business:
+ConsumerReportAckProEmail.signalementNonAccepteHelp=You can still continue the process to find a solution or obtain compensation:  : <a href="https://signal.conso.gouv.fr/en/litige" target="_blank">continue the process </a>
 ConsumerReportAckProEmail.signalementAccepte=With its response, the company committed to considering your report. It made the following commitment:
 ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=You will receive a new email in {0} days to ask if the company has fulfilled its commitment. Thank you for your patience and please refrain from submitting another report or contacting support before the end of this period.
 
