@@ -10,6 +10,7 @@ import java.time._
 import java.util.Locale
 import java.util.UUID
 import ReportColumnType._
+import com.github.tminglei.slickpg.TsVector
 import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
@@ -71,6 +72,10 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def nightTrain                         = column[Option[String]]("night_train")
   def station                            = column[Option[String]]("station")
   def rappelConsoId                      = column[Option[Int]]("rappel_conso_id")
+
+  def adminSearchColumn              = column[TsVector]("admin_search_column")
+  def proSearchColumn                = column[TsVector]("pro_search_column")
+  def proSearchColumnWithoutConsumer = column[TsVector]("pro_search_column_without_consumer")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,

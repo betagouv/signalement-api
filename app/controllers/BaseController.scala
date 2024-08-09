@@ -78,7 +78,7 @@ abstract class BaseController(
 
   // We should always use our wrappers, to get our error handling
   // We must NOT bind Action to UnsecuredAction as it was before
-  // It has not the same bahaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
+  // It has not the same behaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
   override val Action: ActionBuilder[Request, AnyContent] =
     super.Action andThen new ErrorHandlerActionFunction[Request]()
 
