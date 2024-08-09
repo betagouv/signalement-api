@@ -8,5 +8,5 @@ case class PreFilter(
 object PreFilter {
   val NoFilter: PreFilter = PreFilter(None, List.empty)
   val DGALFilter: PreFilter =
-    PreFilter(Some(ReportCategory.IntoxicationAlimentaire), List(ReportTag.Hygiene, ReportTag.ProduitAlimentaire))
+    PreFilter(Some(ReportCategory.IntoxicationAlimentaire), List(ReportTag.AlimentationMaterielAnimaux, ReportTag.Hygiene, ReportTag.ProduitAlimentaire))
 }
