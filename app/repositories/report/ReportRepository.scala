@@ -59,6 +59,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
     .log("user")
 
+  // To stream PG properly, some parameters are required, see https://scala-slick.org/doc/stable/dbio.html
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = db.stream(
     table
       .joinLeft(CompanyTable.table)
@@ -130,7 +131,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
             case _             => table.lang =!= Locale.FRENCH
           }
         }
-        .filterIf(filters.departments.nonEmpty) { case (table) =>
+        .filterIf(filters.departments.nonEmpty) { table =>
           filters.departments
             .flatMap(toPostalCode)
             .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
@@ -492,6 +493,15 @@ object ReportRepository {
     }
   }
 
+  // Utilisé pour caster un type mal généré par slick : @>
+  // Cette fonction attend le même type à gauche et à droite
+  // mais slick génère varchar[] @> text[]
+  private val castVarCharArrayToTextArray = SimpleExpression.unary[List[String], List[String]] { (s, qb) =>
+    qb.sqlBuilder += "CAST( ": Unit
+    qb.expr(s)
+    qb.sqlBuilder += " AS TEXT[])": Unit
+  }
+
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
       filter: ReportFilter
@@ -505,11 +515,11 @@ object ReportRepository {
       .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
         table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
       }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
-      }
       .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
         table.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.phone) { case (table, reportedPhone) =>
+        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
       }
       .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
         table.phone.isDefined === phoneRequired
@@ -520,22 +530,22 @@ object ReportRepository {
       .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
         table.companyCountry.isDefined === hasForeignCountry
       }
-      .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
-      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
-        table.companySiret
-          .map(siret =>
-            (siret inSetBind filter.siretSirenList
-              .filter(_.matches(SIRET.pattern))
-              .map(SIRET.fromUnsafe(_))
-              .distinct) ||
-              (SubstrSQLFunction(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
-                .filter(_.matches(SIREN.pattern))
-                .distinct)
-          )
-          .getOrElse(false)
+      .filterIf(filter.companyIds.nonEmpty)(_.companyId inSetBind filter.companyIds)
+      .filterIf(filter.siretSirenList.nonEmpty) { table =>
+        (table.companySiret inSetBind filter.siretSirenList
+          .filter(_.matches(SIRET.pattern))
+          .map(SIRET.fromUnsafe)
+          .distinct) ||
+        (SubstrOptSQLFunction(
+          table.companySiret.asColumnOf[Option[String]],
+          0,
+          10
+        ) inSetBind filter.siretSirenList
+          .filter(_.matches(SIREN.pattern))
+          .distinct)
       }
       .filterOpt(filter.siretSirenDefined) { case (table, siretSirenDefined) =>
-        if (siretSirenDefined) table.companySiret.nonEmpty else table.companySiret.isEmpty
+        table.companySiret.isDefined === siretSirenDefined
       }
       .filterOpt(filter.companyName) { case (table, companyName) =>
         table.companyName like s"${companyName}%"
@@ -543,7 +553,6 @@ object ReportRepository {
       .filterIf(filter.companyCountries.nonEmpty) { table =>
         table.companyCountry
           .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
-          .getOrElse(false)
       }
       .filterOpt(filter.start) { case (table, start) =>
         table.creationDate >= start
@@ -572,7 +581,10 @@ object ReportRepository {
           table.category === category
         }
       }
-      .filterIf(filter.status.nonEmpty)(table => table.status.inSet(filter.status.map(_.entryName)))
+      .filterIf(filter.subcategories.nonEmpty) { table =>
+        castVarCharArrayToTextArray(table.subcategories) @> filter.subcategories.toList.bind
+      }
+      .filterIf(filter.status.nonEmpty)(table => table.status.inSetBind(filter.status.map(_.entryName)))
       .filterIf(filter.withTags.nonEmpty) { table =>
         table.tags @& filter.withTags.toList.bind
       }
@@ -580,13 +592,10 @@ object ReportRepository {
         table.tags @& filter.withoutTags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ " " ++
-          ArrayToStringSQLFunction(table.details, ",", "") ++ " " ++
-          table.station.getOrElse("") ++ " " ++
-          table.train.getOrElse("") ++ " " ++
-          table.ter.getOrElse("") ++ " " ++
-          table.nightTrain.getOrElse("") ++ " " ++
-          table.influencerName.getOrElse("") regexLike s"$details"
+        val englishQuery = table.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
+        val frenchQuery  = table.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
+
+        Case If (table.lang) === Locale.ENGLISH Then englishQuery Else frenchQuery
       }
       .filterOpt(filter.description) { case (table, description) =>
         // unique separator use to match the string between  "Description :" et and separator
@@ -636,7 +645,7 @@ object ReportRepository {
           .filter(_.evaluation.inSet(filter.engagementEvaluation))
           .exists
       }
-      .filterIf(filter.departments.nonEmpty) { case (table) =>
+      .filterIf(filter.departments.nonEmpty) { table =>
         val departmentsFilter: Rep[Boolean] = filter.departments
           .flatMap(toPostalCode)
           .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
@@ -645,8 +654,8 @@ object ReportRepository {
         departmentsFilter && table.companyCountry.isEmpty
 
       }
-      .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
-        table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
+      .filterIf(filter.activityCodes.nonEmpty) { table =>
+        table.companyActivityCode.inSetBind(filter.activityCodes)
       }
       .filterOpt(filter.visibleToPro) { case (table, visibleToPro) =>
         table.visibleToPro === visibleToPro
@@ -658,10 +667,14 @@ object ReportRepository {
         table.barcodeProductId.isDefined === barcodeRequired
       }
       .filterOpt(filter.fullText) { case (table, fullText) =>
-        table.contactAgreement &&
-        toTsVector(
-          table.firstName ++ " " ++ table.lastName ++ " " ++ table.consumerReferenceNumber.asColumnOf[String]
-        ) @@ plainToTsQuery(fullText)
+        val englishQuery =
+          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
+            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+
+        val frenchQuery =
+          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
+            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+        Case If (table.lang) === Locale.ENGLISH Then englishQuery Else frenchQuery
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)

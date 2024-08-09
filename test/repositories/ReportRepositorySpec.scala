@@ -110,6 +110,19 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       tags = List(ReportTag.ProduitAlimentaire),
       status = ReportStatus.NA
     )
+  val report7 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      category = "AchatMagasin",
+      subcategories = List("z"),
+      contactAgreement = false,
+      consumerReferenceNumber = Some("XB780"),
+      firstName = "Jean",
+      lastName = "Lino",
+      visibleToPro = false
+    )
 
   val englishReport = Fixtures
     .genReportForCompany(company)
@@ -130,6 +143,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.create(report4), Duration.Inf)
     Await.result(components.reportRepository.create(report5), Duration.Inf)
     Await.result(components.reportRepository.create(report6), Duration.Inf)
+    Await.result(components.reportRepository.create(report7), Duration.Inf)
     Await.result(components.reportRepository.create(englishReport), Duration.Inf)
     Await.result(
       components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios), None)),
@@ -162,16 +176,23 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
+      "fetch for anonymous users when user is admin" in {
+        for {
+          a <- components.reportRepository.getReports(None, ReportFilter(details = Some("anonymousFirstName")))
+          b <- components.reportRepository.getReports(None, ReportFilter(details = Some("anonymousReference")))
+        } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
+      }
+
       "return all reports for an admin user" in {
         components.reportRepository
           .getReports(Some(UserRole.Admin), ReportFilter())
-          .map(result => result.entities must haveLength(8))
+          .map(result => result.entities must haveLength(9))
       }
 
       "return all reports for a DGCCRF user" in {
         components.reportRepository
           .getReports(Some(UserRole.DGCCRF), ReportFilter())
-          .map(result => result.entities must haveLength(8))
+          .map(result => result.entities must haveLength(9))
       }
 
       "return only visible to DGAL for a DGAL user" in {
