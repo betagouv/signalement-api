@@ -493,6 +493,15 @@ object ReportRepository {
     }
   }
 
+  // Utilisé pour caster un type mal généré par slick : @>
+  // Cette fonction attend le même type à gauche et à droite
+  // mais slick génère varchar[] @> text[]
+  private val castVarCharArrayToTextArray = SimpleExpression.unary[List[String], List[String]] { (s, qb) =>
+    qb.sqlBuilder += "CAST( ": Unit
+    qb.expr(s)
+    qb.sqlBuilder += " AS TEXT[])": Unit
+  }
+
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
       filter: ReportFilter
@@ -572,8 +581,8 @@ object ReportRepository {
           table.category === category
         }
       }
-      .filterOpt(filter.subcategories) { case (table, subcategories) =>
-        table.subcategories @> subcategories.bind
+      .filterIf(filter.subcategories.nonEmpty) { table =>
+        castVarCharArrayToTextArray(table.subcategories) @> filter.subcategories.toList.bind
       }
       .filterIf(filter.status.nonEmpty)(table => table.status.inSetBind(filter.status.map(_.entryName)))
       .filterIf(filter.withTags.nonEmpty) { table =>

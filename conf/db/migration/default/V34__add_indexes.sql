@@ -7,6 +7,8 @@ DROP INDEX companies_commercial_name_trgm_idx;
 DROP INDEX companies_establishment_commercial_name_trgm_idx;
 DROP INDEX companies_brand_trgm_idx;
 
+-- La fonction de base PG 'array_to_string' n'est pas immutable car elle peut prendre autre chose que du text en entrée
+-- Seules les fonctions immutables sont utilisables dans les indexes
 CREATE OR REPLACE FUNCTION immutable_array_to_string(text[], text, text)
     RETURNS text as $$ SELECT array_to_string($1, $2, $3); $$
 LANGUAGE sql IMMUTABLE;

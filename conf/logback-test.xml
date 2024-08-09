@@ -24,8 +24,8 @@
     <logger name="tasks" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="utils" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="org.flywaydb" level="ERROR"/>
-              <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>
-              <logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG"/>
+<!--              <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>-->
+<!--              <logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG"/>-->
 
     <root level="INFO">
         <appender-ref ref="ASYNCSTDOUT"/>
