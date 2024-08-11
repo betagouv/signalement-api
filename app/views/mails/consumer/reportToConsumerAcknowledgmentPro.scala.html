@@ -5,7 +5,9 @@
 @import models.report.review.ResponseEvaluation
 @import models.company.Company
 @import models.report.ReportResponseType
-@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
+
+@import utils.FrontRoute
+@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider,frontRoute: FrontRoute)
 
 @views.html.mails.layout(Messages("ConsumerReportAckProEmail.title")) {
     <p>

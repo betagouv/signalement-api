@@ -303,7 +303,7 @@ object EmailDefinitionsConsumer {
             maybeCompany,
             reportResponse,
             frontRoute.website.reportReview(report.id.toString)
-          )
+          )(messagesProvider, frontRoute)
           .toString
 
       override def getAttachements: AttachmentService => Seq[Attachment] =
