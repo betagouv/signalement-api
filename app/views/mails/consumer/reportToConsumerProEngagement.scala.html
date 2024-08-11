@@ -3,7 +3,8 @@
 @import java.net.URI
 @import models.report.review.ResponseEvaluation
 @import models.company.Company
-@(report: Report, maybeCompany: Option[Company], reportResponse: ExistingReportResponse, isResolved: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
+@import utils.FrontRoute
+@(report: Report, maybeCompany: Option[Company], reportResponse: ExistingReportResponse, isResolved: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider,frontRoute: FrontRoute)
 
 @views.html.mails.layout(Messages("ConsumerReportProEngagementEmail.title")) {
     <p>
@@ -29,7 +30,7 @@
     </p>
 
     <p>
-        @Messages("ConsumerReportProEngagementEmail.engagementReminderPeriodAgo",models.engagement.Engagement.EngagementReminderPeriod)
+        @Messages("ConsumerReportProEngagementEmail.engagementReminderPeriodAgo", models.engagement.Engagement.EngagementReminderPeriod)
         <br />
         <b>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</b>
     </p>
@@ -45,15 +46,15 @@
     <div style="display: flex; margin: 50px ">
         <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px">
             <img src='cid:happy' alt="positif" width="75" height="75">
-            <p style="text-align:center;">@Messages("ConsumerReportProEngagementEmail.positive")</p>
+            <p style="text-align: center;">@Messages("ConsumerReportProEngagementEmail.positive")</p>
         </a>
         <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px">
             <img src='cid:neutral' alt="neutre" width="75" height="75"/>
-            <p style="text-align:center;">@Messages("ConsumerReportProEngagementEmail.neutral")</p>
+            <p style="text-align: center;">@Messages("ConsumerReportProEngagementEmail.neutral")</p>
         </a>
-        <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px">
+        <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left: 20px">
             <img src='cid:sad' alt="négatif" width="75" height="75" />
-            <p style="text-align:center;">@Messages("ConsumerReportProEngagementEmail.negative")</p>
+            <p style="text-align: center;">@Messages("ConsumerReportProEngagementEmail.negative")</p>
         </a>
     </div>
     </p>
@@ -62,7 +63,12 @@
     @Html(Messages("ConsumerReportProEngagementEmail.satisfactionRequest"))
     </p>
     <p>
-    @Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))
+    @Messages("ConsumerReportProEngagementEmail.signalementNonAccepteHelp")
+    </p>
+    <p style="text-align: center; padding: 20px">                                                                                                                                                                                                                                                               <qqqqqqqq>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </qqqqqqqq>
+      <a href="@frontRoute.website.litige(report)" class="btn">
+      @Messages("ReportClosedByNoReadingEmail.continuerDemarches")
+      </a>
     </p>
     <p>
     @Html(Messages("ConsumerReportProEngagementEmail.serviceImprovement"))

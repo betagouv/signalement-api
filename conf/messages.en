@@ -67,6 +67,7 @@ ConsumerReportProEngagementEmail.signalConsoExplanationHeader=Understanding Sign
 ConsumerReportProEngagementEmail.positive=Yes
 ConsumerReportProEngagementEmail.neutral=Partially
 ConsumerReportProEngagementEmail.negative=No
+ConsumerReportProEngagementEmail.signalementNonAccepteHelp=If you are not satisfied with the response provided by the company, you can continue the process to find a solution or seek compensation :
 
 
 ConsumerReportAckProEmailOnAdminCompletion.subject=Your report is resolved
