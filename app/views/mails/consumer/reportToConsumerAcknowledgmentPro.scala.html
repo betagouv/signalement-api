@@ -41,6 +41,11 @@
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
             <br />
             <span>@Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))</span>
+            <p style="text-align: center; padding: 20px">
+                <a href="@frontRoute.website.litige(report)" class="btn">
+                @Messages("ReportClosedByNoReadingEmail.continuerDemarches")
+                </a>
+            </p>
         </p>
     }
 
