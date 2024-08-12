@@ -5,7 +5,9 @@
 @import models.report.review.ResponseEvaluation
 @import models.company.Company
 @import models.report.ReportResponseType
-@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider)
+
+@import utils.FrontRoute
+@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider,frontRoute: FrontRoute)
 
 @views.html.mails.layout(Messages("ConsumerReportAckProEmail.title")) {
     <p>
@@ -39,7 +41,15 @@
             @Messages("ConsumerReportAckProEmail.signalementInfonde")
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+            <br />
+            <span>@Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))</span>
         </p>
+        <p style="text-align: center; padding: 20px">
+            <a href="@frontRoute.website.litige(report)" class="btn">
+            @Messages("ReportClosedByNoReadingEmail.continuerDemarches")
+            </a>
+        </p>
+
     }
 
     @if(reportResponse.responseType == ReportResponseType.NOT_CONCERNED) {
@@ -47,6 +57,13 @@
             @Messages("ConsumerReportAckProEmail.signalementNonConcerne")
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
+            <br />
+            <span>@Html(Messages("ConsumerReportAckProEmail.signalementNonAccepteHelp"))</span>
+        </p>
+        <p style="text-align: center; padding: 20px">
+            <a href="@frontRoute.website.litige(report)" class="btn">
+            @Messages("ReportClosedByNoReadingEmail.continuerDemarches")
+            </a>
         </p>
     }
 
