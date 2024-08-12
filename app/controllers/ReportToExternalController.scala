@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import config.SignalConsoConfiguration
 import models.Consumer
 import models.PaginatedResult.paginatedResultWrites
 import models.report._
@@ -26,6 +27,7 @@ class ReportToExternalController(
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     authenticator: Authenticator[Consumer],
+    signalConsoConfiguration: SignalConsoConfiguration,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends ApiKeyBaseController(authenticator, controllerComponents) {
@@ -97,6 +99,7 @@ class ReportToExternalController(
         filter = filter,
         offset,
         limit,
+        signalConsoConfiguration.reportsListLimitMax,
         (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
           ReportWithFilesToExternal(
             ReportToExternal.fromReport(r.report),
