@@ -2,6 +2,8 @@ package repositories.reportfile
 
 import models.report.ReportFile
 import models.report.reportfile.ReportFileId
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.TypedCRUDRepositoryInterface
 
 import java.util.UUID
@@ -21,4 +23,6 @@ trait ReportFileRepositoryInterface extends TypedCRUDRepositoryInterface[ReportF
   def removeStorageFileName(fileId: ReportFileId): Future[Int]
 
   def count(filter: ReportFileFilter): Future[Int]
+
+  def streamOrphanReportFiles: Source[ReportFile, NotUsed]
 }
