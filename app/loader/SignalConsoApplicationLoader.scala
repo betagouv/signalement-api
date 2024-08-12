@@ -730,6 +730,7 @@ class SignalConsoComponents(
       reportFileRepository,
       reportOrchestrator,
       apiKeyAuthenticator,
+      signalConsoConfiguration,
       controllerComponents
     )
 

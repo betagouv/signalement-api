@@ -941,7 +941,8 @@ class ReportOrchestrator(
       connectedUser: User,
       filter: ReportFilter,
       offset: Option[Long],
-      limit: Option[Int]
+      limit: Option[Int],
+      maxResults: Int
   ): Future[PaginatedResult[ReportWithFiles]] =
     for {
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
@@ -962,6 +963,7 @@ class ReportOrchestrator(
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
+            maxResults,
             (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
               ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
           )
@@ -977,7 +979,13 @@ class ReportOrchestrator(
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
     for {
-      reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
+      reportsWithFiles <- getReportsForUser(
+        connectedUser,
+        filter,
+        offset,
+        limit,
+        signalConsoConfiguration.reportsListLimitMax
+      )
 
       reports   = reportsWithFiles.entities.map(_.report)
       reportsId = reports.map(_.id)
@@ -1016,10 +1024,9 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
+      maxResults: Int,
       toApi: (ReportWithMetadata, Map[UUID, List[ReportFile]]) => T
-  ): Future[PaginatedResult[T]] = {
-
-    val maxResults = signalConsoConfiguration.reportsListLimitMax
+  ): Future[PaginatedResult[T]] =
     for {
       _ <- limit match {
         case Some(limitValue) if limitValue > maxResults =>
@@ -1050,7 +1057,6 @@ class ReportOrchestrator(
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
-  }
 
   def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportWithMetadata]] =
     for {
