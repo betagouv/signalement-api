@@ -141,7 +141,8 @@ object ReportsExtractActor {
           requestedBy,
           filter = filters,
           offset = Some(0),
-          limit = Some(signalConsoConfiguration.reportsExportLimitMax)
+          limit = Some(signalConsoConfiguration.reportsExportLimitMax),
+          signalConsoConfiguration.reportsExportLimitMax
         )
         .map(_.entities.map(_.report))
       reportIds = paginatedReports.map(_.id)
