@@ -535,8 +535,6 @@ class SignalConsoComponents(
     taskRepository
   )
 
-  fileDeletionTask.runTask()
-
   val reportReminderTask = new ReportRemindersTask(
     actorSystem,
     reportRepository,
