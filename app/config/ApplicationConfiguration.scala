@@ -15,5 +15,6 @@ case class ApplicationConfiguration(
     crypter: JcaCrypterSettings,
     signer: JcaSignerSettings,
     cookie: CookieAuthenticatorSettings,
-    socialBlade: SocialBladeClientConfiguration
+    socialBlade: SocialBladeClientConfiguration,
+    websiteApi: WebsiteApiConfiguration
 )

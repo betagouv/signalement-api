@@ -1,6 +1,8 @@
 package orchestrators
 
 import cats.data.NonEmptyList
+import cats.implicits.catsSyntaxOption
+import controllers.error.AppError.WebsiteApiError
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
@@ -17,6 +19,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
+import services.WebsiteApiServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
@@ -35,18 +38,19 @@ class StatsOrchestrator(
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
     reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
-    arborescenceFr: List[ArborescenceNode],
-    arborescenceEn: List[ArborescenceNode]
+    websiteApiService: WebsiteApiServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def reportsCountBySubcategories(userRole: UserRole, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
     for {
+      maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
+      minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
       reportNodesFr <- reportRepository
         .reportsCountBySubcategories(userRole, filters, Locale.FRENCH)
-        .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
+        .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.fr, _))
       reportNodesEn <- reportRepository
         .reportsCountBySubcategories(userRole, filters, Locale.ENGLISH)
-        .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
+        .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.en, _))
     } yield ReportNodes(reportNodesFr, reportNodesEn)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
