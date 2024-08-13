@@ -23,6 +23,7 @@ import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
+import services.S3ServiceInterface
 import services.antivirus.AntivirusServiceInterface
 import services.emails.MailRetriesService.EmailRequest
 import services.emails.MailRetriesService
@@ -123,6 +124,8 @@ class DefaultApplicationLoader(
 
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
+
+      override def s3Service: S3ServiceInterface = new S3ServiceMock()
 
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
