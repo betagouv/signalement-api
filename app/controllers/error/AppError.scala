@@ -570,4 +570,11 @@ object AppError {
     override val titleForLogs: String = "file_too_long"
   }
 
+  final case object WebsiteApiError extends InternalAppError {
+    override val `type`: String  = "SC-0061"
+    override val title: String   = "Impossible de récupérer l'arborescence pour le moment"
+    override val details: String = "Impossible de récupérer l'arborescence pour le moment, l'api a renvoyé une erreur"
+    override val titleForLogs: String = "website_api_error"
+  }
+
 }

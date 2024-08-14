@@ -10,7 +10,6 @@ import authentication._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
-import models.report.ArborescenceNode
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
@@ -18,8 +17,6 @@ import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
 import play.api.db.slick.SlickComponents
-import play.api.libs.json.JsArray
-import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.Cookie
@@ -451,28 +448,7 @@ class SignalConsoComponents(
       "reports-extract-actor"
     )
 
-  // This file can be generated in the website using 'yarn minimized-anomalies'.
-  // This is the first iteration of the story, using an copied generated file from the website
-  // The second version will be to expose the file in the website and fetch it in the API at runtime.
-  val arborescenceFrAsJson = context.environment
-    .resourceAsStream("minimized-anomalies_fr.json")
-    .map(json =>
-      try Json.parse(json)
-      finally json.close()
-    )
-    .map(_.as[JsArray])
-    .map(ArborescenceNode.fromJson)
-    .get
-
-  val arborescenceEnAsJson = context.environment
-    .resourceAsStream("minimized-anomalies_en.json")
-    .map(json =>
-      try Json.parse(json)
-      finally json.close()
-    )
-    .map(_.as[JsArray])
-    .map(ArborescenceNode.fromJson)
-    .get
+  val websiteApiService = new WebsiteApiService(applicationConfiguration.websiteApi)
 
   val statsOrchestrator =
     new StatsOrchestrator(
@@ -481,8 +457,7 @@ class SignalConsoComponents(
       responseConsumerReviewRepository,
       reportEngagementReviewRepository,
       accessTokenRepository,
-      arborescenceFrAsJson,
-      arborescenceEnAsJson
+      websiteApiService
     )
 
   val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
