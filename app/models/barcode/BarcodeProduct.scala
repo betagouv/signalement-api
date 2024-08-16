@@ -11,10 +11,11 @@ import java.util.UUID
 case class BarcodeProduct(
     id: UUID = UUID.randomUUID(),
     gtin: String,
-    gs1Product: JsValue,
+    gs1Product: Option[JsValue],
     openFoodFactsProduct: Option[JsValue],
     openBeautyFactsProduct: Option[JsValue],
-    creationDate: OffsetDateTime = OffsetDateTime.now()
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
+    updateDate: OffsetDateTime = OffsetDateTime.now()
 )
 
 object BarcodeProduct {
@@ -53,8 +54,8 @@ object BarcodeProduct {
       .flatMap(extractProductNameFromOpenXFacts)
       .orElse(product.openBeautyFactsProduct.flatMap(extractProductNameFromOpenXFacts))
       .orElse(
-        (product.gs1Product \ "itemOffered" \ "productDescription")
-          .asOpt[List[LangAndValue]]
+        product.gs1Product
+          .flatMap(json => (json \ "itemOffered" \ "productDescription").asOpt[List[LangAndValue]])
           .flatMap(extractFrOrEnOrFirstLangFromGS1)
       )
 
@@ -63,8 +64,8 @@ object BarcodeProduct {
       .flatMap(extractBrandNameFromOpenXFacts)
       .orElse(product.openBeautyFactsProduct.flatMap(extractBrandNameFromOpenXFacts))
       .orElse(
-        (product.gs1Product \ "itemOffered" \ "brand" \ "brandName")
-          .asOpt[List[LangAndValue]]
+        product.gs1Product
+          .flatMap(json => (json \ "itemOffered" \ "brand" \ "brandName").asOpt[List[LangAndValue]])
           .flatMap(extractFrOrEnOrFirstLangFromGS1)
       )
 
@@ -80,9 +81,11 @@ object BarcodeProduct {
 
   val writesToWebsite: OWrites[BarcodeProduct] = (product: BarcodeProduct) =>
     Json.obj(
-      "id"          -> product.id,
-      "gtin"        -> product.gtin,
-      "siren"       -> (product.gs1Product \ "itemOffered" \ "additionalPartyIdentificationValue").asOpt[String],
+      "id"   -> product.id,
+      "gtin" -> product.gtin,
+      "siren" -> product.gs1Product.flatMap(json =>
+        (json \ "itemOffered" \ "additionalPartyIdentificationValue").asOpt[String]
+      ),
       "productName" -> extractProductName(product)
     )
 

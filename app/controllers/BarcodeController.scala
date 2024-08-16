@@ -11,20 +11,20 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 class BarcodeController(
-    gs11Orchestrator: BarcodeOrchestrator,
+    barcodeOrchestrator: BarcodeOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
   def getProductByGTIN(gtin: String) = IpRateLimitedAction3.async { _ =>
-    gs11Orchestrator
+    barcodeOrchestrator
       .getByGTIN(gtin)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
   }
 
   def getById(id: UUID) = SecuredAction.async { _ =>
-    gs11Orchestrator
+    barcodeOrchestrator
       .get(id)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToDashboard))).getOrElse(NotFound))
   }
