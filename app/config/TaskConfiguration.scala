@@ -9,6 +9,7 @@ case class TaskConfiguration(
     active: Boolean,
     subscription: SubscriptionTaskConfiguration,
     reportClosure: ReportClosureTaskConfiguration,
+    orphanReportFileDeletion: OrphanReportFileDeletionTaskConfiguration,
     reportReminders: ReportRemindersTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration,
     companyUpdate: CompanyUpdateTaskConfiguration,
@@ -31,6 +32,10 @@ case class CompanyUpdateTaskConfiguration(
 )
 
 case class ReportClosureTaskConfiguration(
+    startTime: LocalTime
+)
+
+case class OrphanReportFileDeletionTaskConfiguration(
     startTime: LocalTime
 )
 

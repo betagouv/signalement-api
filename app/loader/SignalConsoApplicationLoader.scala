@@ -105,6 +105,7 @@ import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
+import tasks.report.FileDeletionTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
@@ -501,6 +502,14 @@ class SignalConsoComponents(
     messagesApi
   )
 
+  val fileDeletionTask = new FileDeletionTask(
+    actorSystem,
+    reportFileRepository,
+    s3Service,
+    taskConfiguration,
+    taskRepository
+  )
+
   val reportReminderTask = new ReportRemindersTask(
     actorSystem,
     reportRepository,
@@ -820,6 +829,7 @@ class SignalConsoComponents(
     exportReportsToSFTPTask.schedule()
     reportClosureTask.schedule()
     reportReminderTask.schedule()
+    fileDeletionTask.schedule()
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
     }
