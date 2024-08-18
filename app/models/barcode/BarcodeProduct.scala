@@ -98,6 +98,7 @@ object BarcodeProduct {
       "emb_codes"              -> extractEMB(product),
       "packaging"              -> extractPackaging(product),
       "existOnOpenFoodFacts"   -> product.openFoodFactsProduct.isDefined,
-      "existOnOpenBeautyFacts" -> product.openBeautyFactsProduct.isDefined
+      "existOnOpenBeautyFacts" -> product.openBeautyFactsProduct.isDefined,
+      "existOnGS1"             -> product.gs1Product.isDefined
     )
 }
