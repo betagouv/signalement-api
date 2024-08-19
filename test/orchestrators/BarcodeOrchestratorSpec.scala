@@ -59,7 +59,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         val expectedBarcodeProduct = BarcodeProduct(
           gtin = gtin,
-          gs1Product = Json.obj("field" -> data),
+          gs1Product = Some(Json.obj("field" -> data)),
           openFoodFactsProduct = None,
           openBeautyFactsProduct = None
         )
@@ -76,7 +76,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         barcodeOrchestrator.getByGTIN(gtin).map { res =>
           (res.map(_.gtin) shouldEqual Some(gtin)) &&
-          (res.map(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
+          (res.flatMap(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
         }
       }
 
@@ -100,7 +100,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         val expectedBarcodeProduct = BarcodeProduct(
           gtin = gtin,
-          gs1Product = Json.obj("field" -> data),
+          gs1Product = Some(Json.obj("field" -> data)),
           openFoodFactsProduct = None,
           openBeautyFactsProduct = None
         )
@@ -109,7 +109,8 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
         when(gs1Service.getProductByGTIN(accessToken, gtin)).thenReturn(Future.successful(Right(Some(Json.obj()))))
         when(openFoodFactsService.getProductByBarcode(gtin)).thenReturn(Future.successful(None))
         when(openBeautyFactsService.getProductByBarcode(gtin)).thenReturn(Future.successful(None))
-        when(barcodeProductRepository.create(argMatching[BarcodeProduct] { case BarcodeProduct(_, `gtin`, _, _, _, _) =>
+        when(barcodeProductRepository.create(argMatching[BarcodeProduct] {
+          case BarcodeProduct(_, `gtin`, _, _, _, _, _) =>
         }))
           .thenReturn(Future.successful(expectedBarcodeProduct))
 
@@ -123,7 +124,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         barcodeOrchestrator.getByGTIN(gtin).map { res =>
           (res.map(_.gtin) shouldEqual Some(gtin)) &&
-          (res.map(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
+          (res.flatMap(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
         }
       }
 
@@ -150,7 +151,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         val expectedBarcodeProduct = BarcodeProduct(
           gtin = gtin,
-          gs1Product = Json.obj("field" -> data),
+          gs1Product = Some(Json.obj("field" -> data)),
           openFoodFactsProduct = None,
           openBeautyFactsProduct = None
         )
@@ -161,7 +162,8 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
         when(gs1Service.getProductByGTIN(accessToken, gtin)).thenReturn(Future.successful(Right(Some(Json.obj()))))
         when(openFoodFactsService.getProductByBarcode(gtin)).thenReturn(Future.successful(None))
         when(openBeautyFactsService.getProductByBarcode(gtin)).thenReturn(Future.successful(None))
-        when(barcodeProductRepository.create(argMatching[BarcodeProduct] { case BarcodeProduct(_, `gtin`, _, _, _, _) =>
+        when(barcodeProductRepository.create(argMatching[BarcodeProduct] {
+          case BarcodeProduct(_, `gtin`, _, _, _, _, _) =>
         }))
           .thenReturn(Future.successful(expectedBarcodeProduct))
 
@@ -175,7 +177,7 @@ class BarcodeOrchestratorSpec extends Specification with FutureMatchers with Bef
 
         barcodeOrchestrator.getByGTIN(gtin).map { res =>
           (res.map(_.gtin) shouldEqual Some(gtin)) &&
-          (res.map(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
+          (res.flatMap(_.gs1Product) shouldEqual Some(Json.obj("field" -> data)))
         }
       }
     }

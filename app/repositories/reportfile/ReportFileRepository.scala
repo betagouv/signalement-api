@@ -2,12 +2,17 @@ package repositories.reportfile
 
 import models.report._
 import models.report.reportfile.ReportFileId
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.TypedCRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import slick.jdbc.ResultSetConcurrency
+import slick.jdbc.ResultSetType
 import repositories.reportfile.ReportFileColumnType._
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -85,4 +90,21 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
       .length
       .result
   )
+
+  def streamOrphanReportFiles: Source[ReportFile, NotUsed] = Source
+    .fromPublisher(
+      db.stream(
+        table
+          .filter(_.reportId.isEmpty)
+          .filter(_.creationDate <= OffsetDateTime.now().minusDays(7))
+          .result
+          .withStatementParameters(
+            rsType = ResultSetType.ForwardOnly,
+            rsConcurrency = ResultSetConcurrency.ReadOnly,
+            fetchSize = 10000
+          )
+          .transactionally
+      )
+    )
+    .log("user")
 }

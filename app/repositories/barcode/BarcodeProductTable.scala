@@ -10,10 +10,11 @@ import java.time.OffsetDateTime
 class BarcodeProductTable(tag: Tag) extends DatabaseTable[BarcodeProduct](tag, "barcode_product") {
 
   def gtin                   = column[String]("gtin")
-  def gs1Product             = column[JsValue]("gs1_product")
+  def gs1Product             = column[Option[JsValue]]("gs1_product")
   def openFoodFactsProduct   = column[Option[JsValue]]("open_food_facts_product")
   def openBeautyFactsProduct = column[Option[JsValue]]("open_beauty_facts_product")
   def creationDate           = column[OffsetDateTime]("creation_date")
+  def updateDate             = column[OffsetDateTime]("update_date")
 
   override def * = (
     id,
@@ -21,7 +22,8 @@ class BarcodeProductTable(tag: Tag) extends DatabaseTable[BarcodeProduct](tag, "
     gs1Product,
     openFoodFactsProduct,
     openBeautyFactsProduct,
-    creationDate
+    creationDate,
+    updateDate
   ) <> ((BarcodeProduct.apply _).tupled, BarcodeProduct.unapply)
 }
 

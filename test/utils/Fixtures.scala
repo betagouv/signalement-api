@@ -349,7 +349,7 @@ object Fixtures {
     gtin <- arbString.arbitrary
   } yield BarcodeProduct(
     gtin = gtin,
-    gs1Product = Json.obj(),
+    gs1Product = Some(Json.obj()),
     openFoodFactsProduct = None,
     openBeautyFactsProduct = None
   )
