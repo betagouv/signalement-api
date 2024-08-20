@@ -1,5 +1,9 @@
 package repositories.ipblacklist
 
-import repositories.TypedCRUDRepositoryInterface
+import scala.concurrent.Future
 
-trait IpBlackListRepositoryInterface extends TypedCRUDRepositoryInterface[BlackListedIp, String] {}
+trait IpBlackListRepositoryInterface {
+  def create(ip: BlackListedIp): Future[BlackListedIp]
+  def delete(ip: String): Future[Int]
+  def list(): Future[List[BlackListedIp]]
+}

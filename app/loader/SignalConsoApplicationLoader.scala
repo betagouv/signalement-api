@@ -605,6 +605,7 @@ class SignalConsoComponents(
     reportFileOrchestrator,
     companyRepository,
     emailNotificationOrchestrator,
+    ipBlackListRepository,
     frontRoute,
     cookieAuthenticator,
     controllerComponents
