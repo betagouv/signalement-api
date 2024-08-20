@@ -1,17 +1,27 @@
 package repositories.ipblacklist
 
 import repositories.PostgresProfile.api._
-import repositories.TypedCRUDRepository
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-class IpBlackListRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
-    override val ec: ExecutionContext
-) extends TypedCRUDRepository[IpBlackListTable, BlackListedIp, String]
-    with IpBlackListRepositoryInterface {
+class IpBlackListRepository(dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
+    extends IpBlackListRepositoryInterface {
 
-  override val table = IpBlackListTable.table
+  val table = IpBlackListTable.table
 
+  import dbConfig._
+
+  override def create(ip: BlackListedIp): Future[BlackListedIp] = db
+    .run(
+      table returning table += ip
+    )
+
+  override def delete(ip: String): Future[Int] = db.run(
+    table.filter(_.ip === ip).delete
+  )
+
+  override def list(): Future[List[BlackListedIp]] = db.run(table.to[List].result)
 }
