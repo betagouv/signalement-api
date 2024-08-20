@@ -38,7 +38,7 @@ GET           /api/reports/files                                        controll
 GET           /api/reports/files/:uuid/:filename                        controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 DELETE        /api/reports/files/:uuid/:filename                        controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 POST          /api/reports/files                                        controllers.ReportFileController.uploadReportFile()
-POST           /api/reports/files/list                                   controllers.ReportFileController.retrieveReportFiles()
+POST          /api/reports/files/list                                   controllers.ReportFileController.retrieveReportFiles()
 
 GET           /api/reports/download                                     controllers.ReportController.reportsAsPDF()
 GET           /api/reports/download-with-attachments/:reportId          controllers.ReportController.reportAsZip(reportId: java.util.UUID)
@@ -199,6 +199,11 @@ POST          /api/report-blocked-notification/delete                   controll
 GET           /api/blacklisted-emails                                   controllers.BlacklistedEmailsController.list()
 POST          /api/blacklisted-emails                                   controllers.BlacklistedEmailsController.add()
 DELETE        /api/blacklisted-emails/:uuid                             controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
+
+ # Blacklist of ips
+GET           /api/blacklisted-ips                                      controllers.AdminController.blackListedIPs()
+POST          /api/blacklisted-ips                                      controllers.AdminController.createBlacklistedIp()
+DELETE        /api/blacklisted-ips/:ip                                  controllers.AdminController.deleteBlacklistedIp(ip: String)
 
 POST          /api/user-reports-filters                                 controllers.UserReportsFiltersController.save()
 GET           /api/user-reports-filters/:name                           controllers.UserReportsFiltersController.get(name: String)

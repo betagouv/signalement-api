@@ -23,6 +23,8 @@ import play.twirl.api.Html
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
+import repositories.ipblacklist.BlackListedIp
+import repositories.ipblacklist.IpBlackListRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.PDFService
 import services.emails.EmailDefinitions.allEmailDefinitions
@@ -54,6 +56,7 @@ class AdminController(
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     emailNotificationOrchestrator: EmailNotificationOrchestrator,
+    ipBlackListRepository: IpBlackListRepositoryInterface,
     implicit val frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -280,4 +283,19 @@ class AdminController(
         }
       } yield NoContent
     }
+
+  def blackListedIPs() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+    ipBlackListRepository.list().map(blackListedIps => Ok(Json.toJson(blackListedIps)))
+  }
+
+  def deleteBlacklistedIp(ip: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+    ipBlackListRepository.delete(ip).map(_ => NoContent)
+  }
+
+  def createBlacklistedIp() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    for {
+      blacklistedIpRequest <- request.parseBody[BlackListedIp]()
+      blackListedIp        <- ipBlackListRepository.create(blacklistedIpRequest)
+    } yield Created(Json.toJson(blackListedIp))
+  }
 }
