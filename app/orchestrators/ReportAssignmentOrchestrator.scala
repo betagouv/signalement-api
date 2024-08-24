@@ -99,7 +99,7 @@ class ReportAssignmentOrchestrator(
 
   private def formatEventDesc(assigningUser: User, assignedUser: User, reportComment: ReportComment) =
     Json.obj(
-      "description" -> s"Assignation du signalement à ${assignedUser.fullName} (${assignedUser.email}) par ${assigningUser.fullName} "
+      "description" -> s"Assignation du signalement à ${assignedUser.fullName} (${assignedUser.email})"
     ) ++ reportComment.comment.filterNot(_.isBlank).map(c => Json.obj("comment" -> c)).getOrElse(Json.obj())
 
 }
