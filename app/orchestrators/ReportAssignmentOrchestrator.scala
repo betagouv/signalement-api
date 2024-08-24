@@ -4,10 +4,11 @@ import cats.implicits.catsSyntaxOption
 import controllers.error.AppError
 import models.User
 import models.event.Event
-import models.event.Event.stringToDetailsJsValue
 import models.report.Report
+import models.report.reportmetadata.ReportComment
 import models.report.reportmetadata.ReportWithMetadata
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.user.UserRepositoryInterface
@@ -32,14 +33,19 @@ class ReportAssignmentOrchestrator(
 ) {
   val logger = Logger(this.getClass)
 
-  def assignReportToUser(reportId: UUID, assigningUser: User, newAssignedUserId: UUID): Future[User] = {
+  def assignReportToUser(
+      reportId: UUID,
+      assigningUser: User,
+      newAssignedUserId: UUID,
+      reportComment: ReportComment
+  ): Future[User] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
       maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
       reportWithMetadata      <- maybeReportWithMetadata.liftTo[Future](AppError.ReportNotFound(reportId))
       newAssignedUser         <- checkAssignableToUser(reportWithMetadata, newAssignedUserId)
       _                       <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
-      _                       <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser)
+      _ <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser, reportComment)
       _ <-
         if (assigningToSelf) Future.unit
         else
@@ -71,7 +77,12 @@ class ReportAssignmentOrchestrator(
     } yield user
   }
 
-  private def createAssignmentEvent(report: Report, assigningUser: User, assignedUser: User) =
+  private def createAssignmentEvent(
+      report: Report,
+      assigningUser: User,
+      assignedUser: User,
+      reportComment: ReportComment
+  ) =
     eventRepository
       .create(
         Event(
@@ -82,10 +93,13 @@ class ReportAssignmentOrchestrator(
           OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_ASSIGNED,
-          stringToDetailsJsValue(
-            s"Affectation du signalement à ${assignedUser.firstName} ${assignedUser.lastName} (${assignedUser.email})"
-          )
+          formatEventDesc(assigningUser, assignedUser, reportComment)
         )
       )
+
+  private def formatEventDesc(assigningUser: User, assignedUser: User, reportComment: ReportComment) =
+    Json.obj(
+      "description" -> s"Assignation du signalement à ${assignedUser.fullName} (${assignedUser.email}) par ${assigningUser.fullName} "
+    ) ++ reportComment.comment.filterNot(_.isBlank).map(c => Json.obj("comment" -> c)).getOrElse(Json.obj())
 
 }
