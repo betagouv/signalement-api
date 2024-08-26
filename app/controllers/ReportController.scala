@@ -10,6 +10,7 @@ import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import models.report._
 import models.report.delete.ReportAdminAction
+import models.report.reportmetadata.ReportComment
 import orchestrators._
 import play.api.Logger
 import play.api.i18n.Lang
@@ -261,10 +262,16 @@ class ReportController(
     }
 
   def updateReportAssignedUser(uuid: UUID, userId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
       for {
+        reportComment <- request.parseBody[ReportComment]()
         updatedReportWithMetadata <- reportAssignmentOrchestrator
-          .assignReportToUser(reportId = uuid, assigningUser = request.identity, newAssignedUserId = userId)
+          .assignReportToUser(
+            reportId = uuid,
+            assigningUser = request.identity,
+            newAssignedUserId = userId,
+            reportComment
+          )
       } yield Ok(Json.toJson(updatedReportWithMetadata))
     }
 

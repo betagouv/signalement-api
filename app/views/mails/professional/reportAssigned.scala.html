@@ -2,18 +2,37 @@
 @import models.report.Report
 @import models.User
 
-@(report: Report, assigningUser: User, assignedUser: User)(implicit frontRoute: FrontRoute)
+@(report: Report, assigningUser: User, assignedUser: User, comment: Option[String])(implicit frontRoute: FrontRoute)
 
     @views.html.mails.layout(s"Signalement affecté") {
         <p>
-            Bonjour @assignedUser.firstName @assignedUser.lastName,
+            Bonjour @assignedUser.fullName,
         </p>
 
         <p>Un signalement vous a été affecté par @assigningUser.firstName @assigningUser.lastName.</p>
 
+        @if(comment.isDefined) {
+            <p>
+                @assigningUser.fullName vous a laissé un commentaire :
+            </p>
+            <blockquote style="
+                font-style: italic;
+                color: #555;
+                border-left: 5px solid #ccc;
+                padding-left: 20px;
+                margin: 20px 0;
+                background: #f9f9f9;
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+                position: relative;
+            ">
+                @comment.getOrElse("")
+            </blockquote>
+        }
+
         <p>
-            Pour le consulter et y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.url(s"/suivi-des-signalements/report/${report.id.toString}")">
-            Espace Professionnel</a> à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
+            Pour consulter le signalement et y apporter une réponse, il vous suffit de vous connecter sur votre <a href="@frontRoute.dashboard.url(s"/suivi-des-signalements/report/${report.id.toString}")">
+            Espace Professionnel</a>
+            à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
         </p>
 
         <p>Cordialement,</p>
