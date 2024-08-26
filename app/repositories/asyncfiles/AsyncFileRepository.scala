@@ -1,12 +1,17 @@
 package repositories.asyncfiles
 
 import models._
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.asyncfiles.AsyncFilesColumnType._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import slick.jdbc.ResultSetConcurrency
+import slick.jdbc.ResultSetType
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -34,10 +39,27 @@ class AsyncFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(im
         .filterOpt(kind) { case (table, kind) =>
           table.kind === kind
         }
+        .filter(_.creationDate >= OffsetDateTime.now().minusDays(7))
         .sortBy(_.creationDate.desc)
         .to[List]
         .result
     )
+
+  def streamOldReportExports: Source[AsyncFile, NotUsed] = Source
+    .fromPublisher(
+      db.stream(
+        table
+          .filter(_.creationDate <= OffsetDateTime.now().minusDays(10))
+          .result
+          .withStatementParameters(
+            rsType = ResultSetType.ForwardOnly,
+            rsConcurrency = ResultSetConcurrency.ReadOnly,
+            fetchSize = 10000
+          )
+          .transactionally
+      )
+    )
+    .log("user")
 
   def deleteByUserId(userId: UUID): Future[Int] = db
     .run(
