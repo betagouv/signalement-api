@@ -50,7 +50,12 @@ class ReportAssignmentOrchestrator(
         if (assigningToSelf) Future.unit
         else
           mailService.send(
-            ProReportAssignedNotification.Email(reportWithMetadata.report, assigningUser, newAssignedUser)
+            ProReportAssignedNotification.Email(
+              reportWithMetadata.report,
+              assigningUser,
+              newAssignedUser,
+              reportComment.comment
+            )
           )
     } yield newAssignedUser
   }
@@ -93,13 +98,13 @@ class ReportAssignmentOrchestrator(
           OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_ASSIGNED,
-          formatEventDesc(assigningUser, assignedUser, reportComment)
+          formatEventDesc(assignedUser, reportComment)
         )
       )
 
-  private def formatEventDesc(assigningUser: User, assignedUser: User, reportComment: ReportComment) =
+  private def formatEventDesc(assignedUser: User, reportComment: ReportComment) =
     Json.obj(
-      "description" -> s"Assignation du signalement à ${assignedUser.fullName} (${assignedUser.email})"
+      "description" -> s"Affectation du signalement à ${assignedUser.fullName} (${assignedUser.email})"
     ) ++ reportComment.comment.filterNot(_.isBlank).map(c => Json.obj("comment" -> c)).getOrElse(Json.obj())
 
 }

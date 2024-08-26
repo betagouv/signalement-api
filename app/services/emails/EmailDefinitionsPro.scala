@@ -1,6 +1,7 @@
 package services.emails
 
 import cats.data.NonEmptyList
+import cats.implicits.catsSyntaxOptionId
 import models.User
 import models.company.Company
 import models.report.ExistingReportResponse
@@ -241,17 +242,24 @@ object EmailDefinitionsPro {
     override def examples =
       Seq(
         "report_assignement_to_other" -> ((recipient, _) =>
-          Email(report = genReport, assigningUser = genUser, assignedUser = genUser.copy(email = recipient))
+          Email(
+            report = genReport,
+            assigningUser = genUser.copy(firstName = "Max", lastName = "Payne"),
+            assignedUser = genUser.copy(email = recipient),
+            "Bonjour,Je t’affecte ce ticket car ton expertise sur ce type de problématique est bien reconnue. La tâche nécessite une attention particulière, et je suis convaincu que tu pourras gérer cela efficacement. De plus, ta connaissance approfondie sera un atout précieux pour résoudre ce problème rapidement et de manière optimale.\n\nMerci pour ton aide et n’hésite pas à me contacter si tu as besoin de plus d’informations.Cordialement,".some
+          )
         )
       )
 
-    final case class Email(report: Report, assigningUser: User, assignedUser: User)
+    final case class Email(report: Report, assigningUser: User, assignedUser: User, reportComment: Option[String])
         extends ProFilteredEmailSingleReport {
       override val recipients: List[EmailAddress] = List(assignedUser.email)
       override val subject: String                = EmailSubjects.REPORT_ASSIGNED
 
       override def getBody: (FrontRoute, EmailAddress) => String = { (frontRoute, _) =>
-        views.html.mails.professional.reportAssigned(report, assigningUser, assignedUser)(frontRoute).toString
+        views.html.mails.professional
+          .reportAssigned(report, assigningUser, assignedUser, reportComment)(frontRoute)
+          .toString
       }
     }
   }
