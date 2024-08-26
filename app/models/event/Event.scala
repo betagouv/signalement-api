@@ -27,6 +27,4 @@ object Event {
 
   implicit val eventFormat: OFormat[Event]           = Json.format[Event]
   def stringToDetailsJsValue(value: String): JsValue = Json.obj("description" -> value)
-  def jsValueToString(jsValue: Option[JsValue]) =
-    jsValue.flatMap(_.as[JsObject].value.get("description").map(_.toString))
 }
