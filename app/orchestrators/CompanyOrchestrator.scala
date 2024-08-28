@@ -18,7 +18,6 @@ import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
 import models.company.InactiveCompany
-import models.company.UndeliveredDocument
 import models.event.Event
 import models.report.Report
 import models.report.ReportFilter
@@ -42,12 +41,10 @@ import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.FrontRoute
-import utils.SIRET
 import utils.URL
 
 import java.time.OffsetDateTime
 import java.time.Period
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -430,33 +427,5 @@ class CompanyOrchestrator(
         )
         .getOrElse(Future.successful(None))
     } yield updatedCompany
-
-  def handleUndeliveredDocument(
-      siret: SIRET,
-      identity: UUID,
-      undeliveredDocument: UndeliveredDocument
-  ): Future[Option[Event]] =
-    for {
-      company <- companyRepository.findBySiret(siret)
-      event <- company
-        .map(c =>
-          eventRepository
-            .create(
-              Event(
-                UUID.randomUUID(),
-                None,
-                Some(c.id),
-                Some(identity),
-                OffsetDateTime.now(),
-                EventType.ADMIN,
-                ActionEvent.ACTIVATION_DOC_RETURNED,
-                stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
-              )
-            )
-            .map(Some(_))
-        )
-        .getOrElse(Future.successful(None))
-    } yield event
 
 }

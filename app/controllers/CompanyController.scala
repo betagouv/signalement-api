@@ -7,14 +7,12 @@ import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
-import models.company.UndeliveredDocument
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import utils.SIRET
 import authentication.actions.UserAction.WithPermission
 import authentication.actions.UserAction.WithRole
 
@@ -199,21 +197,6 @@ class CompanyController(
         )
     }
 
-  def handleUndeliveredDocument(siret: String) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-      request.body
-        .validate[UndeliveredDocument]
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          undeliveredDocument =>
-            companyOrchestrator
-              .handleUndeliveredDocument(SIRET.fromUnsafe(siret), request.identity.id, undeliveredDocument)
-              .map(
-                _.map(e => Ok(Json.toJson(e)))
-                  .getOrElse(NotFound)
-              )
-        )
-    }
 }
 
 object CompanyObjects {

@@ -4,7 +4,6 @@ import play.api.libs.json._
 import utils.QueryStringMapper
 import utils.SIRET
 
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
@@ -140,10 +139,4 @@ case class CompanyAddressUpdate(
 
 object CompanyAddressUpdate {
   implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]
-}
-
-case class UndeliveredDocument(returnedDate: LocalDate)
-
-object UndeliveredDocument {
-  implicit val format: OFormat[UndeliveredDocument] = Json.format[UndeliveredDocument]
 }
