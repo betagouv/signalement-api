@@ -205,14 +205,6 @@ GET           /api/blacklisted-ips                                      controll
 POST          /api/blacklisted-ips                                      controllers.AdminController.createBlacklistedIp()
 DELETE        /api/blacklisted-ips/:ip                                  controllers.AdminController.deleteBlacklistedIp(ip: String)
 
-POST          /api/user-reports-filters                                 controllers.UserReportsFiltersController.save()
-GET           /api/user-reports-filters/:name                           controllers.UserReportsFiltersController.get(name: String)
-GET           /api/user-reports-filters                                 controllers.UserReportsFiltersController.list()
-DELETE        /api/user-reports-filters/:name                           controllers.UserReportsFiltersController.delete(name)
-PUT           /api/user-reports-filters/rename/:oldName/:newName        controllers.UserReportsFiltersController.rename(oldName, newName)
-PUT           /api/user-reports-filters/default/:name                   controllers.UserReportsFiltersController.setAsDefault(name)
-DELETE        /api/user-reports-filters/default/:name                   controllers.UserReportsFiltersController.unsetDefault(name)
-
 GET           /api/review                                               controllers.SignalConsoReviewController.signalConsoReview()
 
  # Siret extractor gateway
