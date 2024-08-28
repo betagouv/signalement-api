@@ -21,7 +21,6 @@ object UserRole extends PlayEnum[UserRole] {
       UserPermission.listReports,
       UserPermission.createReportAction,
       UserPermission.subscribeReports,
-      UserPermission.crudUserReportsFilters,
       UserPermission.viewConsumerReviewDetails
     )
     override val isAgentOrAdmin = true
@@ -32,7 +31,6 @@ object UserRole extends PlayEnum[UserRole] {
       UserPermission.listReports,
       UserPermission.createReportAction,
       UserPermission.subscribeReports,
-      UserPermission.crudUserReportsFilters,
       UserPermission.viewConsumerReviewDetails
     )
     override val isAgentOrAdmin = true

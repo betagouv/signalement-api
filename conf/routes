@@ -157,7 +157,6 @@ GET           /api/companies/search-url                                 controll
 GET           /api/companies/hosts                                      controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
 PUT           /api/companies/:id/address                                controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 GET           /api/companies/:id/response-rate                          controllers.CompanyController.getResponseRate(id: java.util.UUID)
-POST          /api/companies/:siret/undelivered-document                controllers.CompanyController.handleUndeliveredDocument(siret)
 GET           /api/companies/:companyId                                 controllers.CompanyController.searchById(companyId: java.util.UUID)
 
 # Rating API
@@ -204,14 +203,6 @@ DELETE        /api/blacklisted-emails/:uuid                             controll
 GET           /api/blacklisted-ips                                      controllers.AdminController.blackListedIPs()
 POST          /api/blacklisted-ips                                      controllers.AdminController.createBlacklistedIp()
 DELETE        /api/blacklisted-ips/:ip                                  controllers.AdminController.deleteBlacklistedIp(ip: String)
-
-POST          /api/user-reports-filters                                 controllers.UserReportsFiltersController.save()
-GET           /api/user-reports-filters/:name                           controllers.UserReportsFiltersController.get(name: String)
-GET           /api/user-reports-filters                                 controllers.UserReportsFiltersController.list()
-DELETE        /api/user-reports-filters/:name                           controllers.UserReportsFiltersController.delete(name)
-PUT           /api/user-reports-filters/rename/:oldName/:newName        controllers.UserReportsFiltersController.rename(oldName, newName)
-PUT           /api/user-reports-filters/default/:name                   controllers.UserReportsFiltersController.setAsDefault(name)
-DELETE        /api/user-reports-filters/default/:name                   controllers.UserReportsFiltersController.unsetDefault(name)
 
 GET           /api/review                                               controllers.SignalConsoReviewController.signalConsoReview()
 

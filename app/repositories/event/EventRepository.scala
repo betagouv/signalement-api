@@ -32,11 +32,17 @@ class EventRepository(
     extends CRUDRepository[EventTable, Event]
     with EventRepositoryInterface {
 
-  override val table: TableQuery[EventTable] = EventTable.table
+  override val table = EventTable.table
+  import EventTable.fullTableIncludingDeprecated
 
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
+
+  override def create(element: Event): Future[Event] = db
+    .run(
+      fullTableIncludingDeprecated returning fullTableIncludingDeprecated += element
+    )
 
   override def deleteByReportId(uuidReport: UUID): Future[Int] = db
     .run(
