@@ -8,6 +8,7 @@ import utils.Constants
 import java.time.OffsetDateTime
 import java.util.UUID
 import repositories.PostgresProfile.api._
+import utils.Constants.ActionEvent.ACTIVATION_DOC_RETURNED
 
 class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
 
@@ -45,5 +46,9 @@ class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
 }
 
 object EventTable {
-  val table = TableQuery[EventTable]
+  val fullTableIncludingDeprecated = TableQuery[EventTable]
+
+  val table: Query[EventTable, EventTable#TableElementType, Seq] = fullTableIncludingDeprecated
+    // These events are from an old feature
+    .filter(_.action =!= ACTIVATION_DOC_RETURNED.value)
 }
