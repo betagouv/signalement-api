@@ -164,9 +164,9 @@ ReportAckEmail.consumer=Consommateur
 ReportAckEmail.lastName=Nom : {0}
 ReportAckEmail.firstName=Prénom : {0}
 ReportAckEmail.email=Email : {0}
-ReportAckEmail.contactAgreement=Accord pour contact : {0}
-ReportAckEmail.yes=oui
-ReportAckEmail.no=non
+
+ReportAckEmail.yes=Comme demandé, vos coordonnées seront transmise à l’entreprise
+ReportAckEmail.no=Comme demandé, vos coordonnées ne seront pas transmise à l’entreprise
 ReportAckEmail.understandSignalConso=Comprendre SignalConso
 ReportAckEmail.yourReport=Votre signalement
 ReportAckEmail.influencerName=Influenceur: {0}
