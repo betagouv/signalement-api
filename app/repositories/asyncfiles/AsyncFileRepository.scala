@@ -39,7 +39,7 @@ class AsyncFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(im
         .filterOpt(kind) { case (table, kind) =>
           table.kind === kind
         }
-        .filter(_.creationDate >= OffsetDateTime.now().minusDays(7))
+        .filter(_.creationDate >= OffsetDateTime.now().minusDays(1))
         .sortBy(_.creationDate.desc)
         .to[List]
         .result
