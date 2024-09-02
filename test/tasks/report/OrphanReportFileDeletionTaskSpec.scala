@@ -23,7 +23,7 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class FileDeletionTaskSpec(implicit ee: ExecutionEnv)
+class OrphanReportFileDeletionTaskSpec(implicit ee: ExecutionEnv)
     extends Specification
     with AppSpec
     with Results
@@ -33,7 +33,7 @@ class FileDeletionTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val reportRepository     = components.reportRepository
   lazy val reportFileRepository = components.reportFileRepository
-  lazy val fileDeletionTask     = components.fileDeletionTask
+  lazy val fileDeletionTask     = components.orphanReportFileDeletionTask
   lazy val eventRepository      = components.eventRepository
 
   val creationDate    = OffsetDateTime.parse("2020-01-01T00:00:00Z")
@@ -67,7 +67,7 @@ class FileDeletionTaskSpec(implicit ee: ExecutionEnv)
       .getEvents(report.id, EventFilter(action = Some(action)))
       .map(_.nonEmpty)
 
-  "ReportClosureTask should close the reports that need to be closed" >> {
+  "OrphanReportFileDeletionTask should remove orphan reports" >> {
 
     val report                         = genReport()
     val recentReportFileLinkedToReport = genReportFile(reportId = report.id.some, creationDate = OffsetDateTime.now())

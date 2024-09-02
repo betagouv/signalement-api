@@ -10,9 +10,11 @@ import org.apache.pekko.stream.connectors.s3.MultipartUploadResult
 import org.apache.pekko.stream.connectors.s3.ObjectMetadata
 import services.S3ServiceInterface
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.Future
 
-class S3ServiceMock extends S3ServiceInterface {
+class S3ServiceMock(atomicQueue: ConcurrentLinkedQueue[String] = new ConcurrentLinkedQueue[String]())
+    extends S3ServiceInterface {
 
   override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] = ???
 
@@ -20,7 +22,10 @@ class S3ServiceMock extends S3ServiceInterface {
 
   override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] = ???
 
-  override def delete(bucketKey: String): Future[Done] = Future.successful(Done)
+  override def delete(bucketKey: String): Future[Done] = Future.successful {
+    atomicQueue.remove(bucketKey)
+    Done
+  }
 
   override def getSignedUrl(bucketKey: String, method: HttpMethod): String = ???
 

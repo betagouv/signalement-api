@@ -15,14 +15,14 @@ import utils.Logs.RichLogger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class FileDeletionTask(
+class OrphanReportFileDeletionTask(
     actorSystem: ActorSystem,
     reportFileRepository: ReportFileRepositoryInterface,
     s3Service: S3ServiceInterface,
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface
 )(implicit val executionContext: ExecutionContext, mat: Materializer)
-    extends ScheduledTask(5, "report_file_deletion_task", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(5, "orphan_report_file_deletion_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.orphanReportFileDeletion.startTime)
 

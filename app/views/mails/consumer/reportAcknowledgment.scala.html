@@ -231,12 +231,13 @@
         <br />
         @Messages("ReportAckEmail.email", report.email)
         <br/>
+        <br/>
         @if(report.visibleToPro) {
-            @Messages("ReportAckEmail.contactAgreement", if(report.contactAgreement) {
-                Messages("ReportAckEmail.yes")
+            @if(report.contactAgreement) {
+                <b>@Messages("ReportAckEmail.yes")</b>
             } else {
-                Messages("ReportAckEmail.no")
-            })
+                <b>@Messages("ReportAckEmail.no")</b>
+            }
             <br/>
         }
     </div>

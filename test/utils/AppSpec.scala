@@ -32,6 +32,7 @@ import tasks.company.CompanySyncServiceInterface
 import java.io.File
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 
@@ -92,6 +93,18 @@ trait AppSpec extends BeforeAfterAll with Mockito {
 
 object TestApp {
 
+  def buildAppWithS3Queue(): (
+      Application,
+      SignalConsoComponents,
+      ConcurrentLinkedQueue[String]
+  ) = {
+    val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
+    val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
+    val s3Queue                            = new ConcurrentLinkedQueue[String]()
+    val loader                             = new DefaultApplicationLoader(None, s3Queue)
+    (loader.load(context), loader.components, s3Queue)
+  }
+
   def buildApp(
       maybeConfiguration: Option[Configuration] = None
   ): (
@@ -100,7 +113,9 @@ object TestApp {
   ) = {
     val appEnv: play.api.Environment       = play.api.Environment.simple(new File("."))
     val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
-    val loader                             = new DefaultApplicationLoader(maybeConfiguration)
+    val s3Queue                            = new ConcurrentLinkedQueue[String]()
+    val loader                             = new DefaultApplicationLoader(maybeConfiguration, s3Queue)
+
     (loader.load(context), loader.components)
   }
 
@@ -113,7 +128,8 @@ object TestApp {
 }
 
 class DefaultApplicationLoader(
-    maybeConfiguration: Option[Configuration] = None
+    maybeConfiguration: Option[Configuration] = None,
+    s3Queue: ConcurrentLinkedQueue[String]
 ) extends ApplicationLoader
     with Mockito {
   var components: SignalConsoComponents = _
@@ -125,7 +141,7 @@ class DefaultApplicationLoader(
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
-      override def s3Service: S3ServiceInterface = new S3ServiceMock()
+      override def s3Service: S3ServiceInterface = new S3ServiceMock(s3Queue)
 
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
