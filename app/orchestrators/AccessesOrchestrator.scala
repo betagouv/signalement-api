@@ -63,7 +63,7 @@ class AccessesOrchestrator(
       _ <- user.userRole match {
         case UserRole.DGAL | UserRole.DGCCRF =>
           accessTokenRepository.validateEmail(updateEmailToken, user)
-        case UserRole.Admin | UserRole.Professionnel =>
+        case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.Professionnel =>
           accessTokenRepository.invalidateToken(updateEmailToken)
       }
       updatedUser <-
@@ -73,7 +73,7 @@ class AccessesOrchestrator(
 
   def sendEmailAddressUpdateValidation(user: User, newEmail: EmailAddress): Future[Unit] = {
     val emailValidationFunction = user.userRole match {
-      case UserRole.Admin =>
+      case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
         EmailAddressService.isEmailAcceptableForAdminAccount _
       case UserRole.DGCCRF =>
         EmailAddressService.isEmailAcceptableForDgccrfAccount _

@@ -17,7 +17,6 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.QueryStringMapper
-import authentication.actions.UserAction.WithPermission
 
 import java.time.ZoneId
 
@@ -55,7 +54,7 @@ class ReportListController(
       )
   }
 
-  def extractReports = SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def extractReports = SecuredAction.async { implicit request =>
     for {
       reportFilter <- ReportFilter
         .fromQueryString(request.queryString)

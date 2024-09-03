@@ -2,7 +2,6 @@ package models
 
 import play.api.libs.json._
 import utils.EmailAddress
-import utils.EnumUtils
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -41,22 +40,10 @@ object User {
       "firstName"           -> user.firstName,
       "lastName"            -> user.lastName,
       "role"                -> user.userRole.entryName,
-      "permissions"         -> user.userRole.permissions,
       "lastEmailValidation" -> user.lastEmailValidation,
       "deletionDate"        -> user.deletionDate
     )
 
-}
-
-object UserPermission extends Enumeration {
-  val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
-      editDocuments, subscribeReports, manageAdminOrAgentUsers, softDeleteUsers, viewDeletedUsers,
-      manageBlacklistedEmails, generateConsumerReportEmailAsPDF, viewConsumerReviewDetails =
-    Value
-
-  implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
-
-  implicit def enumWrites: Writes[UserPermission.Value] = EnumUtils.enumWrites
 }
 
 case class UserUpdate(

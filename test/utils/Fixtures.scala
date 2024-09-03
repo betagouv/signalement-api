@@ -15,7 +15,7 @@ import org.scalacheck._
 import play.api.libs.json.Json
 import tasks.company.CompanySearchResult
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.EventType.EventTypeValue
+import utils.Constants.EventType
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -300,7 +300,7 @@ object Fixtures {
     isPublic = true
   )
 
-  def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+  def genEventForReport(reportId: UUID, eventType: EventType, actionEvent: ActionEventValue) = for {
     id        <- arbitrary[UUID]
     companyId <- arbitrary[UUID]
     details   <- arbString.arbitrary
@@ -315,7 +315,7 @@ object Fixtures {
     details = stringToDetailsJsValue(details)
   )
 
-  def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+  def genEventForCompany(companyId: UUID, eventType: EventType, actionEvent: ActionEventValue) = for {
     id      <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(

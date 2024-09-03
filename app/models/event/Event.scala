@@ -2,7 +2,7 @@ package models.event
 
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.EventType.EventTypeValue
+import utils.Constants.EventType
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -13,7 +13,7 @@ case class Event(
     companyId: Option[UUID],
     userId: Option[UUID],
     creationDate: OffsetDateTime,
-    eventType: EventTypeValue,
+    eventType: EventType,
     action: ActionEventValue,
     details: JsValue = Json.obj()
 ) {

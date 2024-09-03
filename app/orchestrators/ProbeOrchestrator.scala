@@ -416,14 +416,10 @@ class ProbeOrchestrator(
       Future.unit
   }
 
-  private def chooseRecipients(): Future[Seq[EmailAddress]] = {
-    val recipients = taskConfiguration.probe.recipients
-    if (recipients.isEmpty) {
-      for {
-        users <- userRepository.listForRoles(Seq(UserRole.Admin))
-      } yield users.map(_.email)
-    } else Future.successful(recipients.map(EmailAddress(_)))
-  }
+  private def chooseRecipients(): Future[Seq[EmailAddress]] =
+    for {
+      users <- userRepository.listForRoles(Seq(UserRole.SuperAdmin))
+    } yield users.map(_.email)
 
   private def computePercentage(nb: Int, nbTotal: Int) =
     // Percentages are not significant if we don't have enough data

@@ -1,6 +1,5 @@
 package models.report.review
 
-import models.UserPermission.viewConsumerReviewDetails
 import models.UserRole
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -24,7 +23,7 @@ object ResponseConsumerReview {
         "reportId"     -> r.reportId,
         "evaluation"   -> r.evaluation,
         "creationDate" -> r.creationDate
-      ) ++ (if (userRole.exists(_.hasPermission(viewConsumerReviewDetails)))
+      ) ++ (if (userRole.exists(UserRole.isAdminOrAgent))
               Json.obj(
                 "details" -> r.details
               )

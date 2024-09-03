@@ -12,7 +12,7 @@ import play.api.mvc.ControllerComponents
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import error.AppError.MalformedFileKey
-import authentication.actions.UserAction.WithPermission
+import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -62,43 +62,40 @@ class AccountController(
   }
 
   def sendAgentInvitation(role: UserRole) =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
-      implicit request =>
-        role match {
-          case UserRole.DGCCRF =>
-            request
-              .parseBody[EmailAddress](JsPath \ "email")
-              .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
-          case UserRole.DGAL =>
-            request
-              .parseBody[EmailAddress](JsPath \ "email")
-              .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
-          case _ => Future.failed(error.AppError.WrongUserRole(role))
-        }
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
+      role match {
+        case UserRole.DGCCRF =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
+        case UserRole.DGAL =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
+        case _ => Future.failed(error.AppError.WrongUserRole(role))
+      }
     }
 
   def sendAgentsInvitations(role: UserRole) =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.multipartFormData) {
-      implicit request =>
-        for {
-          filePart <- request.body.file("emails").liftTo[Future](MalformedFileKey("emails"))
-          source = Source.fromFile(filePart.ref.path.toFile)
-          lines  = source.getLines().toList
-          _      = source.close()
-          _ <- accessesOrchestrator.sendAgentsInvitations(role, lines)
-        } yield Ok
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.multipartFormData) { implicit request =>
+      for {
+        filePart <- request.body.file("emails").liftTo[Future](MalformedFileKey("emails"))
+        source = Source.fromFile(filePart.ref.path.toFile)
+        lines  = source.getLines().toList
+        _      = source.close()
+        _ <- accessesOrchestrator.sendAgentsInvitations(role, lines)
+      } yield Ok
     }
 
   def sendAdminInvitation =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async(parse.json) {
-      implicit request =>
-        request
-          .parseBody[EmailAddress](JsPath \ "email")
-          .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+      request
+        .parseBody[EmailAddress](JsPath \ "email")
+        .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
     }
 
   def fetchPendingAgent(role: Option[UserRole]) =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { request =>
       role match {
         case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | None =>
           accessesOrchestrator
@@ -108,16 +105,23 @@ class AccountController(
       }
     }
 
-  def fetchAdminOrAgentUsers =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
+  def fetchAgentUsers =
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { _ =>
       for {
-        users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin))
+        users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL))
+      } yield Ok(Json.toJson(users))
+    }
+
+  def fetchAdminUsers =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+      for {
+        users <- userRepository.listForRoles(Seq(UserRole.SuperAdmin, UserRole.Admin, UserRole.ReadOnlyAdmin))
       } yield Ok(Json.toJson(users))
     }
 
   // This data is not displayed anywhere
   // The endpoint might be useful to debug without accessing the prod DB
-  def fetchAllSoftDeletedUsers = SecuredAction.andThen(WithPermission(UserPermission.viewDeletedUsers)).async { _ =>
+  def fetchAllSoftDeletedUsers = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     for {
       users <- userRepository.listDeleted()
     } yield Ok(Json.toJson(users))
@@ -141,7 +145,7 @@ class AccountController(
   }
 
   def forceValidateEmail(email: String) =
-    SecuredAction.andThen(WithPermission(UserPermission.manageAdminOrAgentUsers)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async { _ =>
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
@@ -173,7 +177,7 @@ class AccountController(
   }
 
   def softDelete(id: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.softDeleteUsers)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async { request =>
       userOrchestrator.softDelete(targetUserId = id, currentUserId = request.identity.id).map(_ => NoContent)
     }
 

@@ -62,7 +62,7 @@ class EventRepository(
   private def getRawEvents(filter: EventFilter) =
     table
       .filterOpt(filter.eventType) { case (table, eventType) =>
-        table.eventType === eventType.value
+        table.eventType === eventType.entryName
       }
       .filterOpt(filter.action) { case (table, action) =>
         table.action === action.value
@@ -224,7 +224,7 @@ class EventRepository(
     db.run(
       sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
   from events
-    where event_type = '#${PRO.value}'
+    where event_type = '#${PRO.entryName}'
     and report_id is not null
     and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
 and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
