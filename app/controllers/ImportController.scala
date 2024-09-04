@@ -43,7 +43,7 @@ class ImportController(
       case (siren, sirets, emails) => Future.successful((siren, sirets, emails, input.onlyHeadOffice, input.level))
     }
 
-  def importUsers = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def importUsers = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
     for {
       importInput                                    <- request.parseBody[ImportInput]()
       (siren, sirets, emails, onlyHeadOffice, level) <- validateInput(importInput)

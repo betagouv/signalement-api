@@ -48,7 +48,7 @@ class AuthController(
   }
 
   def listAuthAttempts(login: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.empty) { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async(parse.empty) { _ =>
       authOrchestrator
         .listAuthenticationAttempts(login)
         .map(authAttempts => Ok(Json.toJson(authAttempts)))

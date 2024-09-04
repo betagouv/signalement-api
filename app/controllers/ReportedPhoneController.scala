@@ -32,7 +32,7 @@ class ReportedPhoneController(
   val logger: Logger                                  = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
       reportRepository
         .getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(reports =>
@@ -59,7 +59,7 @@ class ReportedPhoneController(
     }
 
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       asyncFileRepository
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))

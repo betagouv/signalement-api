@@ -1,49 +1,37 @@
 package utils
 
+import enumeratum._
+import enumeratum.EnumEntry._
 import models.UserRole
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 object Constants {
 
-  object EventType {
+  sealed trait EventType extends EnumEntry with Uppercase
 
-    // Valeurs possibles de event_type
-    case class EventTypeValue(value: String)
+  object EventType extends PlayEnum[EventType] {
 
-    object EventTypeValue {
-      implicit val eventTypeValueWrites: Writes[EventTypeValue] = (eventTypeValue: EventTypeValue) =>
-        Json.toJson(eventTypeValue.value)
-      implicit val eventTypeValueReads: Reads[EventTypeValue] =
-        JsPath.read[String].map(fromValue(_))
-    }
-
-    object PRO    extends EventTypeValue("PRO")
-    object CONSO  extends EventTypeValue("CONSO")
-    object DGCCRF extends EventTypeValue("DGCCRF")
-    object DGAL   extends EventTypeValue("DGAL")
-    object ADMIN  extends EventTypeValue("ADMIN")
-    object SYSTEM extends EventTypeValue("SYSTEM")
-
-    val eventTypes = Seq(
-      PRO,
-      CONSO,
-      DGCCRF,
-      DGAL,
-      ADMIN,
-      SYSTEM
-    )
-
-    def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
+    case object PRO           extends EventType
+    case object CONSO         extends EventType
+    case object DGCCRF        extends EventType
+    case object DGAL          extends EventType
+    case object SUPERADMIN    extends EventType
+    case object READONLYADMIN extends EventType
+    case object ADMIN         extends EventType
+    case object SYSTEM        extends EventType
 
     def fromUserRole(userRole: UserRole) =
       userRole match {
+        case UserRole.SuperAdmin    => SUPERADMIN
         case UserRole.Admin         => ADMIN
+        case UserRole.ReadOnlyAdmin => READONLYADMIN
         case UserRole.DGCCRF        => DGCCRF
         case UserRole.DGAL          => DGAL
         case UserRole.Professionnel => PRO
       }
 
+    override def values: IndexedSeq[EventType] = findValues
   }
 
   object ActionEvent {

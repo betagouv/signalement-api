@@ -2,48 +2,24 @@ package models
 
 import enumeratum._
 
-sealed trait UserRole extends EnumEntry {
-  val permissions: Seq[UserPermission.Value]
-  final def hasPermission(permission: UserPermission.Value) = permissions.contains(permission)
-
-  val isAgentOrAdmin: Boolean
-}
+sealed trait UserRole extends EnumEntry
 
 object UserRole extends PlayEnum[UserRole] {
 
-  final case object Admin extends UserRole {
-    override val permissions    = UserPermission.values.toSeq
-    override val isAgentOrAdmin = true
-  }
-
-  final case object DGCCRF extends UserRole {
-    override val permissions = Seq(
-      UserPermission.listReports,
-      UserPermission.createReportAction,
-      UserPermission.subscribeReports,
-      UserPermission.viewConsumerReviewDetails
-    )
-    override val isAgentOrAdmin = true
-  }
-
-  final case object DGAL extends UserRole {
-    override val permissions = Seq(
-      UserPermission.listReports,
-      UserPermission.createReportAction,
-      UserPermission.subscribeReports,
-      UserPermission.viewConsumerReviewDetails
-    )
-    override val isAgentOrAdmin = true
-  }
-
-  final case object Professionnel extends UserRole {
-    override val permissions = Seq(
-      UserPermission.listReports,
-      UserPermission.createReportAction
-    )
-    override val isAgentOrAdmin = false
-
-  }
+  final case object SuperAdmin    extends UserRole
+  final case object Admin         extends UserRole
+  final case object ReadOnlyAdmin extends UserRole
+  final case object DGCCRF        extends UserRole
+  final case object DGAL          extends UserRole
+  final case object Professionnel extends UserRole
 
   override def values: IndexedSeq[UserRole] = findValues
+
+  val Admins                     = List(SuperAdmin, Admin)
+  val AdminsAndReadOnly          = ReadOnlyAdmin +: Admins
+  val AdminsAndReadOnlyAndCCRF   = DGCCRF +: AdminsAndReadOnly
+  val AdminsAndReadOnlyAndAgents = DGAL +: AdminsAndReadOnlyAndCCRF
+  val EveryoneButReadOnlyAdmin   = List(SuperAdmin, Admin, DGCCRF, DGAL, Professionnel)
+
+  def isAdminOrAgent(userRole: UserRole) = AdminsAndReadOnlyAndAgents.contains(userRole)
 }

@@ -23,7 +23,7 @@ object ExcelColumnsService {
       zone: ZoneId
   ): List[ReportColumn] = {
     val userRole       = requestedBy.userRole
-    val isAgentOrAdmin = userRole.isAgentOrAdmin
+    val isAgentOrAdmin = UserRole.isAdminOrAgent(userRole)
     List(
       ReportColumn(
         "Date de création",

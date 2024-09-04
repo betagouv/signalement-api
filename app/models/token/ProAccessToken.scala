@@ -27,8 +27,8 @@ object ProAccessToken {
       userRole: UserRole
   ): ProAccessToken =
     userRole match {
-      case UserRole.Admin => new ProAccessToken(id, level, emailedTo, expirationDate, Some(token))
-      case _              => new ProAccessToken(id, level, emailedTo, expirationDate, token = None)
+      case UserRole.SuperAdmin | UserRole.Admin => new ProAccessToken(id, level, emailedTo, expirationDate, Some(token))
+      case _ => new ProAccessToken(id, level, emailedTo, expirationDate, token = None)
     }
 
   implicit val ProAccessTokenFormat: OFormat[ProAccessToken] = Json.format[ProAccessToken]

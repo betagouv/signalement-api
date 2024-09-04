@@ -92,7 +92,9 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] = {
     val maybeReport = userRole match {
+      case Some(UserRole.SuperAdmin)    => database.get(id)
       case Some(UserRole.Admin)         => database.get(id)
+      case Some(UserRole.ReadOnlyAdmin) => database.get(id)
       case Some(UserRole.DGCCRF)        => database.get(id)
       case Some(UserRole.DGAL)          => database.get(id)
       case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)

@@ -14,6 +14,8 @@ import models.token.TokenKind
 import models.token.TokenKind.AdminAccount
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.ReadOnlyAdminAccount
+import models.token.TokenKind.SuperAdminAccount
 import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
@@ -63,7 +65,7 @@ class AccessesOrchestrator(
       _ <- user.userRole match {
         case UserRole.DGAL | UserRole.DGCCRF =>
           accessTokenRepository.validateEmail(updateEmailToken, user)
-        case UserRole.Admin | UserRole.Professionnel =>
+        case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.Professionnel =>
           accessTokenRepository.invalidateToken(updateEmailToken)
       }
       updatedUser <-
@@ -73,7 +75,7 @@ class AccessesOrchestrator(
 
   def sendEmailAddressUpdateValidation(user: User, newEmail: EmailAddress): Future[Unit] = {
     val emailValidationFunction = user.userRole match {
-      case UserRole.Admin =>
+      case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
         EmailAddressService.isEmailAcceptableForAdminAccount _
       case UserRole.DGCCRF =>
         EmailAddressService.isEmailAcceptableForDgccrfAccount _
@@ -138,38 +140,34 @@ class AccessesOrchestrator(
   }
 
   def listAgentPendingTokens(user: User, maybeRequestedRole: Option[UserRole]): Future[List[AgentAccessToken]] =
-    user.userRole match {
-      case UserRole.Admin =>
-        accessTokenRepository.fetchPendingAgentTokens
-          .map(
-            _.flatMap { token =>
-              val maybeUserRole = tokenKindToUserRole(token.kind)
-              (maybeUserRole, maybeRequestedRole) match {
-                case (Some(userRole), Some(requestedRole)) if userRole == requestedRole =>
-                  Some(
-                    AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
-                  )
-                case (Some(userRole), None) =>
-                  Some(
-                    AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
-                  )
-                case _ => None
-              }
-            }
-          )
-      case _ =>
-        logger.error(s"DGCCRF/DGAL token accessed by unexpected user with role ${user.userRole}")
-        Future.failed(CantPerformAction)
-    }
+    accessTokenRepository.fetchPendingAgentTokens
+      .map(
+        _.flatMap { token =>
+          val maybeUserRole = tokenKindToUserRole(token.kind)
+          (maybeUserRole, maybeRequestedRole) match {
+            case (Some(userRole), Some(requestedRole)) if userRole == requestedRole =>
+              Some(
+                AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
+              )
+            case (Some(userRole), None) =>
+              Some(
+                AgentAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, userRole)
+              )
+            case _ => None
+          }
+        }
+      )
 
   def activateAdminOrAgentUser(draftUser: DraftUser, token: String): Future[User] = for {
     _                <- PasswordComplexityHelper.validatePasswordComplexity(draftUser.password)
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {
-        case t if t.kind == TokenKind.DGCCRFAccount => (t, UserRole.DGCCRF)
-        case t if t.kind == TokenKind.DGALAccount   => (t, UserRole.DGAL)
-        case t if t.kind == TokenKind.AdminAccount  => (t, UserRole.Admin)
+        case t if t.kind == TokenKind.DGCCRFAccount        => (t, UserRole.DGCCRF)
+        case t if t.kind == TokenKind.DGALAccount          => (t, UserRole.DGAL)
+        case t if t.kind == TokenKind.SuperAdminAccount    => (t, UserRole.SuperAdmin)
+        case t if t.kind == TokenKind.AdminAccount         => (t, UserRole.Admin)
+        case t if t.kind == TokenKind.ReadOnlyAdminAccount => (t, UserRole.ReadOnlyAdmin)
       }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
     _ = logger.debug(s"Token $token found, creating user with role $userRole")
@@ -238,8 +236,14 @@ class AccessesOrchestrator(
   def sendDGALInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGALAccount)
 
+  def sendSuperAdminInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrAgentInvitation(email, TokenKind.SuperAdminAccount)
+
   def sendAdminInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.AdminAccount)
+
+  def sendReadOnlyAdminInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrAgentInvitation(email, TokenKind.ReadOnlyAdminAccount)
 
   def sendAdminOrAgentInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
     val (emailValidationFunction, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
@@ -257,7 +261,7 @@ class AccessesOrchestrator(
           DgccrfAgentAccessLink.Email("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
-      case AdminAccount =>
+      case AdminAccount | SuperAdminAccount | ReadOnlyAdminAccount =>
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration.toJava,
@@ -275,7 +279,11 @@ class AccessesOrchestrator(
       _              <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)
       existingToken = kind match {
-        case AdminAccount                => existingTokens.find(_.kind == AdminAccount)
+        // Kinds are grouped to avoid having multiple tokens for one user
+        case SuperAdminAccount | AdminAccount | ReadOnlyAdminAccount =>
+          existingTokens.find(t =>
+            t.kind == SuperAdminAccount || t.kind == AdminAccount || t.kind == ReadOnlyAdminAccount
+          )
         case DGALAccount | DGCCRFAccount => existingTokens.find(t => t.kind == DGCCRFAccount || t.kind == DGALAccount)
       }
       token <-

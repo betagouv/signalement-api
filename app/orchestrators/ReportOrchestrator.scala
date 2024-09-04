@@ -11,6 +11,7 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
+import models.UserRole.Professionnel
 import models._
 import models.company.AccessLevel
 import models.company.Address
@@ -1065,15 +1066,16 @@ class ReportOrchestrator(
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address.merge(company.map(_.address), report.map(_.companyAddress))
       visibleReportWithMetadata <-
-        if (Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.Admin).contains(user.userRole))
-          Future.successful(reportWithMetadata)
-        else {
-          companiesVisibilityOrchestrator
-            .fetchVisibleCompanies(user)
-            .map(_.map(v => Some(v.company.siret)))
-            .map { visibleSirets =>
-              reportWithMetadata.filter(r => visibleSirets.contains(r.report.companySiret))
-            }
+        user.userRole match {
+          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
+            Future.successful(reportWithMetadata)
+          case Professionnel =>
+            companiesVisibilityOrchestrator
+              .fetchVisibleCompanies(user)
+              .map(_.map(v => Some(v.company.siret)))
+              .map { visibleSirets =>
+                reportWithMetadata.filter(r => visibleSirets.contains(r.report.companySiret))
+              }
         }
     } yield visibleReportWithMetadata.map(_.setAddress(address))
 

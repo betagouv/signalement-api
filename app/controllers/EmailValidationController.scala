@@ -49,7 +49,7 @@ class EmailValidationController(
   }
 
   def validate(): Action[JsValue] =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
       logger.debug("Calling validate email API")
       for {
         body             <- request.parseBody[ValidateEmail]()
@@ -57,7 +57,7 @@ class EmailValidationController(
       } yield Ok(Json.toJson(validationResult))
     }
 
-  def search() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
+  def search() = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { implicit request =>
     EmailValidationFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))

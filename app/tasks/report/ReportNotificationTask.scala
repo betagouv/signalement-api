@@ -139,6 +139,8 @@ object ReportNotificationTask {
                                                                 .nonEmpty)
             case Some(UserRole.DGCCRF)        => true
             case Some(UserRole.Admin)         => true
+            case Some(UserRole.SuperAdmin)    => true
+            case Some(UserRole.ReadOnlyAdmin) => true
             case Some(UserRole.Professionnel) => true
             case None                         => true
           }

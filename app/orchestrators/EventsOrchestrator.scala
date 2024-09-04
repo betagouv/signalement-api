@@ -121,8 +121,8 @@ class EventsOrchestrator(
 
   private def buildEventFilter(eventType: Option[String]) =
     eventType match {
-      case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
-      case None    => EventFilter()
+      case Some(et) => EventFilter(eventType = EventType.withNameOption(et))
+      case None     => EventFilter()
     }
 
 }
