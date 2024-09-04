@@ -87,11 +87,23 @@ class AccountController(
       } yield Ok
     }
 
-  def sendAdminInvitation =
+  def sendAdminInvitation(role: UserRole) =
     SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
-      request
-        .parseBody[EmailAddress](JsPath \ "email")
-        .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
+      role match {
+        case UserRole.SuperAdmin =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendSuperAdminInvitation(email).map(_ => Ok))
+        case UserRole.Admin =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
+        case UserRole.ReadOnlyAdmin =>
+          request
+            .parseBody[EmailAddress](JsPath \ "email")
+            .flatMap(email => accessesOrchestrator.sendReadOnlyAdminInvitation(email).map(_ => Ok))
+        case _ => Future.failed(error.AppError.WrongUserRole(role))
+      }
     }
 
   def fetchPendingAgent(role: Option[UserRole]) =

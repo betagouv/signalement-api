@@ -121,7 +121,7 @@ POST          /api/accesses/:siret/invitation                         controller
 GET           /api/account                                            controllers.AccountController.fetchUser
 GET           /api/account/token                                      controllers.AccountController.fetchTokenInfo(token: String)
 POST          /api/account/activation                                 controllers.AccountController.activateAccount()
-POST          /api/account/admin/invitation                           controllers.AccountController.sendAdminInvitation()
+POST          /api/account/admin/invitation                           controllers.AccountController.sendAdminInvitation(role: UserRole)
 POST          /api/account/agent/invitation                           controllers.AccountController.sendAgentInvitation(role: UserRole)
 POST          /api/account/agent/invitations                          controllers.AccountController.sendAgentsInvitations(role: UserRole)
 GET           /api/account/agent/pending                              controllers.AccountController.fetchPendingAgent(role: Option[UserRole])
