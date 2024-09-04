@@ -611,8 +611,8 @@ class ReportOrchestrator(
     val newReportStatus = Report.initialStatus(
       employeeConsumer = existingReport.employeeConsumer,
       visibleToPro = existingReport.visibleToPro,
-      companySiret = existingReport.companySiret,
-      companyCountry = existingReport.companyAddress.country
+      companySiret = Some(reportCompany.siret),
+      companyCountry = reportCompany.address.country
     )
     val isSameCompany = existingReport.companySiret.contains(reportCompany.siret)
     for {
@@ -660,8 +660,8 @@ class ReportOrchestrator(
               Constants.EventType.ADMIN,
               Constants.ActionEvent.REPORT_COMPANY_CHANGE,
               stringToDetailsJsValue(
-                s"Entreprise précédente : Siret ${updatedReport.companySiret
-                    .getOrElse("non renseigné")} - ${Some(updatedReport.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
+                s"Entreprise précédente : Siret ${existingReport.companySiret
+                    .getOrElse("non renseigné")} - ${Some(existingReport.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
               )
             )
           )
