@@ -5,7 +5,6 @@ import authentication.actions.UserAction.UserRequest
 import controllers.error.AppError.AuthError
 import controllers.error.AppErrorTransformer
 import models.User
-import models.UserPermission
 import models.UserRole
 import play.api.mvc.Results.Forbidden
 import play.api.mvc._
@@ -32,20 +31,8 @@ class UserAction(val parser: BodyParsers.Default, authenticator: Authenticator[U
 object UserAction {
   type UserRequest[A] = IdentifiedRequest[User, A]
 
-  def WithPermission(
-      anyOfPermissions: UserPermission.Value*
-  )(implicit ec: ExecutionContext): ActionFilter[UserRequest] = new ActionFilter[UserRequest] {
-    override protected def executionContext: ExecutionContext = ec
-
-    override protected def filter[A](request: UserRequest[A]): Future[Option[Result]] =
-      Future.successful {
-        if (anyOfPermissions.intersect(request.identity.userRole.permissions).nonEmpty) {
-          None
-        } else {
-          Some(Forbidden)
-        }
-      }
-  }
+  def WithRole(anyOfRoles: List[UserRole])(implicit ec: ExecutionContext): ActionFilter[UserRequest] =
+    WithRole(anyOfRoles: _*)
 
   def WithRole(anyOfRoles: UserRole*)(implicit ec: ExecutionContext): ActionFilter[UserRequest] =
     new ActionFilter[UserRequest] {

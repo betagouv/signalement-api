@@ -37,7 +37,7 @@ class WebsiteController(
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
   val logger: Logger                                  = Logger(this.getClass)
 
-  def create() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { request =>
+  def create() = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { request =>
     request.body
       .validate[WebsiteCreation]
       .fold(
@@ -60,7 +60,7 @@ class WebsiteController(
       hasAssociation: Option[Boolean],
       isOpen: Option[Boolean]
   ) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -79,14 +79,14 @@ class WebsiteController(
     }
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
       websitesOrchestrator
         .fetchUnregisteredHost(host, start, end)
         .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)))
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
       websitesExtractActor ! WebsiteExtractActor.ExtractRequest(
         request.identity,
@@ -102,14 +102,14 @@ class WebsiteController(
   }
 
   def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async { implicit request =>
       websitesOrchestrator
         .updateWebsiteIdentificationStatus(websiteId, identificationStatus, request.identity)
         .map(website => Ok(Json.toJson(website)))
     }
 
   def updateCompany(websiteId: WebsiteId) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
       request.body
         .validate[CompanyCreation]
         .fold(
@@ -122,20 +122,20 @@ class WebsiteController(
     }
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async { request =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry, request.identity)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
     }
 
-  def remove(websiteId: WebsiteId) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+  def remove(websiteId: WebsiteId) = SecuredAction.andThen(WithRole(UserRole.Admins)).async { _ =>
     websitesOrchestrator
       .delete(websiteId)
       .map(_ => Ok)
   }
 
-  def updateInvestigation() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def updateInvestigation() = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
     for {
       websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
       updated                 <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
@@ -144,7 +144,7 @@ class WebsiteController(
   }
 
   def listInvestigationStatus(): Action[AnyContent] =
-    SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)) { _ =>
       Ok(Json.toJson(websitesOrchestrator.listInvestigationStatus()))
     }
 

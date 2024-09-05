@@ -16,7 +16,7 @@ class SiretExtractorController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def extractSiret() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { request =>
+  def extractSiret() = SecuredAction.andThen(WithRole(UserRole.Admins)).async { request =>
     siretExtractorService
       .extractSiret(request.body.asJson)
       .map { response =>

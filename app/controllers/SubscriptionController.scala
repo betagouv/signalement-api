@@ -4,13 +4,13 @@ import authentication.Authenticator
 import models.SubscriptionCreation
 import models.SubscriptionUpdate
 import models.User
-import models.UserPermission
+import models.UserRole
 import orchestrators.SubscriptionOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import authentication.actions.UserAction.WithPermission
+import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -26,7 +26,7 @@ class SubscriptionController(
   val logger: Logger = Logger(this.getClass)
 
   def createSubscription =
-    SecuredAction.andThen(WithPermission(UserPermission.subscribeReports)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async(parse.json) { implicit request =>
       request.body
         .validate[SubscriptionCreation]
         .fold(
@@ -39,7 +39,7 @@ class SubscriptionController(
     }
 
   def updateSubscription(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.subscribeReports)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async(parse.json) { implicit request =>
       request.body
         .validate[SubscriptionUpdate]
         .fold(
@@ -55,19 +55,19 @@ class SubscriptionController(
     }
 
   def getSubscriptions =
-    SecuredAction.andThen(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
       subscriptionOrchestrator.getSubscriptions(request.identity).map(subscriptions => Ok(Json.toJson(subscriptions)))
     }
 
   def getSubscription(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
       subscriptionOrchestrator
         .getSubscription(uuid, request.identity)
         .map(_.map(s => Ok(Json.toJson(s))).getOrElse(NotFound))
     }
 
   def removeSubscription(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
       subscriptionOrchestrator
         .removeSubscription(uuid, request.identity)
         .map(deletedCount => if (deletedCount > 0) Ok else NotFound)

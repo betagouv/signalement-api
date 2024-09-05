@@ -121,11 +121,11 @@ class AdminController(
   private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)] =
     allEmailDefinitions.flatMap(readExamplesWithFullKey)
 
-  def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+  def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     val keys = allEmailExamples.map(_._1)
     Future.successful(Ok(Json.toJson(keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+  def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     val maybeEmail = allEmailExamples
       .find(_._1 == templateRef)
       .map(_._2(EmailAddress(to), controllerComponents.messagesApi))
@@ -144,10 +144,10 @@ class AdminController(
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }
 
-  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
+  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)) { _ =>
     Ok(Json.toJson(availablePdfs.map(_._1)))
   }
-  def sendTestPdf(templateRef: String) = SecuredAction.andThen(WithRole(UserRole.Admin)) { _ =>
+  def sendTestPdf(templateRef: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)) { _ =>
     availablePdfs.toMap
       .get(templateRef)
       .map { html =>
@@ -185,18 +185,19 @@ class AdminController(
       }.sequence
     } yield ()
 
-  def sendProAckToConsumer = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportInputList](Json.reads[ReportInputList])
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        results =>
-          for {
-            reports <- reportRepository.getReportsByIds(results.reportIds)
-            _       <- _sendProAckToConsumer(reports)
-          } yield Ok
-      )
-  }
+  def sendProAckToConsumer =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+      request.body
+        .validate[ReportInputList](Json.reads[ReportInputList])
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          results =>
+            for {
+              reports <- reportRepository.getReportsByIds(results.reportIds)
+              _       <- _sendProAckToConsumer(reports)
+            } yield Ok
+        )
+    }
 
   private def _sendNewReportToPro(reports: List[Report]) = {
     val reportAndCompanyIdList = reports.flatMap(report => report.companyId.map(c => (report, c)))
@@ -217,7 +218,7 @@ class AdminController(
     } yield ()
   }
 
-  def sendNewReportToPro = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+  def sendNewReportToPro = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
     for {
       reportInputList <- request.parseBody[ReportInputList]()
       reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
@@ -256,19 +257,22 @@ class AdminController(
     } yield ()
   }
 
-  def sendReportAckToConsumer = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
-    for {
-      reportInputList <- request.parseBody[ReportInputList]()
-      reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
-      reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reports.map(_.id))
-      _ <- _sendReportAckToConsumer(reports.map(report => (report, reportFiles.getOrElse(report.id, List.empty))).toMap)
-    } yield Ok
+  def sendReportAckToConsumer =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+      logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
+      for {
+        reportInputList <- request.parseBody[ReportInputList]()
+        reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
+        reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reports.map(_.id))
+        _ <- _sendReportAckToConsumer(
+          reports.map(report => (report, reportFiles.getOrElse(report.id, List.empty))).toMap
+        )
+      } yield Ok
 
-  }
+    }
 
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
-    SecuredAction.andThen(WithRole(UserRole.Admin)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(
           Some(request.identity.userRole),
@@ -284,18 +288,19 @@ class AdminController(
       } yield NoContent
     }
 
-  def blackListedIPs() = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+  def blackListedIPs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     ipBlackListRepository.list().map(blackListedIps => Ok(Json.toJson(blackListedIps)))
   }
 
-  def deleteBlacklistedIp(ip: String) = SecuredAction.andThen(WithRole(UserRole.Admin)).async { _ =>
+  def deleteBlacklistedIp(ip: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     ipBlackListRepository.delete(ip).map(_ => NoContent)
   }
 
-  def createBlacklistedIp() = SecuredAction.andThen(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    for {
-      blacklistedIpRequest <- request.parseBody[BlackListedIp]()
-      blackListedIp        <- ipBlackListRepository.create(blacklistedIpRequest)
-    } yield Created(Json.toJson(blackListedIp))
-  }
+  def createBlacklistedIp() =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+      for {
+        blacklistedIpRequest <- request.parseBody[BlackListedIp]()
+        blackListedIp        <- ipBlackListRepository.create(blacklistedIpRequest)
+      } yield Created(Json.toJson(blackListedIp))
+    }
 }

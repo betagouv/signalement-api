@@ -59,7 +59,9 @@ class UserRepository(
         .joinLeft(
           EventTable.table
             .filter(_.action === ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT.value)
-            .filter(user => user.eventType === EventType.DGCCRF.value || user.eventType === EventType.DGAL.value)
+            .filter(user =>
+              user.eventType === EventType.DGCCRF.entryName || user.eventType === EventType.DGAL.entryName
+            )
             .filter(_.userId.isDefined)
             .groupBy(_.userId)
             .map { case (userId, results) => userId -> results.length }

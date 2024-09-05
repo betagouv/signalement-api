@@ -55,7 +55,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     ),
     inactiveAccounts = null,
     companyUpdate = null,
-    probe = ProbeConfiguration(false, Nil),
+    probe = ProbeConfiguration(false),
     exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30))
   )
 

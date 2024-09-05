@@ -30,7 +30,7 @@ class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
         companyId,
         userId,
         creationDate,
-        Constants.EventType.fromValue(eventType),
+        Constants.EventType.withName(eventType),
         Constants.ActionEvent.fromValue(action),
         details
       )
@@ -38,7 +38,7 @@ class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
 
   def extractEvent: PartialFunction[Event, EventData] = {
     case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-      (id, reportId, companyId, userId, creationDate, eventType.value, action.value, details)
+      (id, reportId, companyId, userId, creationDate, eventType.entryName, action.value, details)
   }
 
   def * =

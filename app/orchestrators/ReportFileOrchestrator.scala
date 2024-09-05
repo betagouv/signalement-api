@@ -113,7 +113,7 @@ class ReportFileOrchestrator(
           _.exists(_.filename == filename)
         )
       reportFile <- maybeReportFile.liftTo[Future](AttachmentNotFound(fileId, filename))
-      userHasDeleteFilePermission = user.map(_.userRole.permissions).exists(_.contains(UserPermission.deleteFile))
+      userHasDeleteFilePermission = user.exists(user => UserRole.Admins.contains(user.userRole))
       _ <- reportFile.reportId match {
         case Some(_) if userHasDeleteFilePermission => reportFileRepository.delete(fileId)
         case Some(_) =>

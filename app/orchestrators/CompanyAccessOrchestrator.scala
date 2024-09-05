@@ -13,8 +13,11 @@ import java.time.OffsetDateTime.now
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import models.UserRole.Admin
+import models.UserRole.DGAL
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
+import models.UserRole.ReadOnlyAdmin
+import models.UserRole.SuperAdmin
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.company.AccessLevel
@@ -175,7 +178,7 @@ class CompanyAccessOrchestrator(
       companyAccess <- companyAccessRepository
         .fetchUsersWithLevel(companies.map(_.id))
     } yield (userLevel, user.userRole) match {
-      case (_, Admin) =>
+      case (_, SuperAdmin) | (_, Admin) | (_, ReadOnlyAdmin) =>
         logger.debug(s"Signal conso admin user : setting editable to true")
         companyAccess.map { case (user, level) => toApi(user, level, editable = true, isHeadOffice) }
       case (_, DGCCRF) =>
@@ -191,7 +194,7 @@ class CompanyAccessOrchestrator(
       case (_, Professionnel) =>
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
-      case _ =>
+      case (_, DGAL) =>
         logger.error(s"User is not supposed to access this feature")
         List.empty[UserWithAccessLevel]
     }

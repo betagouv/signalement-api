@@ -1,7 +1,6 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.UserAction.WithPermission
 import authentication.actions.UserAction.WithRole
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -70,7 +69,7 @@ class ReportController(
   }
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         reportCompany <- request.parseBody[ReportCompany]()
@@ -83,7 +82,7 @@ class ReportController(
     }
 
   def updateReportCountry(uuid: UUID, countryCode: String) =
-    SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       reportOrchestrator
         .updateReportCountry(uuid, countryCode, request.identity.id)
@@ -94,7 +93,7 @@ class ReportController(
     }
 
   def updateReportConsumer(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         reportConsumer <- request.parseBody[ReportConsumerUpdate]()
@@ -125,7 +124,7 @@ class ReportController(
     }
 
   def createReportAction(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.EveryoneButReadOnlyAdmin)).async(parse.json) { implicit request =>
       for {
         reportAction       <- request.parseBody[ReportAction]()
         reportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
@@ -141,7 +140,7 @@ class ReportController(
 
     }
   def getReport(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
         maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
@@ -172,7 +171,7 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def reportsAsPDF() = SecuredAction.andThen(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def reportsAsPDF() = SecuredAction.async { implicit request =>
     val reportFutures = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
@@ -208,7 +207,7 @@ class ReportController(
   }
 
   def reportAsZip(reportId: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.listReports)).async(parse.empty) { implicit request =>
+    SecuredAction.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
         .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
@@ -229,7 +228,7 @@ class ReportController(
   }
 
   def deleteReport(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { request =>
       for {
         reportDeletionReason <- request.parseBody[ReportAdminAction]()
         _ <- reportAdminActionOrchestrator.reportDeletion(
@@ -241,7 +240,7 @@ class ReportController(
     }
 
   def deleteSpamReport() =
-    SecuredAction.andThen(WithPermission(UserPermission.deleteReport)).async(parse.json) { request =>
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { request =>
       for {
         reportsIds <- request.parseBody[List[UUID]]()
         deleted <- reportAdminActionOrchestrator.deleteSpammedReport(
@@ -252,7 +251,7 @@ class ReportController(
     }
 
   def reopenReport(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.deleteReport)).async(parse.empty) { request =>
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.empty) { request =>
       for {
         _ <- reportAdminActionOrchestrator.reportReOpening(
           uuid,
@@ -276,7 +275,7 @@ class ReportController(
     }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
-    SecuredAction.andThen(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { implicit request =>
       for {
         maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
         maybeReport = maybeReportWithMetadata.map(_.report)

@@ -91,7 +91,7 @@ class StatisticController(
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction
     .andThen(
-      WithRole(UserRole.Admin, UserRole.DGCCRF)
+      WithRole(UserRole.AdminsAndReadOnlyAndCCRF)
     )
     .async {
       statsOrchestrator
@@ -168,7 +168,7 @@ class StatisticController(
   }
 
   def countByDepartments() =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
       val mapper = new QueryStringMapper(request.queryString)
       val start  = mapper.localDate("start")
       val end    = mapper.localDate("end")
@@ -176,7 +176,7 @@ class StatisticController(
     }
 
   def reportsCountBySubcategories() =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
@@ -189,7 +189,7 @@ class StatisticController(
     }
 
   def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) =
-    SecuredAction.andThen(WithRole(UserRole.Admin, UserRole.DGCCRF, UserRole.DGAL)).async { _ =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
       statsOrchestrator
         .fetchAdminActionEvents(companyId, reportAdminActionType)
         .map(count => Ok(Json.obj("value" -> count)))
