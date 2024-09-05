@@ -34,16 +34,6 @@ class AccountController(
 
   implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
-  def fetchUser = SecuredAction.async { implicit request =>
-    for {
-      userOpt <- userRepository.get(request.identity.id)
-    } yield userOpt
-      .map { user =>
-        Ok(Json.toJson(user))
-      }
-      .getOrElse(NotFound)
-  }
-
   def activateAccount = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()

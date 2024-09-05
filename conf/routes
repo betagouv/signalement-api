@@ -118,7 +118,6 @@ DELETE        /api/accesses/:siret/token/:tokenId                     controller
 POST          /api/accesses/:siret/invitation                         controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
-GET           /api/account                                            controllers.AccountController.fetchUser
 GET           /api/account/token                                      controllers.AccountController.fetchTokenInfo(token: String)
 POST          /api/account/activation                                 controllers.AccountController.activateAccount()
 POST          /api/account/admin/invitation                           controllers.AccountController.sendAdminInvitation(role: UserRole)
