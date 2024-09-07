@@ -16,10 +16,13 @@ libraryDependencies ++= Seq(
 ) ++ Dependencies.AppDependencies
 
 scalafmtOnCompile := true
+
+javacOptions ++= Seq(
+  "--release", "21" // Use --release for better compatibility if Java 21 must be targeted
+)
 scalacOptions ++= Seq(
   "-explaintypes",
   "-Ywarn-macros:after",
-  "-release:17",
   "-Wconf:cat=unused-imports&src=views/.*:s",
   "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",

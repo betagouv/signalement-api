@@ -692,7 +692,8 @@ class SignalConsoComponents(
     cookieAuthenticator,
     controllerComponents,
     reportWithDataOrchestrator,
-    reportZipExportService
+    reportZipExportService,
+    htmlFromTemplateGenerator
   )
 
   val reportedPhoneController = new ReportedPhoneController(

@@ -1,0 +1,183 @@
+@import utils.FrontRoute
+@import java.time.LocalDateTime
+@import java.time.format.DateTimeFormatter
+@import models.report._
+
+@import models.event.Event
+@import models.company.Company
+
+@import models.report.ExistingReportResponse
+@(
+        report: Report,
+        maybeCompany: Option[Company],
+        events: Seq[(Event, Option[User])],
+        responseOption: Option[ExistingReportResponse],
+        companyEvents: Seq[(Event, Option[User])]
+)(
+        implicit frontRoute: FrontRoute, userRoleOpt: Option[UserRole] = None, messageProvider: MessagesProvider
+)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="viewport" content="width=device-width" />
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>@Messages("reportPDF.page.title", report.id)</title>
+
+        <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
+    </head>
+    <body>
+        <div style="page-break-before: always;">
+            <div class="logo-marianne">
+                <img src='@routes.Assets.versioned("images/logo-marianne.jpg")'/>
+            </div>
+            <div class="logo-sc">
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
+            </div>
+            <div class="references">
+                <small>
+                    @Messages("reportPDF.references.uniqueId", report.id)<br>
+                @Messages("reportPDF.references.documentExtractedOn", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss")))
+                </small>
+            </div>
+            <div class="content">
+                <div>
+                    <h2>@Messages("reportPDF.report.typeHeader")</h2>
+                    <ul>
+                        <li>
+                        @ReportCategory.displayValue(report.category)
+                        </li>
+                        @report.subcategories.map { subcat =>
+                            <li>
+                                @subcat
+                            </li>
+                        }
+                    </ul>
+                    <h2>@Messages("reportPDF.report.detailHeader")</h2>
+                    <ul>
+                    @report.details.map { input =>
+                        <li>
+                            <b>@Html(input.label)</b> @input.value
+                        </li>
+                    }
+                    </ul>
+                    @report.influencer.map { influencer =>
+                        <h3>@Messages("reportPDF.report.influencerHeader")</h3>
+                        <ul>
+                            <li><b>@Messages("reportPDF.report.influencerName", influencer.name)</b></li>
+                            <li><b>@Messages("reportPDF.report.influencerPlatform", influencer.socialNetwork)</b></li>
+                        </ul>
+                    }
+                    @responseOption.map { response =>
+                        <h2>@Messages("reportPDF.report.responseHeader")</h2>
+
+                        <b>
+                        @response.responseType match {
+                            case ReportResponseType.ACCEPTED => {
+                                @Messages("reportPDF.report.responseAccepted")
+                            }
+                            case ReportResponseType.REJECTED => {
+                                @Messages("reportPDF.report.responseRejected")
+                            }
+                            case ReportResponseType.NOT_CONCERNED => {
+                                @Messages("reportPDF.report.responseNotConcerned")
+                            }
+                        }
+
+                        </b>
+                        <div>
+                         <b>
+                             @ExistingReportResponse.translateResponseDetails(response).getOrElse("")
+                         </b>
+                        </div>
+                    }
+
+                    <h2>@Messages("reportPDF.report.companyHeader")</h2>
+                    @report.companySiret.map { siret =>
+                        <div>
+                            <b>@siret</b>
+                        </div>
+                    }
+                    <div>
+                    @views.html.fragments.proAddressForConsumer(maybeCompany)
+                    </div>
+                    @report.websiteURL.websiteURL.map { url =>
+                        <div>
+                            @url
+                        </div>
+                    }
+                    @report.phone.map { phone =>
+                        <div>
+                            @phone
+                        </div>
+                    }
+                    @report.vendor.map { vendor =>
+                        <div>
+                            <h2>@Messages("reportPDF.report.vendorHeader")</h2>
+                            <div>@vendor</div>
+                        </div>
+                    }
+                    <h2>@Messages("reportPDF.report.consumerHeader")</h2>
+                    @if(report.contactAgreement) {
+
+                        <div>
+                            <b>@report.firstName @report.lastName</b>
+                        </div>
+                        <div>
+                        @report.email
+                        </div>
+                        @report.consumerPhone.map { phone =>
+                            <div>
+                                @phone
+                            </div>
+                        }
+                        @report.consumerReferenceNumber.map { consumerReferenceNumber =>
+                            <div>
+                                @Messages("reportPDF.report.consumerReferenceNumber", consumerReferenceNumber)
+                            </div>
+                        }
+                    } else {
+                        <div class="note">@Messages("reportPDF.report.consumerAnonymousNote")</div>
+                    }
+                </div>
+                @if(userRoleOpt.isDefined) {
+                    <div>
+                        <h2>@Messages("reportPDF.report.historyHeader")</h2>
+                        <p>
+                            <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
+                            <br />
+                            <b>@Messages("reportPDF.report.historyEntryCreation")</b>
+                        </p>
+                        @events.sortBy(_._1.creationDate).map { case (e, u) =>
+                        <p>
+                            <span class="note">@e.formattedDate</span>
+                            <br />
+                            <b>@e.action.value</b>
+                            <br />
+                            @e.getDescription
+                        </p>
+                        }
+                    </div>
+                    @if(report.companyId.isDefined) {
+                        <div>
+                            <h2>@Messages("reportPDF.report.companyHistoryHeader")</h2>
+                            @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
+                            <p>
+                                <span class="note">@e.formattedDate</span>
+                                <br />
+                                <b>@e.action.value</b>
+                                <br />
+                                @e.getDescription
+                            </p>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <div class="footer text-center">
+                <img src='@routes.Assets.versioned("images/logo-ministere.jpg")'/>
+            </div>
+        </div>
+    </body>
+</html>
