@@ -48,7 +48,8 @@ class ReportController(
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents,
     reportWithDataOrchestrator: ReportWithDataOrchestrator,
-    massImportService: ReportZipExportService
+    massImportService: ReportZipExportService,
+    htmlFromTemplateGenerator: HtmlFromTemplateGenerator
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -139,6 +140,7 @@ class ReportController(
         .getOrElse(NotFound)
 
     }
+
   def getReport(uuid: UUID) =
     SecuredAction.async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
@@ -179,23 +181,7 @@ class ReportController(
     Future
       .sequence(reportFutures)
       .map(_.flatten)
-      .map(
-        _.map { reportData =>
-          val lang                               = Lang(reportData.report.lang.getOrElse(Locale.FRENCH))
-          val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
-          views.html.pdfs
-            .report(
-              reportData.report,
-              reportData.maybeCompany,
-              reportData.events,
-              reportData.responseOption,
-              reportData.consumerReviewOption,
-              reportData.engagementReviewOption,
-              reportData.companyEvents,
-              reportData.files
-            )(frontRoute = frontRoute, None, messagesProvider)
-        }
-      )
+      .map(_.map(htmlFromTemplateGenerator.reportPdf(_, request.identity)))
       .map(pdfService.createPdfSource)
       .map(pdfSource =>
         Ok.chunked(
@@ -211,7 +197,7 @@ class ReportController(
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
         .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-        .flatMap(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData))
+        .flatMap(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData, request.identity))
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,
