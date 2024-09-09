@@ -120,7 +120,6 @@
                     }
                     <h2>@Messages("reportPDF.report.consumerHeader")</h2>
                     @if(report.contactAgreement) {
-
                         <div>
                             <b>@report.firstName @report.lastName</b>
                         </div>
@@ -141,39 +140,6 @@
                         <div class="note">@Messages("reportPDF.report.consumerAnonymousNote")</div>
                     }
                 </div>
-                @if(userRoleOpt.isDefined) {
-                    <div>
-                        <h2>@Messages("reportPDF.report.historyHeader")</h2>
-                        <p>
-                            <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
-                            <br />
-                            <b>@Messages("reportPDF.report.historyEntryCreation")</b>
-                        </p>
-                        @events.sortBy(_._1.creationDate).map { case (e, u) =>
-                        <p>
-                            <span class="note">@e.formattedDate</span>
-                            <br />
-                            <b>@e.action.value</b>
-                            <br />
-                            @e.getDescription
-                        </p>
-                        }
-                    </div>
-                    @if(report.companyId.isDefined) {
-                        <div>
-                            <h2>@Messages("reportPDF.report.companyHistoryHeader")</h2>
-                            @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
-                            <p>
-                                <span class="note">@e.formattedDate</span>
-                                <br />
-                                <b>@e.action.value</b>
-                                <br />
-                                @e.getDescription
-                            </p>
-                            }
-                        </div>
-                    }
-                }
             </div>
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.jpg")'/>
