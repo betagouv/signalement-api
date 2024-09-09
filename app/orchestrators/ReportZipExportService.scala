@@ -7,6 +7,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
+import models.User
 import models.report.ReportFile
 import models.report.ReportFileApi
 import play.api.Logger
@@ -40,10 +41,14 @@ class ReportZipExportService(
     }
 
   def reportSummaryWithAttachmentsZip(
-      reportWithData: ReportWithData
+      reportWithData: ReportWithData,
+      user: User
   ): Future[Source[ByteString, Future[IOResult]]] = for {
-    reportAttachmentSources <- buildReportAttachmentsSources(reportWithData.report.creationDate, reportWithData.files)
-    reportPdfSummarySource = buildReportPdfSummarySource(reportWithData)
+    reportAttachmentSources <- buildReportAttachmentsSources(
+      reportWithData.report.creationDate,
+      reportWithData.files
+    )
+    reportPdfSummarySource = buildReportPdfSummarySource(reportWithData, user)
     fileSourcesFutures     = reportAttachmentSources :+ reportPdfSummarySource
   } yield ZipBuilder.buildZip(fileSourcesFutures)
 
@@ -51,10 +56,10 @@ class ReportZipExportService(
       creationDate: OffsetDateTime,
       reportFiles: Seq[ReportFileApi]
   ) = for {
-    existingFiles <- reportFiles.traverse(f =>
-      s3Service.exists(f.storageFilename).map(exists => (f, exists))
-    ) map (_.collect { case (file, true) =>
-      file
+    existingFiles <- reportFiles
+      .traverse(f => s3Service.exists(f.storageFilename).map(exists => (f, exists))) map (_.collect {
+      case (file, true) =>
+        file
     })
     reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
       buildReportAttachmentSource(creationDate, file, i + 1)
@@ -76,9 +81,11 @@ class ReportZipExportService(
   } yield ZipBuilder.buildZip(reportAttachmentSources)
 
   private def buildReportPdfSummarySource(
-      reportWithData: ReportWithData
+      reportWithData: ReportWithData,
+      user: User
   ): (ReportZipEntryName, Source[ByteString, Unit]) = {
-    val htmlForPdf = htmlFromTemplateGenerator.reportPdf(reportWithData)
+    val htmlForPdf = htmlFromTemplateGenerator.reportPdf(reportWithData, user)
+
     (
       ReportZipEntryName(
         s"${reportWithData.report.creationDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))}.pdf"

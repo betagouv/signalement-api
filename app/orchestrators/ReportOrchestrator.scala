@@ -601,7 +601,17 @@ class ReportOrchestrator(
       )
     } yield updatedReport
 
-  def updateReportCompany(
+  def updateReportCompanyForWebsite(
+      existingReport: Report,
+      reportCompany: ReportCompany,
+      adminUserId: UUID
+  ) =
+    if (isReportTooOld(existingReport))
+      Future.unit
+    else
+      updateReportCompany(existingReport, reportCompany, adminUserId).map(_ => ())
+
+  private def updateReportCompany(
       existingReport: Report,
       reportCompany: ReportCompany,
       adminUserId: UUID
@@ -808,48 +818,6 @@ class ReportOrchestrator(
       )
     } yield ()
   }
-
-  // dead code ?
-  def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
-    for {
-      report <- reportRepository.get(reportId)
-      newEvent <- report match {
-        case Some(r) =>
-          eventRepository
-            .create(
-              draftEvent.copy(
-                id = UUID.randomUUID(),
-                creationDate = OffsetDateTime.now(),
-                reportId = Some(r.id),
-                companyId = r.companyId,
-                userId = Some(user.id)
-              )
-            )
-            .map(Some(_))
-        case _ => Future.successful(None)
-      }
-      _ <- (report, newEvent) match {
-        case (Some(r), Some(event)) =>
-          reportRepository
-            .update(
-              r.id,
-              r.copy(status = event.action match {
-                case POST_ACCOUNT_ACTIVATION_DOC => ReportStatus.TraitementEnCours
-                case _                           => r.status
-              })
-            )
-            .map(Some(_))
-        case _ => Future.successful(None)
-      }
-    } yield {
-      newEvent.foreach(event =>
-        event.action match {
-          case REPORT_READING_BY_PRO => updateReportAndEventuallyNotifyConsumer(report.get)
-          case _                     => ()
-        }
-      )
-      newEvent
-    }
 
   def handleReportResponse(report: Report, reportResponse: IncomingReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
