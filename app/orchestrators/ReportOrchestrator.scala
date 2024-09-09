@@ -602,10 +602,10 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def updateReportCompanyForWebsite(
-                                     existingReport: Report,
-                                     reportCompany: ReportCompany,
-                                     adminUserId: UUID
-                                   ) =
+      existingReport: Report,
+      reportCompany: ReportCompany,
+      adminUserId: UUID
+  ) =
     if (isReportTooOld(existingReport))
       Future.unit
     else
