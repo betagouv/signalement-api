@@ -18,7 +18,8 @@ libraryDependencies ++= Seq(
 scalafmtOnCompile := true
 
 javacOptions ++= Seq(
-  "--release", "21" // Use --release for better compatibility if Java 21 must be targeted
+  "--release",
+  "21"
 )
 scalacOptions ++= Seq(
   "-explaintypes",
