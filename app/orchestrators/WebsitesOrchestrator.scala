@@ -1,7 +1,6 @@
 package orchestrators
 
-import cats.implicits.catsSyntaxMonadError
-import cats.implicits.catsSyntaxOption
+import cats.implicits.{catsSyntaxMonadError, catsSyntaxOption, toTraverseOps}
 import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.CreateWebsiteError
 import controllers.error.AppError.MalformedHost
@@ -271,8 +270,7 @@ class WebsitesOrchestrator(
     )
     for {
       reports <- reportRepository.getForWebsiteWithoutCompany(websiteHost)
-      updates = reports.map(reportId => reportOrchestrator.updateReportCompany(reportId, reportCompany, userId))
-      _ <- Future.sequence(updates)
+      _ <- reports.traverse(reportId => reportOrchestrator.updateReportCompanyForWebsite(reportId, reportCompany, userId))
     } yield ()
   }
 
