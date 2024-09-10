@@ -5,6 +5,7 @@ import play.api.libs.json.JsValue
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
 import sttp.client3.SttpBackend
+import sttp.client3.SttpClientException
 import sttp.client3.UriContext
 import sttp.client3.basicRequest
 import sttp.client3.playJson.asJson
@@ -44,6 +45,10 @@ class OpenFoodFactsService(implicit ec: ExecutionContext) extends OpenFoodFactsS
           logger.warn(s"Error while calling Open Food Facts: ${response.code}")
           Future.successful(None)
         }
+      }
+      .recover { case e: SttpClientException.ReadException =>
+        logger.warn("Received ReadException from Open Food Facts", e)
+        None
       }
   }
 }
