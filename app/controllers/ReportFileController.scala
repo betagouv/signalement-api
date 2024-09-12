@@ -86,7 +86,7 @@ class ReportFileController(
         .map(_ => NoContent)
   }
 
-  def uploadReportFile: Action[MultipartFormData[Files.TemporaryFile]] =
+  def uploadReportFile(reportFileId: Option[UUID]): Action[MultipartFormData[Files.TemporaryFile]] =
     IpRateLimitedAction1.async(parse.multipartFormData) { request =>
       for {
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
@@ -106,7 +106,8 @@ class ReportFileController(
           .saveReportFile(
             filePart.filename,
             tmpFile,
-            dataPart
+            dataPart,
+            reportFileId.map(ReportFileId.apply)
           )
       } yield Ok(Json.toJson(ReportFileApi.buildForFileOwner(reportFile)))
     }
