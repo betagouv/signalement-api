@@ -63,11 +63,16 @@ class ReportFileOrchestrator(
       _     <- files.traverse(validateAntivirusScanAndRescheduleScanIfNecessary)
     } yield files.map(ReportFileApi.build)
 
-  def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
+  def saveReportFile(
+      filename: String,
+      file: java.io.File,
+      origin: ReportFileOrigin,
+      reportFileId: Option[ReportFileId]
+  ): Future[ReportFile] =
     for {
       reportFile <- reportFileRepository.create(
         ReportFile(
-          ReportFileId.generateId(),
+          reportFileId.getOrElse(ReportFileId.generateId()),
           reportId = None,
           creationDate = OffsetDateTime.now(),
           filename = filename,

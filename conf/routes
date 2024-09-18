@@ -37,7 +37,7 @@ POST          /api/reports/extract                                    controller
 GET           /api/reports/files                                      controllers.ReportFileController.downloadZip(reportId: java.util.UUID, origin :  Option[ReportFileOrigin])
 GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
-POST          /api/reports/files                                      controllers.ReportFileController.uploadReportFile()
+POST          /api/reports/files                                      controllers.ReportFileController.uploadReportFile(reportFileId: Option[java.util.UUID])
 POST          /api/reports/files/list                                 controllers.ReportFileController.retrieveReportFiles()
 
 GET           /api/reports/download                                   controllers.ReportController.reportsAsPDF()
