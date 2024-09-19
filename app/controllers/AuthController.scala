@@ -4,6 +4,7 @@ import authentication.CookieAuthenticator
 import models.UserRole
 import orchestrators.AuthOrchestrator
 import play.api._
+import play.api.libs.json.JsPath
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import models.auth.PasswordChange
@@ -14,6 +15,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import authentication.actions.UserAction.WithRole
+import utils.EmailAddress
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -39,8 +41,21 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def logout(): Action[AnyContent] = SecuredAction { _ =>
-    authenticator.discard(NoContent)
+  def logAs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+    for {
+      userEmail   <- request.parseBody[EmailAddress](JsPath \ "email")
+      userSession <- authOrchestrator.logAs(userEmail, request)
+    } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+  }
+
+  def logout(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    request.identity.impersonator match {
+      case Some(impersonator) =>
+        authOrchestrator
+          .logoutAs(impersonator, request)
+          .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+      case None => Future.successful(authenticator.discard(NoContent))
+    }
   }
 
   def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>

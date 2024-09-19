@@ -25,7 +25,8 @@ case class User(
     lastName: String,
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime],
-    deletionDate: Option[OffsetDateTime] = None
+    deletionDate: Option[OffsetDateTime] = None,
+    impersonator: Option[EmailAddress] = None
 ) {
   def fullName: String = s"${firstName} ${lastName}"
   def isAdmin: Boolean = this.userRole == UserRole.Admin
@@ -41,7 +42,8 @@ object User {
       "lastName"            -> user.lastName,
       "role"                -> user.userRole.entryName,
       "lastEmailValidation" -> user.lastEmailValidation,
-      "deletionDate"        -> user.deletionDate
+      "deletionDate"        -> user.deletionDate,
+      "impersonator"        -> user.impersonator
     )
 
 }

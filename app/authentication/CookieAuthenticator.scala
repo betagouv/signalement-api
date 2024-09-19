@@ -53,19 +53,26 @@ class CookieAuthenticator(
 
   def authenticate[B](request: Request[B]): Future[Either[AuthError, Option[User]]] =
     extract(request) match {
-      case Right(cookieInfos) => userRepository.findByEmail(cookieInfos.userEmail.value).map(Right(_))
-      case Left(authError)    => Future.successful(Left(authError))
+      case Right(cookieInfos) =>
+        userRepository
+          .findByEmail(cookieInfos.userEmail.value)
+          .map(_.map(_.copy(impersonator = cookieInfos.impersonator)))
+          .map(Right(_))
+      case Left(authError) => Future.successful(Left(authError))
     }
 
   private def serialize(cookieInfos: CookieInfos): Either[AuthError, String] = for {
     crypted <- crypter.encrypt(Json.toJson(cookieInfos).toString())
   } yield signer.sign(crypted)
 
-  private def create(userEmail: EmailAddress)(implicit request: RequestHeader): CookieInfos = {
+  private def create(userEmail: EmailAddress, impersonator: Option[EmailAddress] = None)(implicit
+      request: RequestHeader
+  ): CookieInfos = {
     val now = OffsetDateTime.now()
     CookieInfos(
       id = UUID.randomUUID().toString,
       userEmail = userEmail,
+      impersonator = impersonator,
       lastUsedDateTime = now,
       expirationDateTime = now.plus(settings.authenticatorExpiry.toMillis, ChronoUnit.MILLIS),
       idleTimeout = settings.authenticatorIdleTimeout,
@@ -76,6 +83,26 @@ class CookieAuthenticator(
 
   def init(userEmail: EmailAddress)(implicit request: RequestHeader): Either[AuthError, Cookie] = {
     val cookieInfos = create(userEmail)
+    serialize(cookieInfos).map { value =>
+      Cookie(
+        name = settings.cookieName,
+        value = value,
+        // The maxAge` must be used from the authenticator, because it might be changed by the user
+        // to implement "Remember Me" functionality
+        maxAge = cookieInfos.cookieMaxAge.map(_.toSeconds.toInt),
+        path = settings.cookiePath,
+        domain = settings.cookieDomain,
+        secure = settings.secureCookie,
+        httpOnly = settings.httpOnlyCookie,
+        sameSite = settings.sameSite
+      )
+    }
+  }
+
+  def initImpersonated(userEmail: EmailAddress, impersonator: EmailAddress)(implicit
+      request: RequestHeader
+  ): Either[AuthError, Cookie] = {
+    val cookieInfos = create(userEmail, Some(impersonator))
     serialize(cookieInfos).map { value =>
       Cookie(
         name = settings.cookieName,
