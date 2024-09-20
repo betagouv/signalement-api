@@ -97,6 +97,7 @@ GET           /api/mobileapp/requirements                             controller
 
 # Authentication API
 POST          /api/authenticate                                       controllers.AuthController.authenticate()
+POST          /api/log-as                                             controllers.AuthController.logAs()
 POST          /api/logout                                             controllers.AuthController.logout()
 GET           /api/current-user                                       controllers.AuthController.getUser()
 POST          /api/authenticate/password/forgot                       controllers.AuthController.forgotPassword()

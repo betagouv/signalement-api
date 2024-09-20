@@ -727,7 +727,7 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
-    if (user.userRole == UserRole.Professionnel) {
+    if (user.userRole == UserRole.Professionnel && user.impersonator.isEmpty) {
       val report = reportWithMetadata.report
       eventRepository
         .getEvents(report.id, EventFilter(None))

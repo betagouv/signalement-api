@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import authentication.actions.UserAction.WithRole
 import models.User
 import models.UserRole
@@ -31,12 +32,12 @@ class EngagementController(
   }
 
   def check(id: EngagementId) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
       engagementOrchestrator.check(request.identity, id).map(_ => NoContent)
     }
 
   def uncheck(id: EngagementId) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
       engagementOrchestrator.uncheck(request.identity, id).map(_ => NoContent)
     }
 

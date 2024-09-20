@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import models.User
 import models.UserRole
 import models.report.ReportBlockedNotificationBody
@@ -25,22 +26,28 @@ class ReportBlockedNotificationController(
     orchestrator.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))
   }
 
-  def create() = SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportBlockedNotificationBody]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        body =>
-          orchestrator.createIfNotExists(request.identity.id, body.companyIds).map(entity => Ok(Json.toJson(entity)))
-      )
-  }
+  def create() =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        request.body
+          .validate[ReportBlockedNotificationBody]
+          .fold(
+            errors => Future.successful(BadRequest(JsError.toJson(errors))),
+            body =>
+              orchestrator
+                .createIfNotExists(request.identity.id, body.companyIds)
+                .map(entity => Ok(Json.toJson(entity)))
+          )
+    }
 
-  def delete() = SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportBlockedNotificationBody]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        body => orchestrator.delete(request.identity.id, body.companyIds).map(_ => Ok)
-      )
-  }
+  def delete() =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        request.body
+          .validate[ReportBlockedNotificationBody]
+          .fold(
+            errors => Future.successful(BadRequest(JsError.toJson(errors))),
+            body => orchestrator.delete(request.identity.id, body.companyIds).map(_ => Ok)
+          )
+    }
 }

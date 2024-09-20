@@ -2,6 +2,7 @@ package orchestrators
 
 import authentication.CookieAuthenticator
 import authentication.CredentialsProvider
+import authentication.actions.IdentifiedRequest
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
 import cats.instances.future.catsStdInstancesForFuture
@@ -112,6 +113,28 @@ class AuthOrchestrator(
       }
 
   }
+
+  def logAs(userEmail: EmailAddress, request: IdentifiedRequest[User, _]) = for {
+    maybeUserToImpersonate <- userRepository.findByEmail(userEmail.value)
+    userToImpersonate      <- maybeUserToImpersonate.liftTo[Future](UserNotFound(userEmail.value))
+    _ <- userToImpersonate.userRole match {
+      case UserRole.Professionnel => Future.unit
+      case _                      => Future.failed(AuthError("Not a pro"))
+    }
+    cookie <- authenticator.initImpersonated(userEmail, request.identity.email)(request) match {
+      case Right(value) => Future.successful(value)
+      case Left(error)  => Future.failed(error)
+    }
+  } yield UserSession(cookie, userToImpersonate.copy(impersonator = Some(request.identity.email)))
+
+  def logoutAs(userEmail: EmailAddress, request: Request[_]) = for {
+    maybeUser <- userRepository.findByEmail(userEmail.value)
+    user      <- maybeUser.liftTo[Future](UserNotFound(userEmail.value))
+    cookie <- authenticator.init(userEmail)(request) match {
+      case Right(value) => Future.successful(value)
+      case Left(error)  => Future.failed(error)
+    }
+  } yield UserSession(cookie, user)
 
   def forgotPassword(resetPasswordLogin: UserLogin): Future[Unit] =
     userRepository.findByEmail(resetPasswordLogin.login).flatMap {

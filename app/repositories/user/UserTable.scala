@@ -27,7 +27,7 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
   }
 
   def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate) =>
+    case User(id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate, _) =>
       (id, password, email, firstName, lastName, role.entryName, lastEmailValidation, deletionDate)
   }
 
