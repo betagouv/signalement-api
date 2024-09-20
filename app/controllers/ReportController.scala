@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import authentication.actions.UserAction.WithRole
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -108,19 +109,20 @@ class ReportController(
     }
 
   def reportResponse(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
-      implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
-      logger.debug(s"reportResponse ${uuid}")
-      for {
-        reportResponse            <- request.parseBody[IncomingReportResponse]()
-        visibleReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
-        visibleReport = visibleReportWithMetadata.map(_.report)
-        updatedReport <- visibleReport
-          .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
-          .sequence
-      } yield updatedReport
-        .map(r => Ok(Json.toJson(r)))
-        .getOrElse(NotFound)
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
+        logger.debug(s"reportResponse ${uuid}")
+        for {
+          reportResponse            <- request.parseBody[IncomingReportResponse]()
+          visibleReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+          visibleReport = visibleReportWithMetadata.map(_.report)
+          updatedReport <- visibleReport
+            .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
+            .sequence
+        } yield updatedReport
+          .map(r => Ok(Json.toJson(r)))
+          .getOrElse(NotFound)
 
     }
 
@@ -247,17 +249,18 @@ class ReportController(
     }
 
   def updateReportAssignedUser(uuid: UUID, userId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
-      for {
-        reportComment <- request.parseBody[ReportComment]()
-        updatedReportWithMetadata <- reportAssignmentOrchestrator
-          .assignReportToUser(
-            reportId = uuid,
-            assigningUser = request.identity,
-            newAssignedUserId = userId,
-            reportComment
-          )
-      } yield Ok(Json.toJson(updatedReportWithMetadata))
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        for {
+          reportComment <- request.parseBody[ReportComment]()
+          updatedReportWithMetadata <- reportAssignmentOrchestrator
+            .assignReportToUser(
+              reportId = uuid,
+              assigningUser = request.identity,
+              newAssignedUserId = userId,
+              reportComment
+            )
+        } yield Ok(Json.toJson(updatedReportWithMetadata))
     }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =

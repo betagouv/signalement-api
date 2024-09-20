@@ -12,6 +12,7 @@ import scala.concurrent.duration._
 case class CookieInfos(
     id: String,
     userEmail: EmailAddress,
+    impersonator: Option[EmailAddress],
     lastUsedDateTime: OffsetDateTime,
     expirationDateTime: OffsetDateTime,
     idleTimeout: Option[FiniteDuration],
