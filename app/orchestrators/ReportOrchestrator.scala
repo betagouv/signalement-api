@@ -311,7 +311,7 @@ class ReportOrchestrator(
     } yield Done
   }
 
-  private def createReport(draftReport: ReportDraft): Future[Report] =
+  def createReport(draftReport: ReportDraft): Future[Report] =
     for {
       maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionalCountry(draftReport)
@@ -340,7 +340,7 @@ class ReportOrchestrator(
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
-  private def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
+  def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
     draftReport.metadata
       .map { metadataDraft =>
         val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)

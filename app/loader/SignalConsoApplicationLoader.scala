@@ -10,6 +10,7 @@ import authentication._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
+import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
@@ -783,6 +784,9 @@ class SignalConsoComponents(
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
+
+  (new SampleDataService(companyRepository, userRepository, accessTokenRepository, reportOrchestrator)(actorSystem))
+    .genSampleData()
 
   // Routes
   lazy val router: Router =

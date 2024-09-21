@@ -56,6 +56,8 @@ case class Address(
 object Address {
   implicit val addressFormat: OFormat[Address] = Json.format[Address]
 
+  val Empty = Address(None, None, None, None, None, None)
+
   def merge(base: Option[Address], alternative: Option[Address]): Address = {
     val a = base.getOrElse(Address())
     val b = alternative.getOrElse(Address())
