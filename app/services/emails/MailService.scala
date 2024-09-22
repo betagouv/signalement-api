@@ -33,13 +33,13 @@ class MailService(
       email: BaseEmail
   ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)
-    case _ =>
-      send(
-        email.recipients,
-        email.subject,
-        email.getBody(frontRoute, contactAddress),
-        email.getAttachements(attachmentService)
-      )
+    case _                       => Future.unit
+//      send(
+//        email.recipients,
+//        email.subject,
+//        email.getBody(frontRoute, contactAddress),
+//        email.getAttachements(attachmentService)
+//      )
   }
 
   /** Filter pro user recipients that are excluded from notifications and send email

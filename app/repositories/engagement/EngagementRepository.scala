@@ -68,4 +68,10 @@ class EngagementRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .on { case (((engagement, _), _), resolutionEvent) => engagement.resolutionEventId === resolutionEvent.id }
         .result
     )
+
+  override def remove(reportId: UUID): Future[Int] = db.run(
+    table
+      .filter(_.reportId === reportId)
+      .delete
+  )
 }

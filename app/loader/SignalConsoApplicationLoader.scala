@@ -785,7 +785,18 @@ class SignalConsoComponents(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
 
-  (new SampleDataService(companyRepository, userRepository, accessTokenRepository, reportOrchestrator)(actorSystem))
+  (new SampleDataService(
+    companyRepository,
+    userRepository,
+    accessTokenRepository,
+    reportOrchestrator,
+    reportRepository,
+    companyAccessRepository,
+    reportAdminActionOrchestrator,
+    websiteRepository
+  )(
+    actorSystem
+  ))
     .genSampleData()
 
   // Routes

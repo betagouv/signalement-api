@@ -10,13 +10,14 @@ import java.util.UUID
 object UserGenerator {
 
   def generateSampleUser(
+      id: UUID,
       firstName: String,
       lastName: String,
       email: String,
       userRole: UserRole
   ): User =
     User(
-      id = UUID.randomUUID(),
+      id = id,
       password = "",
       email = EmailAddress(email),
       firstName = firstName,

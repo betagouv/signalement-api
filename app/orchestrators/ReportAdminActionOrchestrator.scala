@@ -209,14 +209,14 @@ class ReportAdminActionOrchestrator(
     } yield reports.map(_.id)
   }
 
-  private def deleteReport(
+  def deleteReport(
       id: UUID
   ) =
     for {
+      _ <- engagementOrchestrator.removeEngagement(id)
       _ <- eventRepository.deleteByReportId(id)
       _ <- reportFileOrchestrator.removeFromReportId(id)
       _ <- reportConsumerReviewOrchestrator.remove(id)
-      _ <- engagementOrchestrator.removeEngagement(id)
       _ <- reportRepository.delete(id)
     } yield ()
 
