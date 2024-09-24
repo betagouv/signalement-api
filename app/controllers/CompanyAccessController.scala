@@ -1,9 +1,12 @@
 package controllers
 
 import authentication.Authenticator
+import cats.implicits.catsSyntaxOption
+import controllers.error.AppError.UserNotFoundById
 import models.User
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
+import models.event.Event
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
 import orchestrators.ProAccessTokenOrchestrator
@@ -14,10 +17,13 @@ import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,6 +36,7 @@ class CompanyAccessController(
     accessesOrchestrator: ProAccessTokenOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
+    eventRepository: EventRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -74,13 +81,24 @@ class CompanyAccessController(
   def removeAccess(siret: String, userId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
     implicit request =>
       for {
-        user <- userRepository.get(userId)
-        _ <- user
-          .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
-          .getOrElse(Future.unit)
+        maybeUser <- userRepository.get(userId)
+        user      <- maybeUser.liftTo[Future](UserNotFoundById(userId))
+        _         <- companyAccessRepository.createUserAccess(request.company.id, user.id, AccessLevel.NONE)
+        _ <- eventRepository.create(
+          Event(
+            UUID.randomUUID(),
+            None,
+            Some(request.company.id),
+            Some(request.identity.id),
+            OffsetDateTime.now(),
+            Constants.EventType.fromUserRole(request.identity.userRole),
+            Constants.ActionEvent.USER_ACCESS_REMOVED,
+            Json.obj("userId" -> userId, "email" -> user.email)
+          )
+        )
         // this operation may leave some reports assigned to this user, to which he doesn't have access anymore
         // in theory here we should find these reports and de-assign them
-      } yield if (user.isDefined) Ok else NotFound
+      } yield NoContent
   }
 
   case class AccessInvitation(email: EmailAddress, level: AccessLevel)

@@ -12,6 +12,7 @@ import models.event.Event.stringToDetailsJsValue
 import models.token.TokenKind.CompanyJoin
 import models.token._
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
@@ -157,6 +158,22 @@ class ProAccessTokenOrchestrator(
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
+      _ <- invitedBy match {
+        case Some(u) =>
+          eventRepository.create(
+            Event(
+              UUID.randomUUID(),
+              None,
+              Some(company.id),
+              Some(u.id),
+              OffsetDateTime.now(),
+              Constants.EventType.fromUserRole(u.userRole),
+              Constants.ActionEvent.USER_ACCESS_CREATED,
+              Json.obj("userId" -> user.id, "email" -> user.email, "level" -> level)
+            )
+          )
+        case None => Future.unit
+      }
       _ <- mailService.send(ProNewCompanyAccess.Email(user.email, company, invitedBy))
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()

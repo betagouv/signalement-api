@@ -115,6 +115,9 @@ object Constants {
 
     object REPORT_REOPENED_BY_ADMIN extends ActionEventValue("ReportReOpenedByAdmin")
 
+    object USER_ACCESS_CREATED extends ActionEventValue("UserAccessCreated")
+    object USER_ACCESS_REMOVED extends ActionEventValue("UserAccessRemoved")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -151,7 +154,9 @@ object Constants {
       REFUND_BLACKMAIL,
       OTHER_REASON_DELETE_REQUEST,
       SOLVED_CONTRACTUAL_DISPUTE,
-      REPORT_REOPENED_BY_ADMIN
+      REPORT_REOPENED_BY_ADMIN,
+      USER_ACCESS_CREATED,
+      USER_ACCESS_REMOVED
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
