@@ -342,7 +342,7 @@ class CompanyOrchestrator(
       case _ =>
         views.html.pdfs.accountActivationLastReminder(
           company,
-          mailSentEvents.length,
+          reportNumber = pendingReports.length,
           reportCreationLocalDate,
           reportExpirationLocalDate,
           activationKey
