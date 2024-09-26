@@ -354,7 +354,7 @@ class ReportOrchestrator(
     draftReport.generateReport(maybeCompanyId, None, reportCreationDate, reportCreationDate)
   }
 
-  private def chooseExpirationDate(
+  def chooseExpirationDate(
       baseDate: OffsetDateTime,
       companyHasUsers: Boolean
   ): OffsetDateTime = {

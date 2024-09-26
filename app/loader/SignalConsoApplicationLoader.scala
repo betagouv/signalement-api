@@ -109,6 +109,7 @@ import tasks.report.OrphanReportFileDeletionTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
+import tasks.report.SampleDataGenerationTask
 import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
@@ -554,6 +555,22 @@ class SignalConsoComponents(
       taskRepository
     )
 
+  val sampleDataService = new SampleDataService(
+    companyRepository,
+    userRepository,
+    accessTokenRepository,
+    reportOrchestrator,
+    reportRepository,
+    companyAccessRepository,
+    reportAdminActionOrchestrator,
+    websiteRepository
+  )(
+    actorSystem
+  )
+
+  val sampleDataGenerationTask =
+    new SampleDataGenerationTask(actorSystem, sampleDataService, taskConfiguration, taskRepository)
+
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
 
@@ -785,20 +802,6 @@ class SignalConsoComponents(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
 
-  (new SampleDataService(
-    companyRepository,
-    userRepository,
-    accessTokenRepository,
-    reportOrchestrator,
-    reportRepository,
-    companyAccessRepository,
-    reportAdminActionOrchestrator,
-    websiteRepository
-  )(
-    actorSystem
-  ))
-    .genSampleData()
-
   // Routes
   lazy val router: Router =
     new _root_.router.Routes(
@@ -848,6 +851,9 @@ class SignalConsoComponents(
     oldReportExportDeletionTask.schedule()
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
+    }
+    if (applicationConfiguration.task.sampleData.isActive) {
+      sampleDataGenerationTask.schedule()
     }
   }
 

@@ -2,14 +2,12 @@ package models.report.sampledata
 
 import cats.implicits.catsSyntaxOptionId
 import models.company.Company
-import models.report.ReportTag._
 import models.report.DetailInputValue
 import models.report.Gender
 import models.report.Influencer
 import models.report.ReportCategory
 import models.report.ReportDraft
 import models.report.ReportTag
-import models.report.Train
 import models.report.Gender.Female
 import models.report.Gender.Male
 import models.report.SocialNetworkSlug.TikTok
@@ -34,35 +32,6 @@ object ReportGenerator {
     DetailInputValue("Detail B", "Value B"),
     DetailInputValue("Detail C", "Value C")
   )
-
-  // A list of example company names
-  val companyNames = List(
-    "Company A",
-    "Company B",
-    "Company C"
-  )
-
-  // A list of example email addresses
-  val emailAddresses = List(
-    "emailA@example.com",
-    "emailB@example.com",
-    "emailC@example.com"
-  )
-
-  def randomHiddenToProTags =
-    Random.shuffle(ReportTagHiddenToProfessionnel).head
-
-  // Generate a random Company Name
-  def randomCompanyName: Option[String] =
-    Some(companyNames(Random.nextInt(companyNames.size)))
-
-  // Generate a random email
-  def randomEmail: EmailAddress =
-    EmailAddress(emailAddresses(Random.nextInt(emailAddresses.size)))
-
-  // Generate random train information
-  def randomTrain: Option[Train] =
-    Some(Train("TGV", Some("TER"), None))
 
   case class ConsumerUser(
       firstName: String,
@@ -130,14 +99,14 @@ object ReportGenerator {
       rappelConsoId = None
     )
 
-  private def generateConsumerUser(employeeConsumer: Boolean): ConsumerUser = {
+  private def generateConsumerUser: ConsumerUser = {
     val i = Random.nextInt(100)
     ConsumerUser(
-      firstName = s"TEST FirstName$i",
-      lastName = s"TEST LastName$i",
+      firstName = s"Prénom$i",
+      lastName = s"Nom$i",
       email = EmailAddress(s"dev.signalconso+sample_consumer${i}@gmail.com"),
       contactAgreement = i % 2 == 0,
-      employeeConsumer = employeeConsumer,
+      employeeConsumer = false,
       gender = if (i % 2 == 0) Some(Male) else Some(Female)
     )
   }
@@ -151,7 +120,7 @@ object ReportGenerator {
           website = None,
           phone = None,
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(ReportTag.LitigeContractuel),
           expired = expired,
           french = true
@@ -163,7 +132,7 @@ object ReportGenerator {
           website = None,
           phone = None,
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
@@ -175,7 +144,7 @@ object ReportGenerator {
           website = None,
           phone = Some("0900000000"),
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
@@ -187,7 +156,7 @@ object ReportGenerator {
           website = None,
           phone = None,
           influencer = Some(Influencer(Some(TikTok), None, "InfluencerPseudo")),
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
@@ -199,7 +168,7 @@ object ReportGenerator {
           website = None,
           phone = None,
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
@@ -211,7 +180,7 @@ object ReportGenerator {
           website = Some(URL("http://arnaques.com")),
           phone = None,
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
@@ -224,7 +193,7 @@ object ReportGenerator {
           website = None,
           phone = None,
           influencer = None,
-          consumerUser = generateConsumerUser(false),
+          consumerUser = generateConsumerUser,
           tags = List(tag),
           expired = expired,
           french = true
