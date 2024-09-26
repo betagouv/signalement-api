@@ -127,10 +127,10 @@ class SampleDataService(
       for {
         _ <- companyRepository.create(c)
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
-        reports = ReportGenerator.visibleReports(c, expired = false)
+        reports = ReportGenerator.visibleReports(c)
         createdReports <- reports.traverse(reportOrchestrator.createReport)
         _ <- createdReports.traverse { r =>
-          val creationDate = OffsetDateTime.now().minusDays(Random.between(1, 20))
+          val creationDate = OffsetDateTime.now().minusDays(Random.between(1L, 20L))
           reportRepository.update(
             r.id,
             r.copy(
@@ -167,10 +167,10 @@ class SampleDataService(
     )
 
   private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
-    createdReports <- ReportGenerator.visibleReports(c, expired = false).traverse(reportOrchestrator.createReport)
+    createdReports <- ReportGenerator.visibleReports(c).traverse(reportOrchestrator.createReport)
 
     updateReports <- createdReports.traverse { r =>
-      val creationDate = OffsetDateTime.now().minusWeeks(Random.between(1, 101))
+      val creationDate = OffsetDateTime.now().minusWeeks(Random.between(1L, 101L))
       reportRepository.update(
         r.id,
         r.copy(

@@ -51,7 +51,6 @@ object ReportGenerator {
       influencer: Option[Influencer],
       consumerUser: ConsumerUser,
       tags: List[ReportTag],
-      expired: Boolean,
       french: Boolean
   ): ReportDraft =
     ReportDraft(
@@ -111,7 +110,7 @@ object ReportGenerator {
     )
   }
 
-  def visibleReports(company: Company, expired: Boolean) =
+  def visibleReports(company: Company) =
     ReportTag.values.collect {
       case ReportTag.LitigeContractuel =>
         generateReport(
@@ -122,7 +121,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(ReportTag.LitigeContractuel),
-          expired = expired,
           french = true
         )
       case tag @ ReportTag.ProduitDangereux =>
@@ -134,7 +132,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
       case tag @ ReportTag.DemarchageTelephonique =>
@@ -146,7 +143,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
       case tag @ ReportTag.Influenceur =>
@@ -158,7 +154,6 @@ object ReportGenerator {
           influencer = Some(Influencer(Some(TikTok), None, "InfluencerPseudo")),
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
       case tag @ ReportTag.ReponseConso =>
@@ -170,7 +165,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
       case tag @ ReportTag.Internet =>
@@ -182,7 +176,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
 
@@ -195,7 +188,6 @@ object ReportGenerator {
           influencer = None,
           consumerUser = generateConsumerUser,
           tags = List(tag),
-          expired = expired,
           french = true
         )
     }.toList
