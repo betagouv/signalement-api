@@ -577,4 +577,12 @@ object AppError {
     override val titleForLogs: String = "website_api_error"
   }
 
+  final case class UserNotFoundById(userId: UUID) extends NotFoundError {
+    override val `type`: String = "SC-0062"
+    override val title: String  = s"User with id ${userId.toString} not found"
+    override val details: String =
+      s"User avec id ${userId.toString} introuvable"
+    override val titleForLogs: String = "user_not_found"
+  }
+
 }

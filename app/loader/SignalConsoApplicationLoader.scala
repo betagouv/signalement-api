@@ -639,6 +639,7 @@ class SignalConsoComponents(
       proAccessTokenOrchestrator,
       companiesVisibilityOrchestrator,
       companyAccessOrchestrator,
+      eventRepository,
       cookieAuthenticator,
       controllerComponents
     )
