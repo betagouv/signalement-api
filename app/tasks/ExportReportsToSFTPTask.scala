@@ -72,7 +72,10 @@ class ExportReportsToSFTPTask(
       websiteURL.host.getOrElse(""),
       vendor.getOrElse(""),
       tags.map(_.entryName).mkString(";"),
-      details.map(input => s"${input.label}:${input.value}").mkString("\"", ";", "\""),
+      details
+        .map(input => s"${input.label}:${input.value}".replace("\"", "\"\""))
+        .mkString("\"", ";", "\"")
+        .take(4000), // Asked by SI
       ccrfCode.mkString(";"),
       creationDate.toString,
       status.entryName,
@@ -119,6 +122,7 @@ class ExportReportsToSFTPTask(
           .map { case ((report, maybeCompany), maybeProduct) => printReport(report, maybeCompany, maybeProduct) }
           .mkString("\n")
         fileWriter.write(line)
+        fileWriter.write("\n")
       }
       .map { _ =>
         logger.debug("Closing file.")
