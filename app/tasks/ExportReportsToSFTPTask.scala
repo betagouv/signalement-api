@@ -75,7 +75,7 @@ class ExportReportsToSFTPTask(
       details
         .map(input => s"${input.label}:${input.value}".replace("\"", "\"\""))
         .mkString("\"", ";", "\"")
-        .take(4000), // Asked by Georges
+        .take(4000), // Asked by SI
       ccrfCode.mkString(";"),
       creationDate.toString,
       status.entryName,
