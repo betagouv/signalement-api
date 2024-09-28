@@ -99,34 +99,34 @@ class SampleDataService(
     logger.info("BEGIN Sample service creation")
     for {
       _ <- delete(List(proUser1, proUser2, proUser3, proUser4, proUser5))
-      _ = logger.debug(s"Creation proUser1  ${proUser1.id}")
+      _ = logger.info(s"Creation proUser1  ${proUser1.id}")
       _ <- createUser(proUser1)
-      _ = logger.debug(s"Creation proUser2  ${proUser2.id}")
+      _ = logger.info(s"Creation proUser2  ${proUser2.id}")
       _ <- createUser(proUser2)
-      _ = logger.debug(s"Creation proUser3  ${proUser3.id}")
+      _ = logger.info(s"Creation proUser3  ${proUser3.id}")
       _ <- createUser(proUser3)
-      _ = logger.debug(s"Creation proUser4  ${proUser4.id}")
+      _ = logger.info(s"Creation proUser4  ${proUser4.id}")
       _ <- createUser(proUser4)
-      _ = logger.debug(s"Creation proUser5  ${proUser5.id}")
+      _ = logger.info(s"Creation proUser5  ${proUser5.id}")
       _ <- createUser(proUser5)
-      _ = logger.debug(s"Creation proUser6  ${proUser6.id}")
+      _ = logger.info(s"Creation proUser6  ${proUser6.id}")
       _ <- createUser(proUser6)
-      _ = logger.debug(
+      _ = logger.info(
         s"Creation of company and report for proUser1, proUser2  for companies ${groupCompanies.map(_.id).mkString(",")}"
       )
       _ <- createGroupCompanyReport(groupCompanies, NonEmptyList.of(proUser1, proUser2))
       proUser3Company = CompanyGenerator.createCompany
-      _ = logger.debug(
+      _ = logger.info(
         s"Creation of company and report for proUser3  for companies ${proUser3Company.id}"
       )
       _ <- createGroupCompanyReport(List(proUser3Company), NonEmptyList.one(proUser3))
       proUser4Company = CompanyGenerator.createCompany
-      _ = logger.debug(
+      _ = logger.info(
         s"Creation of company and report for proUser4  for companies ${proUser4Company.id}"
       )
       _ <- createCompanyWithNoReports(proUser4Company, proUser4)
       proUser5Company = CompanyGenerator.createCompany
-      _ = logger.debug(
+      _ = logger.info(
         s"Creation of company and report for proUser5  for companies ${proUser5Company.id}"
       )
       _ <- createGroupCompanyReport(List(proUser5Company), NonEmptyList.of(proUser6, proUser5))
@@ -150,9 +150,18 @@ class SampleDataService(
     groupCompanies.traverse(c =>
       for {
         _ <- companyRepository.create(c)
+        _ = logger.info(
+          s"--- Company created"
+        )
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
+        _ = logger.info(
+          s"--- Company access given to user"
+        )
         reports = ReportGenerator.visibleReports(c)
         createdReports <- reports.traverse(reportOrchestrator.createReport)
+        _ = logger.info(
+          s"--- Pending reports created"
+        )
         _ <- createdReports.traverse { r =>
           val creationDate = OffsetDateTime.now().minusDays(Random.between(1L, 20L))
           reportRepository.update(
@@ -163,6 +172,9 @@ class SampleDataService(
             )
           )
         }
+        _ = logger.info(
+          s"--- Pending reports updated with new expiration date"
+        )
         acceptedResponse = IncomingReportResponse(
           responseType = ACCEPTED,
           consumerDetails = "Consumer details",
@@ -184,15 +196,32 @@ class SampleDataService(
           List.empty,
           None
         )
+        _ = logger.info(
+          s"--- Closed reports creation"
+        )
         _ <- processedReports(c, acceptedResponse, proUsers.head)
+        _ = logger.info(
+          s"--- accepted reports created"
+        )
         _ <- processedReports(c, rejectedResponse, proUsers.head)
+        _ = logger.info(
+          s"--- rejected reports created"
+        )
         _ <- processedReports(c, notConcernedResponse, proUsers.head)
+        _ = logger.info(
+          s"--- notConcerned reports created"
+        )
+        _ = logger.info(
+          s"--- Closed reports created"
+        )
       } yield ()
     )
 
   private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
     createdReports <- ReportGenerator.visibleReports(c).traverse(reportOrchestrator.createReport)
-
+    _ = logger.info(
+      s"--- Closed reports created"
+    )
     updateReports <- createdReports.traverse { r =>
       val creationDate = OffsetDateTime.now().minusWeeks(Random.between(1L, 101L))
       reportRepository.update(
@@ -203,7 +232,13 @@ class SampleDataService(
         )
       )
     }
+    _ = logger.info(
+      s"--- Closed reports expiration date updated"
+    )
     _ <- updateReports.traverse(reportOrchestrator.handleReportResponse(_, response, proUser))
+    _ = logger.info(
+      s"--- Closed reports expiration pro response updated"
+    )
   } yield ()
 
   private def createUser(user: User) =
@@ -224,10 +259,10 @@ class SampleDataService(
       .traverse { predefinedUser =>
         for {
           maybeUser <- userRepository.get(predefinedUser.id)
-          _ = logger.debug(s"Looking for ${predefinedUser.id}, existing ?: ${maybeUser.isDefined}")
+          _ = logger.info(s"Looking for ${predefinedUser.id}, existing ?: ${maybeUser.isDefined}")
           maybeCompany <- maybeUser.traverse(user => companyAccessRepository.fetchCompaniesWithLevel(user))
           companies = maybeCompany.getOrElse(List.empty)
-          _ = logger.debug(
+          _ = logger.info(
             s"Looking for companies link to company user ${predefinedUser.id} ${predefinedUser.id}, found: ${companies.size}"
           )
           sirets = companies.map(c => c.company.siret.value)
@@ -239,15 +274,15 @@ class SampleDataService(
               None
             )
             .map(_.entities.map(_.report.id))
-          _ = logger.debug(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
+          _ = logger.info(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _ <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
 
           websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
-          _ = logger.debug(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
+          _ = logger.info(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _ <- websites.map(_.id).traverse(websiteRepository.delete)
           _ <- companies.traverse(c => companyRepository.delete(c.company.id))
           _ <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
-          _ = logger.debug(s"Deletion done for company user ${predefinedUser.id}")
+          _ = logger.info(s"Deletion done for company user ${predefinedUser.id}")
         } yield ()
       }
     o.tap(_ => logger.info("DELETING previous data Done"))
