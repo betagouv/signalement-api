@@ -1,6 +1,7 @@
 package models.report.sampledata
 
 import cats.data.NonEmptyList
+import cats.implicits.toFlatMapOps
 import cats.implicits.toTraverseOps
 import models.User
 import models.UserRole.Professionnel
@@ -28,6 +29,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
+import scala.util.chaining.scalaUtilChainingOps
 
 class SampleDataService(
     companyRepository: CompanyRepositoryInterface,
@@ -94,18 +96,40 @@ class SampleDataService(
 
     val groupCompanies = CompanyGenerator.createCompanies(subsidiaryCount = 3)
 
+    logger.info("BEGIN Sample service creation")
     for {
       _ <- delete(List(proUser1, proUser2, proUser3, proUser4, proUser5))
+      _ = logger.debug(s"Creation proUser1  ${proUser1.id}")
       _ <- createUser(proUser1)
+      _ = logger.debug(s"Creation proUser2  ${proUser2.id}")
       _ <- createUser(proUser2)
+      _ = logger.debug(s"Creation proUser3  ${proUser3.id}")
       _ <- createUser(proUser3)
+      _ = logger.debug(s"Creation proUser4  ${proUser4.id}")
       _ <- createUser(proUser4)
+      _ = logger.debug(s"Creation proUser5  ${proUser5.id}")
       _ <- createUser(proUser5)
+      _ = logger.debug(s"Creation proUser6  ${proUser6.id}")
       _ <- createUser(proUser6)
+      _ = logger.debug(
+        s"Creation of company and report for proUser1, proUser2  for companies ${groupCompanies.map(_.id).mkString(",")}"
+      )
       _ <- createGroupCompanyReport(groupCompanies, NonEmptyList.of(proUser1, proUser2))
-      _ <- createGroupCompanyReport(List(CompanyGenerator.createCompany), NonEmptyList.one(proUser3))
-      _ <- createCompanyWithNoReports(CompanyGenerator.createCompany, proUser4)
-      _ <- createGroupCompanyReport(List(CompanyGenerator.createCompany), NonEmptyList.of(proUser6, proUser5))
+      proUser3Company = CompanyGenerator.createCompany
+      _ = logger.debug(
+        s"Creation of company and report for proUser3  for companies ${proUser3Company.id}"
+      )
+      _ <- createGroupCompanyReport(List(proUser3Company), NonEmptyList.one(proUser3))
+      proUser4Company = CompanyGenerator.createCompany
+      _ = logger.debug(
+        s"Creation of company and report for proUser4  for companies ${proUser4Company.id}"
+      )
+      _ <- createCompanyWithNoReports(proUser4Company, proUser4)
+      proUser5Company = CompanyGenerator.createCompany
+      _ = logger.debug(
+        s"Creation of company and report for proUser5  for companies ${proUser5Company.id}"
+      )
+      _ <- createGroupCompanyReport(List(proUser5Company), NonEmptyList.of(proUser6, proUser5))
     } yield ()
 
   }.recoverWith { case error =>
@@ -194,27 +218,40 @@ class SampleDataService(
       }
       .flatMap(_ => userRepository.updatePassword(user.id, password = "test"))
 
-  private def delete(predefinedUsers: List[User]) =
-    predefinedUsers.traverse { predefinedUser =>
-      for {
-        maybeUser    <- userRepository.get(predefinedUser.id)
-        maybeCompany <- maybeUser.traverse(user => companyAccessRepository.fetchCompaniesWithLevel(user))
-        companies = maybeCompany.getOrElse(List.empty)
-        sirets    = companies.map(c => c.company.siret.value)
-        reportList <- reportRepository
-          .getReports(
-            None,
-            ReportFilter(siretSirenList = sirets, siretSirenDefined = Some(true)),
-            None,
-            None
+  private def delete(predefinedUsers: List[User]) = {
+    logger.info("DELETING previous data")
+    val o = predefinedUsers
+      .traverse { predefinedUser =>
+        for {
+          maybeUser <- userRepository.get(predefinedUser.id)
+          _ = logger.debug(s"Looking for ${predefinedUser.id}, existing ?: ${maybeUser.isDefined}")
+          maybeCompany <- maybeUser.traverse(user => companyAccessRepository.fetchCompaniesWithLevel(user))
+          companies = maybeCompany.getOrElse(List.empty)
+          _ = logger.debug(
+            s"Looking for companies link to company user ${predefinedUser.id} ${predefinedUser.id}, found: ${companies.size}"
           )
-          .map(_.entities.map(_.report.id))
-        _        <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
-        websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
-        _        <- websites.map(_.id).traverse(websiteRepository.delete)
-        _        <- companies.traverse(c => companyRepository.delete(c.company.id))
-        _        <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
-      } yield ()
-    }
+          sirets = companies.map(c => c.company.siret.value)
+          reportList <- reportRepository
+            .getReports(
+              None,
+              ReportFilter(siretSirenList = sirets, siretSirenDefined = Some(true)),
+              None,
+              None
+            )
+            .map(_.entities.map(_.report.id))
+          _ = logger.debug(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
+          _ <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
+
+          websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
+          _ = logger.debug(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
+          _ <- websites.map(_.id).traverse(websiteRepository.delete)
+          _ <- companies.traverse(c => companyRepository.delete(c.company.id))
+          _ <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
+          _ = logger.debug(s"Deletion done for company user ${predefinedUser.id}")
+        } yield ()
+      }
+    o.tap(_ => logger.info("DELETING previous data Done"))
+
+  }
 
 }
