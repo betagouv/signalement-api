@@ -46,7 +46,7 @@ import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
-import services.emails.MailService
+import services.emails.MailServiceInterface
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
@@ -67,28 +67,28 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator(
-    mailService: MailService,
-    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
-    reportRepository: ReportRepositoryInterface,
-    reportMetadataRepository: ReportMetadataRepositoryInterface,
-    reportFileOrchestrator: ReportFileOrchestrator,
-    companyRepository: CompanyRepositoryInterface,
-    socialNetworkRepository: SocialNetworkRepositoryInterface,
-    accessTokenRepository: AccessTokenRepositoryInterface,
-    eventRepository: EventRepositoryInterface,
-    userRepository: UserRepositoryInterface,
-    websiteRepository: WebsiteRepositoryInterface,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    emailNotificationOrchestrator: EmailNotificationOrchestrator,
-    blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface,
-    emailValidationOrchestrator: EmailValidationOrchestrator,
-    emailConfiguration: EmailConfiguration,
-    tokenConfiguration: TokenConfiguration,
-    signalConsoConfiguration: SignalConsoConfiguration,
-    companySyncService: CompanySyncServiceInterface,
-    engagementRepository: EngagementRepositoryInterface,
-    engagementOrchestrator: EngagementOrchestrator,
-    messagesApi: MessagesApi
+                          mailService: MailServiceInterface,
+                          reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+                          reportRepository: ReportRepositoryInterface,
+                          reportMetadataRepository: ReportMetadataRepositoryInterface,
+                          reportFileOrchestrator: ReportFileOrchestrator,
+                          companyRepository: CompanyRepositoryInterface,
+                          socialNetworkRepository: SocialNetworkRepositoryInterface,
+                          accessTokenRepository: AccessTokenRepositoryInterface,
+                          eventRepository: EventRepositoryInterface,
+                          userRepository: UserRepositoryInterface,
+                          websiteRepository: WebsiteRepositoryInterface,
+                          companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+                          emailNotificationOrchestrator: EmailNotificationOrchestrator,
+                          blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface,
+                          emailValidationOrchestrator: EmailValidationOrchestrator,
+                          emailConfiguration: EmailConfiguration,
+                          tokenConfiguration: TokenConfiguration,
+                          signalConsoConfiguration: SignalConsoConfiguration,
+                          companySyncService: CompanySyncServiceInterface,
+                          engagementRepository: EngagementRepositoryInterface,
+                          engagementOrchestrator: EngagementOrchestrator,
+                          messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
