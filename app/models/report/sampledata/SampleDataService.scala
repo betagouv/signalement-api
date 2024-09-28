@@ -99,6 +99,7 @@ class SampleDataService(
     logger.info("BEGIN Sample service creation")
     for {
       _ <- delete(List(proUser1, proUser2, proUser3, proUser4, proUser5))
+      _ = logger.info("DELETING previous data Done")
       _ = logger.info(s"Creation proUser1  ${proUser1.id}")
       _ <- createUser(proUser1)
       _ = logger.info(s"Creation proUser2  ${proUser2.id}")
@@ -255,7 +256,7 @@ class SampleDataService(
 
   private def delete(predefinedUsers: List[User]) = {
     logger.info("DELETING previous data")
-    val o = predefinedUsers
+    predefinedUsers
       .traverse { predefinedUser =>
         for {
           maybeUser <- userRepository.get(predefinedUser.id)
@@ -266,17 +267,9 @@ class SampleDataService(
             s"Looking for companies link to company user ${predefinedUser.id} , found: ${companies.size}"
           )
           companyIds = companies.map(c => c.company.id)
-          reportList <- reportRepository
-            .getReports(
-              None,
-              ReportFilter(companyIds = companyIds),
-              None,
-              None
-            )
-            .map(_.entities.map(_.report.id))
+          reportList <- companyIds.flatTraverse(c => reportRepository.getReports(c))
           _ = logger.info(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
-          _ <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
-
+          _        <- reportList.traverse(r => reportAdminActionOrchestrator.deleteReport(r.id))
           websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
           _ = logger.info(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _ <- websites.map(_.id).traverse(websiteRepository.delete)
@@ -285,7 +278,6 @@ class SampleDataService(
           _ = logger.info(s"Deletion done for company user ${predefinedUser.id}")
         } yield ()
       }
-    o.tap(_ => logger.info("DELETING previous data Done"))
 
   }
 
