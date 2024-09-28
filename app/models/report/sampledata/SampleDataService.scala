@@ -263,13 +263,13 @@ class SampleDataService(
           maybeCompany <- maybeUser.traverse(user => companyAccessRepository.fetchCompaniesWithLevel(user))
           companies = maybeCompany.getOrElse(List.empty)
           _ = logger.info(
-            s"Looking for companies link to company user ${predefinedUser.id} ${predefinedUser.id}, found: ${companies.size}"
+            s"Looking for companies link to company user ${predefinedUser.id} , found: ${companies.size}"
           )
-          sirets = companies.map(c => c.company.siret.value)
+          companyIds = companies.map(c => c.company.id)
           reportList <- reportRepository
             .getReports(
               None,
-              ReportFilter(siretSirenList = sirets, siretSirenDefined = Some(true)),
+              ReportFilter(companyIds = companyIds),
               None,
               None
             )
