@@ -1,18 +1,16 @@
 package models.report.sampledata
 
 import cats.data.NonEmptyList
-import cats.implicits.toFlatMapOps
 import cats.implicits.toTraverseOps
 import models.User
 import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
+import models.report.IncomingReportResponse
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportResponseType.NOT_CONCERNED
 import models.report.ReportResponseType.REJECTED
 import models.report.sampledata.UserGenerator.generateSampleUser
-import models.report.IncomingReportResponse
-import models.report.ReportFilter
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.ActorSystem
@@ -29,7 +27,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
-import scala.util.chaining.scalaUtilChainingOps
 
 class SampleDataService(
     companyRepository: CompanyRepositoryInterface,
