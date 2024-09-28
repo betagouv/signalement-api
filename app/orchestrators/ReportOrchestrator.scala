@@ -46,7 +46,7 @@ import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
 import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotification
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
-import services.emails.MailService
+import services.emails.MailServiceInterface
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
@@ -67,7 +67,7 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator(
-    mailService: MailService,
+    mailService: MailServiceInterface,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportMetadataRepository: ReportMetadataRepositoryInterface,
@@ -311,7 +311,7 @@ class ReportOrchestrator(
     } yield Done
   }
 
-  private def createReport(draftReport: ReportDraft): Future[Report] =
+  def createReport(draftReport: ReportDraft): Future[Report] =
     for {
       maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionalCountry(draftReport)
@@ -340,7 +340,7 @@ class ReportOrchestrator(
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
-  private def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
+  def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
     draftReport.metadata
       .map { metadataDraft =>
         val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)
@@ -354,7 +354,7 @@ class ReportOrchestrator(
     draftReport.generateReport(maybeCompanyId, None, reportCreationDate, reportCreationDate)
   }
 
-  private def chooseExpirationDate(
+  def chooseExpirationDate(
       baseDate: OffsetDateTime,
       companyHasUsers: Boolean
   ): OffsetDateTime = {

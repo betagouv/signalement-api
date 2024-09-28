@@ -35,4 +35,6 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
   def findByEmails(emails: List[EmailAddress]): Future[Seq[User]]
 
   def findByIds(ids: Seq[UUID]): Future[Seq[User]]
+  def hardDelete(id: UUID): Future[Int]
+
 }

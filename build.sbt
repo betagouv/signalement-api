@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   compilerPlugin(scalafixSemanticdb)
 ) ++ Dependencies.AppDependencies
 
-scalafmtOnCompile := true
+//scalafmtOnCompile := true
 scalacOptions ++= Seq(
   "-explaintypes",
   "-Ywarn-macros:after",

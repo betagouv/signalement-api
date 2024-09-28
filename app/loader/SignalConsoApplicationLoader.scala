@@ -10,6 +10,7 @@ import authentication._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
+import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
@@ -90,8 +91,10 @@ import repositories.website.WebsiteRepositoryInterface
 import services._
 import services.antivirus.AntivirusService
 import services.antivirus.AntivirusServiceInterface
+import services.emails.BaseEmail
 import services.emails.MailRetriesService
 import services.emails.MailService
+import services.emails.MailServiceInterface
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import sttp.capabilities
@@ -108,6 +111,7 @@ import tasks.report.OrphanReportFileDeletionTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
+import tasks.report.SampleDataGenerationTask
 import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
@@ -271,7 +275,7 @@ class SignalConsoComponents(
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)
-  val mailService = new MailService(
+  var mailService = new MailService(
     mailRetriesService,
     emailConfiguration,
     reportNotificationBlockedRepository,
@@ -385,8 +389,9 @@ class SignalConsoComponents(
     )
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
-  val reportOrchestrator = new ReportOrchestrator(
-    mailService,
+
+  def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
+    emailService,
     reportConsumerReviewOrchestrator,
     reportRepository,
     reportMetadataRepository,
@@ -409,6 +414,8 @@ class SignalConsoComponents(
     engagementOrchestrator,
     messagesApi
   )
+
+  val reportOrchestrator = buildReportOrchestrator(mailService)
 
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     reportOrchestrator,
@@ -552,6 +559,24 @@ class SignalConsoComponents(
       taskConfiguration,
       taskRepository
     )
+
+  private val reportOrchestratorWithFakeMailer = buildReportOrchestrator(_ => Future.unit)
+
+  val sampleDataService = new SampleDataService(
+    companyRepository,
+    userRepository,
+    accessTokenRepository,
+    reportOrchestratorWithFakeMailer,
+    reportRepository,
+    companyAccessRepository,
+    reportAdminActionOrchestrator,
+    websiteRepository
+  )(
+    actorSystem
+  )
+
+  val sampleDataGenerationTask =
+    new SampleDataGenerationTask(actorSystem, sampleDataService, taskConfiguration, taskRepository)
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
@@ -834,6 +859,9 @@ class SignalConsoComponents(
     oldReportExportDeletionTask.schedule()
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
+    }
+    if (applicationConfiguration.task.sampleData.isActive) {
+      sampleDataGenerationTask.schedule()
     }
   }
 

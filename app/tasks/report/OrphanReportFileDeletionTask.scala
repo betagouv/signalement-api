@@ -22,7 +22,7 @@ class OrphanReportFileDeletionTask(
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface
 )(implicit val executionContext: ExecutionContext, mat: Materializer)
-    extends ScheduledTask(5, "orphan_report_file_deletion_task", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(10, "orphan_report_file_deletion_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.orphanReportFileDeletion.startTime)
 

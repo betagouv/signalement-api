@@ -23,7 +23,7 @@ class OldReportExportDeletionTask(
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface
 )(implicit val executionContext: ExecutionContext, mat: Materializer)
-    extends ScheduledTask(6, "old_report_export_deletion_task", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(9, "old_report_export_deletion_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.oldReportExportDeletion.startTime)
 

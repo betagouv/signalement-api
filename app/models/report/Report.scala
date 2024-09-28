@@ -152,6 +152,7 @@ case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
 
 object WebsiteURL {
   implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
+  val Empty                                          = WebsiteURL(None, None)
 }
 
 case class ReportWithFiles(
