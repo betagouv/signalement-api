@@ -91,7 +91,6 @@ import repositories.website.WebsiteRepositoryInterface
 import services._
 import services.antivirus.AntivirusService
 import services.antivirus.AntivirusServiceInterface
-import services.emails.BaseEmail
 import services.emails.MailRetriesService
 import services.emails.MailService
 import services.emails.MailServiceInterface
@@ -249,7 +248,7 @@ class SignalConsoComponents(
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
-  def s3Service: S3ServiceInterface = new S3Service()
+  val s3Service: S3ServiceInterface = new S3Service()
 
   //  Actor
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
@@ -390,7 +389,7 @@ class SignalConsoComponents(
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
 
-  def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
+  private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
     reportConsumerReviewOrchestrator,
     reportRepository,

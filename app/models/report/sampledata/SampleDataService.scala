@@ -194,11 +194,13 @@ class SampleDataService(
       }
       .flatMap(_ => userRepository.updatePassword(user.id, password = "test"))
 
-  private def delete(users: List[User]) =
-    users.traverse { u =>
+  private def delete(predefinedUsers: List[User]) =
+    predefinedUsers.traverse { predefinedUser =>
       for {
-        companies <- companyAccessRepository.fetchCompaniesWithLevel(u)
-        sirets = companies.map(_.company.siret.value)
+        maybeUser    <- userRepository.get(predefinedUser.id)
+        maybeCompany <- maybeUser.traverse(user => companyAccessRepository.fetchCompaniesWithLevel(user))
+        companies = maybeCompany.getOrElse(List.empty)
+        sirets    = companies.map(c => c.company.siret.value)
         reportList <- reportRepository
           .getReports(
             None,
@@ -207,12 +209,11 @@ class SampleDataService(
             None
           )
           .map(_.entities.map(_.report.id))
-        _         <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
-        companies <- companyAccessRepository.fetchCompaniesWithLevel(u)
-        websites  <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
-        _         <- websites.map(_.id).traverse(websiteRepository.delete)
-        _         <- companies.traverse(c => companyRepository.delete(c.company.id))
-        _         <- userRepository.hardDelete(u.id)
+        _        <- reportList.traverse(reportAdminActionOrchestrator.deleteReport)
+        websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
+        _        <- websites.map(_.id).traverse(websiteRepository.delete)
+        _        <- companies.traverse(c => companyRepository.delete(c.company.id))
+        _        <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
       } yield ()
     }
 
