@@ -55,4 +55,4 @@ case class ReportRemindersTaskConfiguration(
 case class ProbeConfiguration(active: Boolean)
 
 case class ExportReportsToSFTPConfiguration(filePath: String, startTime: LocalTime)
-case class SampleDataConfiguration(isActive: Boolean = false, startTime: LocalTime)
+case class SampleDataConfiguration(active: Boolean = false, startTime: LocalTime)

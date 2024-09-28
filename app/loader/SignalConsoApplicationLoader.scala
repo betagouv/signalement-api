@@ -860,7 +860,7 @@ class SignalConsoComponents(
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
     }
-    if (applicationConfiguration.task.sampleData.isActive) {
+    if (applicationConfiguration.task.sampleData.active) {
       sampleDataGenerationTask.schedule()
     }
   }
