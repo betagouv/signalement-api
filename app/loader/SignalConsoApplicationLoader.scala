@@ -7,6 +7,11 @@ import org.apache.pekko.actor.typed
 import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import org.apache.pekko.util.Timeout
 import authentication._
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
@@ -91,7 +96,6 @@ import repositories.website.WebsiteRepositoryInterface
 import services._
 import services.antivirus.AntivirusService
 import services.antivirus.AntivirusServiceInterface
-import services.emails.BaseEmail
 import services.emails.MailRetriesService
 import services.emails.MailService
 import services.emails.MailServiceInterface
@@ -249,7 +253,21 @@ class SignalConsoComponents(
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
-  def s3Service: S3ServiceInterface = new S3Service()
+  private val awsS3Client: AmazonS3 = AmazonS3ClientBuilder
+    .standard()
+    .withEndpointConfiguration(
+      new EndpointConfiguration("https://cellar-c2.services.clever-cloud.com", "us-east-1")
+    )
+    .withCredentials(
+      new AWSStaticCredentialsProvider(
+        new BasicAWSCredentials(
+          bucketConfiguration.keyId,
+          bucketConfiguration.secretKey
+        )
+      )
+    )
+    .build()
+  lazy val s3Service: S3ServiceInterface = new S3Service(awsS3Client)
 
   //  Actor
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
@@ -390,7 +408,7 @@ class SignalConsoComponents(
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
 
-  def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
+  private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
     reportConsumerReviewOrchestrator,
     reportRepository,

@@ -15,10 +15,12 @@ import repositories.event.EventFilter
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.Fixtures
+import utils.S3ServiceMock
 import utils.TestApp
 
 import java.time.OffsetDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -30,11 +32,19 @@ class OrphanReportFileDeletionTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   val (app, components) = TestApp.buildApp()
+  val queue             = new ConcurrentLinkedQueue[String]()
+  val fileDeletionTask = new OrphanReportFileDeletionTask(
+    components.actorSystem,
+    components.reportFileRepository,
+    new S3ServiceMock(queue),
+    taskConfiguration,
+    components.taskRepository
+  )(components.executionContext, components.materializer)
 
   lazy val reportRepository     = components.reportRepository
   lazy val reportFileRepository = components.reportFileRepository
-  lazy val fileDeletionTask     = components.orphanReportFileDeletionTask
-  lazy val eventRepository      = components.eventRepository
+
+  lazy val eventRepository = components.eventRepository
 
   val creationDate    = OffsetDateTime.parse("2020-01-01T00:00:00Z")
   val taskRunDate     = OffsetDateTime.parse("2020-06-01T00:00:00Z")
