@@ -43,53 +43,53 @@ class SampleDataService(
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("io-dispatcher")
 
+  val proUser1 = generateSampleUser(
+    UUID.fromString("8a87f4f4-185a-47c4-a71d-7e27577d7483"),
+    "User",
+    "PRO 1",
+    "dev.signalconso+SAMPLE_PRO1@gmail.com",
+    Professionnel
+  )
+  val proUser2 = generateSampleUser(
+    UUID.fromString("0920b263-223f-40ae-a5a1-9efe5b624966"),
+    "User",
+    "PRO 2",
+    "dev.signalconso+SAMPLE_PRO2@gmail.com",
+    Professionnel
+  )
+  val proUser3 = generateSampleUser(
+    UUID.fromString("3f80c538-676b-4f2b-a318-7625379e0040"),
+    "User",
+    "PRO 3",
+    "dev.signalconso+SAMPLE_PRO3@gmail.com",
+    Professionnel
+  )
+
+  val proUser4 = generateSampleUser(
+    UUID.fromString("6a17610b-2fb5-4d0e-b4b6-a700d1b446a7"),
+    "User",
+    "PRO 4",
+    "dev.signalconso+SAMPLE_PRO4@gmail.com",
+    Professionnel
+  )
+
+  val proUser5 = generateSampleUser(
+    UUID.fromString("b5dead94-d3ee-4718-a181-97dcb6c5b867"),
+    "User",
+    "PRO 5",
+    "dev.signalconso+SAMPLE_PRO5@gmail.com",
+    Professionnel
+  )
+
+  val proUser6 = generateSampleUser(
+    UUID.fromString("d91520ec-b1d6-4163-9f70-ebd9117f06bc"),
+    "User",
+    "PRO 6",
+    "dev.signalconso+SAMPLE_PRO6@gmail.com",
+    Professionnel
+  )
+
   def genSampleData() = {
-
-    val proUser1 = generateSampleUser(
-      UUID.fromString("8a87f4f4-185a-47c4-a71d-7e27577d7483"),
-      "User",
-      "PRO 1",
-      "dev.signalconso+SAMPLE_PRO1@gmail.com",
-      Professionnel
-    )
-    val proUser2 = generateSampleUser(
-      UUID.fromString("0920b263-223f-40ae-a5a1-9efe5b624966"),
-      "User",
-      "PRO 2",
-      "dev.signalconso+SAMPLE_PRO2@gmail.com",
-      Professionnel
-    )
-    val proUser3 = generateSampleUser(
-      UUID.fromString("3f80c538-676b-4f2b-a318-7625379e0040"),
-      "User",
-      "PRO 3",
-      "dev.signalconso+SAMPLE_PRO3@gmail.com",
-      Professionnel
-    )
-
-    val proUser4 = generateSampleUser(
-      UUID.fromString("6a17610b-2fb5-4d0e-b4b6-a700d1b446a7"),
-      "User",
-      "PRO 4",
-      "dev.signalconso+SAMPLE_PRO4@gmail.com",
-      Professionnel
-    )
-
-    val proUser5 = generateSampleUser(
-      UUID.fromString("b5dead94-d3ee-4718-a181-97dcb6c5b867"),
-      "User",
-      "PRO 5",
-      "dev.signalconso+SAMPLE_PRO5@gmail.com",
-      Professionnel
-    )
-
-    val proUser6 = generateSampleUser(
-      UUID.fromString("d91520ec-b1d6-4163-9f70-ebd9117f06bc"),
-      "User",
-      "PRO 6",
-      "dev.signalconso+SAMPLE_PRO6@gmail.com",
-      Professionnel
-    )
 
     val groupCompanies = CompanyGenerator.createCompanies(subsidiaryCount = 3)
 
