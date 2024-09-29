@@ -7,9 +7,11 @@ import org.apache.pekko.actor.typed
 import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import org.apache.pekko.util.Timeout
 import authentication._
-import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._

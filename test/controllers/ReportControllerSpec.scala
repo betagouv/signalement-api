@@ -42,7 +42,10 @@ import utils.Constants.ActionEvent.REFUND_BLACKMAIL
 import utils.Constants.ActionEvent.OTHER_REASON_DELETE_REQUEST
 import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
 import utils.Constants.EventType
-import utils.{EmailAddress, Fixtures, S3ServiceMock, TestApp}
+import utils.EmailAddress
+import utils.Fixtures
+import utils.S3ServiceMock
+import utils.TestApp
 import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
@@ -298,9 +301,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               super.configuration
             )
 
-            override def s3Service: S3ServiceInterface = {
+            override def s3Service: S3ServiceInterface =
               new S3ServiceMock()
-            }
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")

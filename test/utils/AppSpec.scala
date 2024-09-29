@@ -125,8 +125,7 @@ class DefaultApplicationLoader(
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
-      override def s3Service =
-        new S3ServiceMock()
+      override def s3Service = new S3ServiceMock()
 
       override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
