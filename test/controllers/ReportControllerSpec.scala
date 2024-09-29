@@ -301,7 +301,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               super.configuration
             )
 
-            override def s3Service: S3ServiceInterface =
+            override lazy val s3Service: S3ServiceInterface =
               new S3ServiceMock()
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)

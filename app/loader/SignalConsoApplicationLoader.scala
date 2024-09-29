@@ -267,7 +267,7 @@ class SignalConsoComponents(
       )
     )
     .build()
-  def s3Service: S3ServiceInterface = new S3Service(awsS3Client)
+  lazy val s3Service: S3ServiceInterface = new S3Service(awsS3Client)
 
   //  Actor
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
