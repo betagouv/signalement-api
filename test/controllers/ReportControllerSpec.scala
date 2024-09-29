@@ -35,15 +35,14 @@ import play.api.mvc.Results
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.event.EventFilter
+import services.S3ServiceInterface
 import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REFUND_BLACKMAIL
 import utils.Constants.ActionEvent.OTHER_REASON_DELETE_REQUEST
 import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
 import utils.Constants.EventType
-import utils.EmailAddress
-import utils.Fixtures
-import utils.TestApp
+import utils.{EmailAddress, Fixtures, S3ServiceMock, TestApp}
 import utils.AuthHelpers._
 
 import java.time.temporal.ChronoUnit
@@ -299,20 +298,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               super.configuration
             )
 
-//            override val s3Service: S3ServiceInterface = {
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              println(s"------------------  = /////////////////////////////////////// ------------------")
-//              new S3ServiceMock()
-//            }
+            override def s3Service: S3ServiceInterface = {
+              new S3ServiceMock()
+            }
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
