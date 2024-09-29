@@ -35,7 +35,7 @@ class OldReportExportDeletionTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val asyncFileRepository = components.asyncFileRepository
   lazy val userRepository      = components.userRepository
-  val queue = new ConcurrentLinkedQueue[String]()
+  val queue                    = new ConcurrentLinkedQueue[String]()
 
   val fileDeletionTask = new OldReportExportDeletionTask(
     components.actorSystem,

@@ -2,16 +2,20 @@ package tasks.report
 
 import cats.implicits.toTraverseOps
 import models.company.CompanyWithAccess
-import models.report.{Report, ReportStatus}
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import utils.{AppSpec, Fixtures, TestApp}
+import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
 
 import java.time.OffsetDateTime
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)

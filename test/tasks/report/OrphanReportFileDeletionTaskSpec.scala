@@ -13,7 +13,10 @@ import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.event.EventFilter
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.{AppSpec, Fixtures, S3ServiceMock, TestApp}
+import utils.AppSpec
+import utils.Fixtures
+import utils.S3ServiceMock
+import utils.TestApp
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -28,9 +31,8 @@ class OrphanReportFileDeletionTaskSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-
   val (app, components) = TestApp.buildApp()
-  val queue = new ConcurrentLinkedQueue[String]()
+  val queue             = new ConcurrentLinkedQueue[String]()
   val fileDeletionTask = new OrphanReportFileDeletionTask(
     components.actorSystem,
     components.reportFileRepository,
@@ -42,7 +44,7 @@ class OrphanReportFileDeletionTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportRepository     = components.reportRepository
   lazy val reportFileRepository = components.reportFileRepository
 
-  lazy val eventRepository      = components.eventRepository
+  lazy val eventRepository = components.eventRepository
 
   val creationDate    = OffsetDateTime.parse("2020-01-01T00:00:00Z")
   val taskRunDate     = OffsetDateTime.parse("2020-06-01T00:00:00Z")

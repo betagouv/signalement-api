@@ -210,7 +210,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         new WithApplication(app) {
 
-
           val company = Fixtures.genCompany.sample.get
           val report  = Fixtures.genReportForCompany(company).sample.get
           val event   = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
@@ -284,7 +283,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     def application(skipValidation: Boolean = false) = new {
 
       val adminIdentity = Fixtures.genAdminUser.sample.get
-
 
       class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
