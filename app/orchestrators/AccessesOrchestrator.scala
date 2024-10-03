@@ -139,7 +139,7 @@ class AccessesOrchestrator(
     } yield ()
   }
 
-  def listAgentPendingTokens(user: User, maybeRequestedRole: Option[UserRole]): Future[List[AgentAccessToken]] =
+  def listAgentPendingTokens(maybeRequestedRole: Option[UserRole]): Future[List[AgentAccessToken]] =
     accessTokenRepository.fetchPendingAgentTokens
       .map(
         _.flatMap { token =>

@@ -162,6 +162,7 @@ object Constants {
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
       Map(
         UserRole.Professionnel -> List(COMMENT),
+        UserRole.SuperAdmin    -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
         UserRole.Admin         -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
         UserRole.DGCCRF        -> List(COMMENT, CONTROL),
         UserRole.DGAL          -> List(COMMENT, CONTROL)

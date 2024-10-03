@@ -18,5 +18,6 @@ trait EngagementRepositoryInterface extends TypedCRUDRepositoryInterface[Engagem
   ): Future[Seq[(((Report, Engagement), Event), Option[Event])]]
   def check(engagementId: EngagementId, resolutionEventId: UUID): Future[Int]
   def uncheck(engagementId: EngagementId): Future[Int]
+  def remove(reportId: UUID): Future[Int]
   def listEngagementsExpiringAt(date: LocalDate): Future[Seq[(((Engagement, Report), Event), Option[Event])]]
 }

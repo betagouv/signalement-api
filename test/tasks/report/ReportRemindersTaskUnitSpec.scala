@@ -4,6 +4,7 @@ import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import config.ExportReportsToSFTPConfiguration
 import config.ProbeConfiguration
 import config.ReportRemindersTaskConfiguration
+import config.SampleDataConfiguration
 import config.TaskConfiguration
 import models.company.AccessLevel
 import models.event.Event
@@ -56,7 +57,8 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     inactiveAccounts = null,
     companyUpdate = null,
     probe = ProbeConfiguration(false),
-    exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30))
+    exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30)),
+    sampleData = SampleDataConfiguration(true, LocalTime.of(3, 30))
   )
 
   val testKit = ActorTestKit()

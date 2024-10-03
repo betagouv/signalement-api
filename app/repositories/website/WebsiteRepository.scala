@@ -2,9 +2,7 @@ package repositories.website
 
 import models._
 import models.company.Company
-
 import models.investigation.InvestigationStatus
-
 import models.website.IdentificationStatus.NotIdentified
 import models.website.IdentificationStatus
 import models.website.Website
@@ -21,6 +19,7 @@ import slick.lifted.TableQuery
 import utils.URL
 
 import java.time._
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -89,6 +88,13 @@ class WebsiteRepository(
           websiteTable.companyId === companyTable.id && companyTable.isOpen
         }
         .result
+    )
+
+  def searchByCompaniesId(ids: List[UUID]): Future[Seq[(Website)]] =
+    db.run(
+      table.filter { result =>
+        result.companyId inSet ids
+      }.result
     )
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =

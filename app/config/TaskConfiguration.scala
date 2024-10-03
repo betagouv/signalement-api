@@ -15,7 +15,8 @@ case class TaskConfiguration(
     inactiveAccounts: InactiveAccountsTaskConfiguration,
     companyUpdate: CompanyUpdateTaskConfiguration,
     probe: ProbeConfiguration,
-    exportReportsToSFTP: ExportReportsToSFTPConfiguration
+    exportReportsToSFTP: ExportReportsToSFTPConfiguration,
+    sampleData: SampleDataConfiguration
 )
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
@@ -54,3 +55,4 @@ case class ReportRemindersTaskConfiguration(
 case class ProbeConfiguration(active: Boolean)
 
 case class ExportReportsToSFTPConfiguration(filePath: String, startTime: LocalTime)
+case class SampleDataConfiguration(active: Boolean = false, startTime: LocalTime)

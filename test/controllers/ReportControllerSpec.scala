@@ -286,8 +286,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
       val adminIdentity = Fixtures.genAdminUser.sample.get
 
-      val mockS3Service = new S3ServiceMock()
-
       class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
 
@@ -303,7 +301,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               super.configuration
             )
 
-            override def s3Service: S3ServiceInterface = mockS3Service
+            override lazy val s3Service: S3ServiceInterface =
+              new S3ServiceMock()
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")

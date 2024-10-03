@@ -2,9 +2,7 @@ package repositories.website
 
 import models.PaginatedResult
 import models.company.Company
-
 import models.investigation.InvestigationStatus
-
 import models.website.Website
 import models.website.WebsiteId
 import models.website.IdentificationStatus
@@ -12,6 +10,7 @@ import repositories.TypedCRUDRepositoryInterface
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Future
 
 trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, WebsiteId] {
@@ -53,4 +52,6 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
   def listNotAssociatedToCompany(host: String): Future[Seq[Website]]
 
   def listIdentified(host: String): Future[Seq[Website]]
+
+  def searchByCompaniesId(ids: List[UUID]): Future[Seq[(Website)]]
 }

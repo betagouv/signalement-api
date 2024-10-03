@@ -107,11 +107,14 @@ class EngagementOrchestrator(
     } yield ()
 
   def removeEngagement(reportId: UUID): Future[Unit] =
-    findEngagementReview(reportId).flatMap {
-      case Some(engagementReview) =>
-        reportEngagementReviewRepository.delete(engagementReview.id).map(_ => ())
-      case None => Future.unit
-    }
+    for {
+      _ <- findEngagementReview(reportId).flatMap {
+        case Some(engagementReview) =>
+          reportEngagementReviewRepository.delete(engagementReview.id).map(_ => ())
+        case None => Future.unit
+      }
+      _ <- engagementRepository.remove(reportId)
+    } yield ()
 
   def findEngagementReview(reportId: UUID): Future[Option[EngagementReview]] =
     reportEngagementReviewRepository.findByReportId(reportId) map {

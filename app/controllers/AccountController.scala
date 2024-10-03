@@ -97,11 +97,11 @@ class AccountController(
     }
 
   def fetchPendingAgent(role: Option[UserRole]) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { _ =>
       role match {
         case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | None =>
           accessesOrchestrator
-            .listAgentPendingTokens(request.identity, role)
+            .listAgentPendingTokens(role)
             .map(tokens => Ok(Json.toJson(tokens)))
         case Some(role) => Future.failed(error.AppError.WrongUserRole(role))
       }

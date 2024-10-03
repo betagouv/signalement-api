@@ -10,10 +10,7 @@ import org.apache.pekko.util.ByteString
 
 import java.nio.file.Path
 import com.amazonaws.HttpMethod
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import com.amazonaws.services.s3.model.ResponseHeaderOverrides
 import config.BucketConfiguration
@@ -25,7 +22,7 @@ import play.api.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class S3Service(implicit
+class S3Service(awsS3Client: AmazonS3)(implicit
     val materializer: Materializer,
     val executionContext: ExecutionContext,
     val bucketConfiguration: BucketConfiguration
@@ -34,20 +31,6 @@ class S3Service(implicit
   private[this] val bucketName = bucketConfiguration.amazonBucketName
 
   private val pekkoS3Client = S3
-  private val awsS3Client = AmazonS3ClientBuilder
-    .standard()
-    .withEndpointConfiguration(
-      new EndpointConfiguration("https://cellar-c2.services.clever-cloud.com", "us-east-1")
-    )
-    .withCredentials(
-      new AWSStaticCredentialsProvider(
-        new BasicAWSCredentials(
-          bucketConfiguration.keyId,
-          bucketConfiguration.secretKey
-        )
-      )
-    )
-    .build()
 
   override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
     pekkoS3Client.multipartUpload(bucketName, bucketKey)

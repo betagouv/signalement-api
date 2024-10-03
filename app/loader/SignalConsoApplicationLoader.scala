@@ -7,9 +7,15 @@ import org.apache.pekko.actor.typed
 import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import org.apache.pekko.util.Timeout
 import authentication._
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
+import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
@@ -92,6 +98,7 @@ import services.antivirus.AntivirusService
 import services.antivirus.AntivirusServiceInterface
 import services.emails.MailRetriesService
 import services.emails.MailService
+import services.emails.MailServiceInterface
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import sttp.capabilities
@@ -108,6 +115,7 @@ import tasks.report.OrphanReportFileDeletionTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
+import tasks.report.SampleDataGenerationTask
 import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
@@ -245,7 +253,21 @@ class SignalConsoComponents(
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
-  def s3Service: S3ServiceInterface = new S3Service()
+  private val awsS3Client: AmazonS3 = AmazonS3ClientBuilder
+    .standard()
+    .withEndpointConfiguration(
+      new EndpointConfiguration("https://cellar-c2.services.clever-cloud.com", "us-east-1")
+    )
+    .withCredentials(
+      new AWSStaticCredentialsProvider(
+        new BasicAWSCredentials(
+          bucketConfiguration.keyId,
+          bucketConfiguration.secretKey
+        )
+      )
+    )
+    .build()
+  lazy val s3Service: S3ServiceInterface = new S3Service(awsS3Client)
 
   //  Actor
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
@@ -271,7 +293,7 @@ class SignalConsoComponents(
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)
-  val mailService = new MailService(
+  var mailService = new MailService(
     mailRetriesService,
     emailConfiguration,
     reportNotificationBlockedRepository,
@@ -385,8 +407,9 @@ class SignalConsoComponents(
     )
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
-  val reportOrchestrator = new ReportOrchestrator(
-    mailService,
+
+  private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
+    emailService,
     reportConsumerReviewOrchestrator,
     reportRepository,
     reportMetadataRepository,
@@ -409,6 +432,8 @@ class SignalConsoComponents(
     engagementOrchestrator,
     messagesApi
   )
+
+  val reportOrchestrator = buildReportOrchestrator(mailService)
 
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     reportOrchestrator,
@@ -552,6 +577,24 @@ class SignalConsoComponents(
       taskConfiguration,
       taskRepository
     )
+
+  private val reportOrchestratorWithFakeMailer = buildReportOrchestrator(_ => Future.unit)
+
+  val sampleDataService = new SampleDataService(
+    companyRepository,
+    userRepository,
+    accessTokenRepository,
+    reportOrchestratorWithFakeMailer,
+    reportRepository,
+    companyAccessRepository,
+    reportAdminActionOrchestrator,
+    websiteRepository
+  )(
+    actorSystem
+  )
+
+  val sampleDataGenerationTask =
+    new SampleDataGenerationTask(actorSystem, sampleDataService, taskConfiguration, taskRepository)
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
@@ -834,6 +877,9 @@ class SignalConsoComponents(
     oldReportExportDeletionTask.schedule()
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
+    }
+    if (applicationConfiguration.task.sampleData.active) {
+      sampleDataGenerationTask.schedule()
     }
   }
 

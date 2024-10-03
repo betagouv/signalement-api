@@ -33,7 +33,7 @@ class MailService(
       email: BaseEmail
   ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)
-    case email =>
+    case _ =>
       send(
         email.recipients,
         email.subject,
