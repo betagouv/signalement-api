@@ -68,7 +68,7 @@ class ExportReportsToSFTPTask(
       id.toString,
       lang.map(_.toLanguageTag).getOrElse(""),
       category,
-      subcategories.mkString(";"),
+      subcategories.mkString("\"", ";", "\""),
       websiteURL.host.getOrElse(""),
       vendor.getOrElse(""),
       tags.map(_.entryName).mkString(";"),
@@ -91,9 +91,9 @@ class ExportReportsToSFTPTask(
       maybeCompany.map(_.isHeadOffice.toString).getOrElse(""),
       maybeCompany.map(_.isOpen.toString).getOrElse(""),
       maybeProduct.map(_.gtin).getOrElse(""),
-      influencer.flatMap(_.socialNetwork).map(_.entryName).getOrElse(""),
-      influencer.flatMap(_.otherSocialNetwork).getOrElse(""),
-      influencer.map(_.name).getOrElse("")
+      s""""${influencer.flatMap(_.socialNetwork).map(_.entryName).getOrElse("")}"""",
+      s""""${influencer.flatMap(_.otherSocialNetwork).getOrElse("")}"""",
+      s""""${influencer.map(_.name).getOrElse("")}""""
     )
 
     fields.mkString(",")
