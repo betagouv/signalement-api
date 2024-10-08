@@ -6,6 +6,7 @@ import models.User
 import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
+import models.report.ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR
 import models.report.IncomingReportResponse
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportResponseType.NOT_CONCERNED
@@ -178,7 +179,7 @@ class SampleDataService(
           consumerDetails = "Consumer details",
           dgccrfDetails = Some("CCRF details"),
           fileIds = List.empty,
-          responseDetails = None
+          responseDetails = Some(REMBOURSEMENT_OU_AVOIR)
         )
         rejectedResponse = IncomingReportResponse(
           REJECTED,
