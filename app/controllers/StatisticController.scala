@@ -121,6 +121,13 @@ class StatisticController(
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
+  def getAcceptedResponsesDistribution(companyId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
+      statsOrchestrator
+        .getAcceptedResponsesDistribution(companyId, request.identity.userRole)
+        .map(x => Ok(Json.toJson(x)))
+    }
+
   def getProReportToTransmitStat() =
     SecuredAction.async { request =>
       // Includes the reports that we want to transmit to a pro

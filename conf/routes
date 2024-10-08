@@ -14,6 +14,7 @@ GET           /api/stats/reports/delay/responsed                      controller
 GET           /api/stats/reports/delay/read                           controllers.StatisticController.getDelayReportReadInHours(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/tags                                 controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                               controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/accepted                             controllers.StatisticController.getAcceptedResponsesDistribution(companyId: java.util.UUID)
 GET           /api/stats/reports/reviews                              controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/engagement-reviews                   controllers.StatisticController.getReportEngagementReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/pro-totransmit                       controllers.StatisticController.getProReportToTransmitStat()

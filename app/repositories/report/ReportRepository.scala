@@ -6,6 +6,7 @@ import com.github.tminglei.slickpg.TsVector
 import models._
 import models.barcode.BarcodeProduct
 import models.company.Company
+import models.report.ReportResponseType.ACCEPTED
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
@@ -36,6 +37,7 @@ import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import repositories.reportengagementreview.ReportEngagementReviewTable
+import repositories.reportresponse.ReportResponseTable
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -300,6 +302,23 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .map { case (status, report) => status -> report.size }
         .result
     ).map(_.toMap)
+
+  def getAcceptedResponsesDistribution(companyId: UUID, userRole: UserRole): Future[Map[ExistingResponseDetails, Int]] =
+    db.run(
+      ReportTable
+        .table(Some(userRole))
+        .join(ReportResponseTable.table)
+        .on(_.id === _.reportId)
+        .filter(_._2.responseType === ACCEPTED.entryName)
+        .filter(_._2.responseDetails.isDefined)
+        .filter(_._2.companyId === companyId)
+        .groupBy(_._2.responseDetails)
+        .map { case (details, group) => details -> group.size }
+        .result
+    ).map(
+      _.toMap
+        .map { case (details, nb) => ExistingResponseDetails.withName(details.get) -> nb }
+    )
 
   def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] = {
     def spreadListOfTags(map: Seq[(List[ReportTag], Int)]): Map[ReportTag, Int] =
