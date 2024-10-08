@@ -53,6 +53,11 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] = ???
 
+  override def getAcceptedResponsesDistribution(
+      companyId: UUID,
+      userRole: UserRole
+  ): Future[Map[ExistingResponseDetails, Int]] = ???
+
   override def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
     ???
 

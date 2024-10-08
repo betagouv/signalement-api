@@ -142,6 +142,9 @@ class StatsOrchestrator(
   def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
     reportRepository.getReportsStatusDistribution(companyId, userRole)
 
+  def getAcceptedResponsesDistribution(companyId: UUID, userRole: UserRole): Future[Map[ExistingResponseDetails, Int]] =
+    reportRepository.getAcceptedResponsesDistribution(companyId, userRole)
+
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
