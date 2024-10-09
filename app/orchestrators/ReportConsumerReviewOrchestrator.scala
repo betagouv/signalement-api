@@ -80,6 +80,14 @@ class ReportConsumerReviewOrchestrator(
     } yield ()
   }
 
+  def deleteDetails(reportId: UUID): Future[Unit] = for {
+    reviews <- responseConsumerReviewRepository.findByReportId(reportId)
+    _ <- reviews match {
+      case review :: _ => responseConsumerReviewRepository.update(review.id, review.copy(details = Some("")))
+      case _ => Future.unit
+    }
+  } yield ()
+
   private def updateReview(review: ResponseConsumerReview) =
     responseConsumerReviewRepository.update(
       review.id,
@@ -88,6 +96,7 @@ class ReportConsumerReviewOrchestrator(
         details = review.details
       )
     )
+
   private def createReview(reportId: UUID, evaluation: ResponseEvaluation): Future[Event] =
     responseConsumerReviewRepository
       .createOrUpdate(

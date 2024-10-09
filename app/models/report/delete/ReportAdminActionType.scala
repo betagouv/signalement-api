@@ -10,5 +10,5 @@ object ReportAdminActionType extends PlayEnum[ReportAdminActionType] {
   case object SolvedContractualDispute extends ReportAdminActionType
   case object ConsumerThreatenByPro    extends ReportAdminActionType
   case object RefundBlackMail          extends ReportAdminActionType
-  case object OtherReasonDeleteRequest extends ReportAdminActionType
+  case object RGPDDeleteRequest        extends ReportAdminActionType
 }

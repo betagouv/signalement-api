@@ -24,6 +24,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
   case object NonConsulte    extends ReportStatus
   case object ConsulteIgnore extends ReportStatus
   case object MalAttribue    extends ReportStatus
+  case object SuppressionRGPD    extends ReportStatus
 
   val statusVisibleByPro: Seq[ReportStatus] =
     Seq(
@@ -33,7 +34,8 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       Infonde,
       NonConsulte,
       ConsulteIgnore,
-      MalAttribue
+      MalAttribue,
+      SuppressionRGPD
     )
 
   val statusWithProResponse = Seq(PromesseAction, Infonde, MalAttribue)
@@ -66,6 +68,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       case NonConsulte        => if (isPro) "Clôturé" else "Signalement non consulté"
       case ConsulteIgnore     => if (isPro) "Clôturé" else "Signalement consulté ignoré"
       case MalAttribue        => if (isPro) "Clôturé" else "Signalement mal attribué"
+      case SuppressionRGPD    => if (isPro) "Supprimé" else "Suppression RGPD"
     }
   }
 
