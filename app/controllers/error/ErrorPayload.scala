@@ -6,7 +6,7 @@ import play.api.libs.json.Json
 final case class ErrorPayload(`type`: String, title: String, details: String)
 
 object ErrorPayload {
-  def apply(error: AppError): ErrorPayload = ErrorPayload(error.`type`, error.title, error.details)
+  def apply(error: AppError): ErrorPayload = ErrorPayload(error.scErrorCode, error.title, error.details)
 
   val AuthenticationErrorPayload = ErrorPayload(
     "SC-AUTH",
