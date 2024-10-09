@@ -3,7 +3,7 @@ package authentication
 import authentication.JcaCrypter.UnderlyingIVBug
 import authentication.JcaCrypter.UnexpectedFormat
 import authentication.JcaCrypter.UnknownVersion
-import controllers.error.AppError.AuthError
+import controllers.error.AppError.BrokenAuthError
 
 import java.security.MessageDigest
 import java.util.Base64
@@ -30,7 +30,7 @@ class JcaCrypter(settings: JcaCrypterSettings) {
     * @return
     *   The encrypted string.
     */
-  def encrypt(value: String): Either[AuthError, String] = {
+  def encrypt(value: String): Either[BrokenAuthError, String] = {
     val keySpec = secretKeyWithSha256(settings.key, "AES")
     val cipher  = Cipher.getInstance("AES/CTR/NoPadding")
     cipher.init(Cipher.ENCRYPT_MODE, keySpec)
@@ -38,7 +38,7 @@ class JcaCrypter(settings: JcaCrypterSettings) {
     val version        = 1
     Option(cipher.getIV) match {
       case Some(iv) => Right(s"$version-${Base64.getEncoder.encodeToString(iv ++ encryptedValue)}")
-      case None     => Left(AuthError(UnderlyingIVBug))
+      case None     => Left(BrokenAuthError(UnderlyingIVBug))
     }
   }
 
@@ -49,11 +49,11 @@ class JcaCrypter(settings: JcaCrypterSettings) {
     * @return
     *   The plain text string.
     */
-  def decrypt(value: String): Either[AuthError, String] =
+  def decrypt(value: String): Either[BrokenAuthError, String] =
     value.split("-", 2) match {
       case Array(version, data) if version == "1" => Right(decryptVersion1(data, settings.key))
-      case Array(version, _)                      => Left(AuthError(UnknownVersion.format(version)))
-      case _                                      => Left(AuthError(UnexpectedFormat))
+      case Array(version, _)                      => Left(BrokenAuthError(UnknownVersion.format(version)))
+      case _                                      => Left(BrokenAuthError(UnexpectedFormat))
     }
 
   /** Generates the SecretKeySpec, given the private key and the algorithm.

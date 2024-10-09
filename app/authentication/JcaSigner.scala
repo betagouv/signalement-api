@@ -3,7 +3,7 @@ package authentication
 import authentication.JcaSigner.BadSignature
 import authentication.JcaSigner.InvalidMessageFormat
 import authentication.JcaSigner.UnknownVersion
-import controllers.error.AppError.AuthError
+import controllers.error.AppError.BrokenAuthError
 import org.apache.commons.codec.binary.Hex
 
 import javax.crypto.Mac
@@ -42,7 +42,7 @@ class JcaSigner(settings: JcaSignerSettings) {
     * @return
     *   The verified raw data, or an error if the message isn't valid.
     */
-  def extract(message: String): Either[AuthError, String] =
+  def extract(message: String): Either[BrokenAuthError, String] =
     for {
       tuple1 <- fragment(message)
       (_, actualSignature, actualData) = tuple1
@@ -52,7 +52,7 @@ class JcaSigner(settings: JcaSignerSettings) {
         if (constantTimeEquals(expectedSignature, actualSignature)) {
           Right(actualData)
         } else {
-          Left(AuthError(BadSignature))
+          Left(BrokenAuthError(BadSignature))
         }
     } yield res
 
@@ -63,11 +63,11 @@ class JcaSigner(settings: JcaSignerSettings) {
     * @return
     *   The message parts.
     */
-  private def fragment(message: String): Either[AuthError, (String, String, String)] =
+  private def fragment(message: String): Either[BrokenAuthError, (String, String, String)] =
     message.split("-", 3) match {
       case Array(version, signature, data) if version == "1" => Right((version, signature, data))
-      case Array(version, _, _)                              => Left(AuthError(UnknownVersion.format(version)))
-      case _                                                 => Left(AuthError(InvalidMessageFormat))
+      case Array(version, _, _)                              => Left(BrokenAuthError(UnknownVersion.format(version)))
+      case _                                                 => Left(BrokenAuthError(InvalidMessageFormat))
     }
 
   /** Constant time equals method.

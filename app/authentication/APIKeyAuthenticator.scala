@@ -1,6 +1,6 @@
 package authentication
 
-import controllers.error.AppError.AuthError
+import controllers.error.AppError.BrokenAuthError
 import models.Consumer
 import play.api.Logger
 import play.api.mvc.Request
@@ -17,7 +17,7 @@ class APIKeyAuthenticator(
 
   val logger: Logger = Logger(this.getClass)
 
-  override def authenticate[B](request: Request[B]): Future[Either[AuthError, Option[Consumer]]] = {
+  override def authenticate[B](request: Request[B]): Future[Either[BrokenAuthError, Option[Consumer]]] = {
     val hasher         = passwordHasherRegistry.current
     val headerValueOpt = request.headers.get("X-Api-Key")
 

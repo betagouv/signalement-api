@@ -1,15 +1,16 @@
 package controllers.error
 
+import controllers.error.AppError.BrokenAuthError
 import controllers.error.AppError.ServerError
-import controllers.error.ErrorPayload.AuthenticationErrorPayload
+import controllers.error.ErrorPayload.failedAuthenticationErrorPayload
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Request
 import play.api.mvc.Result
 import play.api.mvc.Results
+import utils.Logs.RichLogger
 
 import java.util.UUID
-import utils.Logs.RichLogger
 object AppErrorTransformer {
 
   val logger: Logger = Logger(this.getClass())
@@ -63,8 +64,19 @@ object AppErrorTransformer {
         logger.errorWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
         Results.InternalServerError(Json.toJson(ErrorPayload(error)))
 
-      case error: UnauthorizedError =>
+      case error: BrokenAuthError =>
         logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
-        Results.Unauthorized(Json.toJson(AuthenticationErrorPayload))
+        Results.Unauthorized(
+          Json.toJson(
+            ErrorPayload(
+              "SC-AUTH-BROKEN",
+              "Broken authentication",
+              s"Vous êtes déconnecté : ${error.details}"
+            )
+          )
+        )
+      case error: FailedAuthenticationError =>
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
+        Results.Unauthorized(Json.toJson(failedAuthenticationErrorPayload))
     }
 }
