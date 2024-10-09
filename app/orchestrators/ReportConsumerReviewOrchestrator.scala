@@ -84,7 +84,7 @@ class ReportConsumerReviewOrchestrator(
     reviews <- responseConsumerReviewRepository.findByReportId(reportId)
     _ <- reviews match {
       case review :: _ => responseConsumerReviewRepository.update(review.id, review.copy(details = Some("")))
-      case _ => Future.unit
+      case _           => Future.unit
     }
   } yield ()
 

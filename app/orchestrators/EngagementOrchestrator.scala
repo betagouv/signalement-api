@@ -163,7 +163,7 @@ class EngagementOrchestrator(
     reviews <- reportEngagementReviewRepository.findByReportId(reportId)
     _ <- reviews match {
       case review :: _ => reportEngagementReviewRepository.update(review.id, review.copy(details = Some("")))
-      case _ => Future.unit
+      case _           => Future.unit
     }
   } yield ()
 

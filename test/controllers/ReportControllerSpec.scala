@@ -10,10 +10,17 @@ import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
 import loader.SignalConsoComponents
 import models.BlacklistedEmail
-import models.report.{DetailInputValue, IncomingReportResponse, ReportFile, ReportFileOrigin, ReportStatus}
+import models.report.DetailInputValue
+import models.report.IncomingReportResponse
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportStatus
 import models.report.ReportStatus.PromesseAction
 import models.report.delete.ReportAdminAction
-import models.report.delete.ReportAdminActionType.{ConsumerThreatenByPro, RGPDDeleteRequest, RefundBlackMail, SolvedContractualDispute}
+import models.report.delete.ReportAdminActionType.ConsumerThreatenByPro
+import models.report.delete.ReportAdminActionType.RGPDDeleteRequest
+import models.report.delete.ReportAdminActionType.RefundBlackMail
+import models.report.delete.ReportAdminActionType.SolvedContractualDispute
 import models.report.reportfile.ReportFileId
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewId
@@ -32,7 +39,11 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.event.EventFilter
 import services.S3ServiceInterface
-import utils.Constants.ActionEvent.{CONSUMER_THREATEN_BY_PRO, POST_ACCOUNT_ACTIVATION_DOC, REFUND_BLACKMAIL, RGPD_DELETE_REQUEST, SOLVED_CONTRACTUAL_DISPUTE}
+import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
+import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
+import utils.Constants.ActionEvent.REFUND_BLACKMAIL
+import utils.Constants.ActionEvent.RGPD_DELETE_REQUEST
+import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
 import utils.Constants.EventType
 import utils.EmailAddress
 import utils.Fixtures
@@ -194,7 +205,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       forall(
         List(
           (ConsumerThreatenByPro, CONSUMER_THREATEN_BY_PRO),
-          (RefundBlackMail, REFUND_BLACKMAIL),
+          (RefundBlackMail, REFUND_BLACKMAIL)
         )
       ) { case (actionType, expectedActionEvent) =>
         val testEnv = application()
@@ -271,81 +282,81 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     "delete report" in new Context {
 
-        val testEnv = application()
+      val testEnv = application()
 
-        import testEnv._
+      import testEnv._
 
-        new WithApplication(app) {
+      new WithApplication(app) {
 
-          val company = Fixtures.genCompany.sample.get
-          val report  = Fixtures.genReportForCompany(company).sample.get
-          val event   = Fixtures.genReponseEventForReport(report.id).sample.get
-          val reportFile = ReportFile(
-            ReportFileId.generateId(),
-            Some(report.id),
+        val company = Fixtures.genCompany.sample.get
+        val report  = Fixtures.genReportForCompany(company).sample.get
+        val event   = Fixtures.genReponseEventForReport(report.id).sample.get
+        val reportFile = ReportFile(
+          ReportFileId.generateId(),
+          Some(report.id),
+          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          "fileName",
+          "storageName",
+          ReportFileOrigin.Consumer,
+          None
+        )
+        val review =
+          ResponseConsumerReview(
+            ResponseConsumerReviewId.generateId(),
+            report.id,
+            Positive,
             OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-            "fileName",
-            "storageName",
-            ReportFileOrigin.Consumer,
             None
           )
-          val review =
-            ResponseConsumerReview(
-              ResponseConsumerReviewId.generateId(),
-              report.id,
-              Positive,
-              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-              None
-            )
 
-          Await.result(
-            for {
-              _ <- userRepository.create(adminIdentity)
-              _ <- companyRepository.create(company)
-              _ <- reportRepository.create(report)
-              _ <- reportFileRepository.create(reportFile)
-              _ <- eventRepository.create(event)
-              _ <- responseConsumerReviewRepository.create(review)
-            } yield (),
-            Duration.Inf
-          )
-          val jsonBody = Json.toJson(ReportAdminAction(RGPDDeleteRequest, comment = "comment"))
+        Await.result(
+          for {
+            _ <- userRepository.create(adminIdentity)
+            _ <- companyRepository.create(company)
+            _ <- reportRepository.create(report)
+            _ <- reportFileRepository.create(reportFile)
+            _ <- eventRepository.create(event)
+            _ <- responseConsumerReviewRepository.create(review)
+          } yield (),
+          Duration.Inf
+        )
+        val jsonBody = Json.toJson(ReportAdminAction(RGPDDeleteRequest, comment = "comment"))
 
-          val request =
-            FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
-              .withAuthCookie(adminIdentity.email, components.cookieAuthenticator)
-              .withJsonBody(jsonBody)
+        val request =
+          FakeRequest("DELETE", s"/api/reports/${report.id.toString}")
+            .withAuthCookie(adminIdentity.email, components.cookieAuthenticator)
+            .withJsonBody(jsonBody)
 
-          val result = route(app, request).get
+        val result = route(app, request).get
 
-          Helpers.status(result) must beEqualTo(NO_CONTENT)
-          Helpers.contentAsBytes(result).isEmpty mustEqual true
+        Helpers.status(result) must beEqualTo(NO_CONTENT)
+        Helpers.contentAsBytes(result).isEmpty mustEqual true
 
-          val (maybeReport, maybeReportFile, maybeEvent, maybeReview, events) = Await.result(
-            for {
-              maybeReport     <- reportRepository.get(report.id)
-              maybeReportFile <- reportFileRepository.get(reportFile.id)
-              maybeEvent      <- eventRepository.get(event.id)
-              maybeReview     <- responseConsumerReviewRepository.get(review.id)
-              events          <- eventRepository.getCompanyEventsWithUsers(company.id, EventFilter(None, None))
-            } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview, events),
-            Duration.Inf
-          )
+        val (maybeReport, maybeReportFile, maybeEvent, maybeReview, events) = Await.result(
+          for {
+            maybeReport     <- reportRepository.get(report.id)
+            maybeReportFile <- reportFileRepository.get(reportFile.id)
+            maybeEvent      <- eventRepository.get(event.id)
+            maybeReview     <- responseConsumerReviewRepository.get(review.id)
+            events          <- eventRepository.getCompanyEventsWithUsers(company.id, EventFilter(None, None))
+          } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview, events),
+          Duration.Inf
+        )
 
-          maybeReport.map(_.firstName) must beSome("")
-          maybeReport.map(_.lastName) must beSome("")
-          maybeReport.map(_.lastName) must beSome("")
-          maybeReport.flatMap(_.consumerPhone) must beSome("") or beNone
-          maybeReport.flatMap(_.consumerReferenceNumber) must beSome("") or beNone
-          maybeReport.map(_.email.value) must beSome("")
-          maybeReport.map(_.details) must beSome(List.empty[DetailInputValue])
-          maybeReport.map(_.status) must beSome(ReportStatus.SuppressionRGPD: ReportStatus)
-          maybeReportFile must beNone
-          maybeEvent.map(_.details.as[IncomingReportResponse].consumerDetails) must beSome("")
-          maybeReview.flatMap(_.details) must beSome("")
-          events.headOption.map(_._1.action) shouldEqual Some(RGPD_DELETE_REQUEST)
+        maybeReport.map(_.firstName) must beSome("")
+        maybeReport.map(_.lastName) must beSome("")
+        maybeReport.map(_.lastName) must beSome("")
+        maybeReport.flatMap(_.consumerPhone) must beSome("") or beNone
+        maybeReport.flatMap(_.consumerReferenceNumber) must beSome("") or beNone
+        maybeReport.map(_.email.value) must beSome("")
+        maybeReport.map(_.details) must beSome(List.empty[DetailInputValue])
+        maybeReport.map(_.status) must beSome(ReportStatus.SuppressionRGPD: ReportStatus)
+        maybeReportFile must beNone
+        maybeEvent.map(_.details.as[IncomingReportResponse].consumerDetails) must beSome("")
+        maybeReview.flatMap(_.details) must beSome("")
+        events.headOption.map(_._1.action) shouldEqual Some(RGPD_DELETE_REQUEST)
 
-        }
+      }
     }
   }
 

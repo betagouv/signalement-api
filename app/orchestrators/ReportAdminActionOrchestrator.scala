@@ -10,7 +10,8 @@ import io.scalaland.chimney.dsl._
 import models._
 import models.company.Company
 import models.event.Event
-import models.report.ReportStatus.{SuppressionRGPD, Transmis}
+import models.report.ReportStatus.SuppressionRGPD
+import models.report.ReportStatus.Transmis
 import models.report._
 import models.report.delete.ReportAdminAction
 import models.report.delete.ReportAdminActionType
@@ -19,7 +20,8 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
-import repositories.event.{EventFilter, EventRepositoryInterface}
+import repositories.event.EventFilter
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotificationOnAdminCompletion
 import services.emails.EmailDefinitionsConsumer.ConsumerReportDeletionConfirmation
@@ -28,7 +30,8 @@ import services.emails.EmailDefinitionsPro.ProResponseAcknowledgmentOnAdminCompl
 import services.emails.MailService
 import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.{ActionEvent, EventType}
+import utils.Constants.ActionEvent
+import utils.Constants.EventType
 import utils.EmailAddress.EmptyEmailAddress
 import utils.Logs.RichLogger
 import utils.SIREN.fromSIRET
@@ -180,17 +183,22 @@ class ReportAdminActionOrchestrator(
     )
     for {
       _ <- reportRepository.update(emptiedReport.id, emptiedReport)
-      proEvents <- eventRepository.getEvents(reportId = emptiedReport.id, filter = EventFilter(eventType = Some(EventType.PRO), action = Some(ActionEvent.REPORT_PRO_RESPONSE)))
+      proEvents <- eventRepository.getEvents(
+        reportId = emptiedReport.id,
+        filter = EventFilter(eventType = Some(EventType.PRO), action = Some(ActionEvent.REPORT_PRO_RESPONSE))
+      )
       _ <- proEvents.traverse { event =>
-        val emptiedDetails = event.details.as[ExistingReportResponse].copy(fileIds = List.empty, consumerDetails = "", dgccrfDetails = None)
+        val emptiedDetails = event.details
+          .as[ExistingReportResponse]
+          .copy(fileIds = List.empty, consumerDetails = "", dgccrfDetails = None)
         eventRepository.update(event.id, event.copy(details = Json.toJson(emptiedDetails)))
       }
-      _ <- reportConsumerReviewOrchestrator.deleteDetails(emptiedReport.id)
-      _ <- engagementOrchestrator.deleteDetails(emptiedReport.id)
-      _ <- reportFileOrchestrator.removeFromReportId(emptiedReport.id)
+      _            <- reportConsumerReviewOrchestrator.deleteDetails(emptiedReport.id)
+      _            <- engagementOrchestrator.deleteDetails(emptiedReport.id)
+      _            <- reportFileOrchestrator.removeFromReportId(emptiedReport.id)
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      _            <- createAdminDeletionReportEvent(report.companyId, user, RGPD_DELETE_REQUEST, reportAdminCompletionDetails)
-      _            <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
+      _ <- createAdminDeletionReportEvent(report.companyId, user, RGPD_DELETE_REQUEST, reportAdminCompletionDetails)
+      _ <- mailService.send(ConsumerReportDeletionConfirmation.Email(report, maybeCompany, messagesApi))
     } yield emptiedReport
   }
 

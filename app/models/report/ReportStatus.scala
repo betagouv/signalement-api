@@ -18,13 +18,13 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   /** Read by pro status
     */
-  case object Transmis       extends ReportStatus
-  case object PromesseAction extends ReportStatus
-  case object Infonde        extends ReportStatus
-  case object NonConsulte    extends ReportStatus
-  case object ConsulteIgnore extends ReportStatus
-  case object MalAttribue    extends ReportStatus
-  case object SuppressionRGPD    extends ReportStatus
+  case object Transmis        extends ReportStatus
+  case object PromesseAction  extends ReportStatus
+  case object Infonde         extends ReportStatus
+  case object NonConsulte     extends ReportStatus
+  case object ConsulteIgnore  extends ReportStatus
+  case object MalAttribue     extends ReportStatus
+  case object SuppressionRGPD extends ReportStatus
 
   val statusVisibleByPro: Seq[ReportStatus] =
     Seq(
