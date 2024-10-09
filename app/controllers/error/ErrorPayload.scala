@@ -8,7 +8,7 @@ final case class ErrorPayload(`type`: String, title: String, details: String)
 object ErrorPayload {
   def apply(error: AppError): ErrorPayload = ErrorPayload(error.scErrorCode, error.title, error.details)
 
-  val AuthenticationErrorPayload = ErrorPayload(
+  val failedAuthenticationErrorPayload = ErrorPayload(
     "SC-AUTH",
     "Cannot authenticate user",
     """ Email ou mot de passe incorrect. Si vous avez oublié votre mot de passe, cliquez sur 'mot de passe oublié' pour le récupérer.""".stripMargin

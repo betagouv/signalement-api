@@ -4,7 +4,7 @@ import authentication.BCryptPasswordHasher
 import authentication.PasswordInfo
 import controllers.error.AppError._
 import controllers.error.ErrorPayload
-import controllers.error.ErrorPayload.AuthenticationErrorPayload
+import controllers.error.ErrorPayload.failedAuthenticationErrorPayload
 import loader.SignalConsoComponents
 import models._
 import models.auth.AuthToken
@@ -142,7 +142,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(AuthenticationErrorPayload)
+          Json.toJson(failedAuthenticationErrorPayload)
         )
 
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
@@ -168,7 +168,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(AuthenticationErrorPayload)
+          Json.toJson(failedAuthenticationErrorPayload)
         )
 
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)

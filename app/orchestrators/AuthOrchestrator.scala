@@ -119,7 +119,7 @@ class AuthOrchestrator(
     userToImpersonate      <- maybeUserToImpersonate.liftTo[Future](UserNotFound(userEmail.value))
     _ <- userToImpersonate.userRole match {
       case UserRole.Professionnel => Future.unit
-      case _                      => Future.failed(AuthError("Not a pro"))
+      case _                      => Future.failed(BrokenAuthError("Not a pro"))
     }
     cookie <- authenticator.initImpersonated(userEmail, request.identity.email)(request) match {
       case Right(value) => Future.successful(value)

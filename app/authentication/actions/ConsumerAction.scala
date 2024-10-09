@@ -2,7 +2,7 @@ package authentication.actions
 
 import authentication.Authenticator
 import authentication.actions.ConsumerAction.ConsumerRequest
-import controllers.error.AppError.AuthError
+import controllers.error.AppError.BrokenAuthError
 import controllers.error.AppErrorTransformer
 import models.Consumer
 import play.api.mvc._
@@ -18,7 +18,7 @@ class ConsumerAction(val parser: BodyParsers.Default, authenticator: Authenticat
     authenticator.authenticate(request).flatMap {
       case Right(Some(consumer)) => Future.successful(Right(IdentifiedRequest(consumer, request)))
       case Right(None) =>
-        val result = AppErrorTransformer.handleError(request, AuthError("Consumer not found in DB"))
+        val result = AppErrorTransformer.handleError(request, BrokenAuthError("Consumer not found in DB"))
         Future.successful(Left(result))
       case Left(error) =>
         val result = AppErrorTransformer.handleError(request, error)

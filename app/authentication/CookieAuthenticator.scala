@@ -1,7 +1,7 @@
 package authentication
 
 import authentication.CookieAuthenticator.CookieAuthenticatorSettings
-import controllers.error.AppError.AuthError
+import controllers.error.AppError.BrokenAuthError
 import models.User
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -25,7 +25,7 @@ class CookieAuthenticator(
 )(implicit ec: ExecutionContext)
     extends Authenticator[User] {
 
-  private def unserialize(str: String): Either[AuthError, CookieInfos] =
+  private def unserialize(str: String): Either[BrokenAuthError, CookieInfos] =
     for {
       data          <- signer.extract(str)
       decryptedData <- crypter.decrypt(data)
@@ -34,24 +34,24 @@ class CookieAuthenticator(
         .validate[CookieInfos]
         .asEither
         .left
-        .map(_ => AuthError("Error while extracting data from cookie"))
+        .map(_ => BrokenAuthError("Error while extracting data from cookie"))
     } yield cookiesInfos
 
-  def extract[B](request: Request[B]): Either[AuthError, CookieInfos] = {
+  def extract[B](request: Request[B]): Either[BrokenAuthError, CookieInfos] = {
     val maybeFingerprint = if (settings.useFingerprinting) Some(fingerprintGenerator.generate(request)) else None
     val maybeCookiesInfos = request.cookies.get(settings.cookieName) match {
       case Some(cookie) => unserialize(cookie.value)
-      case None         => Left(AuthError("Cookie not found"))
+      case None         => Left(BrokenAuthError("Cookie not found"))
     }
 
     maybeCookiesInfos match {
       case Right(a) if maybeFingerprint.isDefined && a.fingerprint != maybeFingerprint =>
-        Left(AuthError("Fingerprint does not match"))
+        Left(BrokenAuthError("Fingerprint does not match"))
       case v => v
     }
   }
 
-  def authenticate[B](request: Request[B]): Future[Either[AuthError, Option[User]]] =
+  def authenticate[B](request: Request[B]): Future[Either[BrokenAuthError, Option[User]]] =
     extract(request) match {
       case Right(cookieInfos) =>
         userRepository
@@ -61,7 +61,7 @@ class CookieAuthenticator(
       case Left(authError) => Future.successful(Left(authError))
     }
 
-  private def serialize(cookieInfos: CookieInfos): Either[AuthError, String] = for {
+  private def serialize(cookieInfos: CookieInfos): Either[BrokenAuthError, String] = for {
     crypted <- crypter.encrypt(Json.toJson(cookieInfos).toString())
   } yield signer.sign(crypted)
 
@@ -81,7 +81,7 @@ class CookieAuthenticator(
     )
   }
 
-  def init(userEmail: EmailAddress)(implicit request: RequestHeader): Either[AuthError, Cookie] = {
+  def init(userEmail: EmailAddress)(implicit request: RequestHeader): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail)
     serialize(cookieInfos).map { value =>
       Cookie(
@@ -101,7 +101,7 @@ class CookieAuthenticator(
 
   def initImpersonated(userEmail: EmailAddress, impersonator: EmailAddress)(implicit
       request: RequestHeader
-  ): Either[AuthError, Cookie] = {
+  ): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail, Some(impersonator))
     serialize(cookieInfos).map { value =>
       Cookie(
