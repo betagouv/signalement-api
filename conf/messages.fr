@@ -225,4 +225,4 @@ ConsumerReportDeletionEmail.hello=Bonjour,
 ConsumerReportDeletionEmail.body=Conformément à votre demande, nous avons supprimé le signalement daté du <b>{0}</b> concernant une entreprise :
 ConsumerReportDeletionEmail.companySiret=SIRET : <b>{0}</b>
 ConsumerReportDeletionEmail.team=L''équipe SignalConso
-ConsumerReportDeletionEmail.notRequested=Si vous n''avez pas effectué cette demande, merci de contacter le support .
+ConsumerReportDeletionEmail.notRequested=Si vous n''avez pas effectué cette demande, merci de contacter le support.

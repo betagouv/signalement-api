@@ -15,6 +15,7 @@ import org.scalacheck._
 import play.api.libs.json.Json
 import tasks.company.CompanySearchResult
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.EventType
 
 import java.time.OffsetDateTime
@@ -313,6 +314,30 @@ object Fixtures {
     eventType = eventType,
     action = actionEvent,
     details = stringToDetailsJsValue(details)
+  )
+
+  def genReponseEventForReport(reportId: UUID) = for {
+    id            <- arbitrary[UUID]
+    companyId     <- arbitrary[UUID]
+    details       <- arbString.arbitrary
+    dgccrfDetails <- arbString.arbitrary
+  } yield Event(
+    id = id,
+    reportId = Some(reportId),
+    companyId = Some(companyId),
+    userId = None,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    eventType = EventType.PRO,
+    action = REPORT_PRO_RESPONSE,
+    details = Json.toJson(
+      IncomingReportResponse(
+        ReportResponseType.ACCEPTED,
+        consumerDetails = details,
+        dgccrfDetails = Some(dgccrfDetails),
+        fileIds = List.empty,
+        responseDetails = None
+      )
+    )
   )
 
   def genEventForCompany(companyId: UUID, eventType: EventType, actionEvent: ActionEventValue) = for {
