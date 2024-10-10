@@ -21,6 +21,7 @@ import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
 import models.engagement.EngagementId
+import models.report.ReportStatus.SuppressionRGPD
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportWithMetadata
@@ -727,7 +728,9 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
-    if (user.userRole == UserRole.Professionnel && user.impersonator.isEmpty) {
+    if (
+      user.userRole == UserRole.Professionnel && user.impersonator.isEmpty && reportWithMetadata.report.status != SuppressionRGPD
+    ) {
       val report = reportWithMetadata.report
       eventRepository
         .getEvents(report.id, EventFilter(None))

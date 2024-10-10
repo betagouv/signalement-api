@@ -159,6 +159,14 @@ class EngagementOrchestrator(
     } yield ()
   }
 
+  def deleteDetails(reportId: UUID): Future[Unit] = for {
+    reviews <- reportEngagementReviewRepository.findByReportId(reportId)
+    _ <- reviews match {
+      case review :: _ => reportEngagementReviewRepository.update(review.id, review.copy(details = Some("")))
+      case _           => Future.unit
+    }
+  } yield ()
+
   private def updateEngagementReview(review: EngagementReview) =
     reportEngagementReviewRepository.update(
       review.id,
