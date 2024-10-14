@@ -1,7 +1,7 @@
  # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
-
+GET           /                                                       controllers.HealthController.health
 # Static pages
 GET           /api                                                    controllers.StaticController.api
 
@@ -71,6 +71,7 @@ GET           /api/ext/v2/reports                                     controller
 GET           /api/ext/reports/:uuid                                  controllers.ReportToExternalController.getReportToExternal(uuid)
 
 # Admin API
+
 
 GET           /api/admin/test-email                                   controllers.AdminController.getEmailCodes()
 POST          /api/admin/test-email                                   controllers.AdminController.sendTestEmail(templateRef, to)
