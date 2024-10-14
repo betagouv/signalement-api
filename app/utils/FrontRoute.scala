@@ -40,7 +40,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
     def validateEmail(token: String)        = url(s"/connexion/validation-email?token=${token}")
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
-    def activation                          = url("/activation")
+//    def activation                          = url("/activation")
     def welcome                             = url("/")
     def updateEmail(token: String)          = url(s"/parametres/update-email/$token")
 
