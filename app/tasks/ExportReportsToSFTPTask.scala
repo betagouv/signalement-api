@@ -58,6 +58,18 @@ class ExportReportsToSFTPTask(
     "influenceur_name"
   ).mkString(",")
 
+  private def wrapAndEscapeQuotes(s: String): String =
+    s""""${s.replace("\"", "\"\"")}""""
+
+  private def wrapAndEscapeQuotes(maybeString: Option[String]): String =
+    maybeString match {
+      case Some(s) => s""""${s.replace("\"", "\"\"")}""""
+      case None => ""
+    }
+
+  private def wrapAndEscapeQuotes(s: List[String]): String =
+    s""""${s.mkString(";").replace("\"", "\"\"").take(3998)}"""" // Asked by SI
+
   private def printReport(
       report: Report,
       maybeCompany: Option[Company],
@@ -66,34 +78,31 @@ class ExportReportsToSFTPTask(
     import report._
     val fields: List[String] = List(
       id.toString,
-      lang.map(_.toLanguageTag).getOrElse(""),
-      category,
-      subcategories.mkString("\"", ";", "\""),
-      websiteURL.host.getOrElse(""),
-      vendor.getOrElse(""),
-      tags.map(_.entryName).mkString(";"),
-      details
-        .map(input => s"${input.label}:${input.value}".replace("\"", "\"\""))
-        .mkString("\"", ";", "\"")
-        .take(4000), // Asked by SI
-      ccrfCode.mkString(";"),
+      wrapAndEscapeQuotes(lang.map(_.toLanguageTag)),
+      wrapAndEscapeQuotes(category),
+      wrapAndEscapeQuotes(subcategories),
+      wrapAndEscapeQuotes(websiteURL.host),
+      wrapAndEscapeQuotes(vendor),
+      wrapAndEscapeQuotes(tags.map(_.entryName)),
+      wrapAndEscapeQuotes(details.map(input => s"${input.label}:${input.value}")),
+      wrapAndEscapeQuotes(ccrfCode),
       creationDate.toString,
       status.entryName,
       forwardToReponseConso.toString,
-      reponseconsoCode.mkString(";"),
+      wrapAndEscapeQuotes(reponseconsoCode),
       companySiret.map(_.value).getOrElse(""),
-      companyName.getOrElse(""),
-      companyBrand.getOrElse(""),
+      wrapAndEscapeQuotes(companyName),
+      wrapAndEscapeQuotes(companyBrand),
       companyActivityCode.getOrElse(""),
-      companyAddress.country.map(_.name).getOrElse(""),
-      companyAddress.postalCode.getOrElse(""),
+      wrapAndEscapeQuotes(companyAddress.country.map(_.name)),
+      wrapAndEscapeQuotes(companyAddress.postalCode),
       expirationDate.toString,
       maybeCompany.map(_.isHeadOffice.toString).getOrElse(""),
       maybeCompany.map(_.isOpen.toString).getOrElse(""),
       maybeProduct.map(_.gtin).getOrElse(""),
-      s""""${influencer.flatMap(_.socialNetwork).map(_.entryName).getOrElse("")}"""",
-      s""""${influencer.flatMap(_.otherSocialNetwork).getOrElse("")}"""",
-      s""""${influencer.map(_.name).getOrElse("")}""""
+      wrapAndEscapeQuotes(influencer.flatMap(_.socialNetwork).map(_.entryName)),
+      wrapAndEscapeQuotes(influencer.flatMap(_.otherSocialNetwork)),
+      wrapAndEscapeQuotes(influencer.map(_.name))
     )
 
     fields.mkString(",")
