@@ -98,7 +98,9 @@ GET           /api/mobileapp/requirements                             controller
 
 # Authentication API
 POST          /api/authenticate                                       controllers.AuthController.authenticate()
+GET           /api/authenticate/proconnect/callback                   controllers.AuthController.proConnectAuthenticateCallBack(code: String, state: String, id_token: String)
 POST          /api/log-as                                             controllers.AuthController.logAs()
+GET           /api/logout/proconnect/callback                         controllers.AuthController.proConnectLogoutCallBack(state: String)
 POST          /api/logout                                             controllers.AuthController.logout()
 GET           /api/current-user                                       controllers.AuthController.getUser()
 POST          /api/authenticate/password/forgot                       controllers.AuthController.forgotPassword()

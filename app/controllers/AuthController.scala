@@ -41,6 +41,28 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
+  def proConnectAuthenticateCallBack(code: String, state: String, id_token: String): Action[JsValue] = {
+    //Generer et Stocker  le state dans la session
+    //Appeler
+    IpRateLimitedAction2.async(parse.json) { implicit request =>
+      for {
+        userLogin   <- request.parseBody[UserCredentials]()
+        userSession <- authOrchestrator.login(userLogin, request)
+      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+    }
+  }
+
+  def proConnectLogoutCallBack(state: String): Action[AnyContent] = SecuredAction.async { implicit request =>
+   //check du state
+    request.identity.impersonator match {
+      case Some(impersonator) =>
+        authOrchestrator
+          .logoutAs(impersonator, request)
+          .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+      case None => Future.successful(authenticator.discard(NoContent))
+    }
+  }
+
   def logAs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
     for {
       userEmail   <- request.parseBody[EmailAddress](JsPath \ "email")
