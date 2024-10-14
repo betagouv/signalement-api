@@ -28,6 +28,8 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def findByEmail(email: String): Future[Option[User]]
 
+  def findByAuthProviderId(authProviderId: String): Future[Option[User]]
+
   def findByEmailIncludingDeleted(email: String): Future[Option[User]]
 
   def softDelete(id: UUID): Future[Int]
@@ -36,5 +38,7 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def findByIds(ids: Seq[UUID]): Future[Seq[User]]
   def hardDelete(id: UUID): Future[Int]
+
+  def restore(user: User): Future[User]
 
 }

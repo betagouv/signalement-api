@@ -1,6 +1,7 @@
 package authentication
 
 import authentication.CookieAuthenticator.CookieAuthenticatorSettings
+import cats.implicits.catsSyntaxOptionId
 import controllers.error.AppError.BrokenAuthError
 import models.User
 import play.api.libs.json.Json
@@ -23,6 +24,26 @@ class CookieAuthenticator(
     userRepository: UserRepositoryInterface
 )(implicit ec: ExecutionContext)
     extends Authenticator[User] {
+
+  private def create(
+      userEmail: EmailAddress,
+      impersonator: Option[EmailAddress] = None,
+      proConnectIdToken: Option[String] = None,
+      proConnectState: Option[String] = None
+  ): CookieInfos = {
+    val now = OffsetDateTime.now()
+    CookieInfos(
+      id = UUID.randomUUID().toString,
+      userEmail = userEmail,
+      impersonator = impersonator,
+      lastUsedDateTime = now,
+      expirationDateTime = now.plus(settings.authenticatorExpiry.toMillis, ChronoUnit.MILLIS),
+      idleTimeout = settings.authenticatorIdleTimeout,
+      cookieMaxAge = settings.cookieMaxAge,
+      proConnectIdToken = proConnectIdToken,
+      proConnectState = proConnectState
+    )
+  }
 
   private def unserialize(str: String): Either[BrokenAuthError, CookieInfos] =
     for {
@@ -56,21 +77,20 @@ class CookieAuthenticator(
     crypted <- crypter.encrypt(Json.toJson(cookieInfos).toString())
   } yield signer.sign(crypted)
 
-  private def create(userEmail: EmailAddress, impersonator: Option[EmailAddress] = None): CookieInfos = {
-    val now = OffsetDateTime.now()
-    CookieInfos(
-      id = UUID.randomUUID().toString,
-      userEmail = userEmail,
-      impersonator = impersonator,
-      lastUsedDateTime = now,
-      expirationDateTime = now.plus(settings.authenticatorExpiry.toMillis, ChronoUnit.MILLIS),
-      idleTimeout = settings.authenticatorIdleTimeout,
-      cookieMaxAge = settings.cookieMaxAge
-    )
+  def initSignalConsoCookie(userEmail: EmailAddress, impersonator: Option[EmailAddress]): Either[BrokenAuthError, Cookie] = {
+    val cookieInfos = create(userEmail, impersonator)
+    init(cookieInfos)
   }
 
-  def init(userEmail: EmailAddress): Either[BrokenAuthError, Cookie] = {
-    val cookieInfos = create(userEmail)
+  def initProConnectCookie(userEmail: EmailAddress, proConnectIdToken: String, proConnectState: String)(implicit
+      request: RequestHeader
+  ): Either[BrokenAuthError, Cookie] = {
+    val cookieInfos =
+      create(userEmail, proConnectIdToken = proConnectIdToken.some, proConnectState = proConnectState.some)
+    init(cookieInfos)
+  }
+
+  private def init(cookieInfos: CookieInfos): Either[BrokenAuthError, Cookie] =
     serialize(cookieInfos).map { value =>
       Cookie(
         name = settings.cookieName,
@@ -85,25 +105,6 @@ class CookieAuthenticator(
         sameSite = settings.sameSite
       )
     }
-  }
-
-  def initImpersonated(userEmail: EmailAddress, impersonator: EmailAddress): Either[BrokenAuthError, Cookie] = {
-    val cookieInfos = create(userEmail, Some(impersonator))
-    serialize(cookieInfos).map { value =>
-      Cookie(
-        name = settings.cookieName,
-        value = value,
-        // The maxAge` must be used from the authenticator, because it might be changed by the user
-        // to implement "Remember Me" functionality
-        maxAge = cookieInfos.cookieMaxAge.map(_.toSeconds.toInt),
-        path = settings.cookiePath,
-        domain = settings.cookieDomain,
-        secure = settings.secureCookie,
-        httpOnly = settings.httpOnlyCookie,
-        sameSite = settings.sameSite
-      )
-    }
-  }
 
   def embed(cookie: Cookie, result: Result): Result =
     result.withCookies(cookie)
@@ -129,7 +130,7 @@ object CookieAuthenticator {
       secureCookie: Boolean,
       httpOnlyCookie: Boolean = true,
       sameSite: Option[Cookie.SameSite],
-      useFingerprinting: Boolean = true,
+      useFingerprinting: Boolean = false,
       cookieMaxAge: Option[FiniteDuration],
       authenticatorIdleTimeout: Option[FiniteDuration] = None,
       authenticatorExpiry: FiniteDuration = 12.hours

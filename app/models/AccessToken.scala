@@ -58,3 +58,11 @@ case class ActivationRequest(
 object ActivationRequest {
   implicit val ActivationRequestFormat: OFormat[ActivationRequest] = Json.format[ActivationRequest]
 }
+
+case class InvitationRequest(
+    email: EmailAddress,
+    authProvider: Option[AuthProvider]
+)
+object InvitationRequest {
+  implicit val InvitationRequestFormat: OFormat[InvitationRequest] = Json.format[InvitationRequest]
+}

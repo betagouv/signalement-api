@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.CookieAuthenticator
+import models.AuthProvider
 import models.PaginatedResult
 import models.UserRole
 import orchestrators.AuthOrchestrator
@@ -15,8 +16,16 @@ import models.auth.UserPassword
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import authentication.actions.UserAction.WithAuthProvider
 import authentication.actions.UserAction.WithRole
+import cats.implicits.catsSyntaxOption
+import cats.implicits.toFunctorOps
+import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
+import cats.syntax.either._
+import _root_.controllers.error.AppError._
+import models.AuthProvider.ProConnect
+import models.AuthProvider.SignalConso
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -27,7 +36,8 @@ class AuthController(
     authOrchestrator: AuthOrchestrator,
     authenticator: CookieAuthenticator,
     controllerComponents: ControllerComponents,
-    enableRateLimit: Boolean
+    enableRateLimit: Boolean,
+    proConnectOrchestrator: ProConnectOrchestrator
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents, enableRateLimit) {
 
@@ -38,9 +48,22 @@ class AuthController(
   def authenticate: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userLogin   <- request.parseBody[UserCredentials]()
-      userSession <- authOrchestrator.login(userLogin)
+      userSession <- authOrchestrator.signalConsoLogin(userLogin)
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
+
+  def startProConnectAuthentication(state: String, nonce: String) =
+    IpRateLimitedAction2.async(parse.empty) { _ =>
+      proConnectOrchestrator.saveState(state, nonce).as(NoContent)
+    }
+
+  def proConnectAuthenticate(code: String, state: String) =
+    IpRateLimitedAction2.async(parse.empty) { request =>
+      for {
+        (token_id, user) <- proConnectOrchestrator.login(code, state)
+        userSession      <- authOrchestrator.proConnectLogin(user, request, token_id, state)
+      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+    }
 
   def logAs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
     for {
@@ -49,15 +72,28 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def logout(): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def logout(): Action[AnyContent] = SecuredAction.andThen(WithAuthProvider(SignalConso)).async { implicit request =>
     request.identity.impersonator match {
       case Some(impersonator) =>
         authOrchestrator
           .logoutAs(impersonator)
           .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
-      case None => Future.successful(authenticator.discard(NoContent))
+      case None =>
+        Future.successful(authenticator.discard(NoContent))
     }
   }
+
+  def logoutProConnect(): Action[AnyContent] =
+    SecuredAction.andThen(WithAuthProvider(ProConnect)).async { implicit request =>
+      for {
+        cookiesInfo <- authenticator.extract(request).liftTo[Future]
+        tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
+        state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
+        redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
+        result = Ok(redirectUrl)
+      } yield authenticator.discard(result)
+
+    }
 
   def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>
     Future.successful(Ok(Json.toJson(request.identity)))
@@ -77,19 +113,21 @@ class AuthController(
     } yield Ok
   }
 
-  def resetPassword(token: UUID): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
-    for {
-      userPassword <- request.parseBody[UserPassword]()
-      _            <- authOrchestrator.resetPassword(token, userPassword)
-    } yield NoContent
-  }
+  def resetPassword(token: UUID): Action[JsValue] =
+    IpRateLimitedAction2.async(parse.json) { implicit request =>
+      for {
+        userPassword <- request.parseBody[UserPassword]()
+        _            <- authOrchestrator.resetPassword(token, userPassword)
+      } yield NoContent
+    }
 
-  def changePassword = SecuredAction.async(parse.json) { implicit request =>
-    for {
-      updatePassword <- request.parseBody[PasswordChange]()
-      _              <- authOrchestrator.changePassword(request.identity, updatePassword)
-    } yield NoContent
+  def changePassword =
+    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).async(parse.json) { implicit request =>
+      for {
+        updatePassword <- request.parseBody[PasswordChange]()
+        _              <- authOrchestrator.changePassword(request.identity, updatePassword)
+      } yield NoContent
 
-  }
+    }
 
 }

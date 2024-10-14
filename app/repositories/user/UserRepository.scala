@@ -119,6 +119,14 @@ class UserRepository(
         .headOption
     )
 
+  override def findByAuthProviderId(authProviderId: String): Future[Option[User]] =
+    db.run(
+      table
+        .filter(_.authProviderId === authProviderId)
+        .result
+        .headOption
+    )
+
   override def findByEmailIncludingDeleted(email: String): Future[Option[User]] =
     db.run(
       fullTableIncludingDeleted
@@ -129,6 +137,13 @@ class UserRepository(
         .result
         .headOption
     )
+
+  override def restore(user: User): Future[User] = {
+    val restoredUser = user.copy(deletionDate = None)
+    db.run(
+      fullTableIncludingDeleted.filter(_.id === user.id).update(restoredUser)
+    ).map(_ => restoredUser)
+  }
 
   // Override the base method to avoid accidental delete
   override def delete(id: UUID): Future[Int] = softDelete(id)
