@@ -64,7 +64,7 @@ class ExportReportsToSFTPTask(
   private def wrapAndEscapeQuotes(maybeString: Option[String]): String =
     maybeString match {
       case Some(s) => s""""${s.replace("\"", "\"\"")}""""
-      case None => ""
+      case None    => ""
     }
 
   private def wrapAndEscapeQuotes(s: List[String]): String =
