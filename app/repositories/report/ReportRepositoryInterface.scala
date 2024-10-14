@@ -24,7 +24,6 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def streamReports: Source[Report, NotUsed]
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])]
-
   def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]]
 
   def findSimilarReportList(
@@ -78,6 +77,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getByStatusAndExpired(status: List[ReportStatus], now: OffsetDateTime): Future[List[Report]]
 
+  def getOldReports(createdBefore: OffsetDateTime): Future[List[Report]]
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]]
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]

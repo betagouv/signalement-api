@@ -404,6 +404,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
+  def getOldReports(createdBefore: OffsetDateTime): Future[List[Report]] = db.run(
+    table
+      .filter(_.creationDate < createdBefore)
+      .to[List]
+      .result
+  )
+
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       table
