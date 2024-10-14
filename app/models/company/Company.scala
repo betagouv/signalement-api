@@ -123,6 +123,7 @@ case class CompanyWithNbReports(
     brand: Option[String],
     address: Address,
     activityCode: Option[String],
+    isHeadOffice: Boolean,
     isOpen: Option[Boolean],
     count: Int,
     responseRate: Int
