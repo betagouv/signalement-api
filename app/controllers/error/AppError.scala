@@ -112,11 +112,12 @@ object AppError {
     override val titleForLogs: String = "max_auth_attempts_reached"
   }
 
-  final case class BrokenAuthError(message: String) extends AppError {
+  final case class BrokenAuthError(message: String, clientSideMessageOverride: Option[String] = None) extends AppError {
     override val scErrorCode: String  = "SC-0051"
     override val title: String        = "Broken auth"
     override val details: String      = message
     override val titleForLogs: String = "broken_auth_error"
+    val clientSideMessage             = clientSideMessageOverride.getOrElse(message)
   }
 
   final case class InvalidPassword(login: String) extends FailedAuthenticationError {

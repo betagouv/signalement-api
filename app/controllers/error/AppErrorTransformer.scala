@@ -71,7 +71,7 @@ object AppErrorTransformer {
             ErrorPayload(
               "SC-AUTH-BROKEN",
               "Broken authentication",
-              s"Vous êtes déconnecté : ${error.details}"
+              s"Vous êtes déconnecté : ${error.clientSideMessage}"
             )
           )
         )

@@ -46,7 +46,13 @@ class CookieAuthenticator(
 
     maybeCookiesInfos match {
       case Right(a) if maybeFingerprint.isDefined && a.fingerprint != maybeFingerprint =>
-        Left(BrokenAuthError("Fingerprint does not match"))
+        Left(
+          BrokenAuthError(
+            s"Fingerprint does not match : ${a.fingerprint} vs $maybeFingerprint. Based on headers values : ${fingerprintGenerator
+                .readHeadersValues(request)}",
+            Some("Fingerprint does not match")
+          )
+        )
       case v => v
     }
   }

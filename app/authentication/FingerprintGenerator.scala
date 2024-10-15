@@ -34,14 +34,12 @@ class FingerprintGenerator {
     *   The generated fingerprint.
     */
   def generate(request: RequestHeader): String =
-    sha1(
-      new StringBuilder()
-        .append(request.headers.get(USER_AGENT).getOrElse(""))
-        .append(":")
-        .append(request.headers.get(ACCEPT_LANGUAGE).getOrElse(""))
-        .append(":")
-        .append(request.headers.get(ACCEPT_CHARSET).getOrElse(""))
-        .append(":")
-        .toString()
+    sha1(readHeadersValues(request).mkString(":"))
+
+  def readHeadersValues(request: RequestHeader): Seq[String] =
+    Seq(
+      request.headers.get(USER_AGENT).getOrElse(""),
+      request.headers.get(ACCEPT_LANGUAGE).getOrElse(""),
+      request.headers.get(ACCEPT_CHARSET).getOrElse("")
     )
 }
