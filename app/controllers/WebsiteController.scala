@@ -44,7 +44,7 @@ class WebsiteController(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         websiteCreation =>
           websitesOrchestrator
-            .create(URL(websiteCreation.host), websiteCreation.company.toCompany())
+            .create(URL(websiteCreation.host), websiteCreation.company.toCompany(), request.identity)
             .map(website => Ok(Json.toJson(website)))
       )
   }

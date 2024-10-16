@@ -44,7 +44,7 @@ class WebsitesOrchestrator(
 
   val logger: Logger = Logger(this.getClass)
 
-  def create(url: URL, company: Company): Future[Website] =
+  def create(url: URL, company: Company, user: User): Future[Website] =
     for {
       host                   <- url.getHost.liftTo[Future](MalformedHost(url.value))
       createdCompany         <- companyRepository.getOrCreate(company.siret, company)
@@ -62,6 +62,7 @@ class WebsitesOrchestrator(
         identificationStatus = IdentificationStatus.Identified
       )
       createdWebsite <- repository.create(website)
+      _              <- updatePreviousReportsAssociatedToWebsite(website.host, createdCompany, user.id)
     } yield createdWebsite
 
   def searchByHost(host: String): Future[Seq[Country]] =
@@ -272,6 +273,7 @@ class WebsitesOrchestrator(
     )
     for {
       reports <- reportRepository.getForWebsiteWithoutCompany(websiteHost)
+      _ = logger.debug(s"updatePreviousReportsAssociatedToWebsite: Found ${reports.length} reports to update")
       _ <- reports.traverse(reportId =>
         reportOrchestrator.updateReportCompanyForWebsite(reportId, reportCompany, userId)
       )
