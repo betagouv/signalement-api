@@ -607,9 +607,10 @@ class ReportOrchestrator(
       reportCompany: ReportCompany,
       adminUserId: UUID
   ) =
-    if (isReportTooOld(existingReport))
+    if (isReportTooOld(existingReport)) {
+      logger.debug(s"Report ${existingReport.id} is too old to be updated")
       Future.unit
-    else
+    } else
       updateReportCompany(existingReport, reportCompany, adminUserId).map(_ => ())
 
   private def updateReportCompany(
