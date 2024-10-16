@@ -19,7 +19,6 @@ import scala.concurrent.Future
 class CookieAuthenticator(
     signer: JcaSigner,
     crypter: JcaCrypter,
-    fingerprintGenerator: FingerprintGenerator,
     settings: CookieAuthenticatorSettings,
     userRepository: UserRepositoryInterface
 )(implicit ec: ExecutionContext)
@@ -37,25 +36,11 @@ class CookieAuthenticator(
         .map(_ => BrokenAuthError("Error while extracting data from cookie"))
     } yield cookiesInfos
 
-  def extract[B](request: Request[B]): Either[BrokenAuthError, CookieInfos] = {
-    val maybeFingerprint = if (settings.useFingerprinting) Some(fingerprintGenerator.generate(request)) else None
-    val maybeCookiesInfos = request.cookies.get(settings.cookieName) match {
+  def extract[B](request: Request[B]): Either[BrokenAuthError, CookieInfos] =
+    request.cookies.get(settings.cookieName) match {
       case Some(cookie) => unserialize(cookie.value)
       case None         => Left(BrokenAuthError("Cookie not found"))
     }
-
-    maybeCookiesInfos match {
-      case Right(a) if maybeFingerprint.isDefined && a.fingerprint != maybeFingerprint =>
-        Left(
-          BrokenAuthError(
-            s"Fingerprint does not match : ${a.fingerprint} vs $maybeFingerprint. Based on headers values : ${fingerprintGenerator
-                .readHeadersValues(request)}",
-            Some("Fingerprint does not match")
-          )
-        )
-      case v => v
-    }
-  }
 
   def authenticate[B](request: Request[B]): Future[Either[BrokenAuthError, Option[User]]] =
     extract(request) match {
@@ -71,9 +56,7 @@ class CookieAuthenticator(
     crypted <- crypter.encrypt(Json.toJson(cookieInfos).toString())
   } yield signer.sign(crypted)
 
-  private def create(userEmail: EmailAddress, impersonator: Option[EmailAddress] = None)(implicit
-      request: RequestHeader
-  ): CookieInfos = {
+  private def create(userEmail: EmailAddress, impersonator: Option[EmailAddress] = None): CookieInfos = {
     val now = OffsetDateTime.now()
     CookieInfos(
       id = UUID.randomUUID().toString,
@@ -82,12 +65,11 @@ class CookieAuthenticator(
       lastUsedDateTime = now,
       expirationDateTime = now.plus(settings.authenticatorExpiry.toMillis, ChronoUnit.MILLIS),
       idleTimeout = settings.authenticatorIdleTimeout,
-      cookieMaxAge = settings.cookieMaxAge,
-      fingerprint = if (settings.useFingerprinting) Some(fingerprintGenerator.generate(request)) else None
+      cookieMaxAge = settings.cookieMaxAge
     )
   }
 
-  def init(userEmail: EmailAddress)(implicit request: RequestHeader): Either[BrokenAuthError, Cookie] = {
+  def init(userEmail: EmailAddress): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail)
     serialize(cookieInfos).map { value =>
       Cookie(
@@ -105,9 +87,7 @@ class CookieAuthenticator(
     }
   }
 
-  def initImpersonated(userEmail: EmailAddress, impersonator: EmailAddress)(implicit
-      request: RequestHeader
-  ): Either[BrokenAuthError, Cookie] = {
+  def initImpersonated(userEmail: EmailAddress, impersonator: EmailAddress): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail, Some(impersonator))
     serialize(cookieInfos).map { value =>
       Cookie(

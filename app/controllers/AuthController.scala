@@ -37,7 +37,7 @@ class AuthController(
   def authenticate: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userLogin   <- request.parseBody[UserCredentials]()
-      userSession <- authOrchestrator.login(userLogin, request)
+      userSession <- authOrchestrator.login(userLogin)
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
@@ -52,7 +52,7 @@ class AuthController(
     request.identity.impersonator match {
       case Some(impersonator) =>
         authOrchestrator
-          .logoutAs(impersonator, request)
+          .logoutAs(impersonator)
           .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
       case None => Future.successful(authenticator.discard(NoContent))
     }
