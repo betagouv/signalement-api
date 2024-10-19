@@ -4,8 +4,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 case class ProConnectAccessToken(
-    accessToken: String,
-    tokenType: String,
+    access_token: String,
     expires_in: Int,
     id_token: String
 )

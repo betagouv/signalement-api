@@ -15,6 +15,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import authentication.actions.UserAction.WithRole
+import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 
 import java.util.UUID
@@ -26,7 +27,8 @@ class AuthController(
     authOrchestrator: AuthOrchestrator,
     authenticator: CookieAuthenticator,
     controllerComponents: ControllerComponents,
-    enableRateLimit: Boolean
+    enableRateLimit: Boolean,
+    proConnectOrchestrator: ProConnectOrchestrator
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents, enableRateLimit) {
 
@@ -41,15 +43,14 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def proConnectAuthenticateCallBack(code: String, state: String, id_token: String): Action[JsValue] = {
+  def proConnectAuthenticateCallBack(code: String, state: String) = {
     //Generer et Stocker  le state dans la session
     //Appeler
-    IpRateLimitedAction2.async(parse.json) { implicit request =>
+    IpRateLimitedAction2.async(parse.empty)(_ => {
       for {
-        userLogin   <- request.parseBody[UserCredentials]()
-        userSession <- authOrchestrator.login(userLogin, request)
-      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
-    }
+        jwt <- proConnectOrchestrator.login(code, state)
+      } yield Ok(jwt)
+    })
   }
 
   def proConnectLogoutCallBack(state: String): Action[AnyContent] = SecuredAction.async { implicit request =>

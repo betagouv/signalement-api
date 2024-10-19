@@ -3,8 +3,11 @@ package orchestrators.proconnect
 import config.ProConnectConfiguration
 import orchestrators.proconnect.ProConnectClient.ProConnectError
 import play.api.Logger
+import play.api.libs.json.Json
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.{UriContext, asString, basicRequest}
+import sttp.client3.UriContext
+import sttp.client3.asString
+import sttp.client3.basicRequest
 import sttp.client3.playJson.asJson
 import sttp.model.Header
 
@@ -17,7 +20,7 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
   val backend = AsyncHttpClientFutureBackend()
 
   def getToken(code: String): Future[ProConnectAccessToken] = {
-    val url = uri"${config.url}/${config.tokenEndpoint}"
+    val url = s"${config.url}/${config.tokenEndpoint}"
     val request = basicRequest
       .body(
         Map(
@@ -25,10 +28,10 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
           "client_secret" -> config.clientSecret,
           "grant_type"    -> "authorization_code",
           "redirect_uri"  -> config.loginRedirectUri.toString,
-          "code"          -> "Products.Read"
+          "code"          -> code
         )
       )
-      .post(url)
+      .post(uri"${url}")
       .response(asJson[ProConnectAccessToken])
 
     request
@@ -39,10 +42,12 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
             case Right(token) =>
               Future.successful(token)
             case Left(error) =>
-              logger.error(s"Error while parsing oauth token from ProConnect", error)
+              println(s"------------------ error = ${error} ------------------")
+//              logger.error(s"Error while parsing oauth token from ProConnect", error)
               Future.failed(ProConnectError("Error while parsing oauth token from ProConnect"))
           }
         } else {
+          logger.error(response.toString())
           Future.failed(ProConnectError(s"Error while fetching oauth token from ProConnect, code: ${response.code}"))
         }
       }
@@ -50,10 +55,13 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
 
   def userInfo(token: ProConnectAccessToken): Future[String] = {
     val url = uri"${config.url}/${config.userinfoEndpoint}"
+    println(s"token : ${Json.toJson(token)}")
     val request = basicRequest
       .get(url)
-      .headers(Header.authorization("Bearer", token.accessToken))
+      .headers(Header.authorization("Bearer", token.access_token))
       .response(asString)
+
+    println(s"-------request.toCurl-----------  = ${request.toCurl} ------------------")
 
     request
       .send(backend)

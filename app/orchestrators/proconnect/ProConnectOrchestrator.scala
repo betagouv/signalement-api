@@ -1,15 +1,8 @@
 package orchestrators.proconnect
 
-import models.report.SocialNetworkSlug
-import models.report.socialnetwork.CertifiedInfluencer
-import orchestrators.socialmedia.SocialBladeClient.SocialBladeSupportedSocialNetwork
 import play.api.Logger
-import repositories.influencer.InfluencerRepositoryInterface
 
-import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class ProConnectOrchestrator(
     proConnectClient: ProConnectClient
@@ -17,5 +10,15 @@ class ProConnectOrchestrator(
     val executionContext: ExecutionContext
 ) {
   val logger: Logger = Logger(this.getClass)
+
+  def login(code: String, state: String) = {
+    println(s"------------------ (code,state,id_token) = ${(code, state)} ------------------")
+    for {
+      token <- proConnectClient.getToken(code)
+      _ = println(s"------------------ token = ${token} ------------------")
+      jwtRaw <- proConnectClient.userInfo(token)
+      _ = println(s"------------------ jwtRaw = ${jwtRaw} ------------------")
+    } yield jwtRaw
+  }
 
 }
