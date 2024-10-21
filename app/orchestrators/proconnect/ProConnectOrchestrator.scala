@@ -15,10 +15,9 @@ class ProConnectOrchestrator(
     println(s"------------------ (code,state,id_token) = ${(code, state)} ------------------")
     for {
       token <- proConnectClient.getToken(code)
-      _ = println(s"------------------ token = ${token} ------------------")
-      jwtRaw <- proConnectClient.userInfo(token)
-      _ = println(s"------------------ jwtRaw = ${jwtRaw} ------------------")
-    } yield jwtRaw
+//      jwtRaw <- proConnectClient.userInfo(token)
+//      _ = println(s"------------------ jwtRaw = ${jwtRaw} ------------------")
+    } yield token.id_token
   }
 
 }

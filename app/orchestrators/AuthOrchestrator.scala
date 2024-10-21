@@ -17,7 +17,6 @@ import orchestrators.AuthOrchestrator.AuthAttemptPeriod
 import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
 import play.api.Logger
-import play.api.mvc.Cookie
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
@@ -27,7 +26,7 @@ import services.emails.MailService
 import utils.Logs.RichLogger
 import utils.EmailAddress
 import utils.PasswordComplexityHelper
-
+import cats.syntax.either._
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
@@ -72,47 +71,61 @@ class AuthOrchestrator(
       Future.successful(())
     }
 
-  def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
-    logger.debug(s"Validate auth attempts count")
-    val eventualUserSession: Future[UserSession] = for {
-      _         <- validateAuthenticationAttempts(userLogin.login)
-      maybeUser <- userRepository.findByEmailIncludingDeleted(userLogin.login)
-      user      <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
-      _ = logger.debug(s"Found user (maybe deleted)")
-      _ <- handleDeletedUser(user, userLogin)
-      _ = logger.debug(s"Check last validation email for DGCCRF users")
-      _ <- validateAgentAccountLastEmailValidation(user)
-      _ = logger.debug(s"Successful login for user")
-      cookie <- getCookie(userLogin)(request)
-      _ = logger.debug(s"Successful generated token for user")
-    } yield UserSession(cookie, user)
+  def signalConsoLogin(userCredentials: UserCredentials, request: Request[_]): Future[UserSession] = for {
+    _    <- validateAuthenticationAttempts(userCredentials.login)
+    user <- getStrictUser(userCredentials.login)
+    _ = logger.debug(s"Found user (maybe deleted)")
+    _ <- handleDeletedUser(user, userCredentials)
+    _ = logger.debug(s"Check last validation email for DGCCRF users")
+    _ <- validateAgentAccountLastEmailValidation(user)
+    _ = logger.debug(s"Successful login for user")
+    _      <- credentialsProvider.authenticate(userCredentials.login, userCredentials.password)
+    cookie <- authenticator.initSignalConsoCookie(EmailAddress(userCredentials.login), None)(request).liftTo[Future]
+    _           = logger.debug(s"Successful generated token for user")
+    userSession = UserSession(cookie, user)
+    _ <- saveAuthAttempt(userSession)
+  } yield userSession
 
-    eventualUserSession
-      .flatMap { session =>
-        logger.debug(s"Saving auth attempts for user")
-        authAttemptRepository.create(AuthAttempt.build(userLogin.login, isSuccess = true)).map(_ => session)
-      }
+  def proConnectLogin(login: String, request: Request[_], proConnectIdToken: String): Future[UserSession] =
+    for {
+      user <- getStrictUser(login)
+      _ = logger.debug(s"Successful login for user")
+      cookie <- authenticator.initProConnectCookie(EmailAddress(login), proConnectIdToken)(request).liftTo[Future]
+      _           = logger.debug(s"Successful generated token for user")
+      userSession = UserSession(cookie, user)
+      _ <- saveAuthAttempt(userSession)
+    } yield userSession
+
+  private def saveAuthAttempt(userSession: UserSession): Future[UserSession] = {
+    val login = userSession.user.email.value
+    logger.debug(s"Saving auth attempts for user")
+    authAttemptRepository
+      .create(AuthAttempt.build(login, isSuccess = true))
+      .map(_ => userSession)
       .recoverWith {
         case error: AppError =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
-            .create(AuthAttempt.build(userLogin.login, isSuccess = false, failureCause = Some(error.details)))
+            .create(AuthAttempt.build(login, isSuccess = false, failureCause = Some(error.details)))
             .flatMap(_ => Future.failed(error))
         case error =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
             .create(
               AuthAttempt.build(
-                userLogin.login,
+                login,
                 isSuccess = false,
                 failureCause = Some(s"Unexpected error : ${error.getMessage}")
               )
             )
             .flatMap(_ => Future.failed(error))
-
       }
-
   }
+
+  private def getStrictUser(login: String) = for {
+    maybeUser <- userRepository.findByEmailIncludingDeleted(login)
+    user      <- maybeUser.liftTo[Future](UserNotFound(login))
+  } yield user
 
   def logAs(userEmail: EmailAddress, request: IdentifiedRequest[User, _]) = for {
     maybeUserToImpersonate <- userRepository.findByEmail(userEmail.value)
@@ -121,19 +134,13 @@ class AuthOrchestrator(
       case UserRole.Professionnel => Future.unit
       case _                      => Future.failed(BrokenAuthError("Not a pro"))
     }
-    cookie <- authenticator.initImpersonated(userEmail, request.identity.email)(request) match {
-      case Right(value) => Future.successful(value)
-      case Left(error)  => Future.failed(error)
-    }
+    cookie <- authenticator.initSignalConsoCookie(userEmail, Some(request.identity.email))(request).liftTo[Future]
   } yield UserSession(cookie, userToImpersonate.copy(impersonator = Some(request.identity.email)))
 
   def logoutAs(userEmail: EmailAddress, request: Request[_]) = for {
     maybeUser <- userRepository.findByEmail(userEmail.value)
     user      <- maybeUser.liftTo[Future](UserNotFound(userEmail.value))
-    cookie <- authenticator.init(userEmail)(request) match {
-      case Right(value) => Future.successful(value)
-      case Left(error)  => Future.failed(error)
-    }
+    cookie    <- authenticator.initSignalConsoCookie(userEmail, None)(request).liftTo[Future]
   } yield UserSession(cookie, user)
 
   def forgotPassword(resetPasswordLogin: UserLogin): Future[Unit] =
@@ -181,15 +188,6 @@ class AuthOrchestrator(
     _ <- userRepository.updatePassword(user.id, passwordChange.newPassword)
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
-
-  private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
-    for {
-      _ <- credentialsProvider.authenticate(userLogin.login, userLogin.password)
-      cookie <- authenticator.init(EmailAddress(userLogin.login)) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
-    } yield cookie
 
   private def validateAgentAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF | UserRole.DGAL if needsEmailRevalidation(user) =>

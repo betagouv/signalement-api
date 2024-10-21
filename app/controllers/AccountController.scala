@@ -18,6 +18,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.io.Source
+import cats.syntax.either._
 
 class AccountController(
     userOrchestrator: UserOrchestrator,
@@ -43,10 +44,7 @@ class AccountController(
         case None =>
           accessesOrchestrator.activateAdminOrAgentUser(activationRequest.draftUser, activationRequest.token)
       }
-      cookie <- authenticator.init(createdUser.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
+      cookie <- authenticator.initSignalConsoCookie(createdUser.email, None).liftTo[Future]
     } yield authenticator.embed(cookie, Ok(Json.toJson(createdUser)))
 
   }
@@ -139,10 +137,7 @@ class AccountController(
     for {
       token <- request.parseBody[String](JsPath \ "token")
       user  <- accessesOrchestrator.validateAgentEmail(token)
-      cookie <- authenticator.init(user.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
+      cookie <- authenticator.initSignalConsoCookie(user.email, None).liftTo[Future]
     } yield authenticator.embed(cookie, Ok(Json.toJson(user)))
   }
 
@@ -168,15 +163,14 @@ class AccountController(
     } yield NoContent
   }
 
-  def updateEmailAddress(token: String) = SecuredAction.async { implicit request =>
-    for {
-      updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
-      cookie <- authenticator.init(updatedUser.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
-    } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
-  }
+  def updateEmailAddress(token: String) =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin, UserRole.Admin, UserRole.Professionnel, UserRole.DGAL)).async {
+      implicit request =>
+        for {
+          updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
+          cookie      <- authenticator.initSignalConsoCookie(updatedUser.email, None).liftTo[Future]
+        } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
+    }
 
   def softDelete(id: UUID) =
     SecuredAction.andThen(WithRole(UserRole.Admins)).async { request =>

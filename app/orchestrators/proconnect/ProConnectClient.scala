@@ -42,8 +42,7 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
             case Right(token) =>
               Future.successful(token)
             case Left(error) =>
-              println(s"------------------ error = ${error} ------------------")
-//              logger.error(s"Error while parsing oauth token from ProConnect", error)
+              logger.error(s"Error while parsing oauth token from ProConnect", error)
               Future.failed(ProConnectError("Error while parsing oauth token from ProConnect"))
           }
         } else {

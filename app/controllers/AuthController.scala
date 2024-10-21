@@ -39,22 +39,22 @@ class AuthController(
   def authenticate: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
       userLogin   <- request.parseBody[UserCredentials]()
-      userSession <- authOrchestrator.login(userLogin, request)
+      userSession <- authOrchestrator.signalConsoLogin(userLogin, request)
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def proConnectAuthenticateCallBack(code: String, state: String) = {
-    //Generer et Stocker  le state dans la session
-    //Appeler
-    IpRateLimitedAction2.async(parse.empty)(_ => {
+  def proConnectAuthenticateCallBack(code: String, state: String) =
+    // Generer et Stocker  le state dans la session
+    // Appeler
+    IpRateLimitedAction2.async(parse.empty) { request =>
       for {
-        jwt <- proConnectOrchestrator.login(code, state)
-      } yield Ok(jwt)
-    })
-  }
+        token_id    <- proConnectOrchestrator.login(code, state)
+        userSession <- authOrchestrator.proConnectLogin("s.sedoud.betagouv@gmail.com", request, token_id)
+      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+    }
 
   def proConnectLogoutCallBack(state: String): Action[AnyContent] = SecuredAction.async { implicit request =>
-   //check du state
+    // check du state
     request.identity.impersonator match {
       case Some(impersonator) =>
         authOrchestrator
