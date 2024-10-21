@@ -17,6 +17,7 @@ import com.typesafe.config.ConfigFactory
 import config._
 import models.report.sampledata.SampleDataService
 import orchestrators._
+import orchestrators.proconnect.{ProConnectClient, ProConnectOrchestrator}
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
@@ -666,11 +667,15 @@ class SignalConsoComponents(
   val asyncFileController =
     new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
+  val proConnectClient = new ProConnectClient(applicationConfiguration.proConnect)
+  val proConnectOrchestrator = new ProConnectOrchestrator(proConnectClient)
+
   val authController = new AuthController(
     authOrchestrator,
     cookieAuthenticator,
     controllerComponents,
-    applicationConfiguration.app.enableRateLimit
+    applicationConfiguration.app.enableRateLimit,
+    proConnectOrchestrator
   )
 
   val companyAccessController =

@@ -17,7 +17,8 @@ case class CookieInfos(
     expirationDateTime: OffsetDateTime,
     idleTimeout: Option[FiniteDuration],
     cookieMaxAge: Option[FiniteDuration],
-    fingerprint: Option[String]
+    fingerprint: Option[String],
+    proConnectIdToken : Option [String]
 )
 
 object CookieInfos {
@@ -27,4 +28,6 @@ object CookieInfos {
     def writes(o: FiniteDuration): JsValue = LongWrites.writes(o.toSeconds)
   }
   implicit val formatCookieInfos: OFormat[CookieInfos] = Json.format[CookieInfos]
+
+
 }
