@@ -9,7 +9,7 @@ import models.website.Website
 import models.website.WebsiteId
 import play.api.Logger
 import repositories.PostgresProfile.api._
-import repositories.TypedCRUDRepository
+import repositories.{PaginateOps, TypedCRUDRepository}
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
 import repositories.website.WebsiteColumnType._
@@ -187,8 +187,8 @@ class WebsiteRepository(
 
   def getUnkonwnReportCountByHost(
       host: Option[String],
-      start: Option[LocalDate] = None,
-      end: Option[LocalDate] = None
+      start: Option[LocalDate],
+      end: Option[LocalDate],
   ): Future[List[(String, Int)]] = db
     .run(
       WebsiteTable.table
@@ -210,6 +210,34 @@ class WebsiteRepository(
         .to[List]
         .result
     )
+
+  def getUnkonwnReportCountByHost(
+                                   host: Option[String],
+                                   start: Option[LocalDate],
+                                   end: Option[LocalDate],
+                                   offset: Option[Long], limit: Option[Int]
+                                 ): Future[PaginatedResult[(String, Int)]] =
+    WebsiteTable.table
+      .filter(t => host.fold(true.bind)(h => t.host like s"%${h}%"))
+      .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
+      .filterOpt(start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .filterOpt(end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .joinLeft(ReportTable.table)
+      .on { (websiteTable, reportTable) =>
+        websiteTable.host === reportTable.host && reportTable.host.isDefined
+      }
+      .groupBy(_._1.host)
+      .map { case (host, report) => (host, report.map(_._2).size) }
+      .sortBy(_._2.desc)
+      .withPagination(db)(
+        maybeOffset = offset,
+        maybeLimit = limit,
+        maybePreliminaryAction = None
+      )
 
   def listNotAssociatedToCompany(host: String): Future[Seq[Website]] =
     db.run(
