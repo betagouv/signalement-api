@@ -49,7 +49,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   implicit class ReportStatusOps(reportStatus: ReportStatus) {
     def isFinal: Boolean =
-      Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, InformateurInterne, NA).contains(
+      Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, InformateurInterne, NA, SuppressionRGPD).contains(
         reportStatus
       )
 

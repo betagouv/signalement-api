@@ -61,7 +61,7 @@ The fetch phone group  SIRET endpoint should
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchGrouped(None, None, None).toString)
+    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchGrouped(None, None, None, None, None).toString)
       .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)

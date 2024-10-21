@@ -92,7 +92,7 @@ The fetch unregistered host endpoint should
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost(None, None, None).toString)
+    val request = FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost(None, None, None, None, None).toString)
       .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)

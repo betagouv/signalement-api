@@ -248,11 +248,12 @@ class WebsitesOrchestrator(
   def fetchUnregisteredHost(
       host: Option[String],
       start: Option[String],
-      end: Option[String]
-  ): Future[List[WebsiteHostCount]] =
+      end: Option[String],
+      offset: Option[Long], limit: Option[Int]
+  ): Future[PaginatedResult[WebsiteHostCount]] =
     repository
-      .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
-      .map(_.map { case (host, count) => WebsiteHostCount(host, count) })
+      .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end), offset, limit)
+      .map(_.mapEntities { case (host, count) => WebsiteHostCount(host, count) })
 
   private def updatePreviousReportsAssociatedToWebsite(
       websiteHost: String,

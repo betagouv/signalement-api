@@ -78,11 +78,11 @@ class WebsiteController(
       } yield Ok(resultAsJson)
     }
 
-  def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
+  def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int]) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
       websitesOrchestrator
-        .fetchUnregisteredHost(host, start, end)
-        .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)))
+        .fetchUnregisteredHost(host, start, end, offset, limit)
+        .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)(paginatedResultWrites[WebsiteHostCount])))
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
