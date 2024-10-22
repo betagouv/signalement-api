@@ -31,8 +31,7 @@ class OldReportsRgpdDeletionTask(
   override def runTask(): Future[Unit] = {
     val createdBefore = OffsetDateTime.now().minusYears(5)
     for {
-      // TODO ajouter filtre : qui ne sont pas dejà dans l'état RGPD
-      veryOldReports <- reportRepository.getOldReports(createdBefore)
+      veryOldReports <- reportRepository.getOldReportsNotRgpdDeleted(createdBefore)
       _ = if (veryOldReports.length > maxReportsAllowedToDelete) {
         // Safety : if we had some date-related bug in this task, it could empty our whole database!
         throw ServerError(

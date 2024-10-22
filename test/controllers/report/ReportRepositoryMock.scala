@@ -111,4 +111,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???
 
   override def streamReports: Source[Report, NotUsed] = ???
+
+  override def getOldReportsNotRgpdDeleted(createdBefore: OffsetDateTime): Future[List[Report]] = ???
 }

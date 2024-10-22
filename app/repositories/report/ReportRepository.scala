@@ -7,6 +7,7 @@ import models._
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
+import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
@@ -404,9 +405,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def getOldReports(createdBefore: OffsetDateTime): Future[List[Report]] = db.run(
+  def getOldReportsNotRgpdDeleted(createdBefore: OffsetDateTime): Future[List[Report]] = db.run(
     table
       .filter(_.creationDate < createdBefore)
+      .filter(_.status =!= SuppressionRGPD.entryName)
       .to[List]
       .result
   )
