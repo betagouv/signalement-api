@@ -249,7 +249,8 @@ class WebsitesOrchestrator(
       host: Option[String],
       start: Option[String],
       end: Option[String],
-      offset: Option[Long], limit: Option[Int]
+      offset: Option[Long],
+      limit: Option[Int]
   ): Future[PaginatedResult[WebsiteHostCount]] =
     repository
       .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end), offset, limit)

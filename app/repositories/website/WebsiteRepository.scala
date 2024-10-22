@@ -9,7 +9,8 @@ import models.website.Website
 import models.website.WebsiteId
 import play.api.Logger
 import repositories.PostgresProfile.api._
-import repositories.{PaginateOps, TypedCRUDRepository}
+import repositories.PaginateOps
+import repositories.TypedCRUDRepository
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
 import repositories.website.WebsiteColumnType._
@@ -188,7 +189,7 @@ class WebsiteRepository(
   def getUnkonwnReportCountByHost(
       host: Option[String],
       start: Option[LocalDate],
-      end: Option[LocalDate],
+      end: Option[LocalDate]
   ): Future[List[(String, Int)]] = db
     .run(
       WebsiteTable.table
@@ -212,11 +213,12 @@ class WebsiteRepository(
     )
 
   def getUnkonwnReportCountByHost(
-                                   host: Option[String],
-                                   start: Option[LocalDate],
-                                   end: Option[LocalDate],
-                                   offset: Option[Long], limit: Option[Int]
-                                 ): Future[PaginatedResult[(String, Int)]] =
+      host: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[(String, Int)]] =
     WebsiteTable.table
       .filter(t => host.fold(true.bind)(h => t.host like s"%${h}%"))
       .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)

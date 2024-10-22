@@ -10,7 +10,8 @@ import models.report.ReportResponseType.ACCEPTED
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
-import repositories.{CRUDRepository, PaginateOps}
+import repositories.CRUDRepository
+import repositories.PaginateOps
 import repositories.PostgresProfile.api._
 import repositories.barcode.BarcodeProductTable
 import repositories.company.CompanyTable
@@ -454,7 +455,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .result
       )
 
-  def getPhoneReports(q: Option[String], start: Option[LocalDate], end: Option[LocalDate], offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] =
+  def getPhoneReports(
+      q: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] =
     table
       .filter(_.phone.isDefined)
       .filterOpt(q) { case (table, p) =>
@@ -467,7 +474,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
       .groupBy(a => (a.phone, a.companySiret, a.companyName, a.category))
-      .map { case (a, b) => (a, b.length)}
+      .map { case (a, b) => (a, b.length) }
       .sortBy(_._2.desc)
       .withPagination(db)(
         maybeOffset = offset,

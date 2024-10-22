@@ -10,6 +10,7 @@ import cats.syntax.option._
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
+import models.PaginatedResult
 import models.User
 import models.UserRole
 import models.auth._
@@ -217,9 +218,13 @@ class AuthOrchestrator(
     _ = logger.debug(s"Auth attempts count check successful")
   } yield ()
 
-  def listAuthenticationAttempts(login: Option[String]): Future[Seq[AuthAttempt]] =
+  def listAuthenticationAttempts(
+      login: Option[String],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[AuthAttempt]] =
     for {
-      authAttempts <- authAttemptRepository.listAuthAttempts(login)
+      authAttempts <- authAttemptRepository.listAuthAttempts(login, offset, limit)
     } yield authAttempts
 
 }

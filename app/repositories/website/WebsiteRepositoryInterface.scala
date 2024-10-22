@@ -50,11 +50,12 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
   ): Future[List[(String, Int)]]
 
   def getUnkonwnReportCountByHost(
-                                   host: Option[String],
-                                   start: Option[LocalDate],
-                                   end: Option[LocalDate],
-                                   offset: Option[Long], limit: Option[Int]
-                                 ): Future[PaginatedResult[(String, Int)]]
+      host: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[(String, Int)]]
 
   def listNotAssociatedToCompany(host: String): Future[Seq[Website]]
 

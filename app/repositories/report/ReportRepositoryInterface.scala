@@ -83,7 +83,13 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]
 
-  def getPhoneReports(q: Option[String], start: Option[LocalDate], end: Option[LocalDate], offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]]
+  def getPhoneReports(
+      q: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]]
 
   def reportsCountBySubcategories(
       userRole: UserRole,

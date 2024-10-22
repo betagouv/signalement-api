@@ -105,7 +105,7 @@ GET           /api/current-user                                       controller
 POST          /api/authenticate/password/forgot                       controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                        controllers.AuthController.resetPassword(token: java.util.UUID)
 POST          /api/account/password                                   controllers.AuthController.changePassword()
-GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String])
+GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int])
 
 # Accesses API
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.myCompanies()

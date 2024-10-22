@@ -11,7 +11,8 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.report.ReportRepositoryInterface
 import slick.basic.DatabasePublisher
-import utils.{CRUDRepositoryMock, SIRET}
+import utils.CRUDRepositoryMock
+import utils.SIRET
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -85,7 +86,13 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = ???
 
-  override def getPhoneReports(q: Option[String], start: Option[LocalDate], end: Option[LocalDate], offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] = ???
+  override def getPhoneReports(
+      q: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] = ???
 
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 
