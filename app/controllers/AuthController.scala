@@ -44,13 +44,15 @@ class AuthController(
   }
 
   def proConnectAuthenticateCallBack(code: String, state: String) =
-    // Generer et Stocker  le state dans la session
-    // Appeler
     IpRateLimitedAction2.async(parse.empty) { request =>
       for {
         token_id    <- proConnectOrchestrator.login(code, state)
         userSession <- authOrchestrator.proConnectLogin("s.sedoud.betagouv@gmail.com", request, token_id)
-      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
+      } yield authenticator.embed(
+        userSession.cookie,
+        SeeOther("http://localhost:9000/connexion")
+      )
+
     }
 
   def proConnectLogoutCallBack(state: String): Action[AnyContent] = SecuredAction.async { implicit request =>

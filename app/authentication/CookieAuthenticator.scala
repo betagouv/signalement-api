@@ -89,7 +89,7 @@ class CookieAuthenticator(
   def initSignalConsoCookie(userEmail: EmailAddress, impersonator: Option[EmailAddress])(implicit
       request: RequestHeader
   ): Either[BrokenAuthError, Cookie] = {
-    val cookieInfos = create(userEmail, (impersonator))
+    val cookieInfos = create(userEmail, impersonator)
     init(cookieInfos)
   }
 
@@ -140,7 +140,7 @@ object CookieAuthenticator {
       secureCookie: Boolean,
       httpOnlyCookie: Boolean = true,
       sameSite: Option[Cookie.SameSite],
-      useFingerprinting: Boolean = true,
+      useFingerprinting: Boolean = false,
       cookieMaxAge: Option[FiniteDuration],
       authenticatorIdleTimeout: Option[FiniteDuration] = None,
       authenticatorExpiry: FiniteDuration = 12.hours

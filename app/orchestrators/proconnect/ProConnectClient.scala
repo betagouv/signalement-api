@@ -3,7 +3,6 @@ package orchestrators.proconnect
 import config.ProConnectConfiguration
 import orchestrators.proconnect.ProConnectClient.ProConnectError
 import play.api.Logger
-import play.api.libs.json.Json
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.UriContext
 import sttp.client3.asString
@@ -53,15 +52,11 @@ class ProConnectClient(config: ProConnectConfiguration)(implicit ec: ExecutionCo
   }
 
   def userInfo(token: ProConnectAccessToken): Future[String] = {
-    val url = uri"${config.url}/${config.userinfoEndpoint}"
-    println(s"token : ${Json.toJson(token)}")
+    val url = uri"${config.url}/api/v2/userinfo"
     val request = basicRequest
       .get(url)
       .headers(Header.authorization("Bearer", token.access_token))
       .response(asString)
-
-    println(s"-------request.toCurl-----------  = ${request.toCurl} ------------------")
-
     request
       .send(backend)
       .flatMap { response =>
