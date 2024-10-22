@@ -8,7 +8,7 @@ import play.api.test.FakeRequest
 object AuthHelpers {
   implicit class FakeRequestOps[A](request: FakeRequest[A]) {
     def withAuthCookie(userEmail: EmailAddress, cookieAuthenticator: CookieAuthenticator): FakeRequest[A] = {
-      val cookie = cookieAuthenticator.init(userEmail)(request).toOption.get
+      val cookie = cookieAuthenticator.init(userEmail).toOption.get
       request.withCookies(cookie)
     }
   }

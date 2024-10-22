@@ -16,8 +16,7 @@ case class CookieInfos(
     lastUsedDateTime: OffsetDateTime,
     expirationDateTime: OffsetDateTime,
     idleTimeout: Option[FiniteDuration],
-    cookieMaxAge: Option[FiniteDuration],
-    fingerprint: Option[String]
+    cookieMaxAge: Option[FiniteDuration]
 )
 
 object CookieInfos {

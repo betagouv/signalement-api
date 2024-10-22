@@ -237,12 +237,11 @@ class SignalConsoComponents(
 
   val ipBlackListRepository = new IpBlackListRepository(dbConfig)
 
-  val crypter              = new JcaCrypter(applicationConfiguration.crypter)
-  val signer               = new JcaSigner(applicationConfiguration.signer)
-  val fingerprintGenerator = new FingerprintGenerator()
+  val crypter = new JcaCrypter(applicationConfiguration.crypter)
+  val signer  = new JcaSigner(applicationConfiguration.signer)
 
   val cookieAuthenticator =
-    new CookieAuthenticator(signer, crypter, fingerprintGenerator, applicationConfiguration.cookie, userRepository)
+    new CookieAuthenticator(signer, crypter, applicationConfiguration.cookie, userRepository)
   val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)

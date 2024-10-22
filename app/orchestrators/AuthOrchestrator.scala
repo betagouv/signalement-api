@@ -18,7 +18,6 @@ import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
 import play.api.Logger
 import play.api.mvc.Cookie
-import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
@@ -72,7 +71,7 @@ class AuthOrchestrator(
       Future.successful(())
     }
 
-  def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
+  def login(userLogin: UserCredentials): Future[UserSession] = {
     logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
       _         <- validateAuthenticationAttempts(userLogin.login)
@@ -83,7 +82,7 @@ class AuthOrchestrator(
       _ = logger.debug(s"Check last validation email for DGCCRF users")
       _ <- validateAgentAccountLastEmailValidation(user)
       _ = logger.debug(s"Successful login for user")
-      cookie <- getCookie(userLogin)(request)
+      cookie <- getCookie(userLogin)
       _ = logger.debug(s"Successful generated token for user")
     } yield UserSession(cookie, user)
 
@@ -121,16 +120,16 @@ class AuthOrchestrator(
       case UserRole.Professionnel => Future.unit
       case _                      => Future.failed(BrokenAuthError("Not a pro"))
     }
-    cookie <- authenticator.initImpersonated(userEmail, request.identity.email)(request) match {
+    cookie <- authenticator.initImpersonated(userEmail, request.identity.email) match {
       case Right(value) => Future.successful(value)
       case Left(error)  => Future.failed(error)
     }
   } yield UserSession(cookie, userToImpersonate.copy(impersonator = Some(request.identity.email)))
 
-  def logoutAs(userEmail: EmailAddress, request: Request[_]) = for {
+  def logoutAs(userEmail: EmailAddress) = for {
     maybeUser <- userRepository.findByEmail(userEmail.value)
     user      <- maybeUser.liftTo[Future](UserNotFound(userEmail.value))
-    cookie <- authenticator.init(userEmail)(request) match {
+    cookie <- authenticator.init(userEmail) match {
       case Right(value) => Future.successful(value)
       case Left(error)  => Future.failed(error)
     }
@@ -182,7 +181,7 @@ class AuthOrchestrator(
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
 
-  private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
+  private def getCookie(userLogin: UserCredentials): Future[Cookie] =
     for {
       _ <- credentialsProvider.authenticate(userLogin.login, userLogin.password)
       cookie <- authenticator.init(EmailAddress(userLogin.login)) match {
