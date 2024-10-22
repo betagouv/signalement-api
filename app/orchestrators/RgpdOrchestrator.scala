@@ -20,13 +20,14 @@ class RgpdOrchestrator(
     engagementOrchestrator: EngagementOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
-    eventRepository: EventRepositoryInterface,
+    eventRepository: EventRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
   def deleteRGPD(
       report: Report
   ): Future[Report] = {
+    logger.info(s"Emptying report ${report.id} for RGPD")
     val emptiedReport = report.copy(
       firstName = "",
       lastName = "",
@@ -51,6 +52,7 @@ class RgpdOrchestrator(
       _ <- reportConsumerReviewOrchestrator.deleteDetails(emptiedReport.id)
       _ <- engagementOrchestrator.deleteDetails(emptiedReport.id)
       _ <- reportFileOrchestrator.removeFromReportId(emptiedReport.id)
+      _ = logger.info(s"Report ${report.id} was emptied")
     } yield emptiedReport
   }
 
