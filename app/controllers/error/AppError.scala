@@ -585,4 +585,13 @@ object AppError {
     override val titleForLogs: String = "user_not_found"
   }
 
+  final case class ProConnectSessionNotFound(state: String) extends FailedAuthenticationError {
+    override val scErrorCode: String = "SC-0063"
+    override val title: String       = "Cannot find pro connect state"
+    override val details: String =
+      s"State $state ProConnect introuvable "
+    override val titleForLogs: String = "state_not_found"
+  }
+
+
 }

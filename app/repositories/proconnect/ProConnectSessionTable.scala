@@ -1,28 +1,27 @@
 package repositories.proconnect
 
-import models.auth.AuthToken
 import repositories.DatabaseTable
 import repositories.PostgresProfile.api._
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ProConnectSessionTable(tag: Tag) extends DatabaseTable[AuthToken](tag, "proconnect_session") {
+class ProConnectSessionTable(tag: Tag) extends DatabaseTable[ProConnectSession](tag, "pro_connect_session") {
 
-  def userId = column[UUID]("state")
-  def expiry = column[OffsetDateTime]("expiry")
+  def state = column[String]("state")
+  def creationDate = column[OffsetDateTime]("creation_date")
 
-  type AuthTokenData = (UUID, UUID, OffsetDateTime)
+  type ProConnectSessionData = (UUID, String, OffsetDateTime)
 
-  def constructAuthToken: AuthTokenData => AuthToken = { case (id, userId, expiry) =>
-    AuthToken(id, userId, expiry)
+  def constructProConnectSession: ProConnectSessionData => ProConnectSession = { case (id, state, creationDate) =>
+    ProConnectSession(id, state, creationDate)
   }
 
-  def extractAuthToken: PartialFunction[AuthToken, AuthTokenData] = { case AuthToken(id, userId, expiry) =>
-    (id, userId, expiry)
+  def extractProConnectSession: PartialFunction[ProConnectSession, ProConnectSessionData] = { case ProConnectSession(id, state, creationDate) =>
+    (id, state, creationDate)
   }
 
-  def * = (id, userId, expiry) <> (constructAuthToken, extractAuthToken.lift)
+  def * = (id, state, creationDate) <> (constructProConnectSession, extractProConnectSession.lift)
 }
 
 object ProConnectSessionTable {

@@ -1,22 +1,38 @@
 package orchestrators.proconnect
 
+import controllers.error.AppError
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
+import repositories.proconnect.{ProConnectSession, ProConnectSessionRepositoryInterface}
+import utils.Logs.RichLogger
 
 import java.util.Base64
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ProConnectOrchestrator(
-    proConnectClient: ProConnectClient
+    proConnectClient: ProConnectClient,
+    proConnectSessionRepository: ProConnectSessionRepositoryInterface
 )(implicit
     val executionContext: ExecutionContext
 ) {
   val logger: Logger = Logger(this.getClass)
 
+  def saveState(state: String): Future[ProConnectSession] =
+    proConnectSessionRepository.create(ProConnectSession(state))
+
   def login(code: String, state: String) = {
-    println(s"------------------ (code,state,id_token) = ${(code, state)} ------------------")
     for {
-      token <- proConnectClient.getToken(code)
+      maybeStoredState <- proConnectSessionRepository.find(state)
+      _ <- maybeStoredState match {
+        case Some(_) => Future.successful(())
+        case None =>
+          logger.errorWithTitle(
+            "csrf_state_mismatch",
+            s"State ${state} not found, is this the result of a csrf attack ?"
+          )
+          Future.failed(AppError.ProConnectSessionNotFound(state))
+      }
+      token  <- proConnectClient.getToken(code)
       jwtRaw <- proConnectClient.userInfo(token)
       _ = println(s"------------------ jwtRaw = ${decodeJwt(jwtRaw)} ------------------")
     } yield token.id_token
@@ -38,15 +54,14 @@ class ProConnectOrchestrator(
     }
 
     // Decode header and payload
-    val headerDecoded = base64Decode(parts(0))
+    val headerDecoded  = base64Decode(parts(0))
     val payloadDecoded = base64Decode(parts(1))
 
     // Parse as JSON
-    val headerJson = Json.parse(headerDecoded)
+    val headerJson  = Json.parse(headerDecoded)
     val payloadJson = Json.parse(payloadDecoded)
 
     (headerJson, payloadJson)
   }
-
 
 }

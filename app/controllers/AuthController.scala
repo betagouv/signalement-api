@@ -15,6 +15,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import authentication.actions.UserAction.WithRole
+import cats.implicits.toFunctorOps
 import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 
@@ -43,7 +44,12 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def proConnectAuthenticateCallBack(code: String, state: String) =
+  def startProConnectAuthentication(state: String) =
+    IpRateLimitedAction2.async(parse.empty) { _ =>
+      proConnectOrchestrator.saveState(state).as(NoContent)
+    }
+
+  def proConnectAuthenticate(code: String, state: String) =
     IpRateLimitedAction2.async(parse.empty) { request =>
       for {
         token_id    <- proConnectOrchestrator.login(code, state)

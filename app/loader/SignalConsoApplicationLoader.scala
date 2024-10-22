@@ -69,6 +69,7 @@ import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
 import repositories.ipblacklist.IpBlackListRepository
 import repositories.probe.ProbeRepository
+import repositories.proconnect.{ProConnectSessionRepository, ProConnectSessionRepositoryInterface}
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -209,6 +210,7 @@ class SignalConsoComponents(
   val asyncFileRepository: AsyncFileRepositoryInterface     = new AsyncFileRepository(dbConfig)
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface     = new AuthTokenRepository(dbConfig)
+  val proConnectSessionRepository: ProConnectSessionRepositoryInterface     = new ProConnectSessionRepository(dbConfig)
   def companyRepository: CompanyRepositoryInterface         = new CompanyRepository(dbConfig)
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
@@ -668,7 +670,7 @@ class SignalConsoComponents(
     new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
   val proConnectClient = new ProConnectClient(applicationConfiguration.proConnect)
-  val proConnectOrchestrator = new ProConnectOrchestrator(proConnectClient)
+  val proConnectOrchestrator = new ProConnectOrchestrator(proConnectClient,proConnectSessionRepository)
 
   val authController = new AuthController(
     authOrchestrator,
