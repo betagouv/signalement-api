@@ -31,20 +31,21 @@ class ReportedPhoneController(
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
   val logger: Logger                                  = Logger(this.getClass)
 
-  def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
+  def fetchGrouped(
+      q: Option[String],
+      start: Option[String],
+      end: Option[String],
+      offset: Option[Long],
+      limit: Option[Int]
+  ) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
       reportRepository
-        .getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
+        .getPhoneReports(q, DateUtils.parseDate(start), DateUtils.parseDate(end), offset, limit)
         .map(reports =>
           Ok(
             Json.toJson(
               reports
-                .groupBy(report => (report.phone, report.companySiret, report.companyName, report.category))
-                .collect {
-                  case ((Some(phone), siretOpt, companyNameOpt, category), reports) if q.forall(phone.contains(_)) =>
-                    ((phone, siretOpt, companyNameOpt, category), reports.length)
-                }
-                .map { case ((phone, siretOpt, companyNameOpt, category), count) =>
+                .mapEntities { case ((phone, siretOpt, companyNameOpt, category), count) =>
                   Json.obj(
                     "phone"       -> phone,
                     "siret"       -> siretOpt,
@@ -53,7 +54,7 @@ class ReportedPhoneController(
                     "count"       -> count
                   )
                 }
-            )
+            )(PaginatedResult.paginatedResultWrites)
           )
         )
     }

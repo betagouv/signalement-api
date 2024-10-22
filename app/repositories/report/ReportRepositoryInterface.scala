@@ -11,6 +11,7 @@ import models.company.Company
 import models.report.reportmetadata.ReportWithMetadata
 import repositories.CRUDRepositoryInterface
 import slick.basic.DatabasePublisher
+import utils.SIRET
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -81,6 +82,14 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]]
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]
+
+  def getPhoneReports(
+      q: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]]
 
   def reportsCountBySubcategories(
       userRole: UserRole,

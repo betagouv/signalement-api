@@ -105,7 +105,7 @@ GET           /api/current-user                                       controller
 POST          /api/authenticate/password/forgot                       controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                        controllers.AuthController.resetPassword(token: java.util.UUID)
 POST          /api/account/password                                   controllers.AuthController.changePassword()
-GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String])
+GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int])
 
 # Accesses API
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.myCompanies()
@@ -181,7 +181,7 @@ POST          /api/website-investigations                             controller
 GET           /api/websites                                           controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean],isOpen: Option[Boolean])
 POST          /api/websites                                           controllers.WebsiteController.create()
 GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
-GET           /api/websites/unregistered                              controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/websites/unregistered                              controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/unregistered/extract                      controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                               controllers.WebsiteController.updateCompany(id: WebsiteId)
 PUT           /api/websites/:id/country                               controllers.WebsiteController.updateCompanyCountry(id: WebsiteId, companyCountry : String)
@@ -189,7 +189,7 @@ PUT           /api/websites/:id                                       controller
 DELETE        /api/websites/:id                                       controllers.WebsiteController.remove(id: WebsiteId)
 
 # Reported phones API
-GET           /api/reported-phones                                    controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/reported-phones                                    controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/reported-phones/extract                            controllers.ReportedPhoneController.extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
 
 # Report notifications block list API

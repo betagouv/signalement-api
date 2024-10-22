@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.CookieAuthenticator
+import models.PaginatedResult
 import models.UserRole
 import orchestrators.AuthOrchestrator
 import play.api._
@@ -62,11 +63,11 @@ class AuthController(
     Future.successful(Ok(Json.toJson(request.identity)))
   }
 
-  def listAuthAttempts(login: Option[String]) =
+  def listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int]) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async(parse.empty) { _ =>
       authOrchestrator
-        .listAuthenticationAttempts(login)
-        .map(authAttempts => Ok(Json.toJson(authAttempts)))
+        .listAuthenticationAttempts(login, offset, limit)
+        .map(authAttempts => Ok(Json.toJson(authAttempts)(PaginatedResult.paginatedResultWrites)))
     }
 
   def forgotPassword: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
