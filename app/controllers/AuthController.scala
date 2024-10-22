@@ -48,10 +48,7 @@ class AuthController(
       for {
         token_id    <- proConnectOrchestrator.login(code, state)
         userSession <- authOrchestrator.proConnectLogin("s.sedoud.betagouv@gmail.com", request, token_id)
-      } yield authenticator.embed(
-        userSession.cookie,
-        SeeOther("http://localhost:9000/connexion")
-      )
+      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
 
     }
 
