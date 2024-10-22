@@ -82,5 +82,5 @@ The fetch phone group  SIRET endpoint should
       /("count").andHave(count)
 
   def haveCountsByPhone(phoneMatchers: Matcher[String]*): Matcher[String] =
-    have(allOf(phoneMatchers: _*))
+    /("entities").andHave(allOf(phoneMatchers: _*))
 }

@@ -109,5 +109,5 @@ The fetch unregistered host endpoint should
       /("count").andHave(count)
 
   def haveCountsByHost(countsByHost: Matcher[String]*): Matcher[String] =
-    have(allOf(countsByHost: _*))
+    /("entities").andHave(allOf(countsByHost: _*))
 }

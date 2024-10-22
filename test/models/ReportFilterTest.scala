@@ -17,7 +17,7 @@ class ReportFilterTest extends Specification {
   "ReportFilter" should {
 
     "fromQueryString should parse empty map" in {
-      val emptyFilter = ReportFilter(status = ReportStatus.values)
+      val emptyFilter = ReportFilter()
       ReportFilter.fromQueryString(Map.empty) shouldEqual Success(emptyFilter)
     }
 
