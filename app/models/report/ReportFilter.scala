@@ -67,10 +67,7 @@ object ReportFilter {
       end = mapper.timeWithLocalDateRetrocompatEndOfDay("end"),
       category = mapper.string("category"),
       companyIds = mapper.seq("companyIds").map(UUID.fromString),
-      status = {
-        val statuses = mapper.seq("status").map(ReportStatus.withName)
-        if (statuses.isEmpty) ReportStatus.values else statuses
-      },
+      status = mapper.seq("status").map(ReportStatus.withName),
       details = mapper.string("details", trimmed = true),
       description = mapper.string("description", trimmed = true),
       hasForeignCountry = mapper.boolean("hasForeignCountry"),

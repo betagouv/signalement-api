@@ -1,5 +1,6 @@
 package repositories.authattempt
 
+import models.PaginatedResult
 import models.auth.AuthAttempt
 import models.auth.AuthAttemptFilter
 import play.api.Logger
@@ -47,15 +48,20 @@ class AuthAttemptRepository(
       .result
   )
 
-  override def listAuthAttempts(login: Option[String]): Future[Seq[AuthAttempt]] = db
-    .run(
-      table
-        .filterOpt(login) { case (table, login) =>
-          table.login like s"%${login}%"
-        }
-        .sortBy(_.timestamp.desc)
-        .take(1000)
-        .result
-    )
+  override def listAuthAttempts(
+      login: Option[String],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[AuthAttempt]] =
+    table
+      .filterOpt(login) { case (table, login) =>
+        table.login like s"%${login}%"
+      }
+      .sortBy(_.timestamp.desc)
+      .withPagination(db)(
+        maybeOffset = offset,
+        maybeLimit = limit,
+        maybePreliminaryAction = None
+      )
 
 }

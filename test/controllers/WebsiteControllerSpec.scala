@@ -92,8 +92,9 @@ The fetch unregistered host endpoint should
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost(None, None, None).toString)
-      .withAuthCookie(adminUser.email, components.cookieAuthenticator)
+    val request =
+      FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost(None, None, None, None, None).toString)
+        .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -108,5 +109,5 @@ The fetch unregistered host endpoint should
       /("count").andHave(count)
 
   def haveCountsByHost(countsByHost: Matcher[String]*): Matcher[String] =
-    have(allOf(countsByHost: _*))
+    /("entities").andHave(allOf(countsByHost: _*))
 }

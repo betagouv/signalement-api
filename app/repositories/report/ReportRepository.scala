@@ -11,6 +11,7 @@ import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
 import repositories.CRUDRepository
+import repositories.PaginateOps
 import repositories.PostgresProfile.api._
 import repositories.barcode.BarcodeProductTable
 import repositories.company.CompanyTable
@@ -452,6 +453,33 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           }
           .to[List]
           .result
+      )
+
+  def getPhoneReports(
+      q: Option[String],
+      start: Option[LocalDate],
+      end: Option[LocalDate],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] =
+    table
+      .filter(_.phone.isDefined)
+      .filterOpt(q) { case (table, p) =>
+        table.phone.like(s"%$p%")
+      }
+      .filterOpt(start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .filterOpt(end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .groupBy(a => (a.phone, a.companySiret, a.companyName, a.category))
+      .map { case (a, b) => (a, b.length) }
+      .sortBy(_._2.desc)
+      .withPagination(db)(
+        maybeOffset = offset,
+        maybeLimit = limit,
+        maybePreliminaryAction = None
       )
 
   override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] =

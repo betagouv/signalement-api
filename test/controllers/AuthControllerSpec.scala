@@ -98,12 +98,12 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login), None, None)
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(OK)
 
-        val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+        val authAttempts = Await.result(result.map(_._2), Duration.Inf).entities
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
         authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(true))
@@ -137,7 +137,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login), None, None)
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
@@ -145,7 +145,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
           Json.toJson(failedAuthenticationErrorPayload)
         )
 
-        val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+        val authAttempts = Await.result(result.map(_._2), Duration.Inf).entities
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
         authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
@@ -163,7 +163,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res          <- route(app, request).get
-          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login))
+          authAttempts <- authAttemptRepository.listAuthAttempts(Some(login), None, None)
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
@@ -171,7 +171,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
           Json.toJson(failedAuthenticationErrorPayload)
         )
 
-        val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+        val authAttempts = Await.result(result.map(_._2), Duration.Inf).entities
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
         authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))

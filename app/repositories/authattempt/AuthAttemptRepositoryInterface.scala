@@ -1,5 +1,6 @@
 package repositories.authattempt
 
+import models.PaginatedResult
 import models.auth.AuthAttempt
 import models.auth.AuthAttemptFilter
 import repositories.CRUDRepositoryInterface
@@ -12,5 +13,9 @@ trait AuthAttemptRepositoryInterface extends CRUDRepositoryInterface[AuthAttempt
 
   def countAuthAttempts(filter: AuthAttemptFilter): Future[Int]
 
-  def listAuthAttempts(login: Option[String]): Future[Seq[AuthAttempt]]
+  def listAuthAttempts(
+      login: Option[String],
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[AuthAttempt]]
 }
