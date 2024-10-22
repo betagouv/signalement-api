@@ -111,6 +111,7 @@ import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
 import tasks.report.OldReportExportDeletionTask
+import tasks.report.OldReportsRgpdDeletionTask
 import tasks.report.OrphanReportFileDeletionTask
 import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
@@ -484,6 +485,14 @@ class SignalConsoComponents(
       websiteApiService
     )
 
+  val rgpdOrchestrator = new RgpdOrchestrator(
+    reportConsumerReviewOrchestrator,
+    engagementOrchestrator,
+    reportRepository,
+    reportFileOrchestrator,
+    eventRepository
+  )
+
   val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
     mailService,
     reportConsumerReviewOrchestrator,
@@ -493,6 +502,7 @@ class SignalConsoComponents(
     companyRepository,
     eventRepository,
     companiesVisibilityOrchestrator,
+    rgpdOrchestrator,
     messagesApi
   )
 
@@ -537,6 +547,14 @@ class SignalConsoComponents(
     actorSystem,
     asyncFileRepository,
     s3Service,
+    taskConfiguration,
+    taskRepository
+  )
+
+  val oldReportsRgpdDeletionTask = new OldReportsRgpdDeletionTask(
+    actorSystem,
+    reportRepository,
+    rgpdOrchestrator,
     taskConfiguration,
     taskRepository
   )
@@ -875,6 +893,7 @@ class SignalConsoComponents(
     reportReminderTask.schedule()
     orphanReportFileDeletionTask.schedule()
     oldReportExportDeletionTask.schedule()
+    oldReportsRgpdDeletionTask.schedule()
     if (applicationConfiguration.task.probe.active) {
       probeOrchestrator.scheduleProbeTasks()
     }
