@@ -49,6 +49,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     reportClosure = null,
     orphanReportFileDeletion = null,
     oldReportExportDeletion = null,
+    oldReportsRgpdDeletion = null,
     reportReminders = ReportRemindersTaskConfiguration(
       startTime = LocalTime.of(2, 0),
       intervalInHours = 1.day,
