@@ -593,5 +593,12 @@ object AppError {
     override val titleForLogs: String = "state_not_found"
   }
 
+  final case class ProConnectSessionInvalidClaim(message: String) extends FailedAuthenticationError {
+    override val scErrorCode: String = "SC-0064"
+    override val title: String       = "Malformed request body"
+    override val details: String =
+      s"Le corps de la réponse (claim )ProConnect  ne correspond pas à ce qui est attendu par l'API : $message"
+    override val titleForLogs: String = "malformed_claim"
+  }
 
 }
