@@ -12,7 +12,6 @@ import repositories.tasklock.TaskRepositoryInterface
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.DailyTaskSettings
 
-import java.time.LocalTime
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -31,7 +30,7 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) extends ScheduledTask(5, "company_update_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val taskSettings = DailyTaskSettings(startTime = LocalTime.of(3, 0))
+  override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.companyUpdate.startTime)
 
   // Be careful on how much stress you can put to the database, database task are queued into 1000 slot queue.
   // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database

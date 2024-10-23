@@ -30,6 +30,7 @@ case class InactiveAccountsTaskConfiguration(
 )
 
 case class CompanyUpdateTaskConfiguration(
+    startTime: LocalTime,
     etablissementApiUrl: String,
     etablissementApiKey: String
 )
