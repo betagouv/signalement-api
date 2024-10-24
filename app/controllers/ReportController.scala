@@ -130,7 +130,7 @@ class ReportController(
     SecuredAction.andThen(WithRole(UserRole.EveryoneButReadOnlyAdmin)).async(parse.json) { implicit request =>
       for {
         reportAction       <- request.parseBody[ReportAction]()
-        reportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
+        reportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
         report = reportWithMetadata.map(_.report)
         newEvent <-
           report
@@ -166,6 +166,7 @@ class ReportController(
               ReportWithFilesAndAssignedUser(
                 r.report,
                 r.metadata,
+                r.bookmark.isDefined,
                 maybeAssignedMinimalUser,
                 reportFiles.map(ReportFileApi.build(_))
               )
@@ -266,14 +267,14 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { implicit request =>
       for {
-        maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity.userRole), uuid)
+        maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
         maybeReport = maybeReportWithMetadata.map(_.report)
         company <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
         files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
           reportId = uuid,
           eventType = None,
-          userRole = request.identity.userRole
+          user = request.identity
         )
         proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
         source = maybeReport

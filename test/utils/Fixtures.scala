@@ -71,6 +71,7 @@ object Fixtures {
   val genAdminUser  = genUser.map(_.copy(userRole = UserRole.Admin))
   val genProUser    = genUser.map(_.copy(userRole = UserRole.Professionnel))
   val genDgccrfUser = genUser.map(_.copy(userRole = UserRole.DGCCRF))
+  val genDgalUser   = genUser.map(_.copy(userRole = UserRole.DGAL))
 
   val genSiren = for {
     randInt <- Gen.choose(0, 999999999)

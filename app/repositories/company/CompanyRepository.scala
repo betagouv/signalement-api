@@ -61,7 +61,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
-      userRole: UserRole
+      user: User
   ): Future[PaginatedResult[(Company, Int, Int)]] = {
     def companyIdByEmailTable(emailWithAccess: EmailAddress) = CompanyAccessTable.table
       .join(UserTable.table)
@@ -72,7 +72,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
     val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.word_similarity_threshold = 0.5"""
 
     val query = table
-      .joinLeft(ReportTable.table(Some(userRole)))
+      .joinLeft(ReportTable.table(Some(user)))
       .on(_.id === _.companyId)
       .filterIf(search.departments.nonEmpty) { case (company, report) =>
         val departmentsFilter: Rep[Boolean] = search.departments

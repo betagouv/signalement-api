@@ -3,7 +3,6 @@ package orchestrators
 import config.TaskConfiguration
 import models.EmailValidationFilter
 import models.UserRole
-import models.UserRole.Admin
 import models.auth.AuthAttemptFilter
 import models.report.ReportFileOrigin.Consumer
 import models.report.ReportFileOrigin.Professional
@@ -104,8 +103,8 @@ class ProbeOrchestrator(
             end = Some(dateTime)
           )
           for {
-            nb      <- reportRepository.count(Some(Admin), filter.copy(status = Seq(InformateurInterne)))
-            nbTotal <- reportRepository.count(Some(Admin), filter)
+            nb      <- reportRepository.count(None, filter.copy(status = Seq(InformateurInterne)))
+            nbTotal <- reportRepository.count(None, filter)
           } yield computePercentage(nb, nbTotal)
         }
       ),
@@ -345,7 +344,7 @@ class ProbeOrchestrator(
     query = (dateTime, _) =>
       reportRepository
         .count(
-          Some(Admin),
+          None,
           reportFilter.copy(start = Some(dateTime.minusDuration(evaluationPeriod)), end = Some(dateTime))
         )
         .map(n => Some(n.toDouble)),

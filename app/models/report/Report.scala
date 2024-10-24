@@ -158,6 +158,7 @@ object WebsiteURL {
 case class ReportWithFiles(
     report: Report,
     metadata: Option[ReportMetadata],
+    isBookmarked: Boolean,
     files: List[ReportFile]
 )
 
@@ -170,6 +171,7 @@ case class EventWithUser(event: Event, user: Option[User])
 case class ReportWithFilesAndAssignedUser(
     report: Report,
     metadata: Option[ReportMetadata],
+    isBookmarked: Boolean,
     assignedUser: Option[MinimalUser],
     files: List[ReportFileApi]
 )
@@ -181,6 +183,7 @@ object ReportWithFilesAndAssignedUser {
 case class ReportWithFilesAndResponses(
     report: Report,
     metadata: Option[ReportMetadata],
+    isBookmarked: Boolean,
     assignedUser: Option[MinimalUser],
     files: List[ReportFile],
     consumerReview: Option[ResponseConsumerReview],
