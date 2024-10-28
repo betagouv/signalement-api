@@ -1,8 +1,15 @@
 package orchestrators
 
+import cats.implicits.toTraverseOps
+import controllers.error.AppError.CreateWebsiteError
+import models.User
 import models.company.AccessLevel
 import models.company.Company
+import models.website.IdentificationStatus.Identified
+import models.website.IdentificationStatus
+import models.website.Website
 import repositories.company.CompanyRepositoryInterface
+import repositories.website.WebsiteRepositoryInterface
 import tasks.company.CompanySearchResult
 import tasks.company.CompanySyncServiceInterface
 import utils.EmailAddress
@@ -20,13 +27,17 @@ trait ImportOrchestratorInterface {
       onlyHeadOffice: Boolean,
       level: AccessLevel
   ): Future[Unit]
+
+  def importMarketplaces(websites: List[(SIRET, String)], user: User): Future[List[Unit]]
 }
 
 class ImportOrchestrator(
     companyRepository: CompanyRepositoryInterface,
     companySyncService: CompanySyncServiceInterface,
     userOrchestrator: UserOrchestratorInterface,
-    proAccessTokenOrchestrator: ProAccessTokenOrchestratorInterface
+    proAccessTokenOrchestrator: ProAccessTokenOrchestratorInterface,
+    websiteRepository: WebsiteRepositoryInterface,
+    websitesOrchestrator: WebsitesOrchestrator
 )(implicit ec: ExecutionContext)
     extends ImportOrchestratorInterface {
 
@@ -80,4 +91,71 @@ class ImportOrchestrator(
       )
     } yield ()
 
+  def importMarketplaces(websites: List[(SIRET, String)], user: User): Future[List[Unit]] = {
+
+    val sirets = websites.map(_._1).distinct
+    for {
+      existingCompanies <- companyRepository.findBySirets(sirets)
+      missingSirets = sirets.diff(existingCompanies.map(_.siret))
+      missingCompanies <- companySyncService.companiesBySirets(missingSirets)
+      createdCompanies <- Future.sequence(
+        missingCompanies.map(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
+      )
+
+      allCompanies         = existingCompanies ++ createdCompanies
+      companiesAndWebistes = websites.map { case (siret, host) => allCompanies.find(_.siret == siret).get -> host }
+
+      res <- companiesAndWebistes.traverse { case (company, host) =>
+        for {
+          websites <- websiteRepository.listByHost(host)
+          _ <- websites.toList match {
+            case website :: _ =>
+              website.companyId match {
+                case Some(_) if website.identificationStatus == Identified =>
+                  val websiteToUpdate = website.copy(
+                    companyId = Some(company.id),
+                    isMarketplace = true
+                  )
+                  websiteRepository.update(websiteToUpdate.id, websiteToUpdate)
+                case _ =>
+                  for {
+                    identified <- websiteRepository.listIdentified(website.host)
+                    _ <-
+                      if (identified.length > 1 && identified.flatMap(_.companyId).contains(company.id)) {
+                        Future.failed(
+                          CreateWebsiteError(
+                            "L'entreprise ne peut pas être modifiée si plus d'un siret est associé au site web"
+                          )
+                        )
+                      } else Future.unit
+                    websiteToUpdate = website.copy(
+                      companyCountry = None,
+                      companyId = Some(company.id),
+                      isMarketplace = true
+                    )
+                    updatedWebsite <- websitesOrchestrator.updateIdentification(websiteToUpdate, user)
+                    _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
+                  } yield updatedWebsite
+              }
+            case Nil =>
+              val website = Website(
+                host = host,
+                companyCountry = None,
+                companyId = Some(company.id),
+                identificationStatus = IdentificationStatus.Identified,
+                isMarketplace = true
+              )
+              for {
+                createdWebsite <- websiteRepository.create(website)
+                _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
+              } yield createdWebsite
+
+          }
+
+        } yield ()
+      }
+
+    } yield res
+
+  }
 }

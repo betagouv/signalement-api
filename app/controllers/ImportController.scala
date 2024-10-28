@@ -25,8 +25,17 @@ case class ImportInput(
     level: AccessLevel
 )
 
+case class MarketplaceImportInput(
+    host: String,
+    siret: SIRET
+)
+
 object ImportInput {
   implicit val importInputFormat: OFormat[ImportInput] = Json.format[ImportInput]
+}
+
+object MarketplaceImportInput {
+  implicit val marketplaceImportInputFormat: OFormat[MarketplaceImportInput] = Json.format[MarketplaceImportInput]
 }
 
 class ImportController(
@@ -50,4 +59,12 @@ class ImportController(
       _ <- importOrchestrator.importUsers(siren, sirets, emails, onlyHeadOffice, level)
     } yield NoContent
   }
+
+  def importMarketplaces() =
+    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+      for {
+        input <- request.parseBody[List[MarketplaceImportInput]]()
+        res   <- importOrchestrator.importMarketplaces(input.map(i => i.siret -> i.host), request.identity)
+      } yield Ok(res.length.toString)
+    }
 }

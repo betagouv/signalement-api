@@ -9,6 +9,7 @@ import org.mockito.ArgumentMatchers.argThat
 import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito.mock
+import repositories.website.WebsiteRepositoryInterface
 import tasks.company.CompanySyncServiceInterface
 import utils.Fixtures
 import utils.SIRET
@@ -27,9 +28,18 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
         val companySyncService         = mock[CompanySyncServiceInterface]
         val userOrchestrator           = mock[UserOrchestratorInterface]
         val proAccessTokenOrchestrator = mock[ProAccessTokenOrchestratorInterface]
+        val websiteRepository          = mock[WebsiteRepositoryInterface]
+        val websitesOrchestrator       = mock[WebsitesOrchestrator]
 
         val importOrchestrator =
-          new ImportOrchestrator(companyRepository, companySyncService, userOrchestrator, proAccessTokenOrchestrator)
+          new ImportOrchestrator(
+            companyRepository,
+            companySyncService,
+            userOrchestrator,
+            proAccessTokenOrchestrator,
+            websiteRepository,
+            websitesOrchestrator
+          )
 
         val siren                = Fixtures.genSiren.sample.get
         val existingUser1        = Fixtures.genUser.sample.get

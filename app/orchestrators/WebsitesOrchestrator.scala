@@ -187,7 +187,7 @@ class WebsitesOrchestrator(
     updatedWebsite <- updateIdentification(websiteToUpdate, user)
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
 
-  private def updateIdentification(website: Website, user: User) = {
+  def updateIdentification(website: Website, user: User): Future[Website] = {
     logger.debug(s"Removing other websites with the same host : ${website.host}")
     for {
       _ <- repository
@@ -256,7 +256,7 @@ class WebsitesOrchestrator(
       .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end), offset, limit)
       .map(_.mapEntities { case (host, count) => WebsiteHostCount(host, count) })
 
-  private def updatePreviousReportsAssociatedToWebsite(
+  def updatePreviousReportsAssociatedToWebsite(
       websiteHost: String,
       company: Company,
       userId: UUID

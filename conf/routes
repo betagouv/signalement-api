@@ -213,6 +213,7 @@ GET           /api/review                                             controller
 POST          /api/extract-siret                                      controllers.SiretExtractorController.extractSiret()
 
 POST          /api/import/companies                                   controllers.ImportController.importUsers()
+POST          /api/import/marketplaces                                controllers.ImportController.importMarketplaces()
 
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
 GET           /api/barcode/:id                                        controllers.BarcodeController.getById(id: java.util.UUID)
