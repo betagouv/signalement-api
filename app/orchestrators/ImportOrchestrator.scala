@@ -98,14 +98,12 @@ class ImportOrchestrator(
       existingCompanies <- companyRepository.findBySirets(sirets)
       missingSirets = sirets.diff(existingCompanies.map(_.siret))
       missingCompanies <- companySyncService.companiesBySirets(missingSirets)
-      createdCompanies <- Future.sequence(
-        missingCompanies.map(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
-      )
+      createdCompanies <- missingCompanies.traverse(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
 
       allCompanies         = existingCompanies ++ createdCompanies
-      companiesAndWebistes = websites.map { case (siret, host) => allCompanies.find(_.siret == siret).get -> host }
+      companiesAndWebsites = websites.map { case (siret, host) => allCompanies.find(_.siret == siret).get -> host }
 
-      res <- companiesAndWebistes.traverse { case (company, host) =>
+      res <- companiesAndWebsites.traverse { case (company, host) =>
         for {
           websites <- websiteRepository.listByHost(host)
           _ <- websites.toList match {
