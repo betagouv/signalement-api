@@ -67,17 +67,17 @@ class ExportReportsToSFTPTask(
       case None    => ""
     }
 
-  private val endWithQuotes = "(\"+)$".r
+  private val endsWithDoubleQuotesRegex = ".*?(\"+)$".r
 
   private def wrapAndEscapeQuotes(s: List[String]): String = {
     // Asked by SI
-    // We want at most 4k chars including surrounding quotes.
+    // We want at most 4k chars including surrounding double quotes.
     val truncated = s.mkString(";").replace("\"", "\"\"").take(3998)
 
     truncated match {
       // We need to ensure the string ends with the right number of quotes to avoid bad quote escape.
       // Do not add a quote at the end if it already ends with an odd number of quotes, mining it's already correctly formatted.
-      case endWithQuotes(quotes) if quotes.length % 2 != 0 => s""""$truncated"""
+      case endsWithDoubleQuotesRegex(quotes) if quotes.length % 2 != 0 => s""""$truncated"""
       case _ => s""""$truncated""""
     }
   }
