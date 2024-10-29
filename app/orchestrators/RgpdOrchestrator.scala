@@ -49,6 +49,13 @@ class RgpdOrchestrator(
           .copy(fileIds = List.empty, consumerDetails = "", dgccrfDetails = None)
         eventRepository.update(event.id, event.copy(details = Json.toJson(emptiedDetails)))
       }
+      commentEvents <- eventRepository.getEvents(
+        reportId = emptiedReport.id,
+        filter = EventFilter(action = Some(ActionEvent.COMMENT))
+      )
+      _ <- commentEvents.traverse(event =>
+        eventRepository.update(event.id, event.copy(details = Json.obj("description" -> "")))
+      )
       _ <- reportConsumerReviewOrchestrator.deleteDetails(emptiedReport.id)
       _ <- engagementOrchestrator.deleteDetails(emptiedReport.id)
       _ <- reportFileOrchestrator.removeFromReportId(emptiedReport.id)

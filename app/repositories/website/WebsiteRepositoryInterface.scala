@@ -62,4 +62,6 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
   def listIdentified(host: String): Future[Seq[Website]]
 
   def searchByCompaniesId(ids: List[UUID]): Future[Seq[(Website)]]
+
+  def listByHost(host: String): Future[Seq[Website]]
 }

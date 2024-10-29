@@ -156,7 +156,6 @@ class WebsiteRepository(
           case (table, false) =>
             table.companyCountry.isEmpty || table.companyId.isEmpty
         }
-        .filter(_.isMarketplace === false)
         .joinLeft(CompanyTable.table)
         .on(_.companyId === _.id)
         .joinLeft(ReportTable.table)
@@ -258,6 +257,13 @@ class WebsiteRepository(
       table
         .filter(_.host === host)
         .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .result
+    )
+
+  def listByHost(host: String): Future[Seq[Website]] =
+    db.run(
+      table
+        .filter(_.host === host)
         .result
     )
 }

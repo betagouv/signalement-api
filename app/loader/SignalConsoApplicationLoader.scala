@@ -811,7 +811,9 @@ class SignalConsoComponents(
     companyRepository,
     companySyncService,
     userOrchestrator,
-    proAccessTokenOrchestrator
+    proAccessTokenOrchestrator,
+    websiteRepository,
+    websitesOrchestrator
   )
   val importController = new ImportController(
     importOrchestrator,
