@@ -2,11 +2,12 @@ package controllers.report
 
 import models.CountByDate
 import models.PaginatedResult
+import models.User
 import models.UserRole
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report._
-import models.report.reportmetadata.ReportWithMetadata
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.report.ReportRepositoryInterface
@@ -35,15 +36,15 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] = ???
 
-  override def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int] = ???
+  override def count(user: Option[User], filter: ReportFilter): Future[Int] = ???
 
-  override def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+  override def getMonthlyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     ???
 
-  override def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+  override def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     ???
 
-  override def getDailyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+  override def getDailyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     ???
 
   override def getReports(companyId: UUID): Future[List[Report]] = ???
@@ -52,29 +53,29 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getWithPhones(): Future[List[Report]] = ???
 
-  override def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] = ???
+  override def getReportsStatusDistribution(companyId: Option[UUID], user: User): Future[Map[String, Int]] = ???
 
   override def getAcceptedResponsesDistribution(
       companyId: UUID,
-      userRole: UserRole
+      user: User
   ): Future[Map[ExistingResponseDetails, Int]] = ???
 
-  override def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
+  override def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]] =
     ???
 
   override def getHostsByCompany(companyId: UUID): Future[Seq[String]] = ???
 
   override def getReportsWithFiles(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter
   ): Future[SortedMap[Report, List[ReportFile]]] = ???
 
   override def getReports(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[ReportWithMetadata]] = ???
+  ) = ???
 
   override def getReportsByIds(ids: List[UUID]): Future[List[Report]] = ???
 
@@ -97,15 +98,15 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 
   override def reportsCountBySubcategories(
-      userRole: UserRole,
+      user: User,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = ???
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[Report]] = ???
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] = {
-    val maybeReport = userRole match {
+  override def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] = {
+    val maybeReport = user.map(_.userRole) match {
       case Some(UserRole.SuperAdmin)    => database.get(id)
       case Some(UserRole.Admin)         => database.get(id)
       case Some(UserRole.ReadOnlyAdmin) => database.get(id)
@@ -114,7 +115,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)
       case None                         => database.get(id)
     }
-    Future.successful(maybeReport.map(ReportWithMetadata(_, None)))
+    Future.successful(maybeReport.map(ReportWithMetadataAndBookmark(_, None, None)))
   }
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???

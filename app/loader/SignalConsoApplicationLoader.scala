@@ -6,6 +6,7 @@ import actors._
 import org.apache.pekko.actor.typed
 import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import org.apache.pekko.util.Timeout
+import authentication.CookieAuthenticator
 import authentication._
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -49,6 +50,8 @@ import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.barcode.BarcodeProductRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepository
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
+import repositories.bookmark.BookmarkRepository
+import repositories.bookmark.BookmarkRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepository
@@ -220,6 +223,7 @@ class SignalConsoComponents(
   val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
+  val bookmarkRepository: BookmarkRepositoryInterface             = new BookmarkRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
@@ -405,6 +409,8 @@ class SignalConsoComponents(
       reportRepository,
       reportEngagementReviewRepository
     )
+
+  val bookmarkOrchestrator = new BookmarkOrchestrator(reportRepository, bookmarkRepository)
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
 
@@ -843,6 +849,8 @@ class SignalConsoComponents(
   val engagementController =
     new EngagementController(engagementOrchestrator, cookieAuthenticator, controllerComponents)
 
+  val bookmarkController = new BookmarkController(bookmarkOrchestrator, cookieAuthenticator, controllerComponents)
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -860,6 +868,7 @@ class SignalConsoComponents(
       reportController,
       reportConsumerReviewController,
       eventsController,
+      bookmarkController,
       reportToExternalController,
       dataEconomieController,
       adminController,

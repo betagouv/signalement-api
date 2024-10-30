@@ -6,7 +6,7 @@ import models.User
 import models.event.Event
 import models.report.Report
 import models.report.reportmetadata.ReportComment
-import models.report.reportmetadata.ReportWithMetadata
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
@@ -61,7 +61,7 @@ class ReportAssignmentOrchestrator(
   }
 
   private def checkAssignableToUser(
-      reportWithMetadata: ReportWithMetadata,
+      reportWithMetadata: ReportWithMetadataAndBookmark,
       newAssignedUserId: UUID
   ): Future[User] = {
     val reportId               = reportWithMetadata.report.id

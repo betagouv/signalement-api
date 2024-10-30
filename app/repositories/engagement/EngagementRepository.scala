@@ -1,6 +1,6 @@
 package repositories.engagement
 
-import models.UserRole
+import models.User
 import models.event.Event
 import models.engagement.Engagement
 import models.engagement.EngagementId
@@ -30,11 +30,11 @@ class EngagementRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
   import dbConfig._
 
   def listEngagementsWithEventsAndReport(
-      userRole: Option[UserRole],
+      user: Option[User],
       companyIds: List[UUID]
   ): Future[Seq[(((Report, Engagement), Event), Option[Event])]] = db.run(
     ReportTable
-      .table(userRole)
+      .table(user)
       .filter(_.companyId inSetBind companyIds)
       .join(table)
       .on { case (report, engagement) => report.id === engagement.reportId }

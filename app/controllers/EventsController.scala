@@ -32,7 +32,7 @@ class EventsController(
     SecuredAction.async { implicit request =>
       logger.info(s"Fetching events for report $reportId with eventType $eventType")
       eventsOrchestrator
-        .getReportsEvents(reportId = reportId, eventType = eventType, userRole = request.identity.userRole)
+        .getReportsEvents(reportId = reportId, eventType = eventType, user = request.identity)
         .map(events => Ok(Json.toJson(events)))
     }
 

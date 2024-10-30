@@ -61,7 +61,11 @@ POST          /api/reports/:uuid/consumer                             controller
 POST          /api/reports/:uuid/action                               controllers.ReportController.createReportAction(uuid: java.util.UUID)
 GET           /api/reports/:uuid/consumer-email-pdf                   controllers.ReportController.generateConsumerReportEmailAsPDF(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                               controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
+POST          /api/reports/:uuid/bookmark                             controllers.BookmarkController.addBookmark(uuid: java.util.UUID)
+DELETE        /api/reports/:uuid/bookmark                             controllers.BookmarkController.removeBookmark(uuid: java.util.UUID)
+GET           /api/reports/bookmarks/count                            controllers.BookmarkController.countBookmarks()
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
+
 
 # Report API for externals SI
 GET           /api/ext/reports/siret/:siret                           controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)

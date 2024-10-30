@@ -33,7 +33,7 @@ trait EventsOrchestratorInterface {
   def getReportsEvents(
       reportId: UUID,
       eventType: Option[String],
-      userRole: UserRole
+      user: User
   ): Future[List[EventWithUser]]
 
   def getCompanyEvents(
@@ -56,10 +56,10 @@ class EventsOrchestrator(
   override def getReportsEvents(
       reportId: UUID,
       eventType: Option[String],
-      userRole: UserRole
+      user: User
   ): Future[List[EventWithUser]] =
     for {
-      maybeReportWithMetadata <- reportRepository.getFor(Some(userRole), reportId)
+      maybeReportWithMetadata <- reportRepository.getFor(Some(user), reportId)
       maybeReport = maybeReportWithMetadata.map(_.report)
       _           = logger.debug("Checking if report exists")
       _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
@@ -68,7 +68,7 @@ class EventsOrchestrator(
       _      = logger.debug("Fetching events")
       events <- eventRepository.getEventsWithUsers(List(reportId), filter)
       _            = logger.debug(s" ${events.length} reports events found")
-      reportEvents = filterAndTransformEvents(userRole, events)
+      reportEvents = filterAndTransformEvents(user.userRole, events)
     } yield reportEvents
 
   override def getCompanyEvents(

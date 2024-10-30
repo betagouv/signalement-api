@@ -44,7 +44,8 @@ case class ReportFilter(
     visibleToPro: Option[Boolean] = None,
     isForeign: Option[Boolean] = None,
     hasBarcode: Option[Boolean] = None,
-    assignedUserId: Option[UUID] = None
+    assignedUserId: Option[UUID] = None,
+    isBookmarked: Option[Boolean] = None
 )
 
 object ReportFilter {
@@ -86,7 +87,8 @@ object ReportFilter {
       fullText = mapper.string("fullText", trimmed = true),
       isForeign = mapper.boolean("isForeign"),
       hasBarcode = mapper.boolean("hasBarcode"),
-      subcategories = mapper.seq("subcategories")
+      subcategories = mapper.seq("subcategories"),
+      isBookmarked = mapper.boolean("isBookmarked")
     )
   }
 
@@ -123,6 +125,7 @@ object ReportFilter {
       activityCodes     <- (jsValue \ "activityCodes").validateOpt[Seq[String]]
       isForeign         <- (jsValue \ "isForeign").validateOpt[Boolean]
       hasBarcode        <- (jsValue \ "hasBarcode").validateOpt[Boolean]
+      isBookmarked      <- (jsValue \ "isBookmarked").validateOpt[Boolean]
     } yield ReportFilter(
       departments = departments.getOrElse(Seq.empty),
       email = email,
@@ -151,7 +154,8 @@ object ReportFilter {
       withoutTags = withoutTags.getOrElse(Seq.empty).map(ReportTag.withName),
       activityCodes = activityCodes.getOrElse(Seq.empty),
       isForeign = isForeign,
-      hasBarcode = hasBarcode
+      hasBarcode = hasBarcode,
+      isBookmarked = isBookmarked
     )
   }
 

@@ -1,7 +1,5 @@
 package repositories.report
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.Source
 import com.github.tminglei.slickpg.TsVector
 import models._
 import models.barcode.BarcodeProduct
@@ -11,18 +9,25 @@ import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadata
-import repositories.CRUDRepository
-import repositories.PaginateOps
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.PostgresProfile.api._
 import repositories.barcode.BarcodeProductTable
+import repositories.bookmark.Bookmark
+import repositories.bookmark.BookmarkTable
 import repositories.company.CompanyTable
 import repositories.report.ReportColumnType._
 import repositories.report.ReportRepository.ReportOrdering
 import repositories.report.ReportRepository.queryFilter
 import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 import repositories.reportconsumerreview.ResponseConsumerReviewTable
+import repositories.reportengagementreview.ReportEngagementReviewTable
 import repositories.reportfile.ReportFileTable
 import repositories.reportmetadata.ReportMetadataTable
+import repositories.reportresponse.ReportResponseTable
+import repositories.CRUDRepository
+import repositories.PaginateOps
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
 import slick.jdbc.JdbcProfile
@@ -38,8 +43,6 @@ import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.reportengagementreview.ReportEngagementReviewTable
-import repositories.reportresponse.ReportResponseTable
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -114,7 +117,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   }
 
   def reportsCountBySubcategories(
-      userRole: UserRole,
+      user: User,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = {
@@ -122,7 +125,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
     db.run(
       ReportTable
-        .table(Some(userRole))
+        .table(Some(user))
         .filterOpt(filters.start) { case (table, s) =>
           table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
@@ -175,20 +178,20 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int] =
-    db.run(queryFilter(ReportTable.table(userRole), filter).length.result)
+  def count(user: Option[User], filter: ReportFilter): Future[Int] =
+    db.run(queryFilter(ReportTable.table(user), filter, user).length.result)
 
-  def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
+  def getMonthlyCount(user: Option[User], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
     db
       .run(
-        queryFilter(ReportTable.table(userRole), filter)
-          .filter { case (report, _) =>
+        queryFilter(ReportTable.table(user), filter, user)
+          .filter { case (report, _, _) =>
             report.creationDate > OffsetDateTime
               .now()
               .minusMonths(ticks.toLong)
               .withDayOfMonth(1)
           }
-          .groupBy { case (report, _) =>
+          .groupBy { case (report, _, _) =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
           }
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -197,11 +200,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
       .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i.toLong).withDayOfMonth(1)))
 
-  def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+  def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
-      queryFilter(ReportTable.table(userRole), filter)
-        .filter { case (report, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
-        .groupBy { case (report, _) =>
+      queryFilter(ReportTable.table(user), filter, user)
+        .filter { case (report, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
+        .groupBy { case (report, _, _) =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
         }
         .map { case ((week, year), group) =>
@@ -225,14 +228,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
 
   def getDailyCount(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
-      queryFilter(ReportTable.table(userRole), filter)
-        .filter { case (report, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
-        .groupBy { case (report, _) =>
+      queryFilter(ReportTable.table(user), filter, user)
+        .filter { case (report, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
+        .groupBy { case (report, _, _) =>
           (
             DatePartSQLFunction("day", report.creationDate),
             DatePartSQLFunction("month", report.creationDate),
@@ -295,20 +298,20 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .result
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
+  def getReportsStatusDistribution(companyId: Option[UUID], user: User): Future[Map[String, Int]] =
     db.run(
       ReportTable
-        .table(Some(userRole))
+        .table(Some(user))
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.status)
         .map { case (status, report) => status -> report.size }
         .result
     ).map(_.toMap)
 
-  def getAcceptedResponsesDistribution(companyId: UUID, userRole: UserRole): Future[Map[ExistingResponseDetails, Int]] =
+  def getAcceptedResponsesDistribution(companyId: UUID, user: User): Future[Map[ExistingResponseDetails, Int]] =
     db.run(
       ReportTable
-        .table(Some(userRole))
+        .table(Some(user))
         .join(ReportResponseTable.table)
         .on(_.id === _.reportId)
         .filter(_._2.responseType === ACCEPTED.entryName)
@@ -322,7 +325,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .map { case (details, nb) => ExistingResponseDetails.withName(details.get) -> nb }
     )
 
-  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] = {
+  def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]] = {
     def spreadListOfTags(map: Seq[(List[ReportTag], Int)]): Map[ReportTag, Int] =
       map.foldLeft(Map.empty[ReportTag, Int]) { case (acc, (tags, count)) =>
         acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
@@ -330,7 +333,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
     db.run(
       ReportTable
-        .table(Some(userRole))
+        .table(Some(user))
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.tags)
         .map { case (status, report) => (status, report.size) }
@@ -350,12 +353,12 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     ).map(_.map(_.getOrElse("")))
 
   def getReportsWithFiles(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
-      queryResult <- queryFilter(ReportTable.table(userRole), filter)
-        .map { case (report, _) => report }
+      queryResult <- queryFilter(ReportTable.table(user), filter, user)
+        .map { case (report, _, _) => report }
         .joinLeft(ReportFileTable.table)
         .on { case (report, reportFile) => report.id === reportFile.reportId }
         .sortBy { case (report, _) => report.creationDate.desc }
@@ -371,15 +374,15 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     } yield filesGroupedByReports
 
   def getReports(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[ReportWithMetadata]] = for {
-    reportsAndMetadatas <- queryFilter(ReportTable.table(userRole), filter)
-      .sortBy { case (report, _) => report.creationDate.desc }
+  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]] = for {
+    reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
+      .sortBy { case (report, _, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities(ReportWithMetadata.fromTuple)
+    reportsWithMetadata = reportsAndMetadatas.mapEntities(ReportWithMetadataAndBookmark.fromTuple)
   } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
@@ -491,18 +494,23 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         maybePreliminaryAction = None
       )
 
-  override def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]] =
+  override def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] =
     for {
       maybeTuple <- db.run(
         ReportTable
-          .table(userRole)
+          .table(user)
           .filter(_.id === id)
           .joinLeft(ReportMetadataTable.table)
           .on(_.id === _.reportId)
+          .joinLeft(BookmarkTable.table)
+          .on { case ((report, _), bookmark) =>
+            bookmark.userId.inSetBind(user.map(_.id)) && report.id === bookmark.reportId
+          }
+          .map { case ((report, metadata), bookmark) => (report, metadata, bookmark) }
           .result
           .headOption
       )
-      maybeReportWithMetadata = maybeTuple.map(ReportWithMetadata.fromTuple)
+      maybeReportWithMetadata = maybeTuple.map(ReportWithMetadataAndBookmark.fromTuple)
     } yield maybeReportWithMetadata
 
 }
@@ -560,8 +568,13 @@ object ReportRepository {
 
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
-      filter: ReportFilter
-  ): Query[(ReportTable, Rep[Option[ReportMetadataTable]]), (Report, Option[ReportMetadata]), Seq] = {
+      filter: ReportFilter,
+      maybeUser: Option[User]
+  ): Query[
+    (ReportTable, Rep[Option[ReportMetadataTable]], Rep[Option[BookmarkTable]]),
+    (Report, Option[ReportMetadata], Option[Bookmark]),
+    Seq
+  ] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
     table
@@ -736,6 +749,15 @@ object ReportRepository {
       .on(_.id === _.reportId)
       .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
         maybeMetadataTable.flatMap(_.assignedUserId) === assignedUserid
+      }
+      .joinLeft(BookmarkTable.table)
+      .on { case ((report, _), bookmark) =>
+        bookmark.userId.inSetBind(maybeUser.map(_.id)) && report.id === bookmark.reportId
+      }
+      .map { case ((report, metadata), bookmark) => (report, metadata, bookmark) }
+      .filterOpt(filter.isBookmarked) { case ((_, _, bookmark), isBookmarked) =>
+        val bookmarkExists = bookmark.isDefined
+        if (isBookmarked) bookmarkExists else !bookmarkExists
       }
 
   }

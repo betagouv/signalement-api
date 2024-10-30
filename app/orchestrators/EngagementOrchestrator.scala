@@ -43,7 +43,7 @@ class EngagementOrchestrator(
     for {
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
       engagements <- engagementRepository.listEngagementsWithEventsAndReport(
-        Some(proUser.userRole),
+        Some(proUser),
         companiesWithAccesses.map(_.company.id)
       )
     } yield engagements.flatMap { case (((report, engagement), promiseEvent), resolutionEvent) =>
@@ -69,7 +69,7 @@ class EngagementOrchestrator(
     for {
       maybeEngagement       <- engagementRepository.get(engagementId)
       engagement            <- maybeEngagement.liftTo[Future](EngagementNotFound(engagementId))
-      maybeReport           <- reportRepository.getFor(Some(proUser.userRole), engagement.reportId)
+      maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
       _ <- report.report.companyId match {
@@ -95,7 +95,7 @@ class EngagementOrchestrator(
     for {
       maybeEngagement       <- engagementRepository.get(engagementId)
       engagement            <- maybeEngagement.liftTo[Future](EngagementNotFound(engagementId))
-      maybeReport           <- reportRepository.getFor(Some(proUser.userRole), engagement.reportId)
+      maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
       _ <- report.report.companyId match {

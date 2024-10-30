@@ -85,7 +85,7 @@ class CompanyController(
 
   def getResponseRate(companyId: UUID) = SecuredAction.async { request =>
     companyOrchestrator
-      .getCompanyResponseRate(companyId, request.identity.userRole)
+      .getCompanyResponseRate(companyId, request.identity)
       .map(results => Ok(Json.toJson(results)))
   }
 

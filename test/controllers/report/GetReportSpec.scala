@@ -199,7 +199,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
     implicit val someUserRole: Option[UserRole] = Some(userRole)
     someResult.isDefined mustEqual true and contentAsJson(Future.successful(someResult.get)) === Json.toJson(
-      ReportWithFiles(report, None, List.empty)
+      ReportWithFiles(report, None, false, List.empty)
     )
   }
 

@@ -1,9 +1,9 @@
 package repositories.engagement
 
-import models.UserRole
-import models.event.Event
+import models.User
 import models.engagement.Engagement
 import models.engagement.EngagementId
+import models.event.Event
 import models.report.Report
 import repositories.TypedCRUDRepositoryInterface
 
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 trait EngagementRepositoryInterface extends TypedCRUDRepositoryInterface[Engagement, EngagementId] {
   def listEngagementsWithEventsAndReport(
-      userRole: Option[UserRole],
+      user: Option[User],
       companyIds: List[UUID]
   ): Future[Seq[(((Report, Engagement), Event), Option[Event])]]
   def check(engagementId: EngagementId, resolutionEventId: UUID): Future[Int]

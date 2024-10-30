@@ -1,6 +1,5 @@
 package repositories
 
-import models.UserRole
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
@@ -29,7 +28,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
 
   val (app, components) = TestApp.buildApp()
 
-  val company = Fixtures.genCompany.sample.get
+  val userAdmin  = Fixtures.genAdminUser.sample.get
+  val userDgccrf = Fixtures.genDgccrfUser.sample.get
+  val userDgal   = Fixtures.genDgalUser.sample.get
+  val userPro    = Fixtures.genProUser.sample.get
+  val company    = Fixtures.genCompany.sample.get
   val anonymousReport = Fixtures
     .genReportForCompany(company)
     .sample
@@ -185,25 +188,25 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
 
       "return all reports for an admin user" in {
         components.reportRepository
-          .getReports(Some(UserRole.Admin), ReportFilter())
+          .getReports(Some(userAdmin), ReportFilter())
           .map(result => result.entities must haveLength(9))
       }
 
       "return all reports for a DGCCRF user" in {
         components.reportRepository
-          .getReports(Some(UserRole.DGCCRF), ReportFilter())
+          .getReports(Some(userDgccrf), ReportFilter())
           .map(result => result.entities must haveLength(9))
       }
 
       "return only visible to DGAL for a DGAL user" in {
         components.reportRepository
-          .getReports(Some(UserRole.DGAL), ReportFilter())
+          .getReports(Some(userDgal), ReportFilter())
           .map(result => result.entities must haveLength(2))
       }
 
       "return all reports for a pro user" in {
         components.reportRepository
-          .getReports(Some(UserRole.Professionnel), ReportFilter())
+          .getReports(Some(userPro), ReportFilter())
           .map(result => result.entities must haveLength(4))
       }
     }
@@ -212,7 +215,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       "fetch french jobs" in {
         for {
           res <- components.reportRepository.reportsCountBySubcategories(
-            UserRole.Admin,
+            userAdmin,
             ReportsCountBySubcategoriesFilter(),
             Locale.FRENCH
           )
@@ -227,7 +230,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       "filter results when user is DGAL" in {
         for {
           res <- components.reportRepository.reportsCountBySubcategories(
-            UserRole.DGAL,
+            userDgal,
             ReportsCountBySubcategoriesFilter(),
             Locale.FRENCH
           )

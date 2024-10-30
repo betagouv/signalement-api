@@ -6,6 +6,7 @@ import controllers.error.AppError.WebsiteApiError
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
+import models.User
 import models.UserRole
 import models.report._
 import models.report.delete.ReportAdminActionType
@@ -41,15 +42,15 @@ class StatsOrchestrator(
     websiteApiService: WebsiteApiServiceInterface
 )(implicit val executionContext: ExecutionContext) {
 
-  def reportsCountBySubcategories(userRole: UserRole, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
+  def reportsCountBySubcategories(user: User, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
     for {
       maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
       minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
       reportNodesFr <- reportRepository
-        .reportsCountBySubcategories(userRole, filters, Locale.FRENCH)
+        .reportsCountBySubcategories(user, filters, Locale.FRENCH)
         .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.fr, _))
       reportNodesEn <- reportRepository
-        .reportsCountBySubcategories(userRole, filters, Locale.ENGLISH)
+        .reportsCountBySubcategories(user, filters, Locale.ENGLISH)
         .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.en, _))
     } yield ReportNodes(reportNodesFr, reportNodesEn)
 
@@ -74,8 +75,8 @@ class StatsOrchestrator(
       .sortWith(_._2 > _._2)
   }
 
-  def getReportCount(userRole: Option[UserRole], reportFilter: ReportFilter): Future[Int] =
-    reportRepository.count(userRole, reportFilter)
+  def getReportCount(user: Option[User], reportFilter: ReportFilter): Future[Int] =
+    reportRepository.count(user, reportFilter)
 
   def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) = {
     val action = reportAdminActionType match {
@@ -89,46 +90,46 @@ class StatsOrchestrator(
   }
 
   def getReportCountPercentage(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       basePercentageFilter: ReportFilter
   ): Future[Int] =
     for {
-      count     <- reportRepository.count(userRole, filter)
-      baseCount <- reportRepository.count(userRole, basePercentageFilter)
+      count     <- reportRepository.count(user, filter)
+      baseCount <- reportRepository.count(user, basePercentageFilter)
     } yield toPercentage(count, baseCount)
 
   def getReportCountPercentageWithinReliableDates(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       basePercentageFilter: ReportFilter
   ): Future[Int] =
     getReportCountPercentage(
-      userRole,
+      user,
       restrictToReliableDates(filter),
       restrictToReliableDates(basePercentageFilter)
     )
 
   def getReportsCountCurve(
-      userRole: Option[UserRole],
+      user: Option[User],
       reportFilter: ReportFilter,
       ticks: Int = 12,
       tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
     tickDuration match {
-      case CurveTickDuration.Month => reportRepository.getMonthlyCount(userRole, reportFilter, ticks)
-      case CurveTickDuration.Week  => reportRepository.getWeeklyCount(userRole, reportFilter, ticks)
-      case CurveTickDuration.Day   => reportRepository.getDailyCount(userRole, reportFilter, ticks)
+      case CurveTickDuration.Month => reportRepository.getMonthlyCount(user, reportFilter, ticks)
+      case CurveTickDuration.Week  => reportRepository.getWeeklyCount(user, reportFilter, ticks)
+      case CurveTickDuration.Day   => reportRepository.getDailyCount(user, reportFilter, ticks)
     }
 
   def getReportsCountPercentageCurve(
-      userRole: Option[UserRole],
+      user: Option[User],
       reportFilter: ReportFilter,
       baseFilter: ReportFilter
   ): Future[Seq[CountByDate]] =
     for {
-      rawCurve  <- getReportsCountCurve(userRole, reportFilter)
-      baseCurve <- getReportsCountCurve(userRole, baseFilter)
+      rawCurve  <- getReportsCountCurve(user, reportFilter)
+      baseCurve <- getReportsCountCurve(user, baseFilter)
     } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
       CountByDate(
         count = toPercentage(a.count, b.count),
@@ -136,14 +137,14 @@ class StatsOrchestrator(
       )
     }
 
-  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
-    reportRepository.getReportsTagsDistribution(companyId, userRole)
+  def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]] =
+    reportRepository.getReportsTagsDistribution(companyId, user)
 
-  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
-    reportRepository.getReportsStatusDistribution(companyId, userRole)
+  def getReportsStatusDistribution(companyId: Option[UUID], user: User): Future[Map[String, Int]] =
+    reportRepository.getReportsStatusDistribution(companyId, user)
 
-  def getAcceptedResponsesDistribution(companyId: UUID, userRole: UserRole): Future[Map[ExistingResponseDetails, Int]] =
-    reportRepository.getAcceptedResponsesDistribution(companyId, userRole)
+  def getAcceptedResponsesDistribution(companyId: UUID, user: User): Future[Map[ExistingResponseDetails, Int]] =
+    reportRepository.getAcceptedResponsesDistribution(companyId, user)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>
