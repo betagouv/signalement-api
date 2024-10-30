@@ -70,7 +70,11 @@ abstract class BaseController(
 ) extends AbstractController(controllerComponents) {
   implicit val ec: ExecutionContext
 
-  private def ipRateLimitFilter[F[_] <: Request[_]](size: Long, rate: Double): IpRateLimitFilter[F] =
+  private def ipRateLimitFilter[F[_] <: Request[_]](
+      size: Long,
+      // refill rate, in number of token per second
+      rate: Double
+  ): IpRateLimitFilter[F] =
     new IpRateLimitFilter[F](new RateLimiter(size, rate, "Rate limit by IP address")) {
       override def rejectResponse[A](implicit request: F[A]): Future[Result] =
         Future.successful(TooManyRequests(s"""Rate limit exceeded"""))

@@ -6,7 +6,7 @@ import models.Consumer
 import models.PaginatedResult.paginatedResultWrites
 import models.report._
 import models.report.ReportWithFilesToExternal.format
-import models.report.reportmetadata.ReportWithMetadata
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -100,7 +100,7 @@ class ReportToExternalController(
         offset,
         limit,
         signalConsoConfiguration.reportsListLimitMax,
-        (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
+        (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
           ReportWithFilesToExternal(
             ReportToExternal.fromReport(r.report),
             m.getOrElse(r.report.id, Nil).map(ReportFileToExternal.fromReportFile)

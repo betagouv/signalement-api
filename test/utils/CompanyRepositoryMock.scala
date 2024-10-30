@@ -2,7 +2,7 @@ package utils
 
 import models.PaginatedResult
 import models.PaginatedSearch
-import models.UserRole
+import models.User
 import models.company.Company
 import models.company.CompanyRegisteredSearch
 import org.apache.pekko.NotUsed
@@ -20,7 +20,7 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
-      userRole: UserRole
+      user: User
   ): Future[PaginatedResult[(Company, Int, Int)]] = ???
 
   override def getOrCreate(siret: SIRET, data: Company): Future[Company] = ???

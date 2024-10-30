@@ -586,4 +586,11 @@ object AppError {
     override val titleForLogs: String = "user_not_found"
   }
 
+  final case class InvalidFilters(explanation: String) extends BadRequestError {
+    override val scErrorCode: String  = "SC-0063"
+    override val title: String        = s"Invalid filters, $explanation"
+    override val details: String      = title
+    override val titleForLogs: String = "invalid_filters"
+  }
+
 }

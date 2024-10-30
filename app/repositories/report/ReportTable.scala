@@ -343,7 +343,7 @@ object ReportTable {
 
   val table = TableQuery[ReportTable]
 
-  def table(userRole: Option[UserRole]): Query[ReportTable, Report, Seq] = userRole match {
+  def table(user: Option[User]): Query[ReportTable, Report, Seq] = user.map(_.userRole) match {
     case None                         => table
     case Some(UserRole.SuperAdmin)    => table
     case Some(UserRole.Admin)         => table
@@ -351,7 +351,7 @@ object ReportTable {
     case Some(UserRole.DGCCRF)        => table
     case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
     case Some(UserRole.Professionnel) =>
-      queryFilter(table, ReportFilter(visibleToPro = Some(true), status = ReportStatus.statusVisibleByPro))
-        .map { case (report, _) => report }
+      queryFilter(table, ReportFilter(visibleToPro = Some(true), status = ReportStatus.statusVisibleByPro), user)
+        .map { case (report, _, _) => report }
   }
 }

@@ -42,7 +42,7 @@ class StatisticController(
         },
         filters =>
           statsOrchestrator
-            .getReportCount(Some(request.identity.userRole), filters)
+            .getReportCount(Some(request.identity), filters)
             .map(count => Ok(Json.obj("value" -> count)))
       )
   }
@@ -65,7 +65,7 @@ class StatisticController(
             .flatMap(CurveTickDuration.namesToValuesMap.get)
             .getOrElse(CurveTickDuration.Month)
           statsOrchestrator
-            .getReportsCountCurve(Some(request.identity.userRole), filters, ticks, tickDuration)
+            .getReportsCountCurve(Some(request.identity), filters, ticks, tickDuration)
             .map(curve => Ok(Json.toJson(curve)))
         }
       )
@@ -114,17 +114,17 @@ class StatisticController(
   }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
-    statsOrchestrator.getReportsTagsDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
-    statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.getReportsStatusDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
   }
 
   def getAcceptedResponsesDistribution(companyId: UUID) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
       statsOrchestrator
-        .getAcceptedResponsesDistribution(companyId, request.identity.userRole)
+        .getAcceptedResponsesDistribution(companyId, request.identity)
         .map(x => Ok(Json.toJson(x)))
     }
 
@@ -136,13 +136,13 @@ class StatisticController(
         visibleToPro = Some(true)
       )
       statsOrchestrator
-        .getReportsCountCurve(Some(request.identity.userRole), filter)
+        .getReportsCountCurve(Some(request.identity), filter)
         .map(curve => Ok(Json.toJson(curve)))
     }
 
   def getProReportTransmittedStat() = SecuredAction.async { request =>
     statsOrchestrator
-      .getReportsCountCurve(Some(request.identity.userRole), transmittedReportsFilter)
+      .getReportsCountCurve(Some(request.identity), transmittedReportsFilter)
       .map(curve => Ok(Json.toJson(curve)))
   }
 
@@ -154,7 +154,7 @@ class StatisticController(
         .getOrElse(statusWithProResponse)
       val filter = ReportFilter(status = statusFilter)
       statsOrchestrator
-        .getReportsCountCurve(Some(request.identity.userRole), filter)
+        .getReportsCountCurve(Some(request.identity), filter)
         .map(curve => Ok(Json.toJson(curve)))
     }
 
@@ -190,7 +190,7 @@ class StatisticController(
           Future.failed(MalformedQueryParams)
         case Success(filters) =>
           statsOrchestrator
-            .reportsCountBySubcategories(request.identity.userRole, filters)
+            .reportsCountBySubcategories(request.identity, filters)
             .map(res => Ok(Json.toJson(res)))
       }
     }

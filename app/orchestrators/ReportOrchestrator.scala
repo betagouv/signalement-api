@@ -24,7 +24,7 @@ import models.engagement.EngagementId
 import models.report.ReportStatus.SuppressionRGPD
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
-import models.report.reportmetadata.ReportWithMetadata
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
@@ -728,7 +728,10 @@ class ReportOrchestrator(
       }
     } yield updatedReport
 
-  def handleReportView(reportWithMetadata: ReportWithMetadata, user: User): Future[ReportWithMetadata] =
+  def handleReportView(
+      reportWithMetadata: ReportWithMetadataAndBookmark,
+      user: User
+  ): Future[ReportWithMetadataAndBookmark] =
     if (
       user.userRole == UserRole.Professionnel && user.impersonator.isEmpty && reportWithMetadata.report.status != SuppressionRGPD
     ) {
@@ -932,13 +935,13 @@ class ReportOrchestrator(
           )
         } else {
           getReportsWithFile[ReportWithFiles](
-            Some(connectedUser.userRole),
+            Some(connectedUser),
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
             maxResults,
-            (r: ReportWithMetadata, m: Map[UUID, List[ReportFile]]) =>
-              ReportWithFiles(r.report, r.metadata, m.getOrElse(r.report.id, Nil))
+            (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
+              ReportWithFiles(r.report, r.metadata, r.bookmark.isDefined, m.getOrElse(r.report.id, Nil))
           )
         }
     } yield paginatedReportFiles
@@ -982,6 +985,7 @@ class ReportOrchestrator(
         ReportWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
+          reportWithFiles.isBookmarked,
           assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportWithFiles.files,
           consumerReviewsMap.getOrElse(reportId, None),
@@ -993,12 +997,12 @@ class ReportOrchestrator(
   }
 
   def getReportsWithFile[T](
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
       maxResults: Int,
-      toApi: (ReportWithMetadata, Map[UUID, List[ReportFile]]) => T
+      toApi: (ReportWithMetadataAndBookmark, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] =
     for {
       _ <- limit match {
@@ -1013,7 +1017,7 @@ class ReportOrchestrator(
       _               = logger.trace("----------------  BEGIN  getReports  ------------------")
       paginatedReports <-
         reportRepository.getReports(
-          userRole,
+          user,
           filter,
           validOffset,
           validLimit
@@ -1031,9 +1035,9 @@ class ReportOrchestrator(
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
 
-  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportWithMetadata]] =
+  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportWithMetadataAndBookmark]] =
     for {
-      reportWithMetadata <- reportRepository.getFor(Some(user.userRole), reportId)
+      reportWithMetadata <- reportRepository.getFor(Some(user), reportId)
       report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address.merge(company.map(_.address), report.map(_.companyAddress))

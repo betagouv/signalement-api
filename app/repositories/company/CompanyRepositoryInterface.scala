@@ -4,7 +4,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import models.PaginatedResult
 import models.PaginatedSearch
-import models.UserRole
+import models.User
 import models.company.Company
 import models.company.CompanyRegisteredSearch
 import repositories.CRUDRepositoryInterface
@@ -22,7 +22,7 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
   def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
-      userRole: UserRole
+      user: User
   ): Future[PaginatedResult[(Company, Int, Int)]]
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company]

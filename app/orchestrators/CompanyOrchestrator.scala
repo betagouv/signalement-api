@@ -91,7 +91,7 @@ class CompanyOrchestrator(
       }
       companyIdFilter = CompanyRegisteredSearch(identity = Some(visibleByUserCompanyIdFilter))
       paginatedResults <- companyRepository
-        .searchWithReportsCount(companyIdFilter, PaginatedSearch(None, None), user.userRole)
+        .searchWithReportsCount(companyIdFilter, PaginatedSearch(None, None), user)
 
       companiesWithNbReports = paginatedResults.entities.map { case (company, count, responseCount) =>
         toCompanyWithNbReports(company, count, responseCount)
@@ -104,7 +104,7 @@ class CompanyOrchestrator(
       user: User
   ): Future[PaginatedResult[CompanyWithNbReports]] =
     companyRepository
-      .searchWithReportsCount(search, paginate, user.userRole)
+      .searchWithReportsCount(search, paginate, user)
       .map(x =>
         x.copy(entities = x.entities.map { case (company, count, responseCount) =>
           toCompanyWithNbReports(company, count, responseCount)
@@ -131,14 +131,14 @@ class CompanyOrchestrator(
         } else throw CompanyNotFound(companyIdFilter)
       }
 
-  def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
+  def getCompanyResponseRate(companyId: UUID, user: User): Future[Int] = {
     val responseReportsFilter =
       ReportFilter(companyIds = Seq(companyId), status = ReportStatus.statusWithProResponse)
     val totalReportsFilter =
       ReportFilter(companyIds = Seq(companyId))
 
-    val totalReportsCount    = reportRepository.count(Some(userRole), totalReportsFilter)
-    val responseReportsCount = reportRepository.count(Some(userRole), responseReportsFilter)
+    val totalReportsCount    = reportRepository.count(Some(user), totalReportsFilter)
+    val responseReportsCount = reportRepository.count(Some(user), responseReportsFilter)
     for {
       total     <- totalReportsCount
       responses <- responseReportsCount

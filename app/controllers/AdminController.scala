@@ -275,7 +275,7 @@ class AdminController(
     SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(
-          Some(request.identity.userRole),
+          Some(request.identity),
           ReportFilter(start = Some(start), end = Some(end))
         )
         _ <- emailType match {

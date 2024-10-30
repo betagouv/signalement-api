@@ -1,14 +1,14 @@
 package repositories.report
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.Source
-import models.report._
 import models.CountByDate
 import models.PaginatedResult
-import models.UserRole
+import models.User
 import models.barcode.BarcodeProduct
 import models.company.Company
-import models.report.reportmetadata.ReportWithMetadata
+import models.report._
+import models.report.reportmetadata.ReportWithMetadataAndBookmark
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import repositories.CRUDRepositoryInterface
 import slick.basic.DatabasePublisher
 import utils.SIRET
@@ -35,14 +35,14 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]]
 
-  def count(userRole: Option[UserRole], filter: ReportFilter): Future[Int]
+  def count(user: Option[User], filter: ReportFilter): Future[Int]
 
-  def getMonthlyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]]
+  def getMonthlyCount(user: Option[User], filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]]
 
-  def getWeeklyCount(userRole: Option[UserRole], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]]
+  def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]]
 
   def getDailyCount(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]]
@@ -57,20 +57,20 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   // dead code
   def getWithPhones(): Future[List[Report]]
 
-  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]]
-  def getAcceptedResponsesDistribution(companyId: UUID, userRole: UserRole): Future[Map[ExistingResponseDetails, Int]]
-  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]]
+  def getReportsStatusDistribution(companyId: Option[UUID], user: User): Future[Map[String, Int]]
+  def getAcceptedResponsesDistribution(companyId: UUID, user: User): Future[Map[ExistingResponseDetails, Int]]
+  def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]]
 
   def getHostsByCompany(companyId: UUID): Future[Seq[String]]
 
-  def getReportsWithFiles(userRole: Option[UserRole], filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]]
+  def getReportsWithFiles(user: Option[User], filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]]
 
   def getReports(
-      userRole: Option[UserRole],
+      user: Option[User],
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[ReportWithMetadata]]
+  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
@@ -92,11 +92,11 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]]
 
   def reportsCountBySubcategories(
-      userRole: UserRole,
+      user: User,
       filters: ReportsCountBySubcategoriesFilter,
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
 
-  def getFor(userRole: Option[UserRole], id: UUID): Future[Option[ReportWithMetadata]]
+  def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]]
 
 }
