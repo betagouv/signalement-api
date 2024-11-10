@@ -85,8 +85,10 @@ class CookieAuthenticator(
     init(cookieInfos)
   }
 
-  def initProConnectCookie(userEmail: EmailAddress, proConnectIdToken: String, proConnectState: String)(implicit
-      request: RequestHeader
+  def initProConnectCookie(
+      userEmail: EmailAddress,
+      proConnectIdToken: String,
+      proConnectState: String
   ): Either[BrokenAuthError, Cookie] = {
     val cookieInfos =
       create(userEmail, proConnectIdToken = proConnectIdToken.some, proConnectState = proConnectState.some)

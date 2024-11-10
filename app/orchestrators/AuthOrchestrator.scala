@@ -19,7 +19,6 @@ import orchestrators.AuthOrchestrator.AuthAttemptPeriod
 import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
 import play.api.Logger
-import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
@@ -96,13 +95,12 @@ class AuthOrchestrator(
 
   def proConnectLogin(
       user: User,
-      request: Request[_],
       proConnectIdToken: String,
       proConnectState: String
   ): Future[UserSession] = {
     val eventualUserSession = for {
       cookie <- authenticator
-        .initProConnectCookie(user.email, proConnectIdToken, proConnectState)(request)
+        .initProConnectCookie(user.email, proConnectIdToken, proConnectState)
         .liftTo[Future]
       _ = logger.debug(s"Successful generated token for user ${user.email.value}")
     } yield UserSession(cookie, user)

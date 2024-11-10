@@ -58,10 +58,10 @@ class AuthController(
     }
 
   def proConnectAuthenticate(code: String, state: String) =
-    IpRateLimitedAction2.async(parse.empty) { request =>
+    IpRateLimitedAction2.async(parse.empty) { _ =>
       for {
         (token_id, user) <- proConnectOrchestrator.login(code, state)
-        userSession      <- authOrchestrator.proConnectLogin(user, request, token_id, state)
+        userSession      <- authOrchestrator.proConnectLogin(user, token_id, state)
       } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
     }
 
