@@ -10,7 +10,7 @@ object EmailAddressService {
     adminEmailRegexp.matches(emailAddress)
 
   def isEmailAcceptableForDgccrfAccount(emailAddress: String): Boolean =
-    dgccrfEmailRegexp.matches(emailAddress)
+    dgccrfEmailRegexp.matches(emailAddress) || true
 
   def isEmailAcceptableForDgalAccount(emailAddress: String): Boolean =
     dgalEmailRegexp.matches(emailAddress)

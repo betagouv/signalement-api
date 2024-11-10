@@ -77,7 +77,7 @@ class AuthOrchestrator(
 
   def signalConsoLogin(userCredentials: UserCredentials): Future[UserSession] = {
 
-    val  eventualUserSession = for {
+    val eventualUserSession = for {
       _    <- validateAuthenticationAttempts(userCredentials.login)
       user <- getStrictUser(userCredentials.login)
       _ = logger.debug(s"Found user (maybe deleted)")
@@ -87,9 +87,8 @@ class AuthOrchestrator(
       _ = logger.debug(s"Successful login for user")
       _      <- credentialsProvider.authenticate(userCredentials.login, userCredentials.password)
       cookie <- authenticator.initSignalConsoCookie(EmailAddress(userCredentials.login), None).liftTo[Future]
-      _           = logger.debug(s"Successful generated token for user")
+      _ = logger.debug(s"Successful generated token for user")
     } yield UserSession(cookie, user)
-
 
     saveAuthAttemptWithRecovery(userCredentials.login, eventualUserSession)
 
@@ -101,17 +100,17 @@ class AuthOrchestrator(
       proConnectIdToken: String,
       proConnectState: String
   ): Future[UserSession] = {
-    val  eventualUserSession =for {
+    val eventualUserSession = for {
       cookie <- authenticator
         .initProConnectCookie(user.email, proConnectIdToken, proConnectState)(request)
         .liftTo[Future]
-      _           = logger.debug(s"Successful generated token for user ${user.email.value}")
+      _ = logger.debug(s"Successful generated token for user ${user.email.value}")
     } yield UserSession(cookie, user)
 
     saveAuthAttemptWithRecovery(user.email.value, eventualUserSession)
   }
 
-  private def saveAuthAttemptWithRecovery[T](login: String, eventualSession: Future[T]): Future[T] = {
+  private def saveAuthAttemptWithRecovery[T](login: String, eventualSession: Future[T]): Future[T] =
     eventualSession
       .flatMap { session =>
         logger.debug(s"Saving auth attempts for user")
@@ -135,7 +134,6 @@ class AuthOrchestrator(
             )
             .flatMap(_ => Future.failed(error))
       }
-  }
 
   private def getStrictUser(login: String) = for {
     maybeUser <- userRepository.findByEmailIncludingDeleted(login)

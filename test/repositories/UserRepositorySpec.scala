@@ -115,7 +115,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
   def e6 = userRepository
     .listInactiveAgentsWithSentEmailCount(now.minusMonths(1), now.minusYears(1))
     .map(_.map { case (user, count) => (user.id, count) }.toSet) must beEqualTo(
-    List(inactiveDgccrfUserWithEmails.id -> Some(2),inactiveDgccrfUser.id -> None).toSet
+    List(inactiveDgccrfUserWithEmails.id -> Some(2), inactiveDgccrfUser.id -> None).toSet
   ).await
   def e7 = userRepository
     .listInactiveAgentsWithSentEmailCount(now.minusMonths(1), now.minusMonths(2)) must beEmpty[List[

@@ -77,7 +77,10 @@ class CookieAuthenticator(
     crypted <- crypter.encrypt(Json.toJson(cookieInfos).toString())
   } yield signer.sign(crypted)
 
-  def initSignalConsoCookie(userEmail: EmailAddress, impersonator: Option[EmailAddress]): Either[BrokenAuthError, Cookie] = {
+  def initSignalConsoCookie(
+      userEmail: EmailAddress,
+      impersonator: Option[EmailAddress]
+  ): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail, impersonator)
     init(cookieInfos)
   }

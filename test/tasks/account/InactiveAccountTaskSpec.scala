@@ -140,7 +140,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
           )
 
         // Validating user
-        userList.map(_.id).toSet shouldEqual(expectedUsers.map(_.id).toSet)
+        userList.map(_.id).toSet shouldEqual (expectedUsers.map(_.id).toSet)
         userList.map(_.id).contains(inactiveDGCCRFUser.id) shouldEqual false
         deletedUsersList.map(_.id).contains(inactiveDGCCRFUser.id) shouldEqual true
 
