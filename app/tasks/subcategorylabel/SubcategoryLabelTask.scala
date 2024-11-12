@@ -1,11 +1,13 @@
 package tasks.subcategorylabel
 
-import cats.implicits.{catsSyntaxOption, toTraverseOps}
+import cats.implicits.catsSyntaxOption
+import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import controllers.error.AppError.WebsiteApiError
 import models.report.ArborescenceNode
 import org.apache.pekko.actor.ActorSystem
-import repositories.subcategorylabel.{SubcategoryLabel, SubcategoryLabelRepositoryInterface}
+import repositories.subcategorylabel.SubcategoryLabel
+import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
 import services.WebsiteApiServiceInterface
 import tasks.ScheduledTask
@@ -35,17 +37,22 @@ class SubcategoryLabelTask(
     }
   } yield ()
 
-
   @tailrec
-  private def toSet(nodes: List[ArborescenceNode], res: Set[SubcategoryLabel] = Set.empty): Set[SubcategoryLabel] = nodes match {
-    case Nil => res
-    case h :: t =>
-      val cats = h.path.map(_._1)
-      val a = cats.indices.map { i =>
-        val tmp = cats.take(i + 1)
+  private def toSet(nodes: List[ArborescenceNode], res: Set[SubcategoryLabel] = Set.empty): Set[SubcategoryLabel] =
+    nodes match {
+      case Nil => res
+      case h :: t =>
+        val cats = h.path.map(_._1)
+        val a = cats.indices.map { i =>
+          val tmp = cats.take(i + 1)
 
-        SubcategoryLabel(category = tmp.head.key, subcategories = tmp.tail.map(_.key).toList, categoryLabel = tmp.head.label, subcategoryLabels = tmp.tail.map(_.label).toList)
-      }
-      toSet(t, res ++ a)
-  }
+          SubcategoryLabel(
+            category = tmp.head.key,
+            subcategories = tmp.tail.map(_.key).toList,
+            categoryLabel = tmp.head.label,
+            subcategoryLabels = tmp.tail.map(_.label).toList
+          )
+        }
+        toSet(t, res ++ a)
+    }
 }

@@ -4,7 +4,8 @@ import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class SubcategoryLabelRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     val ec: ExecutionContext

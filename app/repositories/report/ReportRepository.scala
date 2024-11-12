@@ -27,7 +27,8 @@ import repositories.reportmetadata.ReportMetadataTable
 import repositories.reportresponse.ReportResponseTable
 import repositories.CRUDRepository
 import repositories.PaginateOps
-import repositories.subcategorylabel.{SubcategoryLabel, SubcategoryLabelTable}
+import repositories.subcategorylabel.SubcategoryLabel
+import repositories.subcategorylabel.SubcategoryLabelTable
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
 import slick.jdbc.JdbcProfile
@@ -382,7 +383,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
       .sortBy { case (report, _, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities { case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark]) => ReportWithMetadataAndBookmark.from(report, metadata, bookmark)}
+    reportsWithMetadata = reportsAndMetadatas.mapEntities {
+      case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark]) =>
+        ReportWithMetadataAndBookmark.from(report, metadata, bookmark)
+    }
   } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
@@ -510,11 +514,21 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .on { case (((report, _), _), subcategoryLabel) =>
             report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
           }
-          .map { case (((report, metadata), bookmark), subcategoryLabel) => (report, metadata, bookmark, subcategoryLabel) }
+          .map { case (((report, metadata), bookmark), subcategoryLabel) =>
+            (report, metadata, bookmark, subcategoryLabel)
+          }
           .result
           .headOption
       )
-      maybeReportWithMetadata = maybeTuple.map {case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark], subcategoryLabel: Option[SubcategoryLabel]) => ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)}
+      maybeReportWithMetadata = maybeTuple.map {
+        case (
+              report: Report,
+              metadata: Option[ReportMetadata],
+              bookmark: Option[Bookmark],
+              subcategoryLabel: Option[SubcategoryLabel]
+            ) =>
+          ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
+      }
     } yield maybeReportWithMetadata
 
 }

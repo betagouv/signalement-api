@@ -14,9 +14,9 @@ object ArborescenceNode {
     json.value.flatMap(from(_)).toList
 
   def from(
-            json: JsValue,
-            currentCategory: Option[CategoryInfo] = None,
-            currentPath: Vector[(CategoryInfo, NodeInfo)] = Vector.empty
+      json: JsValue,
+      currentCategory: Option[CategoryInfo] = None,
+      currentPath: Vector[(CategoryInfo, NodeInfo)] = Vector.empty
   ): List[ArborescenceNode] = {
     val id            = (json \ "id").as[String]
     val title         = (json \ "title").as[String]
@@ -27,11 +27,22 @@ object ArborescenceNode {
 
     subcategories match {
       case Nil =>
-        List(ArborescenceNode(currentCategory, currentPath :+ (CategoryInfo(subcategory.orElse(category).get, title), NodeInfo(id, tags))))
+        List(
+          ArborescenceNode(
+            currentCategory,
+            currentPath :+ (CategoryInfo(subcategory.orElse(category).get, title), NodeInfo(id, tags))
+          )
+        )
       case _ =>
         category match {
           case Some(cat) =>
-            subcategories.flatMap(jsValue => from(jsValue, Some(CategoryInfo(cat, title)), currentPath :+ (CategoryInfo(cat, title), NodeInfo(id, tags))))
+            subcategories.flatMap(jsValue =>
+              from(
+                jsValue,
+                Some(CategoryInfo(cat, title)),
+                currentPath :+ (CategoryInfo(cat, title), NodeInfo(id, tags))
+              )
+            )
           case None =>
             subcategories.flatMap(jsValue =>
               from(jsValue, currentCategory, currentPath :+ (CategoryInfo(subcategory.get, title), NodeInfo(id, tags)))

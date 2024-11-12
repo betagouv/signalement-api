@@ -1,7 +1,12 @@
 package tasks.report
 
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
-import config.{ExportReportsToSFTPConfiguration, ProbeConfiguration, ReportRemindersTaskConfiguration, SampleDataConfiguration, SubcategoryLabelsTaskConfiguration, TaskConfiguration}
+import config.ExportReportsToSFTPConfiguration
+import config.ProbeConfiguration
+import config.ReportRemindersTaskConfiguration
+import config.SampleDataConfiguration
+import config.SubcategoryLabelsTaskConfiguration
+import config.TaskConfiguration
 import models.company.AccessLevel
 import models.event.Event
 import models.report.ReportStatus
