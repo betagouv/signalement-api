@@ -164,7 +164,7 @@ class ReportController(
           Ok(
             Json.toJson(
               ReportWithFilesAndAssignedUser(
-                r.report,
+                r.subcategoryLabel.map(_.subcategoryLabels).fold(r.report)(labels => r.report.copy(subcategories = labels)),
                 r.metadata,
                 r.bookmark.isDefined,
                 maybeAssignedMinimalUser,

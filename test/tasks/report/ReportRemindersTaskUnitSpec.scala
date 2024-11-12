@@ -1,11 +1,7 @@
 package tasks.report
 
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
-import config.ExportReportsToSFTPConfiguration
-import config.ProbeConfiguration
-import config.ReportRemindersTaskConfiguration
-import config.SampleDataConfiguration
-import config.TaskConfiguration
+import config.{ExportReportsToSFTPConfiguration, ProbeConfiguration, ReportRemindersTaskConfiguration, SampleDataConfiguration, SubcategoryLabelsTaskConfiguration, TaskConfiguration}
 import models.company.AccessLevel
 import models.event.Event
 import models.report.ReportStatus
@@ -59,6 +55,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     companyUpdate = null,
     probe = ProbeConfiguration(false),
     exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30)),
+    subcategoryLabels = SubcategoryLabelsTaskConfiguration(startTime = LocalTime.of(2, 0), interval = 1.day),
     sampleData = SampleDataConfiguration(true, LocalTime.of(3, 30))
   )
 

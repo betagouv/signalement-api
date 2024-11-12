@@ -1,9 +1,7 @@
 package orchestrators
 
 import models.CountByDate
-import models.report.ArborescenceNode
-import models.report.NodeInfo
-import models.report.ReportNode
+import models.report.{ArborescenceNode, CategoryInfo, NodeInfo, ReportNode}
 import orchestrators.StatsOrchestrator.formatStatData
 import orchestrators.StatsOrchestrator.buildReportNodes
 import org.specs2.mutable.Specification
@@ -18,19 +16,19 @@ class StatsOrchestratorTest extends Specification {
       val arborescence = List(
         ArborescenceNode(
           None,
-          Vector("cat1" -> NodeInfo("1", List("tag1")), "subcat11" -> NodeInfo("1.1", List.empty))
+          Vector(CategoryInfo("cat1", "Cat 1") -> NodeInfo("1", List("tag1")), CategoryInfo("subcat11", "Subcat 11") -> NodeInfo("1.1", List.empty))
         ),
         ArborescenceNode(
           None,
-          Vector("cat2" -> NodeInfo("2", List.empty), "subcat21" -> NodeInfo("2.1", List("tag2")))
+          Vector(CategoryInfo("cat2", "Cat 2") -> NodeInfo("2", List.empty), CategoryInfo("subcat21", "Subcat 1") -> NodeInfo("2.1", List("tag2")))
         ),
         ArborescenceNode(
           None,
-          Vector("cat2" -> NodeInfo("2", List.empty), "subcat22" -> NodeInfo("2.2", List.empty))
+          Vector(CategoryInfo("cat2", "Cat 2") -> NodeInfo("2", List.empty), CategoryInfo("subcat22", "Subcat 22") -> NodeInfo("2.2", List.empty))
         ),
         ArborescenceNode(
           None,
-          Vector("cat3" -> NodeInfo("3", List.empty))
+          Vector(CategoryInfo("cat3", "Cat 3") -> NodeInfo("3", List.empty))
         )
       )
 

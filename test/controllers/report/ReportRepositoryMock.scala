@@ -115,7 +115,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)
       case None                         => database.get(id)
     }
-    Future.successful(maybeReport.map(ReportWithMetadataAndBookmark(_, None, None)))
+    Future.successful(maybeReport.map(ReportWithMetadataAndBookmark(_, None, None, None)))
   }
 
   def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???

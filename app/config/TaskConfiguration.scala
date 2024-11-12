@@ -17,6 +17,7 @@ case class TaskConfiguration(
     companyUpdate: CompanyUpdateTaskConfiguration,
     probe: ProbeConfiguration,
     exportReportsToSFTP: ExportReportsToSFTPConfiguration,
+    subcategoryLabels: SubcategoryLabelsTaskConfiguration,
     sampleData: SampleDataConfiguration
 )
 
@@ -56,6 +57,11 @@ case class ReportRemindersTaskConfiguration(
     intervalInHours: FiniteDuration,
     mailReminderDelay: Period // 7days.
 
+)
+
+case class SubcategoryLabelsTaskConfiguration(
+    startTime: LocalTime,
+    interval: FiniteDuration
 )
 
 case class ProbeConfiguration(active: Boolean)

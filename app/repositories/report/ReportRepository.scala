@@ -8,7 +8,6 @@ import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import models.report.reportmetadata.ReportMetadata
-import models.report.reportmetadata.ReportWithMetadata
 import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
@@ -28,6 +27,7 @@ import repositories.reportmetadata.ReportMetadataTable
 import repositories.reportresponse.ReportResponseTable
 import repositories.CRUDRepository
 import repositories.PaginateOps
+import repositories.subcategorylabel.{SubcategoryLabel, SubcategoryLabelTable}
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
 import slick.jdbc.JdbcProfile
@@ -382,7 +382,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
       .sortBy { case (report, _, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities(ReportWithMetadataAndBookmark.fromTuple)
+    reportsWithMetadata = reportsAndMetadatas.mapEntities { case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark]) => ReportWithMetadataAndBookmark.from(report, metadata, bookmark)}
   } yield reportsWithMetadata
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
@@ -504,13 +504,17 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .on(_.id === _.reportId)
           .joinLeft(BookmarkTable.table)
           .on { case ((report, _), bookmark) =>
-            bookmark.userId.inSetBind(user.map(_.id)) && report.id === bookmark.reportId
+            bookmark.userId === user.map(_.id) && report.id === bookmark.reportId
           }
-          .map { case ((report, metadata), bookmark) => (report, metadata, bookmark) }
+          .joinLeft(SubcategoryLabelTable.table)
+          .on { case (((report, _), _), subcategoryLabel) =>
+            report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
+          }
+          .map { case (((report, metadata), bookmark), subcategoryLabel) => (report, metadata, bookmark, subcategoryLabel) }
           .result
           .headOption
       )
-      maybeReportWithMetadata = maybeTuple.map(ReportWithMetadataAndBookmark.fromTuple)
+      maybeReportWithMetadata = maybeTuple.map {case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark], subcategoryLabel: Option[SubcategoryLabel]) => ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)}
     } yield maybeReportWithMetadata
 
 }
@@ -527,12 +531,6 @@ object ReportRepository {
         case 0 => b.id compareTo (a.id)
         case c => c
       }
-  }
-
-  object ReportWithMetadataOrdering extends Ordering[ReportWithMetadata] {
-    def compare(a: ReportWithMetadata, b: ReportWithMetadata) =
-      ReportOrdering.compare(a.report, b.report)
-
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {
@@ -752,7 +750,7 @@ object ReportRepository {
       }
       .joinLeft(BookmarkTable.table)
       .on { case ((report, _), bookmark) =>
-        bookmark.userId.inSetBind(maybeUser.map(_.id)) && report.id === bookmark.reportId
+        bookmark.userId === maybeUser.map(_.id) && report.id === bookmark.reportId
       }
       .map { case ((report, metadata), bookmark) => (report, metadata, bookmark) }
       .filterOpt(filter.isBookmarked) { case ((_, _, bookmark), isBookmarked) =>
