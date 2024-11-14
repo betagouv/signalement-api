@@ -103,8 +103,11 @@ GET           /api/mobileapp/requirements                             controller
 
 # Authentication API
 POST          /api/authenticate                                       controllers.AuthController.authenticate()
+GET           /api/authenticate/proconnect/start                      controllers.AuthController.startProConnectAuthentication(state: String, nonce:String)
+GET           /api/authenticate/proconnect                            controllers.AuthController.proConnectAuthenticate(code: String, state: String)
 POST          /api/log-as                                             controllers.AuthController.logAs()
 POST          /api/logout                                             controllers.AuthController.logout()
+POST          /api/logout/proconnect                                  controllers.AuthController.logoutProConnect()
 GET           /api/current-user                                       controllers.AuthController.getUser()
 POST          /api/authenticate/password/forgot                       controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                        controllers.AuthController.resetPassword(token: java.util.UUID)

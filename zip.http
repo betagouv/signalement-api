@@ -8,3 +8,10 @@ GET localhost:9000/api/reports/files?reportId=d894fe80-935b-45f8-bfab-ea1c8933f5
 
 GET localhost:9000/api/certified-influencer?name=eeeee&socialNetwork=LinkedIn
 
+
+
+###
+GET localhost:9000/api/authenticate/proconnect/callback?code=Y000000&state=ioio&id_token=059e41a6-bd10-4cb1-97f8-b03884df63de
+
+###
+GET localhost:9009/api/authenticate/proconnect/start?state=hksdgfkhdsfkjdsh

@@ -6,6 +6,7 @@ import cats.implicits.toTraverseOps
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl._
+import models.AuthProvider.ProConnect
 import models._
 import models.token.AdminOrDgccrfTokenKind
 import models.token.AgentAccessToken
@@ -23,6 +24,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.EmailAddressService
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
+import services.emails.EmailDefinitionsDggcrf.DgccrfAgentInvitation
 import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.MailServiceInterface
@@ -171,7 +173,7 @@ class AccessesOrchestrator(
       }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
     _ = logger.debug(s"Token $token found, creating user with role $userRole")
-    user <- userOrchestrator.createUser(draftUser, accessToken, userRole)
+    user <- userOrchestrator.createSignalConsoUser(draftUser, accessToken, userRole)
     _ = logger.debug(s"User created successfully, invalidating token")
     _ <- accessTokenRepository.invalidateToken(accessToken)
     _ = logger.debug(s"Token has been revoked")
@@ -219,7 +221,7 @@ class AccessesOrchestrator(
         val parsedEmails = parseEmails(emails)
         for {
           _   <- validateEmails(parsedEmails, EmailAddressService.isEmailAcceptableForDgccrfAccount)
-          res <- Future.sequence(parsedEmails.map(sendDGCCRFInvitation))
+          res <- Future.sequence(parsedEmails.map(email => sendAdminOrAgentInvitation(email, TokenKind.DGCCRFAccount)))
         } yield res
       case UserRole.DGAL =>
         val parsedEmails = parseEmails(emails)
@@ -230,8 +232,17 @@ class AccessesOrchestrator(
       case _ => Future.failed(WrongUserRole(role))
     }
 
-  def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
-    sendAdminOrAgentInvitation(email, TokenKind.DGCCRFAccount)
+  def sendDGCCRFInvitation(invitationRequest: InvitationRequest): Future[Unit] =
+    invitationRequest.authProvider match {
+      case Some(ProConnect) =>
+        for {
+          _ <- userOrchestrator.createProConnectUser(invitationRequest.email, UserRole.DGCCRF)
+          _ <- mailService.send(
+            DgccrfAgentInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.welcome)
+          )
+        } yield ()
+      case _ => sendAdminOrAgentInvitation(invitationRequest.email, TokenKind.DGCCRFAccount)
+    }
 
   def sendDGALInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGALAccount)
@@ -245,7 +256,7 @@ class AccessesOrchestrator(
   def sendReadOnlyAdminInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.ReadOnlyAdminAccount)
 
-  def sendAdminOrAgentInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
+  private def sendAdminOrAgentInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
     val (emailValidationFunction, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
       case DGCCRFAccount =>
         (

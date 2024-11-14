@@ -1,5 +1,6 @@
 package repositories.user
 
+import models.AuthProvider
 import models.User
 import models.UserRole
 import repositories.DatabaseTable
@@ -17,18 +18,78 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
   def lastName            = column[String]("lastname")
   def role                = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
+  def authProvider        = column[AuthProvider]("auth_provider")
+  def authProviderId      = column[Option[String]]("auth_provider_id")
   def deletionDate        = column[Option[OffsetDateTime]]("deletion_date")
 
-  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime], Option[OffsetDateTime])
+  type UserData =
+    (
+        UUID,
+        String,
+        EmailAddress,
+        String,
+        String,
+        String,
+        Option[OffsetDateTime],
+        AuthProvider,
+        Option[String],
+        Option[OffsetDateTime]
+    )
 
   def constructUser: UserData => User = {
-    case (id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate) =>
-      User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation, deletionDate)
+    case (
+          id,
+          password,
+          email,
+          firstName,
+          lastName,
+          role,
+          lastEmailValidation,
+          authProvider,
+          authProviderId,
+          deletionDate
+        ) =>
+      User(
+        id,
+        password,
+        email,
+        firstName,
+        lastName,
+        UserRole.withName(role),
+        lastEmailValidation,
+        authProvider,
+        authProviderId,
+        deletionDate = deletionDate,
+        impersonator = None
+      )
   }
 
   def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate, _) =>
-      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation, deletionDate)
+    case User(
+          id,
+          password,
+          email,
+          firstName,
+          lastName,
+          role,
+          lastEmailValidation,
+          authProvider,
+          authProviderId,
+          deletionDate,
+          _
+        ) =>
+      (
+        id,
+        password,
+        email,
+        firstName,
+        lastName,
+        role.entryName,
+        lastEmailValidation,
+        authProvider,
+        authProviderId,
+        deletionDate
+      )
   }
 
   def * = (
@@ -39,6 +100,8 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
     lastName,
     role,
     lastEmailValidation,
+    authProvider,
+    authProviderId,
     deletionDate
   ) <> (constructUser, extractUser.lift)
 }
