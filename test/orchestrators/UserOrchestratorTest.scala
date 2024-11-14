@@ -54,7 +54,7 @@ class UserOrchestratorTest(implicit ee: ExecutionEnv)
             Duration.Inf
           )
 
-        userList.map(_.id).toSet  equals (expectedUsers.map(_.id).toSet) shouldEqual true
+        userList.map(_.id).toSet equals (expectedUsers.map(_.id).toSet) shouldEqual true
         userList.map(_.id).contains(targetUser.id) shouldEqual false
 
         deletedUsersList.map(_.id).contains(targetUser.id) shouldEqual true
