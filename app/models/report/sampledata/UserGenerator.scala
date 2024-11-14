@@ -1,5 +1,6 @@
 package models.report.sampledata
 
+import models.AuthProvider.SignalConso
 import models.User
 import models.UserRole
 import utils.EmailAddress
@@ -24,7 +25,9 @@ object UserGenerator {
       lastName = lastName,
       userRole = userRole,
       lastEmailValidation = Some(OffsetDateTime.now()),
-      deletionDate = None
+      deletionDate = None,
+      authProvider = SignalConso,
+      authProviderId = None
     )
 
 }

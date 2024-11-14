@@ -16,6 +16,23 @@ import java.time.LocalDate
 
 object EmailDefinitionsDggcrf {
 
+  case object DgccrfAgentInvitation extends EmailDefinition {
+    override val category = Dgccrf
+
+    override def examples =
+      Seq("access_link" -> ((recipient, _) => Email("DGCCRF")(recipient, dummyURL)))
+
+    final case class Email(role: String)(recipient: EmailAddress, connectionUrl: URI) extends BaseEmail {
+      override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
+
+      override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+        views.html.mails.dgccrf.proConnectInvite(connectionUrl, role).toString
+
+      override val recipients: List[EmailAddress] = List(recipient)
+    }
+
+  }
+
   case object DgccrfAgentAccessLink extends EmailDefinition {
     override val category = Dgccrf
 

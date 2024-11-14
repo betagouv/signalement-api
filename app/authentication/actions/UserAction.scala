@@ -4,6 +4,7 @@ import authentication.Authenticator
 import authentication.actions.UserAction.UserRequest
 import controllers.error.AppError.BrokenAuthError
 import controllers.error.AppErrorTransformer
+import models.AuthProvider
 import models.User
 import models.UserRole
 import play.api.mvc.Results.Forbidden
@@ -41,6 +42,23 @@ object UserAction {
       override protected def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         Future.successful {
           if (anyOfRoles.contains(request.identity.userRole)) {
+            None
+          } else {
+            Some(Forbidden)
+          }
+        }
+    }
+
+  def WithAuthProvider(anyAuthProvider: List[AuthProvider])(implicit ec: ExecutionContext): ActionFilter[UserRequest] =
+    WithAuthProvider(anyAuthProvider: _*)
+
+  def WithAuthProvider(anyAuthProvider: AuthProvider*)(implicit ec: ExecutionContext): ActionFilter[UserRequest] =
+    new ActionFilter[UserRequest] {
+      override protected def executionContext: ExecutionContext = ec
+
+      override protected def filter[A](request: UserRequest[A]): Future[Option[Result]] =
+        Future.successful {
+          if (anyAuthProvider.contains(request.identity.authProvider)) {
             None
           } else {
             Some(Forbidden)

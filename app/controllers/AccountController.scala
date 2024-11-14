@@ -12,12 +12,14 @@ import play.api.mvc.ControllerComponents
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import error.AppError.MalformedFileKey
+import authentication.actions.UserAction.WithAuthProvider
 import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.io.Source
+import cats.syntax.either._
 
 class AccountController(
     userOrchestrator: UserOrchestrator,
@@ -43,10 +45,7 @@ class AccountController(
         case None =>
           accessesOrchestrator.activateAdminOrAgentUser(activationRequest.draftUser, activationRequest.token)
       }
-      cookie <- authenticator.init(createdUser.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
+      cookie <- authenticator.initSignalConsoCookie(createdUser.email, None).liftTo[Future]
     } yield authenticator.embed(cookie, Ok(Json.toJson(createdUser)))
 
   }
@@ -56,12 +55,14 @@ class AccountController(
       role match {
         case UserRole.DGCCRF =>
           request
-            .parseBody[EmailAddress](JsPath \ "email")
-            .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
+            .parseBody[InvitationRequest]()
+            .flatMap { invitationRequest =>
+              accessesOrchestrator.sendDGCCRFInvitation(invitationRequest).map(_ => Ok)
+            }
         case UserRole.DGAL =>
           request
-            .parseBody[EmailAddress](JsPath \ "email")
-            .flatMap(email => accessesOrchestrator.sendDGALInvitation(email).map(_ => Ok))
+            .parseBody[InvitationRequest]()
+            .flatMap(invitationRequest => accessesOrchestrator.sendDGALInvitation(invitationRequest.email).map(_ => Ok))
         case _ => Future.failed(error.AppError.WrongUserRole(role))
       }
     }
@@ -137,12 +138,9 @@ class AccountController(
 
   def validateEmail() = IpRateLimitedAction2.async(parse.json) { implicit request =>
     for {
-      token <- request.parseBody[String](JsPath \ "token")
-      user  <- accessesOrchestrator.validateAgentEmail(token)
-      cookie <- authenticator.init(user.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
-      }
+      token  <- request.parseBody[String](JsPath \ "token")
+      user   <- accessesOrchestrator.validateAgentEmail(token)
+      cookie <- authenticator.initSignalConsoCookie(user.email, None).liftTo[Future]
     } yield authenticator.embed(cookie, Ok(Json.toJson(user)))
   }
 
@@ -151,7 +149,7 @@ class AccountController(
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
-  def edit() = SecuredAction.async(parse.json) { implicit request =>
+  def edit() = SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).async(parse.json) { implicit request =>
     for {
       userUpdate     <- request.parseBody[UserUpdate]()
       updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
@@ -168,15 +166,16 @@ class AccountController(
     } yield NoContent
   }
 
-  def updateEmailAddress(token: String) = SecuredAction.async { implicit request =>
-    for {
-      updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
-      cookie <- authenticator.init(updatedUser.email) match {
-        case Right(value) => Future.successful(value)
-        case Left(error)  => Future.failed(error)
+  def updateEmailAddress(token: String) =
+    SecuredAction
+      .andThen(WithAuthProvider(AuthProvider.SignalConso))
+      .andThen(WithRole(UserRole.SuperAdmin, UserRole.Admin, UserRole.Professionnel, UserRole.DGAL))
+      .async { implicit request =>
+        for {
+          updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
+          cookie      <- authenticator.initSignalConsoCookie(updatedUser.email, None).liftTo[Future]
+        } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
       }
-    } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
-  }
 
   def softDelete(id: UUID) =
     SecuredAction.andThen(WithRole(UserRole.Admins)).async { request =>

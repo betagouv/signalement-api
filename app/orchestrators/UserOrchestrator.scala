@@ -1,8 +1,11 @@
 package orchestrators
 
+import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.EmailAlreadyExist
+import controllers.error.AppError.UserAccountEmailAlreadyExist
 import controllers.error.AppError.UserNotFound
+import controllers.error.AppError.UserNotInvited
 import models.AccessToken
 import models.DraftUser
 import models.User
@@ -11,10 +14,14 @@ import models.UserUpdate
 import play.api.Logger
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import cats.syntax.option._
+import models.AuthProvider.ProConnect
+import models.AuthProvider.SignalConso
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
+import models.proconnect.ProConnectClaim
 import repositories.event.EventRepositoryInterface
 import utils.Constants.ActionEvent.USER_DELETION
 import utils.Constants.EventType.ADMIN
@@ -24,7 +31,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 trait UserOrchestratorInterface {
-  def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User]
+  def createSignalConsoUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User]
 
   def findOrError(emailAddress: EmailAddress): Future[User]
 
@@ -37,6 +44,10 @@ trait UserOrchestratorInterface {
   def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit]
 
   def updateEmail(user: User, newEmail: EmailAddress): Future[User]
+
+  def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User]
+
+  def createProConnectUser(emailAddress: EmailAddress, role: UserRole): Future[User]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository: EventRepositoryInterface)(implicit
@@ -55,7 +66,7 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
   def updateEmail(user: User, newEmail: EmailAddress): Future[User] =
     userRepository.update(user.id, user.copy(email = newEmail))
 
-  override def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
+  override def createSignalConsoUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
     val email: EmailAddress = accessToken.emailedTo.getOrElse(draftUser.email)
     val user = User(
       id = UUID.randomUUID,
@@ -64,6 +75,8 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       firstName = draftUser.firstName,
       lastName = draftUser.lastName,
       userRole = role,
+      authProvider = SignalConso,
+      authProviderId = None,
       lastEmailValidation = Some(OffsetDateTime.now())
     )
     for {
@@ -71,6 +84,47 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       _ <- userRepository.create(user)
     } yield user
   }
+
+  override def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User] =
+    OptionT(userRepository.findByAuthProviderId(claim.sub))
+      .orElseF(userRepository.findByEmail(claim.email))
+      .semiflatMap { user =>
+        val updated = user.copy(
+          email = EmailAddress(claim.email),
+          firstName = claim.givenName,
+          lastName = claim.usualName,
+          authProvider = ProConnect,
+          authProviderId = claim.sub.some,
+          lastEmailValidation = Some(OffsetDateTime.now())
+        )
+        userRepository.update(user.id, updated)
+      }
+      .getOrRaise(
+        UserNotInvited(claim.email)
+      )
+
+  override def createProConnectUser(emailAddress: EmailAddress, role: UserRole): Future[User] =
+    userRepository
+      .findByEmailIncludingDeleted(emailAddress.value)
+      .flatMap {
+        case Some(user) if user.deletionDate.isDefined =>
+          // Reactivating user
+          userRepository.restore(user)
+        case Some(_) => Future.failed(UserAccountEmailAlreadyExist)
+        case None =>
+          val user = User(
+            id = UUID.randomUUID,
+            password = "",
+            email = emailAddress,
+            firstName = "",
+            lastName = "",
+            userRole = role,
+            authProvider = ProConnect,
+            authProviderId = None,
+            lastEmailValidation = Some(OffsetDateTime.now())
+          )
+          userRepository.create(user)
+      }
 
   override def findOrError(emailAddress: EmailAddress): Future[User] =
     userRepository
