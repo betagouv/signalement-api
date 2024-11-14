@@ -11,6 +11,7 @@ import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.report.ReportRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import slick.basic.DatabasePublisher
 import utils.CRUDRepositoryMock
 import utils.SIRET
@@ -118,7 +119,8 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
     Future.successful(maybeReport.map(ReportWithMetadataAndBookmark(_, None, None, None)))
   }
 
-  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = ???
+  override def streamAll
+      : DatabasePublisher[(((Report, Option[Company]), Option[BarcodeProduct]), Option[SubcategoryLabel])] = ???
 
   override def streamReports: Source[Report, NotUsed] = ???
 

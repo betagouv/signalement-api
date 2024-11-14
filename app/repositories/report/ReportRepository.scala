@@ -68,12 +68,17 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     .log("user")
 
   // To stream PG properly, some parameters are required, see https://scala-slick.org/doc/stable/dbio.html
-  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])] = db.stream(
+  override def streamAll
+      : DatabasePublisher[(((Report, Option[Company]), Option[BarcodeProduct]), Option[SubcategoryLabel])] = db.stream(
     table
       .joinLeft(CompanyTable.table)
       .on { case (report, company) => report.companyId === company.id }
       .joinLeft(BarcodeProductTable.table)
       .on { case ((report, _), product) => report.barcodeProductId === product.id }
+      .joinLeft(SubcategoryLabelTable.table)
+      .on { case (((report, _), _), subcategoryLabel) =>
+        report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
+      }
       .result
       .withStatementParameters(
         rsType = ResultSetType.ForwardOnly,
@@ -186,13 +191,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db
       .run(
         queryFilter(ReportTable.table(user), filter, user)
-          .filter { case (report, _, _) =>
+          .filter { case (report, _, _, _) =>
             report.creationDate > OffsetDateTime
               .now()
               .minusMonths(ticks.toLong)
               .withDayOfMonth(1)
           }
-          .groupBy { case (report, _, _) =>
+          .groupBy { case (report, _, _, _) =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
           }
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -204,8 +209,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
-        .groupBy { case (report, _, _) =>
+        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
+        .groupBy { case (report, _, _, _) =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
         }
         .map { case ((week, year), group) =>
@@ -235,8 +240,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
-        .groupBy { case (report, _, _) =>
+        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
+        .groupBy { case (report, _, _, _) =>
           (
             DatePartSQLFunction("day", report.creationDate),
             DatePartSQLFunction("month", report.creationDate),
@@ -359,7 +364,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
       queryResult <- queryFilter(ReportTable.table(user), filter, user)
-        .map { case (report, _, _) => report }
+        .map { case (report, _, _, _) => report }
         .joinLeft(ReportFileTable.table)
         .on { case (report, reportFile) => report.id === reportFile.reportId }
         .sortBy { case (report, _) => report.creationDate.desc }
@@ -381,11 +386,16 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       limit: Option[Int] = None
   ): Future[PaginatedResult[ReportWithMetadataAndBookmark]] = for {
     reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
-      .sortBy { case (report, _, _) => report.creationDate.desc }
+      .sortBy { case (report, _, _, _) => report.creationDate.desc }
       .withPagination(db)(offset, limit)
     reportsWithMetadata = reportsAndMetadatas.mapEntities {
-      case (report: Report, metadata: Option[ReportMetadata], bookmark: Option[Bookmark]) =>
-        ReportWithMetadataAndBookmark.from(report, metadata, bookmark)
+      case (
+            report: Report,
+            metadata: Option[ReportMetadata],
+            bookmark: Option[Bookmark],
+            subcategoryLabel: Option[SubcategoryLabel]
+          ) =>
+        ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
     }
   } yield reportsWithMetadata
 
@@ -583,8 +593,8 @@ object ReportRepository {
       filter: ReportFilter,
       maybeUser: Option[User]
   ): Query[
-    (ReportTable, Rep[Option[ReportMetadataTable]], Rep[Option[BookmarkTable]]),
-    (Report, Option[ReportMetadata], Option[Bookmark]),
+    (ReportTable, Rep[Option[ReportMetadataTable]], Rep[Option[BookmarkTable]], Rep[Option[SubcategoryLabelTable]]),
+    (Report, Option[ReportMetadata], Option[Bookmark], Option[SubcategoryLabel]),
     Seq
   ] = {
     implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
@@ -766,12 +776,15 @@ object ReportRepository {
       .on { case ((report, _), bookmark) =>
         bookmark.userId === maybeUser.map(_.id) && report.id === bookmark.reportId
       }
-      .map { case ((report, metadata), bookmark) => (report, metadata, bookmark) }
-      .filterOpt(filter.isBookmarked) { case ((_, _, bookmark), isBookmarked) =>
+      .joinLeft(SubcategoryLabelTable.table)
+      .on { case (((report, _), _), subcategoryLabel) =>
+        subcategoryLabel.category === report.category && subcategoryLabel.subcategories === report.subcategories
+      }
+      .map { case (((report, metadata), bookmark), subcategoryLabel) => (report, metadata, bookmark, subcategoryLabel) }
+      .filterOpt(filter.isBookmarked) { case ((_, _, bookmark, _), isBookmarked) =>
         val bookmarkExists = bookmark.isDefined
         if (isBookmarked) bookmarkExists else !bookmarkExists
       }
-
   }
 
 }

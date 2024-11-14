@@ -37,7 +37,7 @@ object ReportWithMetadataAndBookmark {
       report: Report,
       metadata: Option[ReportMetadata],
       bookmark: Option[Bookmark],
-      subcategoryLabel: Option[SubcategoryLabel] = None
+      subcategoryLabel: Option[SubcategoryLabel]
   ): ReportWithMetadataAndBookmark =
     ReportWithMetadataAndBookmark(report, metadata, bookmark, subcategoryLabel)
 

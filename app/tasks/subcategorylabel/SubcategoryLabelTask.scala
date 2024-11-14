@@ -31,28 +31,65 @@ class SubcategoryLabelTask(
   override def runTask(): Future[Unit] = for {
     maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
     minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
-    labels = toSet(minimizedAnomalies.fr)
-    _ <- labels.toList.traverse { label =>
-      subcategoryLabelRepository.createOrUpdate(label)
+
+    frLabels = toSet(minimizedAnomalies.fr, french = true)
+    enLabels = toSet(minimizedAnomalies.en, french = false)
+
+    _ <- frLabels.toList.traverse { label =>
+      subcategoryLabelRepository.get(label.category, label.subcategories).flatMap {
+        case Some(existing) =>
+          val updatedLabel =
+            existing.copy(categoryLabelFr = label.categoryLabelFr, subcategoryLabelsFr = label.subcategoryLabelsFr)
+          subcategoryLabelRepository.createOrUpdate(updatedLabel)
+        case None =>
+          subcategoryLabelRepository.createOrUpdate(label)
+      }
+    }
+
+    _ <- enLabels.toList.traverse { label =>
+      subcategoryLabelRepository.get(label.category, label.subcategories).flatMap {
+        case Some(existing) =>
+          val updatedLabel =
+            existing.copy(categoryLabelEn = label.categoryLabelEn, subcategoryLabelsEn = label.subcategoryLabelsEn)
+          subcategoryLabelRepository.createOrUpdate(updatedLabel)
+        case None =>
+          subcategoryLabelRepository.createOrUpdate(label)
+      }
     }
   } yield ()
 
   @tailrec
-  private def toSet(nodes: List[ArborescenceNode], res: Set[SubcategoryLabel] = Set.empty): Set[SubcategoryLabel] =
+  private def toSet(
+      nodes: List[ArborescenceNode],
+      french: Boolean,
+      res: Set[SubcategoryLabel] = Set.empty
+  ): Set[SubcategoryLabel] =
     nodes match {
       case Nil => res
       case h :: t =>
         val cats = h.path.map(_._1)
-        val a = cats.indices.map { i =>
-          val tmp = cats.take(i + 1)
+        val labels = cats.indices.map { i =>
+          val categoryInfos = cats.take(i + 1)
 
-          SubcategoryLabel(
-            category = tmp.head.key,
-            subcategories = tmp.tail.map(_.key).toList,
-            categoryLabel = tmp.head.label,
-            subcategoryLabels = tmp.tail.map(_.label).toList
-          )
+          if (french)
+            SubcategoryLabel(
+              category = categoryInfos.head.key,
+              subcategories = categoryInfos.tail.map(_.key).toList,
+              categoryLabelFr = Some(categoryInfos.head.label),
+              subcategoryLabelsFr = Some(categoryInfos.tail.map(_.label).toList),
+              categoryLabelEn = None,
+              subcategoryLabelsEn = None
+            )
+          else
+            SubcategoryLabel(
+              category = categoryInfos.head.key,
+              subcategories = categoryInfos.tail.map(_.key).toList,
+              categoryLabelFr = None,
+              subcategoryLabelsFr = None,
+              categoryLabelEn = Some(categoryInfos.head.label),
+              subcategoryLabelsEn = Some(categoryInfos.tail.map(_.label).toList)
+            )
         }
-        toSet(t, res ++ a)
+        toSet(t, french, res ++ labels)
     }
 }

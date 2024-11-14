@@ -7,7 +7,9 @@ import config.TaskConfiguration
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report.Report
+import models.report.ReportCategory
 import repositories.report.ReportRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import repositories.tasklock.TaskRepositoryInterface
 import tasks.model.TaskSettings.DailyTaskSettings
 
@@ -85,14 +87,15 @@ class ExportReportsToSFTPTask(
   private def printReport(
       report: Report,
       maybeCompany: Option[Company],
-      maybeProduct: Option[BarcodeProduct]
+      maybeProduct: Option[BarcodeProduct],
+      subcategoryLabel: Option[SubcategoryLabel]
   ): String = {
     import report._
     val fields: List[String] = List(
       id.toString,
       wrapAndEscapeQuotes(lang.map(_.toLanguageTag)),
-      wrapAndEscapeQuotes(category),
-      wrapAndEscapeQuotes(subcategories),
+      wrapAndEscapeQuotes(ReportCategory.displayValue(category)),
+      wrapAndEscapeQuotes(SubcategoryLabel.translateSubcategories(subcategories, subcategoryLabel)),
       wrapAndEscapeQuotes(websiteURL.host),
       wrapAndEscapeQuotes(vendor),
       wrapAndEscapeQuotes(tags.map(_.entryName)),
@@ -140,7 +143,9 @@ class ExportReportsToSFTPTask(
       .grouped(batchSize)
       .runForeach { reports =>
         val line = reports
-          .map { case ((report, maybeCompany), maybeProduct) => printReport(report, maybeCompany, maybeProduct) }
+          .map { case (((report, maybeCompany), maybeProduct), subcategoryLabel) =>
+            printReport(report, maybeCompany, maybeProduct, subcategoryLabel)
+          }
           .mkString("\n")
         fileWriter.write(line)
         fileWriter.write("\n")
