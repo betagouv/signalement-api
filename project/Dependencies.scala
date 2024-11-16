@@ -32,9 +32,6 @@ object Dependencies {
     lazy val sttpPlayJson              = "3.10.1"
     lazy val flyWayVersion             = "10.21.0"
     lazy val janino                    = "3.1.12"
-    // Cannot be updated to "7.4" because of the following error when logging as JSON:
-    // java.lang.NoSuchMethodError: 'java.time.Instant ch.qos.logback.classic.spi.ILoggingEvent.getInstant()'
-    // If we want to upgrade, we MUST check json logs (env var USE_TEXT_LOGS set to false) to see if this error still happen
     lazy val logstashLogbackEncoder = "8.0"
 
   }
