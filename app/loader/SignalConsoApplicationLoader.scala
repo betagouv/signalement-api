@@ -616,12 +616,11 @@ class SignalConsoComponents(
     reportRepository,
     companyAccessRepository,
     reportAdminActionOrchestrator,
-    websiteRepository
+    websiteRepository,
+    eventRepository
   )(
     actorSystem
   )
-
-  sampleDataService.genSampleData()
 
   val sampleDataGenerationTask =
     new SampleDataGenerationTask(actorSystem, sampleDataService, taskConfiguration, taskRepository)

@@ -19,6 +19,7 @@ import play.api.Logging
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
@@ -37,7 +38,8 @@ class SampleDataService(
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
-    websiteRepository: WebsiteRepositoryInterface
+    websiteRepository: WebsiteRepositoryInterface,
+    eventRepository: EventRepositoryInterface
 )(implicit system: ActorSystem)
     extends Logging {
 
@@ -268,6 +270,7 @@ class SampleDataService(
           reportList <- companyIds.flatTraverse(c => reportRepository.getReports(c))
           _ = logger.info(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _        <- reportList.traverse(r => reportAdminActionOrchestrator.deleteReport(r.id))
+          _        <- maybeUser.traverse(user => eventRepository.deleteByUserId(user.id))
           websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
           _ = logger.info(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _ <- websites.map(_.id).traverse(websiteRepository.delete)
