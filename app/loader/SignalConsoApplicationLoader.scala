@@ -616,7 +616,8 @@ class SignalConsoComponents(
     reportRepository,
     companyAccessRepository,
     reportAdminActionOrchestrator,
-    websiteRepository
+    websiteRepository,
+    eventRepository
   )(
     actorSystem
   )
