@@ -51,6 +51,13 @@ class EventRepository(
         .delete
     )
 
+  override def deleteByUserId(userId: UUID): Future[Int] = db
+    .run(
+      table
+        .filter(_.userId === userId)
+        .delete
+    )
+
   override def deleteEngagement(uuidReport: UUID): Future[Int] = db
     .run(
       table

@@ -242,7 +242,7 @@ object StatsOrchestrator {
 
   @tailrec
   private def createOrUpdateReportNode(
-      subcats: Vector[(String, NodeInfo)],
+      subcats: Vector[(CategoryInfo, NodeInfo)],
       count: Int,
       reclamations: Int,
       tree: ReportNode
@@ -251,10 +251,10 @@ object StatsOrchestrator {
     tree.reclamations += reclamations
     subcats match {
       case (path, nodeInfo) +: rest =>
-        tree.children.find(_.name == path) match {
+        tree.children.find(_.name == path.key) match {
           case Some(child) => createOrUpdateReportNode(rest, count, reclamations, child)
           case None =>
-            val reportNode = ReportNode(path, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
+            val reportNode = ReportNode(path.key, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
             tree.children = reportNode :: tree.children
             createOrUpdateReportNode(rest, count, reclamations, reportNode)
 

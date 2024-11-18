@@ -93,6 +93,7 @@ import repositories.signalconsoreview.SignalConsoReviewRepository
 import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabelRepository
 import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.tasklock.TaskRepository
@@ -124,6 +125,7 @@ import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
 import tasks.report.SampleDataGenerationTask
+import tasks.subcategorylabel.SubcategoryLabelTask
 import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
@@ -244,6 +246,8 @@ class SignalConsoComponents(
   val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
   val engagementRepository = new EngagementRepository(dbConfig)
+
+  val subcategoryLabelRepository = new SubcategoryLabelRepository(dbConfig)
 
   val ipBlackListRepository = new IpBlackListRepository(dbConfig)
 
@@ -616,7 +620,8 @@ class SignalConsoComponents(
     reportRepository,
     companyAccessRepository,
     reportAdminActionOrchestrator,
-    websiteRepository
+    websiteRepository,
+    eventRepository
   )(
     actorSystem
   )
@@ -656,6 +661,14 @@ class SignalConsoComponents(
     taskConfiguration,
     taskRepository,
     reportRepository
+  )
+
+  val subcategoryLabelTask = new SubcategoryLabelTask(
+    actorSystem,
+    taskConfiguration,
+    taskRepository,
+    subcategoryLabelRepository,
+    websiteApiService
   )
 
   // Controller
@@ -926,6 +939,7 @@ class SignalConsoComponents(
     if (applicationConfiguration.task.sampleData.active) {
       sampleDataGenerationTask.schedule()
     }
+    subcategoryLabelTask.schedule()
   }
 
   override def config: Config = ConfigFactory.load()

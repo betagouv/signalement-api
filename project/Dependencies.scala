@@ -5,35 +5,34 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    lazy val playSlickVersion          = "6.1.0"
+    lazy val playSlickVersion          = "6.1.1"
     lazy val slickPgVersion            = "0.22.2"
-    lazy val playMailerVersion         = "10.0.0"
-    lazy val pekkoHttpVersion          = "1.0.1"
-    lazy val pekkoVersion              = "1.0.2"
-    lazy val enumeratumVersion         = "1.8.0"
-    lazy val sentryVersion             = "6.34.0"
+    lazy val playMailerVersion         = "10.1.0"
+    lazy val pekkoHttpVersion          = "1.1.0"
+    lazy val pekkoVersion              = "1.0.3"
+    lazy val pekkoActorVersion         = "1.0.3"
+    lazy val pekkoExtensionsVersion    = "1.0.2"
+    lazy val enumeratumVersion         = "1.8.2"
+    lazy val sentryVersion             = "7.17.0"
     lazy val jbcrypt                   = "0.4"
-    lazy val specs2MatcherExtraVersion = "4.20.6"
-    lazy val scalaCheckVersion         = "1.18.0"
+    lazy val specs2MatcherExtraVersion = "4.20.9"
+    lazy val scalaCheckVersion         = "1.18.1"
     lazy val catsCoreVersion           = "2.12.0"
-    lazy val pureConfigVersion         = "0.17.6"
+    lazy val pureConfigVersion         = "0.17.7"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version       = "1.12.736"
-    lazy val jacksonModuleScalaVersion = "2.17.1"
-    lazy val postgresqlVersion         = "42.7.3"
+    lazy val awsJavaSdkS3Version       = "1.12.778"
+    lazy val jacksonModuleScalaVersion = "2.18.1"
+    lazy val postgresqlVersion         = "42.7.4"
     lazy val refinedVersion            = "0.11.2"
     lazy val spoiwoVersion             = "2.2.1"
-    lazy val itext7CoreVersion         = "8.0.4"
-    lazy val html2pdfVersion           = "5.0.4"
-    lazy val chimneyVersion            = "0.8.5"
-    lazy val sttp                      = "3.9.7"
-    lazy val sttpPlayJson              = "3.9.7"
-    lazy val flyWayVersion             = "10.14.0"
+    lazy val itext7CoreVersion         = "8.0.5"
+    lazy val html2pdfVersion           = "5.0.5"
+    lazy val chimneyVersion            = "1.5.0"
+    lazy val sttp                      = "3.10.1"
+    lazy val sttpPlayJson              = "3.10.1"
+    lazy val flyWayVersion             = "10.21.0"
     lazy val janino                    = "3.1.12"
-    // Cannot be updated to "7.4" because of the following error when logging as JSON:
-    // java.lang.NoSuchMethodError: 'java.time.Instant ch.qos.logback.classic.spi.ILoggingEvent.getInstant()'
-    // If we want to upgrade, we MUST check json logs (env var USE_TEXT_LOGS set to false) to see if this error still happen
-    lazy val logstashLogbackEncoder = "7.3"
+    lazy val logstashLogbackEncoder = "8.0"
 
   }
 
@@ -41,7 +40,7 @@ object Dependencies {
     val specs2Import       = specs2            % "test"
     val specs2MatcherExtra = "org.specs2"     %% "specs2-matcher-extra" % Versions.specs2MatcherExtraVersion % "test"
     val scalaCheck         = "org.scalacheck" %% "scalacheck"           % Versions.scalaCheckVersion         % "test"
-    val pekkoTestKit = "org.apache.pekko" %% "pekko-actor-testkit-typed" % Versions.pekkoVersion % "test"
+    val pekkoTestKit = "org.apache.pekko" %% "pekko-actor-testkit-typed" % Versions.pekkoActorVersion % "test"
 
   }
 
@@ -62,16 +61,15 @@ object Dependencies {
     val slickPg            = "com.github.tminglei"   %% "slick-pg"              % Versions.slickPgVersion
     val slickPgPlayJson    = "com.github.tminglei"   %% "slick-pg_play-json"    % Versions.slickPgVersion
     val playMailer         = "org.playframework"     %% "play-mailer"           % Versions.playMailerVersion
-    val pekkoConnectorS3   = "org.apache.pekko"      %% "pekko-connectors-s3"   % Versions.pekkoVersion
-    val pekkoConnectorCSV  = "org.apache.pekko"      %% "pekko-connectors-csv"  % Versions.pekkoVersion
-    val pekkoConnectorFile = "org.apache.pekko"      %% "pekko-connectors-file" % Versions.pekkoVersion
+    val pekkoConnectorS3   = "org.apache.pekko"      %% "pekko-connectors-s3"   % Versions.pekkoExtensionsVersion
+    val pekkoConnectorCSV  = "org.apache.pekko"      %% "pekko-connectors-csv"  % Versions.pekkoExtensionsVersion
+    val pekkoConnectorFile = "org.apache.pekko"      %% "pekko-connectors-file" % Versions.pekkoExtensionsVersion
     val pekkoHttp          = "org.apache.pekko"      %% "pekko-http"            % Versions.pekkoHttpVersion
     val pekkoHttpXml       = "org.apache.pekko"      %% "pekko-http-xml"        % Versions.pekkoHttpVersion
     val jbcrypt            = "org.mindrot"            % "jbcrypt"               % "0.4"
     val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"       % Versions.enumeratumVersion
     val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"       % Versions.awsJavaSdkS3Version
-    val jacksonModuleScala =
-      "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
+    val jacksonModuleScala ="com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql"       % "postgresql"  % Versions.postgresqlVersion
     val refinded   = "eu.timepit"          %% "refined"     % Versions.refinedVersion
     val spoiwo     = "com.norbitltd"       %% "spoiwo"      % Versions.spoiwoVersion

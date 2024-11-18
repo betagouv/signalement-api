@@ -23,6 +23,7 @@ import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import repositories.user.UserRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
@@ -164,11 +165,11 @@ class ReportController(
           Ok(
             Json.toJson(
               ReportWithFilesAndAssignedUser(
-                r.report,
+                SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
                 r.bookmark.isDefined,
                 maybeAssignedMinimalUser,
-                reportFiles.map(ReportFileApi.build(_))
+                reportFiles.map(ReportFileApi.build)
               )
             )
           )

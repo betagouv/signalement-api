@@ -20,7 +20,7 @@ class OldReportsRgpdDeletionTask(
     taskConfiguration: TaskConfiguration,
     taskRepository: TaskRepositoryInterface
 )(implicit val executionContext: ExecutionContext)
-    extends ScheduledTask(9, "old_reports_rgpd_deletion_task", taskRepository, actorSystem, taskConfiguration) {
+    extends ScheduledTask(11, "old_reports_rgpd_deletion_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = DailyTaskSettings(startTime = taskConfiguration.oldReportsRgpdDeletion.startTime)
 
