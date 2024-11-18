@@ -40,6 +40,7 @@ import repositories.engagement.EngagementRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
@@ -941,7 +942,12 @@ class ReportOrchestrator(
             limit,
             maxResults,
             (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
-              ReportWithFiles(r.report, r.metadata, r.bookmark.isDefined, m.getOrElse(r.report.id, Nil))
+              ReportWithFiles(
+                SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
+                r.metadata,
+                r.bookmark.isDefined,
+                m.getOrElse(r.report.id, Nil)
+              )
           )
         }
     } yield paginatedReportFiles

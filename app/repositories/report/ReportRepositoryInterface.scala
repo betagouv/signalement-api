@@ -10,6 +10,7 @@ import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.CRUDRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import slick.basic.DatabasePublisher
 import utils.SIRET
 
@@ -24,7 +25,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def streamReports: Source[Report, NotUsed]
 
-  def streamAll: DatabasePublisher[((Report, Option[Company]), Option[BarcodeProduct])]
+  def streamAll: DatabasePublisher[(((Report, Option[Company]), Option[BarcodeProduct]), Option[SubcategoryLabel])]
   def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]]
 
   def findSimilarReportList(

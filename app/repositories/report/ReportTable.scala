@@ -352,6 +352,6 @@ object ReportTable {
     case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
     case Some(UserRole.Professionnel) =>
       queryFilter(table, ReportFilter(visibleToPro = Some(true), status = ReportStatus.statusVisibleByPro), user)
-        .map { case (report, _, _) => report }
+        .map { case (report, _, _, _) => report }
   }
 }

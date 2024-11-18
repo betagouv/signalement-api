@@ -16,6 +16,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
 import utils.Constants
 
 import java.util.UUID
@@ -65,7 +66,7 @@ class ReportWithDataOrchestrator(
               .map(_.details)
               .map(_.as[ExistingReportResponse])
             ReportWithData(
-              report,
+              SubcategoryLabel.translateSubcategories(report, reportWithMetadata.subcategoryLabel),
               maybeCompany,
               events,
               responseOption,
