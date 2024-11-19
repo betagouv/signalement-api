@@ -4,6 +4,6 @@ import scala.concurrent.Future
 
 trait SubcategoryLabelRepositoryInterface {
 
-  def createOrUpdate(element: SubcategoryLabel): Future[SubcategoryLabel]
+  def createOrUpdateAll(elements: List[SubcategoryLabel]): Future[Unit]
   def get(category: String, subcategories: List[String]): Future[Option[SubcategoryLabel]]
 }

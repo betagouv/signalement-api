@@ -32,34 +32,31 @@ class SubcategoryLabelTask(
     maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
     minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
 
-    frLabels = toSet(minimizedAnomalies.fr, french = true)
-    enLabels = toSet(minimizedAnomalies.en, french = false)
+    frLabels = toSubcategoryLabelSet(minimizedAnomalies.fr, french = true)
+    enLabels = toSubcategoryLabelSet(minimizedAnomalies.en, french = false)
 
-    _ <- frLabels.toList.traverse { label =>
-      subcategoryLabelRepository.get(label.category, label.subcategories).flatMap {
+    frLabelsToInsert <- frLabels.toList.traverse { label =>
+      subcategoryLabelRepository.get(label.category, label.subcategories).map {
         case Some(existing) =>
-          val updatedLabel =
-            existing.copy(categoryLabelFr = label.categoryLabelFr, subcategoryLabelsFr = label.subcategoryLabelsFr)
-          subcategoryLabelRepository.createOrUpdate(updatedLabel)
-        case None =>
-          subcategoryLabelRepository.createOrUpdate(label)
+          existing.copy(categoryLabelFr = label.categoryLabelFr, subcategoryLabelsFr = label.subcategoryLabelsFr)
+        case None => label
+      }
+    }
+    _ <- subcategoryLabelRepository.createOrUpdateAll(frLabelsToInsert)
+
+    enLabelsToInsert <- enLabels.toList.traverse { label =>
+      subcategoryLabelRepository.get(label.category, label.subcategories).map {
+        case Some(existing) =>
+          existing.copy(categoryLabelEn = label.categoryLabelEn, subcategoryLabelsEn = label.subcategoryLabelsEn)
+        case None => label
       }
     }
 
-    _ <- enLabels.toList.traverse { label =>
-      subcategoryLabelRepository.get(label.category, label.subcategories).flatMap {
-        case Some(existing) =>
-          val updatedLabel =
-            existing.copy(categoryLabelEn = label.categoryLabelEn, subcategoryLabelsEn = label.subcategoryLabelsEn)
-          subcategoryLabelRepository.createOrUpdate(updatedLabel)
-        case None =>
-          subcategoryLabelRepository.createOrUpdate(label)
-      }
-    }
+    _ <- subcategoryLabelRepository.createOrUpdateAll(enLabelsToInsert)
   } yield ()
 
   @tailrec
-  private def toSet(
+  private def toSubcategoryLabelSet(
       nodes: List[ArborescenceNode],
       french: Boolean,
       res: Set[SubcategoryLabel] = Set.empty
@@ -90,6 +87,6 @@ class SubcategoryLabelTask(
               subcategoryLabelsEn = Some(categoryInfos.tail.map(_.label).toList)
             )
         }
-        toSet(t, french, res ++ labels)
+        toSubcategoryLabelSet(t, french, res ++ labels)
     }
 }

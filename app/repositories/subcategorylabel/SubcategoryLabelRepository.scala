@@ -14,11 +14,8 @@ class SubcategoryLabelRepository(val dbConfig: DatabaseConfig[JdbcProfile])(impl
   import dbConfig._
   val table = SubcategoryLabelTable.table
 
-  override def createOrUpdate(element: SubcategoryLabel): Future[SubcategoryLabel] = db
-    .run(
-      table.insertOrUpdate(element)
-    )
-    .map(_ => element)
+  override def createOrUpdateAll(elements: List[SubcategoryLabel]): Future[Unit] =
+    db.run(table.insertOrUpdateAll(elements)).map(_ => ())
 
   override def get(category: String, subcategories: List[String]): Future[Option[SubcategoryLabel]] = db.run(
     table.filter(_.category === category).filter(_.subcategories === subcategories).result.headOption
