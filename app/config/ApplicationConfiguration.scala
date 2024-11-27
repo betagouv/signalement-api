@@ -17,5 +17,6 @@ case class ApplicationConfiguration(
     cookie: CookieAuthenticatorSettings,
     proConnect: ProConnectConfiguration,
     socialBlade: SocialBladeClientConfiguration,
-    websiteApi: WebsiteApiConfiguration
+    websiteApi: WebsiteApiConfiguration,
+    albert: AlbertConfiguration
 )
