@@ -232,4 +232,7 @@ POST          /api/reports/:uuid/engagement/review                    controller
 GET           /api/reports/:uuid/engagement/review                    controllers.EngagementController.getEngagementReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review/exists             controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)
 
+POST          /api/albert/classification/:reportId                    controllers.AdminController.classifyAndSummarize(reportId: java.util.UUID)
+GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertClassification(reportId: java.util.UUID)
+
 GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)

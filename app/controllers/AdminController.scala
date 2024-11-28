@@ -3,8 +3,10 @@ package controllers
 import authentication.Authenticator
 import authentication.actions.UserAction.WithRole
 import cats.data.NonEmptyList
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
+import controllers.error.AppError
 import models._
 import models.admin.ReportInputList
 import models.event.Event
@@ -20,12 +22,15 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.twirl.api.Html
+import repositories.albert.AlbertClassification
+import repositories.albert.AlbertClassificationRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.ipblacklist.BlackListedIp
 import repositories.ipblacklist.IpBlackListRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import services.AlbertService
 import services.PDFService
 import services.emails.EmailDefinitions.allEmailDefinitions
 import services.emails.EmailDefinitionsConsumer._
@@ -57,6 +62,8 @@ class AdminController(
     companyRepository: CompanyRepositoryInterface,
     emailNotificationOrchestrator: EmailNotificationOrchestrator,
     ipBlackListRepository: IpBlackListRepositoryInterface,
+    albertClassificationRepository: AlbertClassificationRepositoryInterface,
+    albertService: AlbertService,
     implicit val frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -303,4 +310,36 @@ class AdminController(
         blackListedIp        <- ipBlackListRepository.create(blacklistedIpRequest)
       } yield Created(Json.toJson(blackListedIp))
     }
+
+  def classifyAndSummarize(reportId: UUID) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+    for {
+      maybeReport          <- reportRepository.get(reportId)
+      report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
+      albertClassification <- albertService.classify(report)
+      albertCodeConsoRes   <- albertService.codeConso(report)
+      maybeClassification = albertClassification.flatMap(v =>
+        (v \\ "content").headOption
+          .map(_.as[String])
+          .map(Json.parse)
+          .map(
+            AlbertClassification
+              .fromAlbertApi(
+                reportId,
+                _,
+                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]))
+              )
+          )
+      )
+      _ <- maybeClassification match {
+        case Some(albert) => albertClassificationRepository.createOrUpdate(albert)
+        case None         => Future.unit
+      }
+    } yield NoContent
+  }
+
+  def getAlbertClassification(reportId: UUID) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+    albertClassificationRepository
+      .getByReportId(reportId)
+      .map(maybeClassification => Ok(Json.toJson(maybeClassification)))
+  }
 }

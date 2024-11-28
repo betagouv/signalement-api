@@ -69,7 +69,7 @@ class ExportReportsToSFTPTask(
       case None    => ""
     }
 
-  private val endsWithDoubleQuotesRegex = ".*?(\"+)$".r
+  private val endsWithDoubleQuotesRegex = "(?s).*?(\"+)$".r
 
   private def wrapAndEscapeQuotes(s: List[String]): String = {
     // Asked by SI
