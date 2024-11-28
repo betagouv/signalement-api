@@ -43,6 +43,7 @@ import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
 import repositories.accesstoken.AccessTokenRepository
 import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.albert.AlbertClassificationRepository
 import repositories.asyncfiles.AsyncFileRepository
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.authattempt.AuthAttemptRepository
@@ -697,6 +698,8 @@ class SignalConsoComponents(
     companyRepository,
     emailNotificationOrchestrator,
     ipBlackListRepository,
+    new AlbertClassificationRepository(dbConfig),
+    new AlbertService(applicationConfiguration.albert),
     frontRoute,
     cookieAuthenticator,
     controllerComponents
