@@ -157,7 +157,7 @@ object ExcelColumnsService {
         (_, _, events, _, _, _) =>
           events
             .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-            .map(c => frenchFormatDate(c.event.creationDate.plusDays(EngagementReminderPeriod), zone))
+            .map(c => frenchFormatDate(c.event.creationDate.plusDays(EngagementReminderPeriod.toLong), zone))
             .getOrElse("")
       ),
       ReportColumn(
