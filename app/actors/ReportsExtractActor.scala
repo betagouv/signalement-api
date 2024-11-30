@@ -109,7 +109,7 @@ object ReportsExtractActor {
           Option[EngagementReview],
           List[User]
       ) => String,
-      available:Boolean =  true,
+      available: Boolean = true,
       column: Column = leftAlignmentColumn
   ) {
     def extractStringValue(

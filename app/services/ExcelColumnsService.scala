@@ -267,7 +267,7 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Téléphone",
-        (report, _, _, _, _, _) => report.consumerPhone.filter(_ => report.contactAgreement).getOrElse(""),
+        (report, _, _, _, _, _) => report.consumerPhone.filter(_ => report.contactAgreement).getOrElse("")
       ),
       ReportColumn(
         "Numéro de référence dossier",
