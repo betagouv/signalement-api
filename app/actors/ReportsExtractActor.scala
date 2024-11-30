@@ -109,7 +109,7 @@ object ReportsExtractActor {
           Option[EngagementReview],
           List[User]
       ) => String,
-      available: Boolean = true,
+      available:Boolean =  true,
       column: Column = leftAlignmentColumn
   ) {
     def extractStringValue(
@@ -120,6 +120,7 @@ object ReportsExtractActor {
         engagementReview: Option[EngagementReview],
         users: List[User]
     ): String = extract(report, reportFiles, events, consumerReview, engagementReview, users).take(MaxCharInSingleCell)
+
   }
 
   private def genTmpFile(
