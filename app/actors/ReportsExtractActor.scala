@@ -120,6 +120,7 @@ object ReportsExtractActor {
         engagementReview: Option[EngagementReview],
         users: List[User]
     ): String = extract(report, reportFiles, events, consumerReview, engagementReview, users).take(MaxCharInSingleCell)
+
   }
 
   private def genTmpFile(
