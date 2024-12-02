@@ -5,6 +5,7 @@ import config.SignalConsoConfiguration
 import controllers.routes
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
+import models.UserRole.isAdminOrAgent
 import models._
 import models.engagement.Engagement.EngagementReminderPeriod
 import models.report._
@@ -80,14 +81,12 @@ object ExcelColumnsService {
       ReportColumn(
         "Vendeur (marketplace)",
         (report, _, _, _, _, _) => report.vendor.getOrElse(""),
-        available = isAgentOrAdmin,
         column = centerAlignmentColumn
       ),
       ReportColumn(
         "Train",
         (report, _, _, _, _, _) =>
           report.train.map(t => s"${t.train} ${t.nightTrain.getOrElse("")} ${t.ter.getOrElse("")}").getOrElse(""),
-        available = isAgentOrAdmin,
         column = centerAlignmentColumn
       ),
       ReportColumn(
@@ -106,16 +105,15 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Pièces jointes",
-        (_, files, _, _, _, _) =>
+        (report, files, _, _, _, _) =>
           files
-            .filter(file => file.origin == ReportFileOrigin.Consumer)
+            .filter(file => file.origin == ReportFileOrigin.Consumer && shouldBeVisibleToUser(userRole, report))
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportFileController
                   .downloadReportFile(file.id, file.filename)
                   .url}"
             )
-            .mkString("\n"),
-        available = isAgentOrAdmin
+            .mkString("\n")
       ),
       ReportColumn(
         "Influenceur ou influenceuse",
@@ -252,27 +250,25 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Prénom",
-        (report, _, _, _, _, _) => report.firstName,
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
       ),
       ReportColumn(
         "Nom",
-        (report, _, _, _, _, _) => report.lastName,
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => if (shouldBeVisibleToUser(userRole, report)) report.lastName else ""
       ),
       ReportColumn(
         "Email",
-        (report, _, _, _, _, _) => report.email.value,
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => if (shouldBeVisibleToUser(userRole, report)) report.email.value else ""
       ),
       ReportColumn(
         "Téléphone",
-        (report, _, _, _, _, _) => report.consumerPhone.filter(_ => report.contactAgreement).getOrElse("")
+        (report, _, _, _, _, _) =>
+          report.consumerPhone.filter(_ => shouldBeVisibleToUser(userRole, report)).getOrElse("")
       ),
       ReportColumn(
         "Numéro de référence dossier",
-        (report, _, _, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) =>
+          if (shouldBeVisibleToUser(userRole, report)) report.consumerReferenceNumber.getOrElse("") else ""
       ),
       ReportColumn(
         "Anonyme",
@@ -306,4 +302,6 @@ object ExcelColumnsService {
     ).filter(_.available)
   }
 
+  private def shouldBeVisibleToUser(userRole: UserRole, report: Report) =
+    report.contactAgreement || isAdminOrAgent(userRole)
 }
