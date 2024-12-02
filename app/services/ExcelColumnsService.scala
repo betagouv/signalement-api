@@ -18,15 +18,12 @@ import utils.ExcelUtils._
 
 import java.time.ZoneId
 
-
-
-
 object ExcelColumnsService {
   def buildColumns(
-                    signalConsoConfiguration: SignalConsoConfiguration,
-                    requestedBy: User,
-                    zone: ZoneId
-                  ): List[ReportColumn] = {
+      signalConsoConfiguration: SignalConsoConfiguration,
+      requestedBy: User,
+      zone: ZoneId
+  ): List[ReportColumn] = {
     val userRole       = requestedBy.userRole
     val isAgentOrAdmin = UserRole.isAdminOrAgent(userRole)
     List(
@@ -113,8 +110,8 @@ object ExcelColumnsService {
             .filter(file => file.origin == ReportFileOrigin.Consumer && shouldBeVisibleToUser(userRole, report))
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportFileController
-                .downloadReportFile(file.id, file.filename)
-                .url}"
+                  .downloadReportFile(file.id, file.filename)
+                  .url}"
             )
             .mkString("\n")
       ),
@@ -256,9 +253,9 @@ object ExcelColumnsService {
         (report, _, _, _, _, _) => {
           println(s"-------userRole-----------  = ${userRole} ------------------")
           println(s"------isAdminOrAgent(userRole)------------  = ${isAdminOrAgent(userRole)} ------------------")
-          println(s"-------report.contactAgreement-----------  = ${report.contactAgreement } ------------------")
+          println(s"-------report.contactAgreement-----------  = ${report.contactAgreement} ------------------")
           if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
-  }
+        }
       ),
       ReportColumn(
         "Nom",
@@ -297,12 +294,12 @@ object ExcelColumnsService {
       ReportColumn(
         "Contrôle effectué",
         (
-          _,
-          _,
-          events,
-          _,
-          _,
-          _
+            _,
+            _,
+            events,
+            _,
+            _,
+            _
         ) => if (events.exists(_.event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
         available = userRole == DGCCRF,
         column = centerAlignmentColumn
