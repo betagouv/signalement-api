@@ -1,0 +1,2 @@
+ALTER TABLE albert_classification
+ADD code_conso_category text;

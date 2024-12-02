@@ -317,6 +317,8 @@ class AdminController(
       report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
       albertClassification <- albertService.classify(report)
       albertCodeConsoRes   <- albertService.codeConso(report)
+      _ = println("--------------")
+      _ = println(albertCodeConsoRes)
       maybeClassification = albertClassification.flatMap(v =>
         (v \\ "content").headOption
           .map(_.as[String])
@@ -326,7 +328,7 @@ class AdminController(
               .fromAlbertApi(
                 reportId,
                 _,
-                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]))
+                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]).map(Json.parse))
               )
           )
       )
