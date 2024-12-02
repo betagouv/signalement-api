@@ -6,6 +6,7 @@ import controllers.routes
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models._
+import models.engagement.Engagement.EngagementReminderPeriod
 import models.report._
 import models.report.review.ResponseEvaluation
 import spoiwo.model._
@@ -53,13 +54,11 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Nom de l'entreprise",
-        (report, _, _, _, _, _) => report.companyName.getOrElse(""),
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => report.companyName.getOrElse("")
       ),
       ReportColumn(
         "Adresse de l'entreprise",
-        (report, _, _, _, _, _) => report.companyAddress.toString,
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => report.companyAddress.toString
       ),
       ReportColumn(
         "Email de l'entreprise",
@@ -70,7 +69,6 @@ object ExcelColumnsService {
       ReportColumn(
         "Site web de l'entreprise",
         (report, _, _, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = isAgentOrAdmin,
         column = centerAlignmentColumn
       ),
       ReportColumn(
@@ -82,6 +80,13 @@ object ExcelColumnsService {
       ReportColumn(
         "Vendeur (marketplace)",
         (report, _, _, _, _, _) => report.vendor.getOrElse(""),
+        available = isAgentOrAdmin,
+        column = centerAlignmentColumn
+      ),
+      ReportColumn(
+        "Train",
+        (report, _, _, _, _, _) =>
+          report.train.map(t => s"${t.train} ${t.nightTrain.getOrElse("")} ${t.ter.getOrElse("")}").getOrElse(""),
         available = isAgentOrAdmin,
         column = centerAlignmentColumn
       ),
@@ -114,8 +119,7 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Influenceur ou influenceuse",
-        (report, _, _, _, _, _) => report.influencer.map(_.name).getOrElse(""),
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => report.influencer.map(_.name).getOrElse("")
       ),
       ReportColumn(
         "Plateforme (réseau social)",
@@ -124,8 +128,7 @@ object ExcelColumnsService {
             .flatMap(_.socialNetwork)
             .map(_.entryName)
             .orElse(report.influencer.flatMap(_.otherSocialNetwork))
-            .getOrElse(""),
-        available = isAgentOrAdmin
+            .getOrElse("")
       ),
       ReportColumn(
         "Statut",
@@ -139,6 +142,22 @@ object ExcelColumnsService {
             .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
             .flatMap(_.user)
             .map(u => s"${u.firstName} ${u.lastName}")
+            .getOrElse("")
+      ),
+      ReportColumn(
+        "Date de Réponse du professionnel",
+        (_, _, events, _, _, _) =>
+          events
+            .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .map(c => frenchFormatDate(c.event.creationDate, zone))
+            .getOrElse("")
+      ),
+      ReportColumn(
+        "Date limite de réalisation de la promesse",
+        (_, _, events, _, _, _) =>
+          events
+            .find(_.event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .map(c => frenchFormatDate(c.event.creationDate.plusDays(EngagementReminderPeriod.toLong), zone))
             .getOrElse("")
       ),
       ReportColumn(
@@ -248,8 +267,7 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Téléphone",
-        (report, _, _, _, _, _) => report.consumerPhone.getOrElse(""),
-        available = isAgentOrAdmin
+        (report, _, _, _, _, _) => report.consumerPhone.filter(_ => report.contactAgreement).getOrElse("")
       ),
       ReportColumn(
         "Numéro de référence dossier",
@@ -257,7 +275,7 @@ object ExcelColumnsService {
         available = isAgentOrAdmin
       ),
       ReportColumn(
-        "Accord pour contact",
+        "Anonyme",
         (report, _, _, _, _, _) => if (report.contactAgreement) "Oui" else "Non",
         column = centerAlignmentColumn
       ),
@@ -285,7 +303,7 @@ object ExcelColumnsService {
         available = userRole == DGCCRF,
         column = centerAlignmentColumn
       )
-    ).filter(_.available)
+    )
   }
 
 }
