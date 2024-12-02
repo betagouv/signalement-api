@@ -303,7 +303,7 @@ object ExcelColumnsService {
         available = userRole == DGCCRF,
         column = centerAlignmentColumn
       )
-    )
+    ).filter(_.available)
   }
 
 }
