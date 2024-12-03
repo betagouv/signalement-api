@@ -31,6 +31,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def establishmentCommercialName = column[Option[String]]("establishment_commercial_name")
   def country                     = column[Option[Country]]("country")
   def searchColumnTrgm            = column[String]("search_column_trgm")
+  def albertActivityLabel         = column[Option[String]]("albert_activity_label")
+  def albertUpdateDate            = column[Option[OffsetDateTime]]("albert_update_date")
 
   type CompanyTuple = (
       UUID,
@@ -50,7 +52,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Option[String],
       Option[String],
       Option[String],
-      Option[Country]
+      Option[Country],
+      Option[String],
+      Option[OffsetDateTime]
   )
 
   def constructCompany: CompanyTuple => Company = {
@@ -72,7 +76,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           brand,
           commercialName,
           establishmentCommercialName,
-          country
+          country,
+          albertActivityLabel,
+          albertUpdateDate
         ) =>
       Company(
         id = id,
@@ -93,7 +99,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         isPublic = isPublic,
         brand = brand,
         commercialName = commercialName,
-        establishmentCommercialName = establishmentCommercialName
+        establishmentCommercialName = establishmentCommercialName,
+        albertActivityLabel = albertActivityLabel,
+        albertUpdateDate = albertUpdateDate
       )
   }
 
@@ -110,7 +118,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           isPublic,
           brand,
           commercialName,
-          establishmentCommercialName
+          establishmentCommercialName,
+          albertActivityLabel,
+          albertUpdateDate
         ) =>
       (
         id,
@@ -130,7 +140,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         brand,
         commercialName,
         establishmentCommercialName,
-        address.country
+        address.country,
+        albertActivityLabel,
+        albertUpdateDate
       )
   }
 
@@ -152,7 +164,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
     brand,
     commercialName,
     establishmentCommercialName,
-    country
+    country,
+    albertActivityLabel,
+    albertUpdateDate
   ) <> (constructCompany, extractCompany.lift)
 }
 
