@@ -101,7 +101,14 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     implicit val ordering: ReportRepository.ReportFileOrdering.type = ReportRepository.ReportFileOrdering
 
-    mockReportRepository.getReports(eqTo(None), any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future
+    mockReportRepository.getReports(
+      eqTo(None),
+      any[ReportFilter],
+      any[Option[Long]],
+      any[Option[Int]],
+      eqTo(None),
+      eqTo(None)
+    ) returns Future
       .successful(
         PaginatedResult(0, false, List())
       )

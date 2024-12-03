@@ -379,14 +379,29 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
     } yield filesGroupedByReports
 
+  private def sortReport(
+      report: ReportTable,
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder]
+  ) =
+    (sortBy, orderBy) match {
+      case (Some(ReportSort.Siret), Some(SortOrder.Asc))         => report.companySiret.asc
+      case (Some(ReportSort.Siret), Some(SortOrder.Desc))        => report.companySiret.desc
+      case (Some(ReportSort.CreationDate), Some(SortOrder.Asc))  => report.creationDate.asc
+      case (Some(ReportSort.CreationDate), Some(SortOrder.Desc)) => report.creationDate.desc
+      case _                                                     => report.creationDate.desc
+    }
+
   def getReports(
       user: Option[User],
       filter: ReportFilter,
-      offset: Option[Long] = None,
-      limit: Option[Int] = None
+      offset: Option[Long],
+      limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder]
   ): Future[PaginatedResult[ReportWithMetadataAndBookmark]] = for {
     reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
-      .sortBy { case (report, _, _, _) => report.creationDate.desc }
+      .sortBy { case (report, _, _, _) => sortReport(report, sortBy, orderBy) }
       .withPagination(db)(offset, limit)
     reportsWithMetadata = reportsAndMetadatas.mapEntities {
       case (
