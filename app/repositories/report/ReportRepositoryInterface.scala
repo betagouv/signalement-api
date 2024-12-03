@@ -69,8 +69,10 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def getReports(
       user: Option[User],
       filter: ReportFilter,
-      offset: Option[Long] = None,
-      limit: Option[Int] = None
+      offset: Option[Long],
+      limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder]
   ): Future[PaginatedResult[ReportWithMetadataAndBookmark]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]

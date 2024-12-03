@@ -757,7 +757,11 @@ class ReportOrchestrator(
     for {
       company <- companyRepository.get(companyId)
       reports <- company
-        .map(c => reportRepository.getReports(None, ReportFilter(companyIds = Seq(c.id))).map(_.entities))
+        .map(c =>
+          reportRepository
+            .getReports(None, ReportFilter(companyIds = Seq(c.id)), None, None, None, None)
+            .map(_.entities)
+        )
         .getOrElse(Future.successful(Nil))
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future.successful(0)
     } yield {
@@ -919,6 +923,8 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder],
       maxResults: Int
   ): Future[PaginatedResult[ReportWithFiles]] =
     for {
@@ -940,6 +946,8 @@ class ReportOrchestrator(
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
+            sortBy,
+            orderBy,
             maxResults,
             (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
               ReportWithFiles(
@@ -956,7 +964,9 @@ class ReportOrchestrator(
       connectedUser: User,
       filter: ReportFilter,
       offset: Option[Long],
-      limit: Option[Int]
+      limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder]
   ): Future[PaginatedResult[ReportWithFilesAndResponses]] = {
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
@@ -966,6 +976,8 @@ class ReportOrchestrator(
         filter,
         offset,
         limit,
+        sortBy,
+        orderBy,
         signalConsoConfiguration.reportsListLimitMax
       )
 
@@ -1007,6 +1019,8 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder],
       maxResults: Int,
       toApi: (ReportWithMetadataAndBookmark, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] =
@@ -1026,7 +1040,9 @@ class ReportOrchestrator(
           user,
           filter,
           validOffset,
-          validLimit
+          validLimit,
+          sortBy,
+          orderBy
         )
       endGetReports = System.nanoTime()
       _ = logger.trace(

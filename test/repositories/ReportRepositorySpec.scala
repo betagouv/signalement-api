@@ -160,53 +160,109 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     "getReports" should {
       "not fetch anonymous users" in {
         for {
-          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousFirstName")))
-          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("anonymousReference")))
+          a <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("anonymousFirstName")),
+            None,
+            None,
+            None,
+            None
+          )
+          b <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("anonymousReference")),
+            None,
+            None,
+            None,
+            None
+          )
         } yield (a.entities must beEmpty) && (b.entities must beEmpty)
       }
 
       "fetch users" in {
         for {
-          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("firstName")))
-          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("reference")))
+          a <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("firstName")),
+            None,
+            None,
+            None,
+            None
+          )
+          b <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("reference")),
+            None,
+            None,
+            None,
+            None
+          )
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
       "be case insensitive" in {
         for {
-          a <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("LASTNAME")))
-          b <- components.reportRepository.getReports(None, ReportFilter(fullText = Some("REFERENCE")))
+          a <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("LASTNAME")),
+            None,
+            None,
+            None,
+            None
+          )
+          b <- components.reportRepository.getReports(
+            None,
+            ReportFilter(fullText = Some("REFERENCE")),
+            None,
+            None,
+            None,
+            None
+          )
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
       "fetch for anonymous users when user is admin" in {
         for {
-          a <- components.reportRepository.getReports(None, ReportFilter(details = Some("anonymousFirstName")))
-          b <- components.reportRepository.getReports(None, ReportFilter(details = Some("anonymousReference")))
+          a <- components.reportRepository.getReports(
+            None,
+            ReportFilter(details = Some("anonymousFirstName")),
+            None,
+            None,
+            None,
+            None
+          )
+          b <- components.reportRepository.getReports(
+            None,
+            ReportFilter(details = Some("anonymousReference")),
+            None,
+            None,
+            None,
+            None
+          )
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
       }
 
       "return all reports for an admin user" in {
         components.reportRepository
-          .getReports(Some(userAdmin), ReportFilter())
+          .getReports(Some(userAdmin), ReportFilter(), None, None, None, None)
           .map(result => result.entities must haveLength(9))
       }
 
       "return all reports for a DGCCRF user" in {
         components.reportRepository
-          .getReports(Some(userDgccrf), ReportFilter())
+          .getReports(Some(userDgccrf), ReportFilter(), None, None, None, None)
           .map(result => result.entities must haveLength(9))
       }
 
       "return only visible to DGAL for a DGAL user" in {
         components.reportRepository
-          .getReports(Some(userDgal), ReportFilter())
+          .getReports(Some(userDgal), ReportFilter(), None, None, None, None)
           .map(result => result.entities must haveLength(2))
       }
 
       "return all reports for a pro user" in {
         components.reportRepository
-          .getReports(Some(userPro), ReportFilter())
+          .getReports(Some(userPro), ReportFilter(), None, None, None, None)
           .map(result => result.entities must haveLength(4))
       }
     }

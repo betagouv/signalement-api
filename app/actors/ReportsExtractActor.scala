@@ -143,6 +143,8 @@ object ReportsExtractActor {
           filter = filters,
           offset = Some(0),
           limit = Some(signalConsoConfiguration.reportsExportLimitMax),
+          sortBy = None,
+          orderBy = None,
           signalConsoConfiguration.reportsExportLimitMax
         )
         .map(_.entities.map(_.report))
