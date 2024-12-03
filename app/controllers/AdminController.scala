@@ -315,8 +315,8 @@ class AdminController(
     for {
       maybeReport          <- reportRepository.get(reportId)
       report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
-      albertClassification <- albertService.classify(report)
-      albertCodeConsoRes   <- albertService.codeConso(report)
+      albertClassification <- albertService.classifyReport(report)
+      albertCodeConsoRes   <- albertService.qualifyReportBasedOnCodeConso(report)
       maybeClassification = albertClassification.map(classificationJsonStr =>
         AlbertClassification
           .fromAlbertApi(

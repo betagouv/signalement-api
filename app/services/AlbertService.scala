@@ -139,16 +139,41 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |$codeConsoChunks
        |""".stripMargin
 
-  def classify(report: Report): Future[Option[String]] =
-    report.details.find(_.label == "Description :") match {
+  private def labelCompanyActivityPrompt(signalements: Seq[String]) =
+    s"""
+       |Tu es un expert en classification et reconnaissance des activités d'une entreprise.
+       |Voici une liste de signalements faits par des consommateurs à propos d'une même entreprise. Chaque signalement est un texte libre, séparé par une ligne comportant ce symbole : ====.
+       |
+       |Pour cette entreprise, déduis son secteur d'activité principal en termes simples et précis. Quelques exemples : "Salle de sport", "Site de e-commerce", "Agence de voyages", "Chaîne de télévisions". Il existe de nombreuses possibilités, alors analyse attentivement les signalements.
+       |
+       |Règles de réponse :
+       |
+       |    Une seule réponse : réponds uniquement avec le secteur d'activité de l'entreprise, en quelques mots.
+       |    Précision avant tout : si tu n’es pas sûr ou que l’activité ne peut pas être qualifiée en quelques mots, réponds "Inclassable". Évite absolument de deviner ou d'inventer.
+       |
+       |Exemple de réponse possible :
+       |
+       |    Salle de sport
+       |    Inclassable
+       |  ====
+       |
+       |${signalements.mkString("""
+                                 |
+                                 |====
+                                 |
+                                 |""".stripMargin)}
+       |""".stripMargin
+
+  def classifyReport(report: Report): Future[Option[String]] =
+    report.getDescription match {
       case Some(description) =>
-        chatCompletion(chatPrompt(description.value))
+        chatCompletion(chatPrompt(description))
           .map(Some(_))
           .recover(_ => None)
       case None => Future.successful(None)
     }
 
-  def codeConso(report: Report): Future[Option[String]] =
+  def qualifyReportBasedOnCodeConso(report: Report): Future[Option[String]] =
     report.details.find(_.label == "Description :") match {
       case Some(description) =>
         val url = uri"https://albert.api.etalab.gouv.fr/v1/search"
@@ -183,6 +208,9 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
           }
       case None => Future.successful(None)
     }
+
+  def labelCompanyActivity(selectedCompanyReportsDescriptions: Seq[String]): Future[String] =
+    chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
 
 }
 
