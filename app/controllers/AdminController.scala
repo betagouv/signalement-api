@@ -326,7 +326,7 @@ class AdminController(
               .fromAlbertApi(
                 reportId,
                 _,
-                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]))
+                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]).map(Json.parse))
               )
           )
       )
