@@ -8,7 +8,6 @@ import play.api.libs.json.Json
 import services.AlbertService.AlbertError
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
-import sttp.client3.ResponseException
 import sttp.client3.SttpBackend
 import sttp.client3.UriContext
 import sttp.client3.basicRequest
@@ -25,7 +24,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  private def chatCompletion(chatPrompt: String): Future[JsValue] = {
+  private def chatCompletion(chatPrompt: String): Future[String] = {
     val url = uri"https://albert.api.etalab.gouv.fr/v1/chat/completions"
 
     val body = Json.obj(
@@ -53,7 +52,11 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       if (response.isSuccess) {
         response.body match {
           case Right(jsValue) =>
-            jsValue
+            (jsValue \\ "content").headOption
+              .map(_.as[String])
+              .getOrElse(
+                throw AlbertError(s"Albert call failed, incorrect structure of response body $jsValue")
+              )
           case Left(e) =>
             logger.errorWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
             throw AlbertError("Albert call failed")
@@ -136,7 +139,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |$codeConsoChunks
        |""".stripMargin
 
-  def classify(report: Report): Future[Option[JsValue]] =
+  def classify(report: Report): Future[Option[String]] =
     report.details.find(_.label == "Description :") match {
       case Some(description) =>
         chatCompletion(chatPrompt(description.value))
@@ -145,7 +148,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       case None => Future.successful(None)
     }
 
-  def codeConso(report: Report): Future[Option[JsValue]] =
+  def codeConso(report: Report): Future[Option[String]] =
     report.details.find(_.label == "Description :") match {
       case Some(description) =>
         val url = uri"https://albert.api.etalab.gouv.fr/v1/search"
