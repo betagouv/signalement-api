@@ -15,6 +15,7 @@ import sttp.client3.playJson._
 import sttp.model.Header
 import utils.Logs.RichLogger
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -209,8 +210,13 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       case None => Future.successful(None)
     }
 
-  def labelCompanyActivity(selectedCompanyReportsDescriptions: Seq[String]): Future[String] =
-    chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
+  def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[String] =
+    for {
+      label <- chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
+    } yield
+      if (label.length > 100) {
+        throw AlbertError(s"Invalid Albert result, output way too long for company $companyId : $label")
+      } else label
 
 }
 

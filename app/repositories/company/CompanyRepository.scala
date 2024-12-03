@@ -188,6 +188,22 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .result
     )
 
+  override def findWithOutdatedAlbertActivityLabel(
+      outdatedCutoffDate: OffsetDateTime,
+      limit: Int
+  ): Future[List[Company]] =
+    db.run(
+      table
+        .filter { m =>
+          // keeps only those where the date is too old OR is null
+          m.albertUpdateDate.filter(_ >= outdatedCutoffDate).isEmpty
+        }
+        .sortBy(_.id)
+        .take(limit)
+        .to[List]
+        .result
+    )
+
   override def updateBySiret(
       siret: SIRET,
       isOpen: Boolean,
