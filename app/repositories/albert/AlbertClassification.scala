@@ -13,13 +13,14 @@ case class AlbertClassification(
     explanation: Option[String],
     summary: Option[String],
     raw: String,
-    codeConso: Option[String]
+    codeConso: Option[String],
+    codeConsoCategory: Option[String]
 )
 
 object AlbertClassification {
   implicit val format: OFormat[AlbertClassification] = Json.format[AlbertClassification]
 
-  def fromAlbertApi(reportId: UUID, json: JsValue, codeConso: Option[String]): AlbertClassification =
+  def fromAlbertApi(reportId: UUID, json: JsValue, codeConso: Option[JsValue]): AlbertClassification =
     AlbertClassification(
       reportId = reportId,
       category = (json \ "category").asOpt[String],
@@ -27,6 +28,7 @@ object AlbertClassification {
       explanation = (json \ "explanation").asOpt[String],
       summary = (json \ "summary").asOpt[String],
       raw = Json.stringify(json),
-      codeConso = codeConso
+      codeConsoCategory = codeConso.flatMap(v => (v \ "code_conso").asOpt[String]),
+      codeConso = codeConso.flatMap(v => (v \ "explanation").asOpt[String])
     )
 }

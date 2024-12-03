@@ -107,13 +107,29 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   private def codeConsoPrompt(s: String, chunks: String) =
     s"""
-       |Réponds à la question suivante de manière concise (1 ou 2 phrases) en te basant sur les documents ci-dessous : Le signalement suivant relève-t-il du code de la consommation ?
+       |Tu es un analyste juridique spécialisé en droit de la consommation (documents ci-dessous).
+       |
+       |Analyse le signalement suivant pour déterminer s'il relève du code de la consommation. Utilise les documents fournis comme référence pour ta réponse.
+       |
+       |Fournissez une réponse structurée en JSON contenant les informations suivantes :
+       |  **code_conso**: "Oui" ou "Non" selon si le signalement est couvert par le code de la consommation.
+       |  **explanation**: Une explication claire et concise (1 à 2 phrases) avec mention de l'article pertinent, si applicable.
+       |
+       |Voici un exemple de réponse attendu :
+       |{
+       |  "code_conso": "Oui",
+       |  "explanation": "Le signalement relève de l'article L434-3 du code de la consommation concernant le manque d'hygiène en cuisine."
+       |}
+       |
+       |Consignes spécifiques :
+       |
+       |    **IMPORTANT** : Fournissez uniquement le JSON dans votre réponse, sans texte explicatif ou contenu supplémentaire.
        |
        |Signalement à analyser :
        |
        |$s
        |
-       |Documents :
+       |Documents fournis :
        |
        |$chunks
        |""".stripMargin
