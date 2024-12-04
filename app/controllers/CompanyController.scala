@@ -49,6 +49,7 @@ class CompanyController(
     }
 
   def searchRegistered() = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { request =>
+    implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     CompanyRegisteredSearch
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
@@ -65,6 +66,7 @@ class CompanyController(
   }
 
   def searchById(companyId: UUID) = SecuredAction.async { request =>
+    implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     companyOrchestrator
       .searchRegisteredById(companyId, request.identity)
       .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))

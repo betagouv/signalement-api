@@ -6,7 +6,7 @@ import models.User
 import models.event.Event
 import models.report.Report
 import models.report.reportmetadata.ReportComment
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
+import models.report.reportmetadata.ReportExtra
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
@@ -41,17 +41,17 @@ class ReportAssignmentOrchestrator(
   ): Future[User] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
-      maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
-      reportWithMetadata      <- maybeReportWithMetadata.liftTo[Future](AppError.ReportNotFound(reportId))
-      newAssignedUser         <- checkAssignableToUser(reportWithMetadata, newAssignedUserId)
-      _                       <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
-      _ <- createAssignmentEvent(reportWithMetadata.report, assigningUser, newAssignedUser, reportComment)
+      maybeReportExtra <- reportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
+      reportExtra      <- maybeReportExtra.liftTo[Future](AppError.ReportNotFound(reportId))
+      newAssignedUser  <- checkAssignableToUser(reportExtra, newAssignedUserId)
+      _                <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
+      _                <- createAssignmentEvent(reportExtra.report, assigningUser, newAssignedUser, reportComment)
       _ <-
         if (assigningToSelf) Future.unit
         else
           mailService.send(
             ProReportAssignedNotification.Email(
-              reportWithMetadata.report,
+              reportExtra.report,
               assigningUser,
               newAssignedUser,
               reportComment.comment
@@ -61,11 +61,11 @@ class ReportAssignmentOrchestrator(
   }
 
   private def checkAssignableToUser(
-      reportWithMetadata: ReportWithMetadataAndBookmark,
+      reportExtra: ReportExtra,
       newAssignedUserId: UUID
   ): Future[User] = {
-    val reportId               = reportWithMetadata.report.id
-    val isAlreadyAssignedToHim = reportWithMetadata.metadata.flatMap(_.assignedUserId).contains(newAssignedUserId)
+    val reportId               = reportExtra.report.id
+    val isAlreadyAssignedToHim = reportExtra.metadata.flatMap(_.assignedUserId).contains(newAssignedUserId)
     for {
       _ <-
         if (isAlreadyAssignedToHim)
@@ -75,7 +75,7 @@ class ReportAssignmentOrchestrator(
       user      <- maybeUser.liftTo[Future](AppError.AssignReportError(s"User ${newAssignedUserId} doesn't exist"))
       visibleCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompanies(user)
       visibleSirets = visibleCompanies.map(_.company.siret)
-      isVisible     = reportWithMetadata.report.companySiret.exists(visibleSirets.contains)
+      isVisible     = reportExtra.report.companySiret.exists(visibleSirets.contains)
       _ <-
         if (isVisible) Future.unit
         else Future.failed(AppError.AssignReportError(s"${reportId} can't be seen by user ${newAssignedUserId}"))
