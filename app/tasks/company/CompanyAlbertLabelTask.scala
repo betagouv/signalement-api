@@ -3,7 +3,6 @@ package tasks.company
 import config.TaskConfiguration
 import models.company.Company
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
@@ -23,14 +22,13 @@ class CompanyAlbertLabelTask(
     taskRepository: TaskRepositoryInterface,
     albertService: AlbertService
 )(implicit
-    executionContext: ExecutionContext,
-    materializer: Materializer
+    executionContext: ExecutionContext
 ) extends ScheduledTask(5, "company_albert_label_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = FrequentTaskSettings(interval = 1.hour)
 
-  val COMPANIES_PROCESSED_EACH_RUN = 1000
-  val MAX_REPORTS_USED_BY_COMPANY  = 5
+  private val COMPANIES_PROCESSED_EACH_RUN = 1000
+  private val MAX_REPORTS_USED_BY_COMPANY  = 5
 
   override def runTask(): Future[Unit] = {
     val outdatedCutoffDate = OffsetDateTime.now().minusMonths(1)
@@ -48,7 +46,7 @@ class CompanyAlbertLabelTask(
     } yield ()
   }
 
-  def processCompany(company: Company): Future[Unit] =
+  private def processCompany(company: Company): Future[Unit] =
     for {
       reports <- reportRepository.getLatestMeaningfulReportsOfCompany(
         company.id,

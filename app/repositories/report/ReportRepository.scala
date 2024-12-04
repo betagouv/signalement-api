@@ -560,6 +560,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db.run(
       table
         .filter(_.companyId.filter(_ === companyId).isDefined)
+        // We want to avoid the case where one user spams several reports in a row on a company
+        // and distorts the data
         .distinctOn(_.email)
         .sortBy(_.creationDate.desc)
         .take(limit)
