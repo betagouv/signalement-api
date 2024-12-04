@@ -2,6 +2,7 @@ package tasks.company
 
 import config.TaskConfiguration
 import models.company.Company
+import models.report.Report
 import org.apache.pekko.actor.ActorSystem
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -9,6 +10,7 @@ import repositories.tasklock.TaskRepositoryInterface
 import services.AlbertService
 import tasks.ScheduledTask
 import tasks.model.TaskSettings.FrequentTaskSettings
+import utils.Logs.RichLogger
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -46,21 +48,34 @@ class CompanyAlbertLabelTask(
     } yield ()
   }
 
-  private def processCompany(company: Company): Future[Unit] =
+  private def processCompany(company: Company): Future[Unit] = {
+    logger.infoWithTitle(s"albert_label_company", s"Will try to label company ${company.siret}")
     for {
       reports <- reportRepository.getLatestMeaningfulReportsOfCompany(
         company.id,
-        // we need a little big of margin: not all reports will have a description
-        limit = MAX_REPORTS_USED_BY_COMPANY * 2
+        // we need a little big of margin:
+        // - not all reports will have a description
+        // - we deduplicate later by email
+        limit = MAX_REPORTS_USED_BY_COMPANY * 3
       )
-      descriptions = reports.flatMap(_.getDescription).take(MAX_REPORTS_USED_BY_COMPANY)
+      descriptions =
+        // One user could submit several reports in a row on the company,
+        // thus distorting our data a bit
+        deduplicateByEmail(reports)
+          .flatMap(_.getDescription)
+          .take(MAX_REPORTS_USED_BY_COMPANY)
       maybeLabel <- descriptions match {
-        case Nil => Future.successful(None)
+        case Nil =>
+          logger.info(s"Couldn't find enough usable reports for Albert for ${company.siret}")
+          Future.successful(None)
         case _ =>
           albertService
             .labelCompanyActivity(company.id, descriptions)
             .map(Some(_))
-            .recover(_ => None)
+            .recover { err =>
+              logger.error(s"Didn't get a result from Albert for ${company.siret}", err)
+              None
+            }
       }
       _ <- companyRepository.update(
         company.id,
@@ -72,5 +87,11 @@ class CompanyAlbertLabelTask(
         )
       )
     } yield ()
+  }
 
+  private def deduplicateByEmail(reports: Seq[Report]) =
+    reports
+      .groupBy(_.email)
+      .map(_._2.head)
+      .toSeq
 }
