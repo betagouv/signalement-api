@@ -277,6 +277,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           c.id, c.siret, c.creation_date, c.name, c.activity_code,
           c.street_number, c.street, c.address_supplement, c.city, c.postal_code,
           c.is_headoffice, c.is_open, c.is_public, c.brand, c.commercial_name, c.establishment_commercial_name, c.country,
+          c.albert_activity_label, c.albert_update_date,
           COALESCE(ir.count_ignored, 0) AS count_ignored
        FROM
           companies c
@@ -319,6 +320,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           Option[String],
           Option[String],
           Option[String],
+          Option[String],
+          Option[Timestamp],
           Int
       )
     ]
@@ -343,6 +346,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
               commercialName,
               establishmentCommercialName,
               country,
+              albertActivityLabel,
+              albertUpdateDate,
               countIgnored
             ) =>
           val company = Company(
@@ -364,7 +369,9 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
             isPublic = isPublic,
             brand = brand,
             commercialName = commercialName,
-            establishmentCommercialName = establishmentCommercialName
+            establishmentCommercialName = establishmentCommercialName,
+            albertActivityLabel = albertActivityLabel,
+            albertUpdateDate = albertUpdateDate.map(t => OffsetDateTime.ofInstant(t.toInstant, ZoneOffset.UTC))
           )
           (company, countIgnored)
       }.toList

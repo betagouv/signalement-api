@@ -39,12 +39,13 @@ class CompanyAlbertLabelTask(
         outdatedCutoffDate,
         limit = COMPANIES_PROCESSED_EACH_RUN
       )
-    } yield companies.foldLeft(Future.successful(())) { (previous, company) =>
-      for {
-        _ <- previous
-        _ <- processCompany(company)
-      } yield ()
-    }
+      _ <- companies.foldLeft(Future.successful(())) { (previous, company) =>
+        for {
+          _ <- previous
+          _ <- processCompany(company)
+        } yield ()
+      }
+    } yield ()
   }
 
   def processCompany(company: Company): Future[Unit] =
