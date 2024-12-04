@@ -283,6 +283,8 @@ class SignalConsoComponents(
     .build()
   lazy val s3Service: S3ServiceInterface = new S3Service(awsS3Client)
 
+  val albertService = new AlbertService(applicationConfiguration.albert)
+
   //  Actor
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
@@ -672,6 +674,15 @@ class SignalConsoComponents(
     websiteApiService
   )
 
+  val companyAlbertLabelTask = new CompanyAlbertLabelTask(
+    actorSystem,
+    taskConfiguration,
+    companyRepository,
+    reportRepository,
+    taskRepository,
+    albertService
+  )
+
   // Controller
 
   val blacklistedEmailsController =
@@ -699,7 +710,7 @@ class SignalConsoComponents(
     emailNotificationOrchestrator,
     ipBlackListRepository,
     new AlbertClassificationRepository(dbConfig),
-    new AlbertService(applicationConfiguration.albert),
+    albertService,
     frontRoute,
     cookieAuthenticator,
     controllerComponents
@@ -943,6 +954,7 @@ class SignalConsoComponents(
       sampleDataGenerationTask.schedule()
     }
     subcategoryLabelTask.schedule()
+    companyAlbertLabelTask.schedule()
   }
 
   override def config: Config = ConfigFactory.load()

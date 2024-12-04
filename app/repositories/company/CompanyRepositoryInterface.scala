@@ -12,6 +12,7 @@ import utils.Country
 import utils.SIREN
 import utils.SIRET
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Future
 
@@ -40,6 +41,8 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
   def findByName(name: String): Future[List[Company]]
 
   def findBySiren(siren: List[SIREN]): Future[List[Company]]
+
+  def findWithOutdatedAlbertActivityLabel(outdatedCutoffDate: OffsetDateTime, limit: Int): Future[List[Company]]
 
   def updateBySiret(
       siret: SIRET,

@@ -62,7 +62,7 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
         when(
           companyRepository.getOrCreate(
             SIRET.fromUnsafe(eqTo(company3.siret.value)),
-            argMatching[Company] { case Company(_, company3.siret, _, _, _, _, _, _, _, _, _, _) => }
+            argMatching[Company] { case Company(_, company3.siret, _, _, _, _, _, _, _, _, _, _, _, _) => }
           )
         ).thenReturn(Future.successful(company3))
         when(userOrchestrator.list(users.map(_.email)))

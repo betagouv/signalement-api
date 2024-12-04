@@ -5,6 +5,7 @@ import models.report.Report
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
+import services.AlbertService.AlbertError
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
 import sttp.client3.SttpBackend
@@ -12,7 +13,9 @@ import sttp.client3.UriContext
 import sttp.client3.basicRequest
 import sttp.client3.playJson._
 import sttp.model.Header
+import utils.Logs.RichLogger
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -22,7 +25,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  private def chatCompletion(chatPrompt: String): Future[Option[JsValue]] = {
+  private def chatCompletion(chatPrompt: String): Future[String] = {
     val url = uri"https://albert.api.etalab.gouv.fr/v1/chat/completions"
 
     val body = Json.obj(
@@ -39,30 +42,33 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       "temperature"       -> 0,
       "top_p"             -> 1
     )
-
-    val request = basicRequest
-      .headers(Header.authorization("Bearer", albertConfiguration.apiKey))
-      .post(url)
-      .body(body)
-      .response(asJson[JsValue])
-
-    request
-      .send(backend)
-      .flatMap { response =>
-        if (response.code.isSuccess) {
-          response.body match {
-            case Right(result) =>
-              Future.successful(Some(result))
-            case Left(_) =>
-              Future.successful(None)
-          }
-        } else {
-          Future.successful(None)
+    for {
+      response <- basicRequest
+        .headers(Header.authorization("Bearer", albertConfiguration.apiKey))
+        .post(url)
+        .body(body)
+        .response(asJson[JsValue])
+        .send(backend)
+    } yield
+      if (response.isSuccess) {
+        response.body match {
+          case Right(jsValue) =>
+            (jsValue \\ "content").headOption
+              .map(_.as[String])
+              .getOrElse(
+                throw AlbertError(s"Albert call failed, incorrect structure of response body $jsValue")
+              )
+          case Left(e) =>
+            logger.errorWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
+            throw AlbertError("Albert call failed")
         }
+      } else {
+        logger.errorWithTitle("albert_call", s"Albert call failed with code ${response.code}")
+        throw AlbertError(s"Albert call failed with code ${response.code}")
       }
   }
 
-  private def chatPrompt(s: String) =
+  private def chatPrompt(signalement: String) =
     s"""
        |Vous êtes un expert en traitement automatique des langues et en classification de textes. Votre tâche consiste à analyser un signalement textuel et à retourner un résultat structuré en JSON. Voici les catégories possibles :
        |
@@ -96,16 +102,16 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |
        |Signalement à analyser :
        |
-       |$s
+       |$signalement
        |""".stripMargin
 
-  private def searchPrompt(s: String) =
+  private def searchPrompt(signalement: String) =
     s"""
        |Analyse le signalement suivant pour déterminer s'il relève du code de la consommation :
-       |$s
+       |$signalement
        |""".stripMargin
 
-  private def codeConsoPrompt(s: String, chunks: String) =
+  private def codeConsoPrompt(signalement: String, codeConsoChunks: String) =
     s"""
        |Tu es un analyste juridique spécialisé en droit de la consommation (documents ci-dessous).
        |
@@ -127,20 +133,48 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |
        |Signalement à analyser :
        |
-       |$s
+       |$signalement
        |
        |Documents fournis :
        |
-       |$chunks
+       |$codeConsoChunks
        |""".stripMargin
 
-  def classify(report: Report): Future[Option[JsValue]] =
-    report.details.find(_.label == "Description :") match {
-      case Some(description) => chatCompletion(chatPrompt(description.value))
-      case None              => Future.successful(None)
+  private def labelCompanyActivityPrompt(signalements: Seq[String]) =
+    s"""
+       |Tu es un expert en classification et reconnaissance des activités d'une entreprise.
+       |Voici une liste de signalements faits par des consommateurs à propos d'une même entreprise. Chaque signalement est un texte libre, séparé par une ligne comportant ce symbole : ====.
+       |
+       |Pour cette entreprise, déduis son secteur d'activité principal en termes simples et précis. Quelques exemples : "Salle de sport", "Site de e-commerce", "Agence de voyages", "Chaîne de télévisions". Il existe de nombreuses possibilités, alors analyse attentivement les signalements.
+       |
+       |Règles de réponse :
+       |
+       |    Une seule réponse : réponds uniquement avec le secteur d'activité de l'entreprise, en quelques mots.
+       |    Précision avant tout : si tu n’es pas sûr ou que l’activité ne peut pas être qualifiée en quelques mots, réponds "Inclassable". Évite absolument de deviner ou d'inventer.
+       |
+       |Exemple de réponse possible :
+       |
+       |    Salle de sport
+       |    Inclassable
+       |  ====
+       |
+       |${signalements.mkString("""
+                                 |
+                                 |====
+                                 |
+                                 |""".stripMargin)}
+       |""".stripMargin
+
+  def classifyReport(report: Report): Future[Option[String]] =
+    report.getDescription match {
+      case Some(description) =>
+        chatCompletion(chatPrompt(description))
+          .map(Some(_))
+          .recover(_ => None)
+      case None => Future.successful(None)
     }
 
-  def codeConso(report: Report): Future[Option[JsValue]] =
+  def qualifyReportBasedOnCodeConso(report: Report): Future[Option[String]] =
     report.details.find(_.label == "Description :") match {
       case Some(description) =>
         val url = uri"https://albert.api.etalab.gouv.fr/v1/search"
@@ -164,7 +198,8 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
                 case Right(result) =>
                   val chunks = (result \ "data" \\ "content").map(_.as[String]).mkString("\\n\\n\\n")
                   chatCompletion(codeConsoPrompt(description.value, chunks))
-
+                    .map(Some(_))
+                    .recover(_ => None)
                 case Left(_) =>
                   Future.successful(None)
               }
@@ -175,4 +210,16 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       case None => Future.successful(None)
     }
 
+  def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[String] =
+    for {
+      label <- chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
+    } yield
+      if (label.length > 100) {
+        throw AlbertError(s"Invalid Albert result, output way too long for company $companyId : $label")
+      } else label
+
+}
+
+object AlbertService {
+  case class AlbertError(message: String) extends Throwable
 }

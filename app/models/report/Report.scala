@@ -76,6 +76,11 @@ case class Report(
     !isContractualDispute()
 
   def isReadByPro = ReportStatus.statusReadByPro.contains(status)
+
+  def getDescription: Option[String] =
+    // /!\ Some reports don't have description
+    // in some subcategories, there is no description field (or it's called differently)
+    details.find(_.label == "Description :").map(_.value)
 }
 
 object Report {
