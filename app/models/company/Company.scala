@@ -41,7 +41,9 @@ case class Company(
     isPublic: Boolean,
     brand: Option[String],
     commercialName: Option[String],
-    establishmentCommercialName: Option[String]
+    establishmentCommercialName: Option[String],
+    albertActivityLabel: Option[String] = None,
+    albertUpdateDate: Option[OffsetDateTime] = None
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }

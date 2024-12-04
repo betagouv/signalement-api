@@ -9,6 +9,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.company.CompanyRepositoryInterface
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -39,6 +40,8 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
   override def findByName(name: String): Future[List[Company]] = ???
 
   override def findBySiren(siren: List[SIREN]): Future[List[Company]] = ???
+
+  override def findWithOutdatedAlbertActivityLabel(outdatedCutoffDate: OffsetDateTime, limit: Int) = ???
 
   override def updateBySiret(
       siret: SIRET,

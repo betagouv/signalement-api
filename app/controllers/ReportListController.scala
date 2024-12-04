@@ -6,6 +6,8 @@ import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
+import models.report.ReportSort
+import models.report.SortOrder
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -48,7 +50,9 @@ class ReportListController(
               connectedUser = request.identity,
               filter = filters._1,
               offset = filters._2.offset,
-              limit = filters._2.limit
+              limit = filters._2.limit,
+              sortBy = ReportSort.fromQueryString(request.queryString),
+              orderBy = SortOrder.fromQueryString(request.queryString)
             )
           } yield Ok(Json.toJson(paginatedReports))
       )

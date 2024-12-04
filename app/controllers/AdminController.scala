@@ -315,19 +315,14 @@ class AdminController(
     for {
       maybeReport          <- reportRepository.get(reportId)
       report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
-      albertClassification <- albertService.classify(report)
-      albertCodeConsoRes   <- albertService.codeConso(report)
-      maybeClassification = albertClassification.flatMap(v =>
-        (v \\ "content").headOption
-          .map(_.as[String])
-          .map(Json.parse)
-          .map(
-            AlbertClassification
-              .fromAlbertApi(
-                reportId,
-                _,
-                albertCodeConsoRes.flatMap(v => (v \\ "content").headOption.map(_.as[String]).map(Json.parse))
-              )
+      albertClassification <- albertService.classifyReport(report)
+      albertCodeConsoRes   <- albertService.qualifyReportBasedOnCodeConso(report)
+      maybeClassification = albertClassification.map(classificationJsonStr =>
+        AlbertClassification
+          .fromAlbertApi(
+            reportId,
+            Json.parse(classificationJsonStr),
+            albertCodeConsoRes.map(Json.parse)
           )
       )
       _ <- maybeClassification match {

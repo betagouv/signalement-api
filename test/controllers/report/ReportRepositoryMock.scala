@@ -75,7 +75,9 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       user: Option[User],
       filter: ReportFilter,
       offset: Option[Long],
-      limit: Option[Int]
+      limit: Option[Int],
+      sortBy: Option[ReportSort],
+      orderBy: Option[SortOrder]
   ) = ???
 
   override def getReportsByIds(ids: List[UUID]): Future[List[Report]] = ???
@@ -125,4 +127,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def streamReports: Source[Report, NotUsed] = ???
 
   override def getOldReportsNotRgpdDeleted(createdBefore: OffsetDateTime): Future[List[Report]] = ???
+
+  override def getLatestMeaningfulReportsOfCompany(companyId: UUID, limit: Int) = ???
 }

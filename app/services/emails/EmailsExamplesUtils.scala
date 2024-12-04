@@ -104,7 +104,9 @@ object EmailsExamplesUtils {
     isPublic = true,
     brand = Some("une super enseigne"),
     commercialName = Some("nom commercial"),
-    establishmentCommercialName = Some("nom commercial de l'établissement donc pas le même")
+    establishmentCommercialName = Some("nom commercial de l'établissement donc pas le même"),
+    albertActivityLabel = Some("salle de sport"),
+    albertUpdateDate = Some(OffsetDateTime.now().minusDays(10))
   )
 
   def genCompanyList = List(genCompany, genCompany, genCompany)
