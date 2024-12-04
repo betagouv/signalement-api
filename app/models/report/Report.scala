@@ -80,7 +80,7 @@ case class Report(
   def getDescription: Option[String] =
     // /!\ Some reports don't have description
     // in some subcategories, there is no description field (or it's called differently)
-    details.find(_.label == "Description :").map(_.value)
+    details.find(_.label == "Description :").map(_.value.trim).filterNot(_.isEmpty)
 }
 
 object Report {
