@@ -48,8 +48,8 @@ class ReportWithDataOrchestrator(
     reportOrchestrator
       .getVisibleReportForUser(uuid, userToCheckAuthorization)
       .flatMap { maybeReport =>
-        maybeReport.map { reportWithMetadata =>
-          val report = reportWithMetadata.report
+        maybeReport.map { reportExtra =>
+          val report = reportExtra.report
           for {
             events       <- eventRepository.getEventsWithUsers(List(uuid), EventFilter())
             maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
@@ -66,14 +66,14 @@ class ReportWithDataOrchestrator(
               .map(_.details)
               .map(_.as[ExistingReportResponse])
             ReportWithData(
-              SubcategoryLabel.translateSubcategories(report, reportWithMetadata.subcategoryLabel),
+              SubcategoryLabel.translateSubcategories(report, reportExtra.subcategoryLabel),
               maybeCompany,
               events,
               responseOption,
               consumerReviewOption,
               engagementReviewOption,
               companyEvents,
-              reportFiles.map(ReportFileApi.build(_))
+              reportFiles.map(ReportFileApi.build)
             )
           }
         } match {

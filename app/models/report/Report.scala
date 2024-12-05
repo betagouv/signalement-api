@@ -178,11 +178,20 @@ case class ReportWithFilesAndAssignedUser(
     metadata: Option[ReportMetadata],
     isBookmarked: Boolean,
     assignedUser: Option[MinimalUser],
-    files: List[ReportFileApi]
+    files: List[ReportFileApi],
+    companyAlbertActivityLabel: Option[String]
 )
 object ReportWithFilesAndAssignedUser {
   implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
-    Json.writes[ReportWithFilesAndAssignedUser]
+    Json
+      .writes[ReportWithFilesAndAssignedUser]
+      .contramap(r =>
+        userRole match {
+          case Some(UserRole.Professionnel) =>
+            r.copy(companyAlbertActivityLabel = None)
+          case _ => r
+        }
+      )
 }
 
 case class ReportWithFilesAndResponses(

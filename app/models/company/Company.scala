@@ -1,5 +1,6 @@
 package models.company
 
+import models.UserRole
 import play.api.libs.json._
 import utils.QueryStringMapper
 import utils.SIRET
@@ -125,6 +126,7 @@ case class CompanyWithNbReports(
     brand: Option[String],
     address: Address,
     activityCode: Option[String],
+    albertActivityLabel: Option[String],
     isHeadOffice: Boolean,
     isOpen: Option[Boolean],
     count: Int,
@@ -132,7 +134,16 @@ case class CompanyWithNbReports(
 )
 
 object CompanyWithNbReports {
-  implicit val writes: Writes[CompanyWithNbReports] = Json.writes[CompanyWithNbReports]
+  implicit def writes(implicit userRole: Option[UserRole]): Writes[CompanyWithNbReports] =
+    Json
+      .writes[CompanyWithNbReports]
+      .contramap(r =>
+        userRole match {
+          case Some(UserRole.Professionnel) =>
+            r.copy(albertActivityLabel = None)
+          case _ => r
+        }
+      )
 }
 
 case class CompanyAddressUpdate(

@@ -115,9 +115,9 @@ class ReportController(
         implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
         logger.debug(s"reportResponse ${uuid}")
         for {
-          reportResponse            <- request.parseBody[IncomingReportResponse]()
-          visibleReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
-          visibleReport = visibleReportWithMetadata.map(_.report)
+          reportResponse     <- request.parseBody[IncomingReportResponse]()
+          visibleReportExtra <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+          visibleReport = visibleReportExtra.map(_.report)
           updatedReport <- visibleReport
             .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
             .sequence
@@ -169,7 +169,8 @@ class ReportController(
                 r.metadata,
                 r.bookmark.isDefined,
                 maybeAssignedMinimalUser,
-                reportFiles.map(ReportFileApi.build)
+                reportFiles.map(ReportFileApi.build),
+                companyAlbertActivityLabel = r.companyAlbertActivityLabel
               )
             )
           )
