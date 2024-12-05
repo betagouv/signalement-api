@@ -11,6 +11,7 @@ import models.report.ReportTag
 import models.report.Gender.Female
 import models.report.Gender.Male
 import models.report.SocialNetworkSlug.TikTok
+import models.report.sampledata.SampleDescriptions.sampleDescriptions
 import utils.EmailAddress
 import utils.URL
 
@@ -27,10 +28,10 @@ object ReportGenerator {
   )
 
   // Example detail values to use in reports
-  val detailValues = List(
-    DetailInputValue("Detail A", "Value A"),
-    DetailInputValue("Detail B", "Value B"),
-    DetailInputValue("Detail C", "Value C")
+  private def generateDetailValues() = List(
+    DetailInputValue("Detail A :", "Value A"),
+    DetailInputValue("Detail B :", "Value B"),
+    DetailInputValue("Description :", Random.shuffle(sampleDescriptions).head)
   )
 
   case class ConsumerUser(
@@ -57,7 +58,7 @@ object ReportGenerator {
       gender = consumerUser.gender,
       category = category.label,
       subcategories = List(subcategories(Random.nextInt(subcategories.size))),
-      details = detailValues,
+      details = generateDetailValues(),
       influencer = influencer,
       companyName = companyOrPostalCode.map(_.name).toOption,
       companyCommercialName = companyOrPostalCode.map(_.commercialName).toOption.flatten,
