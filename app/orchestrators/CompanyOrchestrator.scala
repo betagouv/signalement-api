@@ -111,7 +111,7 @@ class CompanyOrchestrator(
         })
       )
 
-  private def toCompanyWithNbReports(company: Company, count: Int, responseCount: Int) = {
+  private def toCompanyWithNbReports(company: Company, count: Long, responseCount: Long) = {
     val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
     company
       .into[CompanyWithNbReports]

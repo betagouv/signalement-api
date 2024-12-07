@@ -63,6 +63,7 @@ import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepository
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
+import repositories.companyreportcounts.CompanyReportCountsRepository
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
@@ -613,6 +614,16 @@ class SignalConsoComponents(
       taskRepository
     )
 
+  val companyReportCountsRepository = new CompanyReportCountsRepository(dbConfig)
+
+  val companyReportCountViewRefresherTask =
+    new CompanyReportCountViewRefresherTask(
+      actorSystem,
+      companyReportCountsRepository,
+      taskConfiguration,
+      taskRepository
+    )
+
   private val reportOrchestratorWithFakeMailer = buildReportOrchestrator(_ => Future.unit)
 
   val sampleDataService = new SampleDataService(
@@ -955,6 +966,7 @@ class SignalConsoComponents(
     }
     subcategoryLabelTask.schedule()
     companyAlbertLabelTask.schedule()
+    companyReportCountViewRefresherTask.schedule()
   }
 
   override def config: Config = ConfigFactory.load()
