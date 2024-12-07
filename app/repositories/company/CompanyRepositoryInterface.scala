@@ -24,7 +24,7 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
       user: User
-  ): Future[PaginatedResult[(Company, Int, Int)]]
+  ): Future[PaginatedResult[(Company, Long, Long)]]
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company]
 
