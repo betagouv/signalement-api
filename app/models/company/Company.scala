@@ -129,7 +129,7 @@ case class CompanyWithNbReports(
     albertActivityLabel: Option[String],
     isHeadOffice: Boolean,
     isOpen: Option[Boolean],
-    count: Int,
+    count: Long,
     responseRate: Int
 )
 

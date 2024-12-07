@@ -11,10 +11,8 @@ import models._
 import models.company.Address
 import models.company.Company
 import models.company.CompanyRegisteredSearch
-import models.report.ReportStatus.statusWithProResponse
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
-import repositories.report.ReportTable
 import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
 import slick.jdbc.ResultSetConcurrency
@@ -24,6 +22,7 @@ import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
 import repositories.CRUDRepository
+import repositories.companyreportcounts.CompanyReportCountsTable
 import slick.basic.DatabaseConfig
 import slick.lifted.Rep
 import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
@@ -62,19 +61,19 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
       user: User
-  ): Future[PaginatedResult[(Company, Int, Int)]] = {
+  ): Future[PaginatedResult[(Company, Long, Long)]] = {
     def companyIdByEmailTable(emailWithAccess: EmailAddress) = CompanyAccessTable.table
       .join(UserTable.table)
       .on(_.userId === _.id)
-      .filter(_._2.email === emailWithAccess)
+      .filter(_._2.email.asColumnOf[String] like s"${emailWithAccess}%")
       .map(_._1.companyId)
 
     val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.word_similarity_threshold = 0.5"""
 
     val query = table
-      .joinLeft(ReportTable.table(Some(user)))
+      .joinLeft(CompanyReportCountsTable.table)
       .on(_.id === _.companyId)
-      .filterIf(search.departments.nonEmpty) { case (company, report) =>
+      .filterIf(search.departments.nonEmpty) { case (company, _) =>
         val departmentsFilter: Rep[Boolean] = search.departments
           .flatMap(toPostalCode)
           .map { dep =>
@@ -82,33 +81,19 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           }
           .reduceLeft(_ || _)
         // Avoid searching departments in foreign countries
-        departmentsFilter && report.flatMap(_.companyCountry).isEmpty
+        departmentsFilter && company.country.isEmpty
       }
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.inSetBind(search.activityCodes)
       }
-      .groupBy(_._1)
-      .map { case (grouped, all) =>
-        (
-          grouped,
-          all.map(_._2).map(_.map(_.id)).countDefined,
-          /* Response rate
-           * Equivalent to following select clause
-           * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
-           */
-          all
-            .map(_._2)
-            .map(b =>
-              b.flatMap { a =>
-                Case If a.status.inSet(
-                  statusWithProResponse.map(_.entryName)
-                ) Then a.id
-              }
-            )
-            .countDefined: Rep[Int]
-        )
+      .map { case (companyTable, companyReportCountView) =>
+        val (totalReports, totalProcessedReports) =
+          companyReportCountView.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
+        (companyTable, totalReports, totalProcessedReports)
       }
-      .sortBy(_._2.desc)
+      .sortBy { case (_, totalReport, _) =>
+        totalReport.desc
+      }
 
     val maybePreliminaryAction = search.identity.flatMap {
       case SearchCompanyIdentityName(_) => Some(setThreshold)
