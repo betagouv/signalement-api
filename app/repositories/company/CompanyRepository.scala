@@ -65,7 +65,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
     def companyIdByEmailTable(emailWithAccess: EmailAddress) = CompanyAccessTable.table
       .join(UserTable.table)
       .on(_.userId === _.id)
-      .filter(_._2.email === emailWithAccess)
+      .filter(_._2.email.asColumnOf[String] like s"${emailWithAccess}%")
       .map(_._1.companyId)
 
     val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.word_similarity_threshold = 0.5"""
