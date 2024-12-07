@@ -86,10 +86,10 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.inSetBind(search.activityCodes)
       }
-      .map { case (table, value) =>
+      .map { case (companyTable, companyReportCountView) =>
         val (totalReports, totalProcessedReports) =
-          value.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
-        (table, totalReports, totalProcessedReports)
+          companyReportCountView.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
+        (companyTable, totalReports, totalProcessedReports)
       }
       .sortBy { case (_, totalReport, _) =>
         totalReport.desc
