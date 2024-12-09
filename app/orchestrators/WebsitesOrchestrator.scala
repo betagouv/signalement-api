@@ -11,6 +11,7 @@ import controllers.error.AppError.WebsiteNotFound
 import controllers.error.AppError.WebsiteNotIdentified
 import models.PaginatedResult
 import models.User
+import models.UserRole
 import models.company.Company
 import models.company.CompanyCreation
 import models.investigation.InvestigationStatus.NotProcessed
@@ -192,9 +193,10 @@ class WebsitesOrchestrator(
     for {
       _ <- repository
         .removeOtherNonIdentifiedWebsitesWithSameHost(website)
-      _               = logger.debug(s"updating identification status when Admin is updating identification")
-      websiteToUpdate = if (user.isAdmin) website.copy(identificationStatus = Identified) else website
-      _               = logger.debug(s"Website to update : ${websiteToUpdate}")
+      _ = logger.debug(s"updating identification status when Admin is updating identification")
+      websiteToUpdate =
+        if (UserRole.isAdmin(user.userRole)) website.copy(identificationStatus = Identified) else website
+      _ = logger.debug(s"Website to update : ${websiteToUpdate}")
       updatedWebsite <- update(websiteToUpdate)
       _ = logger.debug(s"Website company country successfully updated")
     } yield updatedWebsite
