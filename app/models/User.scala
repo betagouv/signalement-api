@@ -31,7 +31,6 @@ case class User(
     impersonator: Option[EmailAddress] = None
 ) {
   def fullName: String = s"${firstName} ${lastName}"
-  def isAdmin: Boolean = this.userRole == UserRole.Admin
 
 }
 
