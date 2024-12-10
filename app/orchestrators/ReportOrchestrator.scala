@@ -296,7 +296,9 @@ class ReportOrchestrator(
 
     for {
       _ <- reportDraft.companyActivityCode match {
-        case Some(activityCode) if activityCode.startsWith("84.") =>
+        // 84 correspond à l'administration publique, sauf quelques cas particuliers :
+        // - 84.30B : Complémentaires retraites donc pas publique
+        case Some(activityCode) if activityCode.startsWith("84.") && activityCode != "84.30B" =>
           Future.failed(AppError.CannotReportPublicAdministration)
         case _ => Future.unit
       }
