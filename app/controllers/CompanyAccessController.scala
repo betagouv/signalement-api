@@ -57,6 +57,7 @@ class CompanyAccessController(
       .map(count => Ok(Json.toJson(count)))
   }
 
+  // Is this used ??
   def myCompanies = SecuredAction.async { implicit request =>
     companyAccessRepository
       .fetchCompaniesWithLevel(request.identity)
