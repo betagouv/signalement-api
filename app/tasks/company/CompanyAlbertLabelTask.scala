@@ -33,7 +33,7 @@ class CompanyAlbertLabelTask(
   private val MAX_REPORTS_USED_BY_COMPANY  = 5
 
   override def runTask(): Future[Unit] = {
-    val outdatedCutoffDate = OffsetDateTime.now().minusMonths(1)
+    val outdatedCutoffDate = OffsetDateTime.now().minusMonths(2)
     for {
       companies <- companyRepository.findWithOutdatedAlbertActivityLabel(
         outdatedCutoffDate,
