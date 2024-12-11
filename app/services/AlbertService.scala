@@ -179,7 +179,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       case Some(description) =>
         val url = uri"https://albert.api.etalab.gouv.fr/v1/search"
         val body = Json.obj(
-          "collections" -> Json.arr("831476c9-f326-44d6-a2d2-72adbf7e60a6"),
+          "collections" -> Json.arr("831476c9-f326-44d6-a2d2-72adbf7e60a6", "1cfcccb5-4d11-46d7-84bf-807d51826175"),
           "prompt"      -> searchPrompt(description.value),
           "k"           -> 6
         )
