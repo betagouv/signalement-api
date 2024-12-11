@@ -59,11 +59,11 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
                 throw AlbertError(s"Albert call failed, incorrect structure of response body $jsValue")
               )
           case Left(e) =>
-            logger.errorWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
+            logger.warnWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
             throw AlbertError("Albert call failed")
         }
       } else {
-        logger.errorWithTitle("albert_call", s"Albert call failed with code ${response.code}")
+        logger.warnWithTitle("albert_call", s"Albert call failed with code ${response.code}")
         throw AlbertError(s"Albert call failed with code ${response.code}")
       }
   }
