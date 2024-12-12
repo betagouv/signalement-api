@@ -25,7 +25,7 @@ class CompanyAlbertLabelTask(
     albertService: AlbertService
 )(implicit
     executionContext: ExecutionContext
-) extends ScheduledTask(5, "company_albert_label_task", taskRepository, actorSystem, taskConfiguration) {
+) extends ScheduledTask(13, "company_albert_label_task", taskRepository, actorSystem, taskConfiguration) {
 
   override val taskSettings = FrequentTaskSettings(interval = 1.hour)
 
