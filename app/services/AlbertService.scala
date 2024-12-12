@@ -221,5 +221,5 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 }
 
 object AlbertService {
-  case class AlbertError(message: String) extends Throwable
+  case class AlbertError(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 }
