@@ -156,6 +156,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |
        |    Salle de sport
        |    Inclassable
+       |
        |  ====
        |
        |${signalements.mkString("""
@@ -210,16 +211,19 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       case None => Future.successful(None)
     }
 
-  def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[String] =
+  def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[Option[String]] =
     for {
       label <- chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
-    } yield
-      if (label.length > 100) {
-        throw AlbertError(s"Invalid Albert result, output way too long for company $companyId : $label")
-      } else label
+    } yield label match {
+      case "Inclassable" => None
+      case s if s.length > 100 =>
+        logger.info(s"Invalid Albert result, output way too long for company $companyId : ${s.slice(0, 100)}...")
+        None
+      case _ => Some(label)
+    }
 
 }
 
 object AlbertService {
-  case class AlbertError(message: String) extends Throwable
+  case class AlbertError(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 }

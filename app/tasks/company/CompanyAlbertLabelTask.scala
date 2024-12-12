@@ -71,7 +71,6 @@ class CompanyAlbertLabelTask(
         case _ =>
           albertService
             .labelCompanyActivity(company.id, descriptions)
-            .map(Some(_))
             .recover { err =>
               logger.error(s"Didn't get a result from Albert for ${company.siret}", err)
               None
