@@ -3,6 +3,7 @@ import models.User
 import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyWithAccess
+import models.company.UserAccess
 import repositories.PostgresProfile
 import slick.dbio.Effect
 import slick.sql.FixedSqlAction
@@ -14,6 +15,8 @@ import scala.concurrent.Future
 trait CompanyAccessRepositoryInterface {
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel]
+
+  def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]]
 
   def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]]
 

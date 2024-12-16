@@ -1,9 +1,13 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
+import authentication.actions.UserAction.WithRole
 import cats.implicits.catsSyntaxOption
+import cats.implicits.toTraverseOps
 import controllers.error.AppError.UserNotFoundById
 import models.User
+import models.UserRole
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
 import models.event.Event
@@ -63,6 +67,64 @@ class CompanyAccessController(
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
   }
+
+  def visibleUsersToPro = SecuredAction.async { implicit request =>
+    for {
+      companiesWithAccesses <- companyVisibilityOrch.fetchVisibleCompanies(request.identity)
+      onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
+      usersAccessesPerCompanyMap <- companyAccessRepository.fetchUsersByCompanyIds(onlyAdminCompanies.map(_.company.id))
+    } yield {
+      val companiesPerUser =
+        usersAccessesPerCompanyMap.toList.flatMap { case (uuid, users) => users.map(_ -> uuid) }.groupMap(_._1)(_._2)
+      val companyCountPerUser =
+        companiesPerUser.view.mapValues(_.length).toList.map(tuple => Json.obj("user" -> tuple._1, "count" -> tuple._2))
+      Ok(Json.toJson(companyCountPerUser))
+    }
+  }
+
+  def invite(email: String) =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
+      for {
+        accesses  <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
+        maybeUser <- userRepository.findByEmail(email)
+        _ <- maybeUser match {
+          case Some(user) =>
+            accessesOrchestrator.addInvitedUserAndNotify(user, accesses.map(_.company), AccessLevel.ADMIN)
+          case None =>
+            accessesOrchestrator.sendInvitations(accesses.map(_.company), EmailAddress(email), AccessLevel.ADMIN)
+        }
+      } yield Ok(email)
+
+    }
+
+  def revoke(userId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
+      for {
+        maybeUser             <- userRepository.get(userId)
+        user                  <- maybeUser.liftTo[Future](UserNotFoundById(userId))
+        companiesWithAccesses <- companyVisibilityOrch.fetchVisibleCompanies(request.identity)
+        onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
+        usersAccesses <- companyAccessRepository.getUserAccesses(onlyAdminCompanies.map(_.company.id), userId)
+        _             <- usersAccesses.traverse(c => removeAccessFor(c.companyId, user, request.identity))
+      } yield Ok(user.email.value)
+    }
+
+  private def removeAccessFor(companyId: UUID, user: User, requestBy: User) =
+    for {
+      _ <- companyAccessRepository.createUserAccess(companyId, user.id, AccessLevel.NONE)
+      _ <- eventRepository.create(
+        Event(
+          UUID.randomUUID(),
+          None,
+          Some(companyId),
+          Some(requestBy.id),
+          OffsetDateTime.now(),
+          Constants.EventType.fromUserRole(requestBy.userRole),
+          Constants.ActionEvent.USER_ACCESS_REMOVED,
+          Json.obj("userId" -> user.id, "email" -> user.email)
+        )
+      )
+    } yield ()
 
   def updateAccess(siret: String, userId: UUID) = withCompanyAccess(siret, adminLevelOnly = true).async {
     implicit request =>
