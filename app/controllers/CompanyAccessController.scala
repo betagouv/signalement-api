@@ -68,7 +68,7 @@ class CompanyAccessController(
       .map(companies => Ok(Json.toJson(companies)))
   }
 
-  def visibleUsersToPro = SecuredAction.async { implicit request =>
+  def visibleUsersToPro = SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
     for {
       companiesWithAccesses <- companyVisibilityOrch.fetchVisibleCompanies(request.identity)
       onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
@@ -82,7 +82,7 @@ class CompanyAccessController(
     }
   }
 
-  def invite(email: String) =
+  def inviteProToMyCompanies(email: String) =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
       for {
         accesses  <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
@@ -97,7 +97,7 @@ class CompanyAccessController(
 
     }
 
-  def revoke(userId: UUID) =
+  def revokeProFromMyCompanies(userId: UUID) =
     SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
       for {
         maybeUser             <- userRepository.get(userId)

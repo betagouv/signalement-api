@@ -117,8 +117,8 @@ GET           /api/auth-attempts                                      controller
 # Accesses API
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.myCompanies()
 GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
-POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.invite(email: String)
-DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revoke(userId: java.util.UUID)
+POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
+DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
 
 GET           /api/accesses/:siret                                    controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
