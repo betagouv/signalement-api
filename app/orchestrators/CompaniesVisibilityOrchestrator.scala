@@ -66,11 +66,7 @@ class CompaniesVisibilityOrchestrator(
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      authorizedCompaniesSiret = authorizedCompanies.map(_.company.siret)
-      headOfficeSirets <- companyRepo
-        .findBySirets(authorizedCompaniesSiret)
-        .map(_.filter(_.isHeadOffice))
-        .map(_.map(_.siret))
+      headOfficeSirets = authorizedCompanies.filter(_.company.isHeadOffice).map(_.company.siret)
       companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.fromSIRET))
       companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
       accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)

@@ -36,6 +36,15 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
+  override def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]] =
+    db.run(
+      table
+        .filter(_.companyId inSetBind companyIds)
+        .filter(_.userId === userId)
+        .to[List]
+        .result
+    )
+
   override def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
       table
