@@ -81,6 +81,12 @@ case class Report(
     // /!\ Some reports don't have description
     // in some subcategories, there is no description field (or it's called differently)
     details.find(_.label == "Description :").map(_.value.trim).filterNot(_.isEmpty)
+
+  def getReponseConsoDescription: Option[String] =
+    details
+      .find(x => x.label == "Your question :" || x.label == "Votre question :")
+      .map(_.value.trim)
+      .filterNot(_.isEmpty)
 }
 
 object Report {
