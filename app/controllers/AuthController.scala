@@ -65,7 +65,7 @@ class AuthController(
       } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
     }
 
-  def logAs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+  def logAs() = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
     for {
       userEmail   <- request.parseBody[EmailAddress](JsPath \ "email")
       userSession <- authOrchestrator.logAs(userEmail, request)
