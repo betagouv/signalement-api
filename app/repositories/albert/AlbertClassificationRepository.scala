@@ -11,6 +11,7 @@ import scala.concurrent.Future
 trait AlbertClassificationRepositoryInterface {
   def getByReportId(reportId: UUID): Future[Option[AlbertClassification]]
   def createOrUpdate(element: AlbertClassification): Future[AlbertClassification]
+  def removeByReportId(reportId: UUID): Future[Int]
 }
 
 class AlbertClassificationRepository(dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
@@ -20,13 +21,17 @@ class AlbertClassificationRepository(dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   import dbConfig._
 
-  def getByReportId(reportId: UUID): Future[Option[AlbertClassification]] = db.run(
+  override def getByReportId(reportId: UUID): Future[Option[AlbertClassification]] = db.run(
     table.filter(_.reportId === reportId).result.headOption
   )
 
-  def createOrUpdate(element: AlbertClassification): Future[AlbertClassification] = db
+  override def createOrUpdate(element: AlbertClassification): Future[AlbertClassification] = db
     .run(
       table.insertOrUpdate(element)
     )
     .map(_ => element)
+
+  override def removeByReportId(reportId: UUID): Future[Int] = db.run(
+    table.filter(_.reportId === reportId).delete
+  )
 }

@@ -167,12 +167,25 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
        |""".stripMargin
 
   def classifyReport(report: Report): Future[Option[String]] =
-    report.getDescription match {
-      case Some(description) =>
+    (report.getDescription, report.getReponseConsoDescription) match {
+      case (Some(description), Some(question)) =>
+        val text =
+          s"""$description
+             |
+             |Ma question :
+             |$question""".stripMargin
+        chatCompletion(chatPrompt(text))
+          .map(Some(_))
+          .recover(_ => None)
+      case (Some(description), None) =>
         chatCompletion(chatPrompt(description))
           .map(Some(_))
           .recover(_ => None)
-      case None => Future.successful(None)
+      case (None, Some(question)) =>
+        chatCompletion(chatPrompt(question))
+          .map(Some(_))
+          .recover(_ => None)
+      case (None, None) => Future.successful(None)
     }
 
   def qualifyReportBasedOnCodeConso(report: Report): Future[Option[String]] =

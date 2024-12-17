@@ -5,6 +5,7 @@ import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import play.api.Logger
 import play.api.libs.json.Json
+import repositories.albert.AlbertClassificationRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -20,7 +21,8 @@ class RgpdOrchestrator(
     engagementOrchestrator: EngagementOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
-    eventRepository: EventRepositoryInterface
+    eventRepository: EventRepositoryInterface,
+    albertClassificationRepository: AlbertClassificationRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -59,8 +61,11 @@ class RgpdOrchestrator(
       _ <- reportConsumerReviewOrchestrator.deleteDetails(emptiedReport.id)
       _ <- engagementOrchestrator.deleteDetails(emptiedReport.id)
       _ <- reportFileOrchestrator.removeFromReportId(emptiedReport.id)
-      _ = logger.info(s"Report ${report.id} was emptied")
-    } yield emptiedReport
+      _ <- albertClassificationRepository.removeByReportId(emptiedReport.id)
+    } yield {
+      logger.info(s"Report ${report.id} was emptied")
+      emptiedReport
+    }
   }
 
 }

@@ -253,6 +253,8 @@ class SignalConsoComponents(
 
   val ipBlackListRepository = new IpBlackListRepository(dbConfig)
 
+  val albertClassificationRepository = new AlbertClassificationRepository(dbConfig)
+
   val crypter = new JcaCrypter(applicationConfiguration.crypter)
   val signer  = new JcaSigner(applicationConfiguration.signer)
 
@@ -509,7 +511,8 @@ class SignalConsoComponents(
     engagementOrchestrator,
     reportRepository,
     reportFileOrchestrator,
-    eventRepository
+    eventRepository,
+    albertClassificationRepository
   )
 
   val reportAdminActionOrchestrator = new ReportAdminActionOrchestrator(
@@ -720,7 +723,7 @@ class SignalConsoComponents(
     companyRepository,
     emailNotificationOrchestrator,
     ipBlackListRepository,
-    new AlbertClassificationRepository(dbConfig),
+    albertClassificationRepository,
     albertService,
     frontRoute,
     cookieAuthenticator,
