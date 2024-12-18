@@ -22,8 +22,9 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
   def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int]
 
   def searchCompaniesByUrl(
-      url: String
-  ): Future[Seq[(Website, Company)]]
+      url: String,
+      nb: Int
+  ): Future[Seq[((Website, Int), Company)]]
 
   def deprecatedSearchCompaniesByHost(
       url: String

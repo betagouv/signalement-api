@@ -41,7 +41,6 @@ import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.FrontRoute
-import utils.URL
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -160,15 +159,12 @@ class CompanyOrchestrator(
   def searchSimilarCompanyByWebsite(url: String): Future[WebsiteCompanySearchResult] = {
     logger.debug(s"searchCompaniesByHost $url")
     for {
-      companiesByUrl <- websiteRepository.searchCompaniesByUrl(url)
-      (exact, similar) = companiesByUrl.partition(x => URL(url).getHost.contains(x._1.host))
-      similarHosts = similar.distinct
-        .take(3)
-        .map(w => WebsiteHost(w._1.host))
-      exactMatch = exact
-        .map { case (website, company) =>
-          CompanySearchResultApi.fromCompany(company, website)
-        }
+      companiesByUrl <- websiteRepository.searchCompaniesByUrl(url, 3)
+      (exact, similar) = companiesByUrl.partition { case ((_, distance), _) => distance == 0 }
+      similarHosts     = similar.distinct.map(w => WebsiteHost(w._1._1.host))
+      exactMatch = exact.map { case (website, company) =>
+        CompanySearchResultApi.fromCompany(company, website._1)
+      }
       _ = logger.debug(s"Found exactMatch: $exactMatch, similarHosts: ${similarHosts}")
     } yield WebsiteCompanySearchResult(exactMatch, similarHosts)
   }

@@ -103,19 +103,20 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
     else add new website with pending kind                                          $e7
  """
 
-  def e1 = websiteRepository.searchCompaniesByUrl(s"http://${defaultWebsite.host}") must beEqualTo(
-    Seq((defaultWebsite, defaultCompany))
+  def e1 = websiteRepository.searchCompaniesByUrl(s"http://${defaultWebsite.host}", 3) must beEqualTo(
+    Seq(((defaultWebsite, 0), defaultCompany))
   ).await
   def e2 = websiteRepository.searchCompaniesByUrl(
-    s"http://${pendingWebsite.host}"
+    s"http://${pendingWebsite.host}",
+    3
   ) must beEqualTo(Seq.empty).await
 
-  def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
-    Seq((marketplaceWebsite, marketplaceCompany))
+  def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}", 3) must beEqualTo(
+    Seq(((marketplaceWebsite, 0), marketplaceCompany))
   ).await
 
-  def e4 = websiteRepository.searchCompaniesByUrl(s"http://${similarHost2}") must beEqualTo(
-    Seq((similarWebsite, defaultCompany))
+  def e4 = websiteRepository.searchCompaniesByUrl(s"http://${similarHost2}", 3) must beEqualTo(
+    Seq(((similarWebsite, 1), defaultCompany))
   ).await
 
   def e5 = websiteRepository.validateAndCreate(
