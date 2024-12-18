@@ -77,15 +77,21 @@ class WebsiteRepository(
         .result
     )
 
-  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
+  private def searchCompaniesByHost(host: String, nb: Int): Future[Seq[((Website, Int), Company)]] =
     db.run(
       table
-        .filter { result =>
-          (result.host <-> (host: String)).<(0.55)
-        }
         .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
+        // Étape 1 : Sélectionner les résultats proches avec pg_trgm
+        .filter(result => result.host % host)
+        .sortBy(result => (result.host <-> host).asc)
+        .take(10) // Réduire le champ des candidats
+        // Étape 2 : Affiner avec levenshtein
+        .filter(result => LevenshteinFunction(result.host, host) <= 4)
+        .map(result => (result, LevenshteinFunction(result.host, host)))
+        .sortBy(_._2.asc)
+        .take(nb)
         .join(CompanyTable.table)
-        .on { (websiteTable, companyTable) =>
+        .on { case ((websiteTable, _), companyTable) =>
           websiteTable.companyId === companyTable.id && companyTable.isOpen
         }
         .result
@@ -122,10 +128,11 @@ class WebsiteRepository(
     )
 
   override def searchCompaniesByUrl(
-      url: String
-  ): Future[Seq[(Website, Company)]] =
+      url: String,
+      nb: Int
+  ): Future[Seq[((Website, Int), Company)]] =
     URL(url).getHost match {
-      case Some(host) => searchCompaniesByHost(host)
+      case Some(host) => searchCompaniesByHost(host, nb)
       case None       => Future.successful(Nil)
     }
 
