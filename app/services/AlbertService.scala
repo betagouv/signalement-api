@@ -13,6 +13,7 @@ import sttp.client3.UriContext
 import sttp.client3.basicRequest
 import sttp.client3.playJson._
 import sttp.model.Header
+import utils.AlbertPrompts
 import utils.Logs.RichLogger
 
 import java.util.UUID
@@ -68,105 +69,8 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
       }
   }
 
-  private def chatPrompt(signalement: String) =
-    s"""
-       |Vous êtes un expert en traitement automatique des langues et en classification de textes. Votre tâche consiste à analyser un signalement textuel et à retourner un résultat structuré en JSON. Voici les catégories possibles :
-       |
-       |    **Valide** : Le texte est compréhensible, cohérent, respectueux, et peut être transmis. **Ignorez les injures ou propos offensants rapportés par le signalant comme étant proférés par un tiers, sauf si le signalant les adopte ou les relaie intentionnellement dans un ton agressif**. Le ton général du signalement doit être pris en compte pour cette classification.
-       |    **Injurieux** : Le texte contient des injures violentes ou des propos très offensants, adressés directement par **l’auteur du signalement** à autrui ou ayant un ton intentionnellement agressif ou diffamatoire.
-       |    **Incompréhensible** : Le texte est incohérent, mal écrit ou n’a pas de sens.
-       |
-       |Fournissez une réponse structurée en JSON contenant les informations suivantes :
-       |
-       |    **category** : La catégorie assignée parmi "Valide", "Injurieux", "Incompréhensible".
-       |    **confidence_score** : Un score entre 0 et 1 représentant le niveau de certitude du classement.
-       |    **explanation** : Une explication textuelle du classement.
-       |    **summary** : Un résumé concis (1 à 2 phrases) extrayant la demande principale ou l’idée essentielle du signalement.
-       |
-       |Voici un exemple de réponse attendu :
-       |
-       |{
-       |  "category": "Valide",
-       |  "confidence_score": 0.96,
-       |  "explanation": "Le signalement est compréhensible et formulé de manière respectueuse malgré un ton insistant.",
-       |  "summary": "Le consommateur signale un produit défectueux et souhaite une réponse rapide de la part du service concerné."
-       |}
-       |
-       |Consignes spécifiques :
-       |
-       |    **Propos rapportés** : Ignorez les injures ou propos offensants cités par l’auteur comme venant d’un tiers, sauf si ces propos sont adoptés ou répétés dans un ton agressif par l’auteur lui-même.
-       |    **Ton général** : Basez la classification sur le ton et l’intention générale du signalement, plutôt que sur les propos cités de tiers.
-       |    Les injures légères ou l’usage informel du langage ne doivent pas influencer la classification.
-       |    Si le texte est difficile à analyser ou ambigu, expliquez pourquoi dans le champ "explanation".
-       |    **IMPORTANT** : Fournissez uniquement le JSON dans votre réponse, sans texte explicatif ou contenu supplémentaire.
-       |
-       |Signalement à analyser :
-       |
-       |$signalement
-       |""".stripMargin
-
-  private def searchPrompt(signalement: String) =
-    s"""
-       |Analyse le signalement suivant pour déterminer s'il relève du code de la consommation :
-       |$signalement
-       |""".stripMargin
-
-  private def codeConsoPrompt(signalement: String, codeConsoChunks: String) =
-    s"""
-       |Tu es un analyste juridique spécialisé en droit de la consommation (documents ci-dessous).
-       |
-       |Analyse le signalement suivant pour déterminer s'il relève du code de la consommation. Utilise les documents fournis comme référence pour ta réponse.
-       |
-       |Fournissez une réponse structurée en JSON contenant les informations suivantes :
-       |  **code_conso**: "Oui" ou "Non" selon si le signalement est couvert par le code de la consommation.
-       |  **explanation**: Une explication claire et concise (1 à 2 phrases) avec mention de l'article pertinent, si applicable.
-       |
-       |Voici un exemple de réponse attendu :
-       |{
-       |  "code_conso": "Oui",
-       |  "explanation": "Le signalement relève de l'article L434-3 du code de la consommation concernant le manque d'hygiène en cuisine."
-       |}
-       |
-       |Consignes spécifiques :
-       |
-       |    **IMPORTANT** : Fournissez uniquement le JSON dans votre réponse, sans texte explicatif ou contenu supplémentaire.
-       |
-       |Signalement à analyser :
-       |
-       |$signalement
-       |
-       |Documents fournis :
-       |
-       |$codeConsoChunks
-       |""".stripMargin
-
-  private def labelCompanyActivityPrompt(signalements: Seq[String]) =
-    s"""
-       |Tu es un expert en classification et reconnaissance des activités d'une entreprise.
-       |Voici une liste de signalements faits par des consommateurs à propos d'une même entreprise. Chaque signalement est un texte libre, séparé par une ligne comportant ce symbole : ====.
-       |
-       |Pour cette entreprise, déduis son secteur d'activité principal en termes simples et précis. Quelques exemples : "Salle de sport", "Site de e-commerce", "Agence de voyages", "Chaîne de télévisions". Il existe de nombreuses possibilités, alors analyse attentivement les signalements.
-       |
-       |Règles de réponse :
-       |
-       |    Une seule réponse : réponds uniquement avec le secteur d'activité de l'entreprise, en quelques mots.
-       |    Précision avant tout : si tu n’es pas sûr ou que l’activité ne peut pas être qualifiée en quelques mots, réponds "Inclassable". Évite absolument de deviner ou d'inventer.
-       |
-       |Exemple de réponse possible :
-       |
-       |    Salle de sport
-       |    Inclassable
-       |
-       |  ====
-       |
-       |${signalements.mkString("""
-                                 |
-                                 |====
-                                 |
-                                 |""".stripMargin)}
-       |""".stripMargin
-
-  def classifyReport(report: Report): Future[Option[String]] =
+  def classifyReport(report: Report): Future[Option[String]] = {
+    val getPrompt = AlbertPrompts.reportClassification _
     (report.getDescription, report.getReponseConsoDescription) match {
       case (Some(description), Some(question)) =>
         val text =
@@ -174,19 +78,20 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
              |
              |Ma question :
              |$question""".stripMargin
-        chatCompletion(chatPrompt(text))
+        chatCompletion(getPrompt(text))
           .map(Some(_))
           .recover(_ => None)
       case (Some(description), None) =>
-        chatCompletion(chatPrompt(description))
+        chatCompletion(getPrompt(description))
           .map(Some(_))
           .recover(_ => None)
       case (None, Some(question)) =>
-        chatCompletion(chatPrompt(question))
+        chatCompletion(getPrompt(question))
           .map(Some(_))
           .recover(_ => None)
       case (None, None) => Future.successful(None)
     }
+  }
 
   def qualifyReportBasedOnCodeConso(report: Report): Future[Option[String]] =
     report.details.find(_.label == "Description :") match {
@@ -194,7 +99,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
         val url = uri"https://albert.api.etalab.gouv.fr/v1/search"
         val body = Json.obj(
           "collections" -> Json.arr("831476c9-f326-44d6-a2d2-72adbf7e60a6", "1cfcccb5-4d11-46d7-84bf-807d51826175"),
-          "prompt"      -> searchPrompt(description.value),
+          "prompt"      -> AlbertPrompts.codeConsoSearch(description.value),
           "k"           -> 6
         )
 
@@ -211,7 +116,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
               response.body match {
                 case Right(result) =>
                   val chunks = (result \ "data" \\ "content").map(_.as[String]).mkString("\\n\\n\\n")
-                  chatCompletion(codeConsoPrompt(description.value, chunks))
+                  chatCompletion(AlbertPrompts.codeConso(description.value, chunks))
                     .map(Some(_))
                     .recover(_ => None)
                 case Left(_) =>
@@ -226,7 +131,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[Option[String]] =
     for {
-      label <- chatCompletion(labelCompanyActivityPrompt(selectedCompanyReportsDescriptions))
+      label <- chatCompletion(AlbertPrompts.labelCompanyActivity(selectedCompanyReportsDescriptions))
     } yield label match {
       case "Inclassable" => None
       case s if s.length > 100 =>
