@@ -21,7 +21,8 @@ import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
 import models.engagement.EngagementId
-import models.report.ReportStatus.{SuppressionRGPD, hasResponse}
+import models.report.ReportStatus.SuppressionRGPD
+import models.report.ReportStatus.hasResponse
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportExtra
