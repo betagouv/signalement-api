@@ -250,9 +250,7 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Prénom",
-        (report, _, _, _, _, _) => {
-          if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
-        }
+        (report, _, _, _, _, _) => if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
       ),
       ReportColumn(
         "Nom",
