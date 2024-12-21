@@ -21,7 +21,7 @@ import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
 import models.engagement.EngagementId
-import models.report.ReportStatus.SuppressionRGPD
+import models.report.ReportStatus.{SuppressionRGPD, hasResponse}
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportExtra
@@ -599,7 +599,7 @@ class ReportOrchestrator(
         case None         => Future.failed(ReportNotFound(reportId))
       }
       _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
-      _ <- if (existingReport.status.isFinal) Future.failed(ReportIsInFinalStatus) else Future.unit
+      _ <- if (hasResponse(existingReport)) Future.failed(ReportIsInFinalStatus) else Future.unit
       updatedReport <- updateReportCompany(
         existingReport,
         reportCompany,
