@@ -59,9 +59,11 @@ class ReportController(
 
   def createReport: Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
+
     for {
       draftReport <- request.parseBody[ReportDraft]()
-      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport).recover {
+      consumerIp = ConsumerIp(request.remoteAddress)
+      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport, consumerIp).recover {
         case err: SpammerEmailBlocked =>
           logger.warn(err.details)
           reportOrchestrator.createFakeReportForBlacklistedUser(draftReport)

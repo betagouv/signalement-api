@@ -2,6 +2,7 @@ package models.report.reportmetadata
 
 import models.company.Address
 import models.company.Company
+import models.report.ConsumerIp
 import models.report.Report
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -15,7 +16,8 @@ case class ReportMetadata(
     reportId: UUID,
     isMobileApp: Boolean,
     os: Option[Os],
-    assignedUserId: Option[UUID]
+    assignedUserId: Option[UUID],
+    consumerIp: Option[ConsumerIp]
 )
 
 object ReportMetadata {
