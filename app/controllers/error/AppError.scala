@@ -342,8 +342,7 @@ object AppError {
     override val title: String       = "The report is too old to update its company."
     override val details: String =
       s"Action non autorisée. Le signalement est trop ancien (plus de ${ReportCompanyChangeThresholdInDays} jours) pour pouvoir changer l'entreprise."
-    override val titleForLogs: String = "review_already_exists"
-
+    override val titleForLogs: String = "report_too_old"
   }
 
   final case class ReportNotFound(reportId: UUID) extends NotFoundError {
@@ -639,6 +638,14 @@ object AppError {
     override val title: String        = s"Invalid filters, $explanation"
     override val details: String      = title
     override val titleForLogs: String = "invalid_filters"
+  }
+
+  final case object ReportIsInFinalStatus extends NotFoundError {
+    override val scErrorCode: String = "SC-0070"
+    override val title: String       = "Cannot update report company because report status is in final status."
+    override val details: String =
+      s"Action non autorisée. Le signalement a déjà été répondu par le professionnel, il n'est donc plus possible de changer l'entreprise."
+    override val titleForLogs: String = "report_in_final_status"
   }
 
 }
