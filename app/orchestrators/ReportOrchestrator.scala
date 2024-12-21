@@ -599,6 +599,7 @@ class ReportOrchestrator(
         case None         => Future.failed(ReportNotFound(reportId))
       }
       _ <- if (isReportTooOld(existingReport)) Future.failed(ReportTooOldToChangeCompany) else Future.unit
+      _ <- if (existingReport.status.isFinal) Future.failed(ReportIsInFinalStatus) else Future.unit
       updatedReport <- updateReportCompany(
         existingReport,
         reportCompany,
