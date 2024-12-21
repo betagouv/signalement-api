@@ -7,6 +7,7 @@ import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
 import models.report.ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR
+import models.report.ConsumerIp
 import models.report.IncomingReportResponse
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportResponseType.NOT_CONCERNED
@@ -159,7 +160,7 @@ class SampleDataService(
           s"--- Company access given to user"
         )
         reports = ReportGenerator.visibleReports(c)
-        createdReports <- reports.traverse(reportOrchestrator.createReport)
+        createdReports <- reports.traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
         _ = logger.info(
           s"--- Pending reports created"
         )
@@ -219,7 +220,9 @@ class SampleDataService(
     )
 
   private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
-    createdReports <- ReportGenerator.visibleReports(c).traverse(reportOrchestrator.createReport)
+    createdReports <- ReportGenerator
+      .visibleReports(c)
+      .traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
     _ = logger.info(
       s"--- Closed reports created"
     )

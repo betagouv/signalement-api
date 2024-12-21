@@ -1,5 +1,7 @@
 package repositories
 
+import cats.implicits.catsSyntaxOptionId
+import models.report.ConsumerIp
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
@@ -149,7 +151,9 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.create(report7), Duration.Inf)
     Await.result(components.reportRepository.create(englishReport), Duration.Inf)
     Await.result(
-      components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios), None)),
+      components.reportMetadataRepository.create(
+        ReportMetadata(report2.id, false, Some(Os.Ios), None, ConsumerIp("0.0.0.0").some)
+      ),
       Duration.Inf
     )
 

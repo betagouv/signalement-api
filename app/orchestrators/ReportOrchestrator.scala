@@ -184,14 +184,14 @@ class ReportOrchestrator(
     }.sequence
   }
 
-  def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
+  def validateAndCreateReport(draftReport: ReportDraft, consumerIp: ConsumerIp): Future[Report] =
     for {
       _             <- validateCompany(draftReport)
       _             <- validateSpamSimilarReport(draftReport)
       _             <- validateReportIdentification(draftReport)
       _             <- validateConsumerEmail(draftReport)
       _             <- validateNumberOfAttachments(draftReport)
-      createdReport <- createReport(draftReport)
+      createdReport <- createReport(draftReport, consumerIp)
     } yield createdReport
 
   private def validateReportIdentification(draftReport: ReportDraft) =
@@ -317,7 +317,7 @@ class ReportOrchestrator(
     } yield Done
   }
 
-  def createReport(draftReport: ReportDraft): Future[Report] =
+  def createReport(draftReport: ReportDraft, consumerIp: ConsumerIp): Future[Report] =
     for {
       maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionalCountry(draftReport)
@@ -338,7 +338,7 @@ class ReportOrchestrator(
       )
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
-      _             <- createReportMetadata(draftReport, report)
+      _             <- createReportMetadata(draftReport, report, consumerIp)
       files         <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
       _             <- emailNotificationOrchestrator.notifyDgccrfIfNeeded(updatedReport)
@@ -346,10 +346,14 @@ class ReportOrchestrator(
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
-  def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
+  private def createReportMetadata(
+      draftReport: ReportDraft,
+      createdReport: Report,
+      consumerIp: ConsumerIp
+  ): Future[Any] =
     draftReport.metadata
       .map { metadataDraft =>
-        val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)
+        val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id, consumerIp)
         reportMetadataRepository.create(metadata)
       }
       .getOrElse(Future.unit)

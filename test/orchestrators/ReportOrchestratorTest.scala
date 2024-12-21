@@ -4,6 +4,7 @@ import org.apache.pekko.Done
 import controllers.error.AppError.CannotReportPublicAdministration
 import controllers.error.AppError.DuplicateReportCreation
 import io.scalaland.chimney.dsl._
+import models.report.ConsumerIp
 import models.report.DetailInputValue
 import models.report.Report
 import models.report.ReportDraft
@@ -67,7 +68,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.ccrfCode, None)
           .withFieldConst(_.metadata, None)
           .transform
-        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
+        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft, ConsumerIp("0.0.0.0"))
       } yield ()
 
       res must throwA[DuplicateReportCreation].await
@@ -104,7 +105,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.ccrfCode, None)
           .withFieldConst(_.metadata, None)
           .transform
-        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
+        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft, ConsumerIp("0.0.0.0"))
       } yield ()
 
       res must throwA[DuplicateReportCreation].await
@@ -183,7 +184,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.ccrfCode, None)
           .withFieldConst(_.metadata, None)
           .transform
-        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
+        _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft, ConsumerIp("0.0.0.0"))
       } yield ()
 
       res must throwA[DuplicateReportCreation].await
@@ -237,7 +238,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
         companyActivityCode = Some("84.10")
       )
       val res =
-        components.reportOrchestrator.validateAndCreateReport(draftReportOnPublicCompany)
+        components.reportOrchestrator.validateAndCreateReport(draftReportOnPublicCompany, ConsumerIp("0.0.0.0"))
       res must throwA[CannotReportPublicAdministration.type].await
     }
 
