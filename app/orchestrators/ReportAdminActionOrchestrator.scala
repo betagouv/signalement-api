@@ -223,7 +223,7 @@ class ReportAdminActionOrchestrator(
   }
 
   def deleteReport(
-                    reportId: UUID
+      reportId: UUID
   ) =
     for {
       _ <- engagementOrchestrator.removeEngagement(reportId)
