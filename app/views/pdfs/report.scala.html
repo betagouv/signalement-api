@@ -213,7 +213,7 @@
                         </ul>
                     }
                 </div>
-                @if(userRoleOpt.isDefined) {
+                @if(userRoleOpt.exists(role => UserRole.AdminsAndReadOnlyAndAgents.contains(role))) {
                     <div>
                         <h2>@Messages("reportPDF.report.historyHeader")</h2>
                         <p>
@@ -231,20 +231,6 @@
                         </p>
                         }
                     </div>
-                    @if(report.companyId.isDefined) {
-                        <div>
-                            <h2>@Messages("reportPDF.report.companyHistoryHeader")</h2>
-                            @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
-                            <p>
-                                <span class="note">@e.formattedDate</span>
-                                <br />
-                                <b>@e.action.value</b>
-                                <br />
-                                @e.getDescription
-                            </p>
-                            }
-                        </div>
-                    }
                 }
             </div>
             <div class="footer text-center">
