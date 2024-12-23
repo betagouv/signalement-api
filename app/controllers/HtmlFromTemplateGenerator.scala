@@ -41,7 +41,7 @@ class HtmlFromTemplateGenerator(messagesApi: MessagesApi, frontRoute: FrontRoute
           reportData.engagementReviewOption,
           reportData.companyEvents,
           reportData.files
-        )(frontRoute = frontRoute, None, messagesProvider)
+        )(frontRoute = frontRoute, Some(user.userRole), messagesProvider)
     }
 
   }
