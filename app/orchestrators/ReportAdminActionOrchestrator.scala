@@ -223,14 +223,14 @@ class ReportAdminActionOrchestrator(
   }
 
   def deleteReport(
-      id: UUID
+                    reportId: UUID
   ) =
     for {
-      _ <- engagementOrchestrator.removeEngagement(id)
-      _ <- eventRepository.deleteByReportId(id)
-      _ <- reportFileOrchestrator.removeFromReportId(id)
-      _ <- reportConsumerReviewOrchestrator.remove(id)
-      _ <- reportRepository.delete(id)
+      _ <- engagementOrchestrator.removeEngagement(reportId)
+      _ <- eventRepository.deleteByReportId(reportId)
+      _ <- reportFileOrchestrator.removeFromReportId(reportId)
+      _ <- reportConsumerReviewOrchestrator.remove(reportId)
+      _ <- reportRepository.delete(reportId)
     } yield ()
 
   private def getCompanyWithUsers(report: Report): Future[(Option[Company], Option[List[User]])] = for {
