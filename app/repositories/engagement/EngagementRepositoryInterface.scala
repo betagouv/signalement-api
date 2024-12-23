@@ -20,4 +20,5 @@ trait EngagementRepositoryInterface extends TypedCRUDRepositoryInterface[Engagem
   def uncheck(engagementId: EngagementId): Future[Int]
   def remove(reportId: UUID): Future[Int]
   def listEngagementsExpiringAt(date: LocalDate): Future[Seq[(((Engagement, Report), Event), Option[Event])]]
+  def removeByUserId(userId: UUID): Future[Int]
 }
