@@ -97,4 +97,81 @@ object AlbertPrompts {
                                         |
                                         |""".stripMargin)}
        |""".stripMargin
+
+  def findProblems(reportsDescriptions: Seq[String], maxPromptLength: Int) = {
+    val separator = "==="
+    val separatorFull =
+      s"""
+         |
+         |${separator}
+         |
+         |""".stripMargin
+    val promptIntro =
+      s"""Voici une liste de signalements rédigés librement par des consommateurs à propos d'une même entreprise. Chaque signalement est séparé par une ligne contenant ce symbole : $separator.
+         |
+         |Ta mission :
+         |
+         |  Identifie les comportements reprochés à l’entreprise à partir des signalements.
+         |  Résume ces comportements en 5 éléments maximum, sous forme de phrases courtes (5 à 15 mots).
+         |  Pour chaque comportement identifié, indique le nombre total de signalements qui le mentionnent.
+         |
+         |Format attendu :
+         |
+         |  La réponse doit être fournie en JSON respectant rigoureusement le format suivant :
+         |
+         |  [
+         |    {
+         |      "probleme": "Description du problème",
+         |      "signalements": Nombre_de_signalements
+         |    },
+         |    {
+         |      "probleme": "Description du problème",
+         |      "signalements": Nombre_de_signalements
+         |    }
+         |  ]
+         |
+         |Exemple :
+         |
+         |  [
+         |    {
+         |      "probleme": "Produit livré totalement différent de ce qui a été acheté",
+         |      "signalements": 3
+         |    },
+         |    {
+         |      "probleme": "Travaux facturés, payés, puis jamais réalisés",
+         |      "signalements": 8
+         |    },
+         |    {
+         |      "probleme": "Service client injoignable",
+         |      "signalements": 2
+         |    }
+         |  ]
+         |
+         |Important :
+         |
+         |  Respecte scrupuleusement la limite de 5 éléments dans la liste.
+         |  Les descriptions des problèmes doivent être concises et refléter les récurrences exactes dans les signalements.
+         |  Compte précisément le nombre de signalements associés à chaque problème.
+         |  Répond avec le JSON brut, sans l'encadrer avec "```json"
+         |$separatorFull
+         |""".stripMargin
+
+    // To fit within the total max prompt length, while still using every descriptions
+    // we will truncate each description to a maximum length
+
+    val nbDescriptions  = reportsDescriptions.length
+    val introLength     = promptIntro.length
+    val separatorLength = separatorFull.length
+    val lengthLeft      = maxPromptLength - introLength
+    val lengthLeftForEachDescription = math
+      .floor(
+        (lengthLeft - (separatorLength * (nbDescriptions - 1))).toDouble / nbDescriptions
+      )
+      .toInt
+
+    val descriptions = reportsDescriptions.map(_.take(lengthLeftForEachDescription)).mkString(separatorFull)
+    val fullPrompt   = s"$promptIntro$descriptions"
+    fullPrompt
+
+  }
 }

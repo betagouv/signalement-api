@@ -556,7 +556,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       }
     } yield maybeReportWithMetadata
 
-  override def getLatestMeaningfulReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]] =
+  override def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]] =
     db.run(
       table
         .filter(_.companyId.filter(_ === companyId).isDefined)
