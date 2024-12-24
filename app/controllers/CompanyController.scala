@@ -7,6 +7,7 @@ import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
+import orchestrators.AlbertOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger
@@ -24,6 +25,7 @@ class CompanyController(
     companyOrchestrator: CompanyOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val companyRepository: CompanyRepositoryInterface,
+    albertOrchestrator: AlbertOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -197,6 +199,12 @@ class CompanyController(
               }
         )
     }
+
+  def getProblemsSeenByAlbert(id: UUID) = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async {
+    for {
+      maybeResult <- albertOrchestrator.genProblemsForCompany(id)
+    } yield Ok(Json.toJson(maybeResult))
+  }
 
 }
 

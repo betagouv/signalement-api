@@ -172,6 +172,8 @@ GET           /api/companies/hosts                                    controller
 PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
 GET           /api/companies/:companyId                               controllers.CompanyController.searchById(companyId: java.util.UUID)
+GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
+
 
 # Rating API
 POST          /api/rating                                             controllers.RatingController.rate()
@@ -238,5 +240,6 @@ GET           /api/reports/:uuid/engagement/review/exists             controller
 
 POST          /api/albert/classification/:reportId                    controllers.AdminController.classifyAndSummarize(reportId: java.util.UUID)
 GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertClassification(reportId: java.util.UUID)
+
 
 GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)
