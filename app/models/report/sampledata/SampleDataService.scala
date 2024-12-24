@@ -7,6 +7,7 @@ import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
 import models.report.ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR
+import models.report.ConsumerIp
 import models.report.IncomingReportResponse
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportResponseType.NOT_CONCERNED
@@ -19,6 +20,7 @@ import play.api.Logging
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.engagement.EngagementRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepositoryInterface
@@ -39,7 +41,8 @@ class SampleDataService(
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
     websiteRepository: WebsiteRepositoryInterface,
-    eventRepository: EventRepositoryInterface
+    eventRepository: EventRepositoryInterface,
+    engagementRepository: EngagementRepositoryInterface
 )(implicit system: ActorSystem)
     extends Logging {
 
@@ -159,7 +162,7 @@ class SampleDataService(
           s"--- Company access given to user"
         )
         reports = ReportGenerator.visibleReports(c)
-        createdReports <- reports.traverse(reportOrchestrator.createReport)
+        createdReports <- reports.traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
         _ = logger.info(
           s"--- Pending reports created"
         )
@@ -219,7 +222,9 @@ class SampleDataService(
     )
 
   private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
-    createdReports <- ReportGenerator.visibleReports(c).traverse(reportOrchestrator.createReport)
+    createdReports <- ReportGenerator
+      .visibleReports(c)
+      .traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
     _ = logger.info(
       s"--- Closed reports created"
     )
@@ -269,8 +274,10 @@ class SampleDataService(
           companyIds = companies.map(c => c.company.id)
           reportList <- companyIds.flatTraverse(c => reportRepository.getReports(c))
           _ = logger.info(s"Looking for reports link to company user ${predefinedUser.id}, found: ${reportList.size}")
-          _        <- reportList.traverse(r => reportAdminActionOrchestrator.deleteReport(r.id))
-          _        <- maybeUser.traverse(user => eventRepository.deleteByUserId(user.id))
+          _ <- reportList.traverse(r => reportAdminActionOrchestrator.deleteReport(r.id))
+          _ <- maybeUser.traverse { user =>
+            engagementRepository.removeByUserId(user.id).flatMap(_ => eventRepository.deleteByUserId(user.id))
+          }
           websites <- websiteRepository.searchByCompaniesId(companies.map(_.company.id))
           _ = logger.info(s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}")
           _ <- websites.map(_.id).traverse(websiteRepository.delete)

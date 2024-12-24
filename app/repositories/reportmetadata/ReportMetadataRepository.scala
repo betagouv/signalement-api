@@ -23,7 +23,9 @@ class ReportMetadataRepository(override val dbConfig: DatabaseConfig[JdbcProfile
       existingMetadata <- table.filter(_.reportId === reportId).result.headOption
       newOrUpdatedMetadata = existingMetadata
         .map(_.copy(assignedUserId = Some(userId)))
-        .getOrElse(ReportMetadata(reportId = reportId, isMobileApp = false, os = None, assignedUserId = Some(userId)))
+        .getOrElse(
+          ReportMetadata(reportId = reportId, isMobileApp = false, os = None, assignedUserId = Some(userId), None)
+        )
       _ <-
         table.insertOrUpdate(newOrUpdatedMetadata)
     } yield newOrUpdatedMetadata).transactionally

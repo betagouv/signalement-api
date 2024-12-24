@@ -74,4 +74,25 @@ class EngagementRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
       .filter(_.reportId === reportId)
       .delete
   )
+
+  def removeByUserId(userId: UUID): Future[Int] = {
+    val idsToDelete = db.run(
+      table
+        .join(EventTable.table)
+        .on { case (engagement, promiseEvent) => engagement.promiseEventId === promiseEvent.id }
+        .joinLeft(EventTable.table)
+        .on { case ((engagement, _), resolutionEvent) => engagement.resolutionEventId === resolutionEvent.id }
+        .filter { case ((_, promiseEvent), resolutionEvent) =>
+          promiseEvent.userId === userId || resolutionEvent.flatMap(_.userId) === userId
+        }
+        .map(_._1._1.id) // Extract IDs of the rows to delete
+        .result
+    )
+
+    idsToDelete.flatMap { ids =>
+      db.run(
+        table.filter(_.id inSet ids).delete // Delete rows with those IDs
+      )
+    }
+  }
 }

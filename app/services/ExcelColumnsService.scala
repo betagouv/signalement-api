@@ -250,12 +250,7 @@ object ExcelColumnsService {
       ),
       ReportColumn(
         "Prénom",
-        (report, _, _, _, _, _) => {
-          println(s"-------userRole-----------  = ${userRole} ------------------")
-          println(s"------isAdminOrAgent(userRole)------------  = ${isAdminOrAgent(userRole)} ------------------")
-          println(s"-------report.contactAgreement-----------  = ${report.contactAgreement} ------------------")
-          if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
-        }
+        (report, _, _, _, _, _) => if (shouldBeVisibleToUser(userRole, report)) report.firstName else ""
       ),
       ReportColumn(
         "Nom",

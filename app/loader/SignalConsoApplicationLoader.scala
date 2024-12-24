@@ -546,6 +546,11 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
+  val albertOrchestrator = new AlbertOrchestrator(
+    reportRepository,
+    albertService
+  )
+
   val reportClosureTask = new ReportClosureTask(
     actorSystem,
     reportRepository,
@@ -638,7 +643,8 @@ class SignalConsoComponents(
     companyAccessRepository,
     reportAdminActionOrchestrator,
     websiteRepository,
-    eventRepository
+    eventRepository,
+    engagementRepository
   )(
     actorSystem
   )
@@ -692,9 +698,8 @@ class SignalConsoComponents(
     actorSystem,
     taskConfiguration,
     companyRepository,
-    reportRepository,
-    taskRepository,
-    albertService
+    albertOrchestrator,
+    taskRepository
   )
 
   // Controller
@@ -770,6 +775,7 @@ class SignalConsoComponents(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
     companyRepository,
+    albertOrchestrator,
     cookieAuthenticator,
     controllerComponents
   )
