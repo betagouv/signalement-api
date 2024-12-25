@@ -189,14 +189,14 @@ GET           /api/resources/investigation-status                     controller
 
 POST          /api/website-investigations                             controllers.WebsiteController.updateInvestigation()
 # Websites API
-GET           /api/websites                                           controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean],isOpen: Option[Boolean])
+GET           /api/websites                                           controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean],isOpen: Option[Boolean],isMarketplace: Option[Boolean])
 POST          /api/websites                                           controllers.WebsiteController.create()
 GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                              controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/unregistered/extract                      controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                               controllers.WebsiteController.updateCompany(id: WebsiteId)
 PUT           /api/websites/:id/country                               controllers.WebsiteController.updateCompanyCountry(id: WebsiteId, companyCountry : String)
-PUT           /api/websites/:id                                       controllers.WebsiteController.updateWebsiteIdentificationStatus(id: WebsiteId, identificationStatus :IdentificationStatus)
+PUT           /api/websites/:id                                       controllers.WebsiteController.updateWebsite(id: WebsiteId, identificationStatus :Option[IdentificationStatus], isMarketPlace: Option[Boolean])
 DELETE        /api/websites/:id                                       controllers.WebsiteController.remove(id: WebsiteId)
 
 # Reported phones API

@@ -58,7 +58,8 @@ class WebsiteController(
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean],
-      isOpen: Option[Boolean]
+      isOpen: Option[Boolean],
+      isMarketplace: Option[Boolean]
   ) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { _ =>
       for {
@@ -72,7 +73,8 @@ class WebsiteController(
             start,
             end,
             hasAssociation,
-            isOpen
+            isOpen,
+            isMarketplace
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
@@ -107,11 +109,20 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
+  def updateWebsite(websiteId: WebsiteId, identificationStatus: Option[IdentificationStatus], isMarketPlace: Option[Boolean]) =
     SecuredAction.andThen(WithRole(UserRole.Admins)).async { implicit request =>
-      websitesOrchestrator
-        .updateWebsiteIdentificationStatus(websiteId, identificationStatus, request.identity)
-        .map(website => Ok(Json.toJson(website)))
+      (identificationStatus, isMarketPlace) match {
+        case (Some(identificationStatus), None) =>
+          websitesOrchestrator
+            .updateWebsiteIdentificationStatus(websiteId, identificationStatus, request.identity)
+            .map(website => Ok(Json.toJson(website)))
+        case (None, Some(isMarketPlace)) =>
+          websitesOrchestrator
+            .updateMarketplace(websiteId = websiteId, isMarketplace = isMarketPlace)
+            .map(website => Ok(Json.toJson(website)))
+
+        case _ => Future.successful(BadRequest)
+      }
     }
 
   def updateCompany(websiteId: WebsiteId) =
