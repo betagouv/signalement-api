@@ -109,7 +109,11 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsite(websiteId: WebsiteId, identificationStatus: Option[IdentificationStatus], isMarketPlace: Option[Boolean]) =
+  def updateWebsite(
+      websiteId: WebsiteId,
+      identificationStatus: Option[IdentificationStatus],
+      isMarketPlace: Option[Boolean]
+  ) =
     SecuredAction.andThen(WithRole(UserRole.Admins)).async { implicit request =>
       (identificationStatus, isMarketPlace) match {
         case (Some(identificationStatus), None) =>

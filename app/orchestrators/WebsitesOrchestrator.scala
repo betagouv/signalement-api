@@ -3,7 +3,13 @@ package orchestrators
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import controllers.error.AppError.{CannotDeleteWebsite, CreateWebsiteError, MalformedHost, WebsiteHostIsAlreadyIdentified, WebsiteNotAssociated, WebsiteNotFound, WebsiteNotIdentified}
+import controllers.error.AppError.CannotDeleteWebsite
+import controllers.error.AppError.CreateWebsiteError
+import controllers.error.AppError.MalformedHost
+import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
+import controllers.error.AppError.WebsiteNotAssociated
+import controllers.error.AppError.WebsiteNotFound
+import controllers.error.AppError.WebsiteNotIdentified
 import models.PaginatedResult
 import models.User
 import models.UserRole
@@ -281,15 +287,15 @@ class WebsitesOrchestrator(
     } yield ()
   }
 
-  def updateMarketplace(websiteId: WebsiteId, isMarketplace: Boolean): Future[Website] = {
+  def updateMarketplace(websiteId: WebsiteId, isMarketplace: Boolean): Future[Website] =
     for {
-      website    <- findWebsite(websiteId)
-      updatedWebsite <- if (website.identificationStatus == Identified && website.companyId.isDefined) {
-        repository.update(websiteId, website.copy(isMarketplace = isMarketplace))
-      } else {
-        Future.failed(WebsiteNotIdentified(website.host))
-      }
+      website <- findWebsite(websiteId)
+      updatedWebsite <-
+        if (website.identificationStatus == Identified && website.companyId.isDefined) {
+          repository.update(websiteId, website.copy(isMarketplace = isMarketplace))
+        } else {
+          Future.failed(WebsiteNotIdentified(website.host))
+        }
     } yield updatedWebsite
-  }
 
 }
