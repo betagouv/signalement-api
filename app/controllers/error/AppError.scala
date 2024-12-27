@@ -396,12 +396,12 @@ object AppError {
     override val titleForLogs: String = "malformed_file_key"
   }
 
-  final case class WebsiteNotIdentified(host: String) extends BadRequestError {
+  final case class WebsiteNotAssociated(host: String) extends BadRequestError {
     override val scErrorCode: String = "SC-0039"
     override val title: String       = s"Website must be associated to identify or update investigation"
     override val details: String =
       s"Le site $host doit être associé à une entreprise ou un pays pour l'identifier ou modifier l'enquête"
-    override val titleForLogs: String = "website_not_identified"
+    override val titleForLogs: String = "website_not_associated"
 
   }
 
@@ -648,4 +648,12 @@ object AppError {
     override val titleForLogs: String = "report_in_final_status"
   }
 
+  final case class WebsiteNotIdentified(host: String) extends BadRequestError {
+    override val scErrorCode: String = "SC-0071"
+    override val title: String       = s"Website must be identified and associated to a company"
+    override val details: String =
+      s"Le site $host doit être identifié et associé à une entreprise pour le marquer comme une marketplace"
+    override val titleForLogs: String = "website_not_identified"
+
+  }
 }

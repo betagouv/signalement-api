@@ -145,11 +145,15 @@ class WebsiteRepository(
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean],
-      isOpen: Option[Boolean]
+      isOpen: Option[Boolean],
+      isMarketplace: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
 
     val baseQuery =
       WebsiteTable.table
+        .filterOpt(isMarketplace) { case (websiteTable, isMarketplaceFilter) =>
+          websiteTable.isMarketplace === isMarketplaceFilter
+        }
         .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
         .filterOpt(identificationStatusFilter) { case (websiteTable, statusList) =>
           websiteTable.identificationStatus inSet statusList
