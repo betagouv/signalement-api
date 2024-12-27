@@ -7,6 +7,7 @@ import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.CreateWebsiteError
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
+import controllers.error.AppError.WebsiteNotAssociated
 import controllers.error.AppError.WebsiteNotFound
 import controllers.error.AppError.WebsiteNotIdentified
 import models.PaginatedResult
@@ -83,7 +84,8 @@ class WebsitesOrchestrator(
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean],
-      isOpen: Option[Boolean]
+      isOpen: Option[Boolean],
+      isMarketplace: Option[Boolean]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
       websites <- repository.listWebsitesCompaniesByReportCount(
@@ -95,7 +97,8 @@ class WebsitesOrchestrator(
         start,
         end,
         hasAssociation,
-        isOpen
+        isOpen,
+        isMarketplace
       )
       _                 = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
@@ -115,7 +118,7 @@ class WebsitesOrchestrator(
         )
       else Future.unit
     _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
-      throw WebsiteNotIdentified(website.host)
+      throw WebsiteNotAssociated(website.host)
     }
     _ <-
       if (newIdentificationStatus == Identified) { validateAndCleanAssociation(website) }
@@ -283,5 +286,16 @@ class WebsitesOrchestrator(
       )
     } yield ()
   }
+
+  def updateMarketplace(websiteId: WebsiteId, isMarketplace: Boolean): Future[Website] =
+    for {
+      website <- findWebsite(websiteId)
+      updatedWebsite <-
+        if (website.identificationStatus == Identified && website.companyId.isDefined) {
+          repository.update(websiteId, website.copy(isMarketplace = isMarketplace))
+        } else {
+          Future.failed(WebsiteNotIdentified(website.host))
+        }
+    } yield updatedWebsite
 
 }
