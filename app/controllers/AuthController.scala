@@ -86,14 +86,20 @@ class AuthController(
 
   def logoutProConnect(): Action[AnyContent] =
     SecuredAction.andThen(WithAuthProvider(ProConnect)).async { implicit request =>
-      for {
-        cookiesInfo <- authenticator.extract(request).liftTo[Future]
-        tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
-        state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
-        redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
-        result = Ok(redirectUrl)
-      } yield authenticator.discard(result)
-
+      request.identity.impersonator match {
+        case Some(impersonator) =>
+          authOrchestrator
+            .logoutAs(impersonator)
+            .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+        case None =>
+          for {
+            cookiesInfo <- authenticator.extract(request).liftTo[Future]
+            tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
+            state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
+            redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
+            result = Ok(redirectUrl)
+          } yield authenticator.discard(result)
+      }
     }
 
   def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>
