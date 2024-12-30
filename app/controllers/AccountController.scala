@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.CookieAuthenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import cats.implicits.catsSyntaxOption
 import config.EmailConfiguration
 import models._
@@ -149,27 +150,30 @@ class AccountController(
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
-  def edit() = SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).async(parse.json) { implicit request =>
-    for {
-      userUpdate     <- request.parseBody[UserUpdate]()
-      updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
-    } yield updatedUserOpt match {
-      case Some(updatedUser) => Ok(Json.toJson(updatedUser))
-      case _                 => NotFound
+  def edit() =
+    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        for {
+          userUpdate     <- request.parseBody[UserUpdate]()
+          updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
+        } yield updatedUserOpt match {
+          case Some(updatedUser) => Ok(Json.toJson(updatedUser))
+          case _                 => NotFound
+        }
     }
-  }
 
-  def sendEmailAddressUpdateValidation() = SecuredAction.async(parse.json) { implicit request =>
-    for {
-      emailAddress <- request.parseBody[EmailAddress](JsPath \ "email")
-      _            <- accessesOrchestrator.sendEmailAddressUpdateValidation(request.identity, emailAddress)
-    } yield NoContent
-  }
+  def sendEmailAddressUpdateValidation() =
+    SecuredAction.andThen(ForbidImpersonation).async(parse.json) { implicit request =>
+      for {
+        emailAddress <- request.parseBody[EmailAddress](JsPath \ "email")
+        _            <- accessesOrchestrator.sendEmailAddressUpdateValidation(request.identity, emailAddress)
+      } yield NoContent
+    }
 
   def updateEmailAddress(token: String) =
     SecuredAction
       .andThen(WithAuthProvider(AuthProvider.SignalConso))
-      .andThen(WithRole(UserRole.SuperAdmin, UserRole.Admin, UserRole.Professionnel, UserRole.DGAL))
+      .andThen(ForbidImpersonation)
       .async { implicit request =>
         for {
           updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)

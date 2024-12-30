@@ -130,20 +130,20 @@ class ReportController(
     }
 
   def createReportAction(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithRole(UserRole.EveryoneButReadOnlyAdmin)).async(parse.json) { implicit request =>
-      for {
-        reportAction       <- request.parseBody[ReportAction]()
-        reportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
-        report = reportWithMetadata.map(_.report)
-        newEvent <-
-          report
-            .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
-            .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity))
-            .sequence
-      } yield newEvent
-        .map(e => Ok(Json.toJson(e)))
-        .getOrElse(NotFound)
-
+    SecuredAction.andThen(WithRole(UserRole.EveryoneButReadOnlyAdmin)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        for {
+          reportAction       <- request.parseBody[ReportAction]()
+          reportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
+          report = reportWithMetadata.map(_.report)
+          newEvent <-
+            report
+              .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
+              .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity))
+              .sequence
+        } yield newEvent
+          .map(e => Ok(Json.toJson(e)))
+          .getOrElse(NotFound)
     }
 
   def getReport(uuid: UUID) =

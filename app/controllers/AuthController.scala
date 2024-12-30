@@ -24,6 +24,7 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 import cats.syntax.either._
 import _root_.controllers.error.AppError._
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import models.AuthProvider.ProConnect
 import models.AuthProvider.SignalConso
 
@@ -85,14 +86,20 @@ class AuthController(
 
   def logoutProConnect(): Action[AnyContent] =
     SecuredAction.andThen(WithAuthProvider(ProConnect)).async { implicit request =>
-      for {
-        cookiesInfo <- authenticator.extract(request).liftTo[Future]
-        tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
-        state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
-        redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
-        result = Ok(redirectUrl)
-      } yield authenticator.discard(result)
-
+      request.identity.impersonator match {
+        case Some(impersonator) =>
+          authOrchestrator
+            .logoutAs(impersonator)
+            .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+        case None =>
+          for {
+            cookiesInfo <- authenticator.extract(request).liftTo[Future]
+            tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
+            state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
+            redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
+            result = Ok(redirectUrl)
+          } yield authenticator.discard(result)
+      }
     }
 
   def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>
@@ -122,11 +129,12 @@ class AuthController(
     }
 
   def changePassword =
-    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).async(parse.json) { implicit request =>
-      for {
-        updatePassword <- request.parseBody[PasswordChange]()
-        _              <- authOrchestrator.changePassword(request.identity, updatePassword)
-      } yield NoContent
+    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        for {
+          updatePassword <- request.parseBody[PasswordChange]()
+          _              <- authOrchestrator.changePassword(request.identity, updatePassword)
+        } yield NoContent
 
     }
 
