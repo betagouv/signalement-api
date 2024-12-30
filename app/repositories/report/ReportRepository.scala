@@ -712,7 +712,7 @@ object ReportRepository {
         val frenchQuery  = table.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
 
         // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang =!= Locale.ENGLISH) && frenchQuery)
+        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
       }
       .filterOpt(filter.description) { case (table, description) =>
         // unique separator use to match the string between  "Description :" et and separator
@@ -793,7 +793,7 @@ object ReportRepository {
             table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
 
         // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang =!= Locale.ENGLISH) && frenchQuery)
+        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
