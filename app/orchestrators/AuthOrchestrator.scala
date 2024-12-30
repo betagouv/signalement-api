@@ -142,8 +142,8 @@ class AuthOrchestrator(
     maybeUserToImpersonate <- userRepository.findByEmail(userEmail.value)
     userToImpersonate      <- maybeUserToImpersonate.liftTo[Future](UserNotFound(userEmail.value))
     _ <- userToImpersonate.userRole match {
-      case UserRole.Professionnel => Future.unit
-      case _                      => Future.failed(BrokenAuthError("Not a pro"))
+      case UserRole.Professionnel | UserRole.DGAL | UserRole.DGCCRF => Future.unit
+      case role => Future.failed(BrokenAuthError(s"Connecting as $role is forbidden"))
     }
     cookie <- authenticator.initSignalConsoCookie(userEmail, Some(request.identity.email)).liftTo[Future]
   } yield UserSession(cookie, userToImpersonate.copy(impersonator = Some(request.identity.email)))

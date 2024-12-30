@@ -24,6 +24,7 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 import cats.syntax.either._
 import _root_.controllers.error.AppError._
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import models.AuthProvider.ProConnect
 import models.AuthProvider.SignalConso
 
@@ -122,11 +123,12 @@ class AuthController(
     }
 
   def changePassword =
-    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).async(parse.json) { implicit request =>
-      for {
-        updatePassword <- request.parseBody[PasswordChange]()
-        _              <- authOrchestrator.changePassword(request.identity, updatePassword)
-      } yield NoContent
+    SecuredAction.andThen(WithAuthProvider(AuthProvider.SignalConso)).andThen(ForbidImpersonation).async(parse.json) {
+      implicit request =>
+        for {
+          updatePassword <- request.parseBody[PasswordChange]()
+          _              <- authOrchestrator.changePassword(request.identity, updatePassword)
+        } yield NoContent
 
     }
 

@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.ImpersonationAction.ForbidImpersonation
 import authentication.actions.UserAction.WithRole
 import models._
 import orchestrators._
@@ -21,14 +22,14 @@ class BookmarkController(
   val logger: Logger = Logger(this.getClass)
 
   def addBookmark(uuid: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).andThen(ForbidImpersonation).async { request =>
       for {
         _ <- bookmarkOrchestrator.addBookmark(uuid, request.identity)
       } yield Ok
     }
 
   def removeBookmark(uuid: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).andThen(ForbidImpersonation).async { request =>
       for {
         _ <- bookmarkOrchestrator.removeBookmark(uuid, request.identity)
       } yield Ok
