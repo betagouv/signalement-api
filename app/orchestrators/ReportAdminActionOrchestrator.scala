@@ -57,16 +57,23 @@ class ReportAdminActionOrchestrator(
   private def fetchStrict(reportId: UUID): Future[Report] =
     reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
 
-  def reportReOpening(reportId: UUID, user: User): Future[Unit] =
+  def reportsReOpening(reportIds: List[UUID], user: User): Future[Unit] =
     for {
-      report <- fetchStrict(reportId)
-      isReopenable = report.status === ReportStatus.NonConsulte || report.status === ReportStatus.ConsulteIgnore
-      _             <- if (isReopenable) Future.unit else throw CannotReopenReport
+      reports <- reportRepository.getReportsByIds(reportIds.toSet.toList)
+      isReopenable = reports.filterNot(report =>
+        report.status === ReportStatus.NonConsulte || report.status === ReportStatus.ConsulteIgnore
+      )
+      _ <- if (isReopenable.isEmpty) Future.unit else throw CannotReopenReport
+      _ <- reports.traverse(reportsReOpening(_, user))
+    } yield ()
+
+  private def reportsReOpening(report: Report, user: User): Future[Unit] =
+    for {
       updatedReport <- reOpenReport(report)
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
-          Some(reportId),
+          Some(updatedReport.id),
           report.companyId,
           Some(user.id),
           OffsetDateTime.now(),

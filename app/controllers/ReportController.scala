@@ -243,11 +243,12 @@ class ReportController(
       } yield Ok(Json.toJson(deleted))
     }
 
-  def reopenReport(uuid: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.empty) { request =>
+  def reopenReport() =
+    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { request =>
       for {
-        _ <- reportAdminActionOrchestrator.reportReOpening(
-          uuid,
+        reportsIds <- request.parseBody[List[UUID]]()
+        _ <- reportAdminActionOrchestrator.reportsReOpening(
+          reportsIds,
           request.identity
         )
       } yield NoContent
