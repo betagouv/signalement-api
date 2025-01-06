@@ -44,7 +44,7 @@ POST          /api/reports/files/list                                 controller
 GET           /api/reports/download                                   controllers.ReportController.reportsAsPDF()
 GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.reportAsZip(reportId: java.util.UUID)
 GET           /api/reports/cloudword/:companyId                       controllers.ReportController.cloudWord(companyId: java.util.UUID)
-POST          /api/reports/:uuid/reopen                               controllers.ReportController.reopenReport(uuid: java.util.UUID)
+POST          /api/reports/reopen                                     controllers.ReportController.reopenReport()
 GET           /api/reports/:uuid                                      controllers.ReportController.getReport(uuid: java.util.UUID)
 DELETE        /api/reports/:uuid                                      controllers.ReportController.deleteReport(uuid: java.util.UUID)
 DELETE        /api/reports                                            controllers.ReportController.deleteSpamReport()
