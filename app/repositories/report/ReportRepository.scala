@@ -342,21 +342,22 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .table(Some(user))
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.tags)
-        .map { case (status, report) => (status, report.size) }
+        .map { case (tags, report) => (tags, report.size) }
         .sortBy(_._2.desc)
         .result
     ).map(spreadListOfTags)
   }
 
-  def getHostsByCompany(companyId: UUID): Future[Seq[String]] =
+  def getHostsByCompany(companyId: UUID): Future[Seq[(String, Int)]] =
     db.run(
       table
         .filter(_.companyId === companyId)
         .filter(_.host.isDefined)
-        .map(_.host)
-        .distinct
+        .groupBy(_.host)
+        .map { case (host, rowsGroup) => (host, rowsGroup.size) }
+        .sortBy(_._2.desc)
         .result
-    ).map(_.map(_.getOrElse("")))
+    ).map(_.map { case (maybeHost, nb) => (maybeHost.getOrElse(""), nb) })
 
   def getReportsWithFiles(
       user: Option[User],
