@@ -1,5 +1,6 @@
 package orchestrators
 
+import cats.implicits.toTraverseOps
 import models.report.Report
 import models.report.ReportTag
 import play.api.Logger
@@ -33,13 +34,44 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
     }
   }
 
+  private val postalCodeRegex = "\\d{5}".r
+  private def extractPostalCode(s: String) =
+    postalCodeRegex.findFirstIn(s)
+
+  private def getDDEmails(report: Report) = {
+    val maybeTag = shouldNotifyDgccrf(report)
+
+    maybeTag match {
+      // Cas spécial BauxPrecaire
+      case Some(ReportTag.BauxPrecaire) =>
+        for {
+          // On doit envoyer tous les signalements Baux précaire à la dd 33. Ce sont eux qui les traitent
+          dd33Email <- subscriptionRepository.getDirectionDepartementaleEmail("33")
+          // Adresse fournie par le conso à l'étape 3.
+          storeDDEmail <- report.details
+            .find(_.label == "Adresse précise du magasin (numéro, nom de rue, code postal et nom de la ville) :")
+            .map(_.value)
+            .flatMap(extractPostalCode)
+            .traverse(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+          // En fallback, l'adresse de l'entreprise identifiée
+          companyDDEmail <- report.companyAddress.postalCode.traverse(postalCode =>
+            subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2))
+          )
+        } yield dd33Email ++ companyDDEmail.getOrElse(Seq.empty) ++ storeDDEmail.getOrElse(Seq.empty)
+      case Some(_) =>
+        // Cas nominal, on prend les emails de la DD de l'entreprise
+        report.companyAddress.postalCode
+          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+          .getOrElse(Future.successful(Seq.empty))
+      case None => Future.successful(Seq.empty)
+    }
+  }
+
   def notifyDgccrfIfNeeded(report: Report): Future[Unit] =
     getNotificationEmail(report) match {
       case Some(email) =>
         for {
-          ddEmails <- report.companyAddress.postalCode
-            .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-            .getOrElse(Future.successful(Seq.empty))
+          ddEmails <- getDDEmails(report)
           _ <-
             if (ddEmails.nonEmpty) {
               mailService.send(email(ddEmails))
