@@ -62,8 +62,9 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def getAcceptedResponsesDistribution(companyId: UUID, user: User): Future[Map[ExistingResponseDetails, Int]]
   def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]]
 
-  def getHostsByCompany(companyId: UUID): Future[Seq[(String, Int)]]
+  def getHostsOfCompany(companyId: UUID): Future[Seq[(String, Int)]]
 
+  def getPhonesOfCompany(companyId: UUID): Future[Seq[(String, Int)]]
   def getReportsWithFiles(user: Option[User], filter: ReportFilter): Future[SortedMap[Report, List[ReportFile]]]
 
   def getReports(
