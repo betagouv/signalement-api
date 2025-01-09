@@ -20,6 +20,8 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
+import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
 import services.WebsiteApiServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
@@ -39,20 +41,44 @@ class StatsOrchestrator(
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
     reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
-    websiteApiService: WebsiteApiServiceInterface
+    websiteApiService: WebsiteApiServiceInterface,
+    subcategoryLabelRepository: SubcategoryLabelRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def reportsCountBySubcategories(user: User, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
     for {
       maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
       minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
+      labels                  <- subcategoryLabelRepository.list()
       reportNodesFr <- reportRepository
         .reportsCountBySubcategories(user, filters, Locale.FRENCH)
         .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.fr, _))
       reportNodesEn <- reportRepository
         .reportsCountBySubcategories(user, filters, Locale.ENGLISH)
         .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.en, _))
-    } yield ReportNodes(reportNodesFr, reportNodesEn)
+    } yield ReportNodes(translateSubcategories(reportNodesFr, labels), translateSubcategories(reportNodesEn, labels))
+
+  private def translateSubcategories(nodes: List[ReportNode], labels: List[SubcategoryLabel]): List[ReportNode] =
+    nodes.map { node =>
+      node.copy(children = translateSubcategories(node.name, List.empty, node.children, labels))
+    }
+
+  private def translateSubcategories(
+      categories: String,
+      subcategories: List[String],
+      nodes: List[ReportNode],
+      labels: List[SubcategoryLabel]
+  ): List[ReportNode] =
+    nodes.map { node =>
+      node.copy(
+        name = labels
+          .find(label => label.category == categories && label.subcategories == subcategories :+ node.name)
+          .flatMap(label => label.subcategoryLabelsFr.orElse(label.subcategoryLabelsEn))
+          .flatMap(_.lastOption)
+          .getOrElse(node.name),
+        children = translateSubcategories(categories, subcategories :+ node.name, node.children, labels)
+      )
+    }
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {
