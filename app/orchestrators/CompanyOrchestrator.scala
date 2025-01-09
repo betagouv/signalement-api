@@ -76,7 +76,10 @@ class CompanyOrchestrator(
       .getOrCreate(companyCreation.siret, companyCreation.toCompany())
 
   def fetchHosts(companyId: UUID): Future[Seq[(String, Int)]] =
-    reportRepository.getHostsByCompany(companyId)
+    reportRepository.getHostsOfCompany(companyId)
+
+  def fetchPhones(companyId: UUID): Future[Seq[(String, Int)]] =
+    reportRepository.getPhonesOfCompany(companyId)
 
   def searchRegisteredById(
       companyIdFilter: UUID,

@@ -37,6 +37,10 @@ class CompanyController(
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
   }
 
+  def fetchPhones(companyId: UUID) = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async {
+    companyOrchestrator.fetchPhones(companyId).map(x => Ok(Json.toJson(x)))
+  }
+
   def create() =
     SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
       request.body

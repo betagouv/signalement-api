@@ -348,7 +348,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     ).map(spreadListOfTags)
   }
 
-  def getHostsByCompany(companyId: UUID): Future[Seq[(String, Int)]] =
+  def getHostsOfCompany(companyId: UUID): Future[Seq[(String, Int)]] =
     db.run(
       table
         .filter(_.companyId === companyId)
@@ -358,6 +358,17 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .sortBy(_._2.desc)
         .result
     ).map(_.map { case (maybeHost, nb) => (maybeHost.getOrElse(""), nb) })
+
+  def getPhonesOfCompany(companyId: UUID): Future[Seq[(String, Int)]] =
+    db.run(
+      table
+        .filter(_.companyId === companyId)
+        .filter(_.phone.isDefined)
+        .groupBy(_.phone)
+        .map { case (phone, rowsGroup) => (phone, rowsGroup.size) }
+        .sortBy(_._2.desc)
+        .result
+    ).map(_.map { case (maybePhone, nb) => (maybePhone.getOrElse(""), nb) })
 
   def getReportsWithFiles(
       user: Option[User],
