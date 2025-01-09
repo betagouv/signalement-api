@@ -503,7 +503,8 @@ class SignalConsoComponents(
       responseConsumerReviewRepository,
       reportEngagementReviewRepository,
       accessTokenRepository,
-      websiteApiService
+      websiteApiService,
+      subcategoryLabelRepository
     )
 
   val rgpdOrchestrator = new RgpdOrchestrator(

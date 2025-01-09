@@ -20,4 +20,6 @@ class SubcategoryLabelRepository(val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def get(category: String, subcategories: List[String]): Future[Option[SubcategoryLabel]] = db.run(
     table.filter(_.category === category).filter(_.subcategories === subcategories).result.headOption
   )
+
+  override def list(): Future[List[SubcategoryLabel]] = db.run(table.to[List].result)
 }
