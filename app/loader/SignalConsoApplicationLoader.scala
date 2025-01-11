@@ -918,6 +918,8 @@ class SignalConsoComponents(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
 
+  companyUpdateTask.runTask()
+
   // Routes
   lazy val router: Router =
     new _root_.router.Routes(

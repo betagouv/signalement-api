@@ -13,13 +13,11 @@ import sttp.model.Header
 import utils.SIREN
 import utils.SIRET
 
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 trait CompanySyncServiceInterface {
-  def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
+  def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]]
   def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]]
   def companyBySiren(siren: SIREN, onlyHeadOffice: Boolean): Future[List[CompanySearchResult]]
   def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]]
@@ -37,8 +35,7 @@ class CompanySyncService(
   val SirenSearchEndpoint = "/api/companies/siren/search"
 
   override def syncCompanies(
-      companies: Seq[Company],
-      lastUpdated: OffsetDateTime
+      companies: Seq[Company]
   ): Future[List[CompanySearchResult]] = {
 
     val request = basicRequest
@@ -46,7 +43,6 @@ class CompanySyncService(
       .post(
         uri"${companyUpdateConfiguration.etablissementApiUrl}"
           .withWholePath(SearchEndpoint)
-          .addParam("lastUpdated", Some(lastUpdated.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)))
       )
       .body(companies.map(_.siret))
       .response(asJson[List[CompanySearchResult]])
