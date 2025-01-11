@@ -147,7 +147,7 @@ class CompanyAccessOrchestrator(
             "multiple_head_offices",
             s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} "
           )
-          //multiple_head_offices error should be investigated, but for now we are considering that last created company is the head office.
+          // multiple_head_offices error should be investigated, but for now we are considering that last created company is the head office.
           companies.maxBy(_.creationDate.toEpochSecond).some.pure[Future]
       }
 

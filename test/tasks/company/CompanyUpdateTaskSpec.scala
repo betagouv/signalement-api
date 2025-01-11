@@ -63,7 +63,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
 
       serviceMock.syncCompanies(
-        Seq(company),
+        Seq(company)
       ) returns Future
         .successful(
           List(companySearchResult)
