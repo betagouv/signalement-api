@@ -158,7 +158,6 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
     }
 
   def findProblems(
-      companyId: UUID,
       selectedCompanyReportsDescriptions: Seq[String]
   ): Future[Option[AlbertProblemsResult]] = {
     val prompt = AlbertPrompts.findProblems(selectedCompanyReportsDescriptions, maxPromptLength = 10000)

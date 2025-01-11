@@ -52,7 +52,7 @@ class AlbertOrchestrator(
           Future.successful(None)
         case _ =>
           albertService
-            .findProblems(companyId, descriptions)
+            .findProblems(descriptions)
             .recover { err =>
               logger.error(s"Didn't get a result from Albert for company $companyId", err)
               None
