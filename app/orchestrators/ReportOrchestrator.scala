@@ -30,6 +30,7 @@ import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
+import orchestrators.ReportOrchestrator.isGouvWebsite
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -65,6 +66,7 @@ import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -303,6 +305,7 @@ class ReportOrchestrator(
           Future.failed(AppError.CannotReportPublicAdministration)
         case _ => Future.unit
       }
+      _ <- isGouvWebsite(reportDraft)
       _ <- reportDraft.companySiret match {
         case Some(siret) =>
           // Try to check if siret exist in signal conso database
@@ -1112,4 +1115,20 @@ class ReportOrchestrator(
 
 object ReportOrchestrator {
   val ReportCompanyChangeThresholdInDays: Long = 90L
+
+  def isGouvWebsite(reportDraft: ReportDraft): Future[Unit] = {
+
+    def isAGouvWebsite(input: URL): Boolean = {
+      val regex   = "^(?!.*\\.gouv\\.fr(?:[\\/\\?#]|$)).*$"
+      val pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE)
+      !pattern.matcher(input.value).matches()
+    }
+
+    reportDraft.websiteURL match {
+      case Some(websiteURL) if isAGouvWebsite(websiteURL) =>
+        Future.failed(AppError.CannotReportPublicAdministration)
+      case _ => Future.unit
+    }
+  }
+
 }
