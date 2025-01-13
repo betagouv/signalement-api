@@ -28,8 +28,8 @@ class StatsOrchestratorTest extends Specification {
         ArborescenceNode(
           None,
           Vector(
-            CategoryInfo("cat2", "Cat 2")        -> NodeInfo("2", List.empty),
-            CategoryInfo("subcat21", "Subcat 1") -> NodeInfo("2.1", List("tag2"))
+            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty),
+            CategoryInfo("subcat21", "Subcat 21") -> NodeInfo("2.1", List("tag2"))
           )
         ),
         ArborescenceNode(
@@ -47,7 +47,7 @@ class StatsOrchestratorTest extends Specification {
 
       val expected =
         List(
-          ReportNode("cat4", "Cat 4", 10, 5, List.empty, List.empty, None),
+          ReportNode("cat4", "cat4", 10, 5, List.empty, List.empty, None),
           ReportNode("cat3", "Cat 3", 0, 0, List.empty, List.empty, Some("3")),
           ReportNode(
             "cat2",
