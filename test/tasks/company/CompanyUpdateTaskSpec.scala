@@ -63,8 +63,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
 
       serviceMock.syncCompanies(
-        Seq(company),
-        companySync.lastUpdated
+        Seq(company)
       ) returns Future
         .successful(
           List(companySearchResult)
@@ -114,8 +113,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
 
       serviceMock.syncCompanies(
-        Seq(company),
-        CompanySync.default.lastUpdated
+        Seq(company)
       ) returns Future
         .successful(
           List(companySearchResult)
@@ -163,8 +161,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       )
 
       serviceMock.syncCompanies(
-        Seq(company),
-        companySync.lastUpdated
+        Seq(company)
       ) returns Future
         .successful(
           List(companySearchResult)
@@ -199,8 +196,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val companySync = CompanySync(UUID.randomUUID(), now.plus(1, ChronoUnit.DAYS))
 
       serviceMock.syncCompanies(
-        org.mockito.ArgumentMatchers.eq(Seq(company)),
-        any[OffsetDateTime]
+        org.mockito.ArgumentMatchers.eq(Seq(company))
       ) returns Future
         .successful(
           List.empty

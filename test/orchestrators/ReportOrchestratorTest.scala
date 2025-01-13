@@ -14,7 +14,7 @@ import org.specs2.mutable.Specification
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-
+import utils.URL
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -236,6 +236,16 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
     "fail when reporting public company" in {
       val draftReportOnPublicCompany = aDraftReport.copy(
         companyActivityCode = Some("84.10")
+      )
+      val res =
+        components.reportOrchestrator.validateAndCreateReport(draftReportOnPublicCompany, ConsumerIp("0.0.0.0"))
+      res must throwA[CannotReportPublicAdministration.type].await
+    }
+
+    "fail when reporting gouv website " in {
+      val draftReportOnPublicCompany = aDraftReport.copy(
+        companyActivityCode = Some("90.10"),
+        websiteURL = Some(URL("http://totot.gouv.fr?titi=tr"))
       )
       val res =
         components.reportOrchestrator.validateAndCreateReport(draftReportOnPublicCompany, ConsumerIp("0.0.0.0"))

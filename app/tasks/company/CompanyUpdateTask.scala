@@ -44,7 +44,7 @@ class CompanyUpdateTask(
           "company_update_task_item",
           s"Syncing ${companies.size} companies"
         )
-        companySyncService.syncCompanies(companies, companySync.lastUpdated)
+        companySyncService.syncCompanies(companies)
       }
       .mapAsync(1)(updateSignalConsoCompaniesBySiret)
       .map(_.flatMap(_.lastUpdated).maxOption.getOrElse(companySync.lastUpdated))

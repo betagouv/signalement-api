@@ -5,11 +5,10 @@ import models.company.Company
 import tasks.company.CompanySearchResult
 import tasks.company.CompanySyncServiceInterface
 
-import java.time.OffsetDateTime
 import scala.concurrent.Future
 
 class CompanySyncServiceMock extends CompanySyncServiceInterface {
-  override def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]] =
+  override def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]] =
     Future.successful(List.empty[CompanySearchResult])
 
   override def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]] = Future.successful(
