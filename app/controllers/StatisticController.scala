@@ -14,9 +14,12 @@ import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
+import play.api.mvc.Results
 import utils.QueryStringMapper
 import authentication.actions.UserAction.WithRole
 
+import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -192,6 +195,20 @@ class StatisticController(
           statsOrchestrator
             .reportsCountBySubcategories(request.identity, filters)
             .map(res => Ok(Json.toJson(res)))
+      }
+    }
+
+  def downloadReportsCountBySubcategories(lang: String) =
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
+      ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
+        case Failure(error) =>
+          logger.error("Cannot parse querystring" + request.queryString, error)
+          Future.failed(MalformedQueryParams)
+        case Success(filters) =>
+          val fileName = s"subcategories_${OffsetDateTime.now()}.csv"
+          statsOrchestrator
+            .downloadReportsCountBySubcategories(request.identity, filters, Locale.forLanguageTag(lang))
+            .map(res => Ok(res).withHeaders(Results.contentDispositionHeader(inline = false, Some(fileName)).toSeq: _*))
       }
     }
 

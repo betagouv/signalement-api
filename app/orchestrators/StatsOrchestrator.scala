@@ -45,6 +45,29 @@ class StatsOrchestrator(
     subcategoryLabelRepository: SubcategoryLabelRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
+  def downloadReportsCountBySubcategories(
+      user: User,
+      filters: ReportsCountBySubcategoriesFilter,
+      locale: Locale
+  ): Future[String] = for {
+    maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
+    minimizedAnomalies      <- maybeMinimizedAnomalies.liftTo[Future](WebsiteApiError)
+    res <-
+      if (locale == Locale.FRENCH)
+        reportRepository
+          .reportsCountBySubcategories(user, filters, Locale.FRENCH)
+          .map(StatsOrchestrator.buildCSV(minimizedAnomalies.fr, _))
+      else
+        reportRepository
+          .reportsCountBySubcategories(user, filters, locale)
+          .map(StatsOrchestrator.buildCSV(minimizedAnomalies.en, _))
+
+  } yield {
+    val header = "Catégorie,Sous-catégorie,Nombre,Réclamations"
+    val lines  = res.map { case (a, b, c, d) => s"$a,$b,$c,$d" }.mkString("\n")
+    s"$header\n$lines"
+  }
+
   def reportsCountBySubcategories(user: User, filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] =
     for {
       maybeMinimizedAnomalies <- websiteApiService.fetchMinimizedAnomalies()
@@ -52,33 +75,11 @@ class StatsOrchestrator(
       labels                  <- subcategoryLabelRepository.list()
       reportNodesFr <- reportRepository
         .reportsCountBySubcategories(user, filters, Locale.FRENCH)
-        .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.fr, _))
+        .map(StatsOrchestrator.buildReportNodes(labels, Locale.FRENCH, minimizedAnomalies.fr, _))
       reportNodesEn <- reportRepository
         .reportsCountBySubcategories(user, filters, Locale.ENGLISH)
-        .map(StatsOrchestrator.buildReportNodes(minimizedAnomalies.en, _))
-    } yield ReportNodes(translateSubcategories(reportNodesFr, labels), translateSubcategories(reportNodesEn, labels))
-
-  private def translateSubcategories(nodes: List[ReportNode], labels: List[SubcategoryLabel]): List[ReportNode] =
-    nodes.map { node =>
-      node.copy(children = translateSubcategories(node.name, List.empty, node.children, labels))
-    }
-
-  private def translateSubcategories(
-      categories: String,
-      subcategories: List[String],
-      nodes: List[ReportNode],
-      labels: List[SubcategoryLabel]
-  ): List[ReportNode] =
-    nodes.map { node =>
-      node.copy(
-        name = labels
-          .find(label => label.category == categories && label.subcategories == subcategories :+ node.name)
-          .flatMap(label => label.subcategoryLabelsFr.orElse(label.subcategoryLabelsEn))
-          .flatMap(_.lastOption)
-          .getOrElse(node.name),
-        children = translateSubcategories(categories, subcategories :+ node.name, node.children, labels)
-      )
-    }
+        .map(StatsOrchestrator.buildReportNodes(labels, Locale.ENGLISH, minimizedAnomalies.en, _))
+    } yield ReportNodes(reportNodesFr, reportNodesEn)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {
@@ -244,23 +245,45 @@ class StatsOrchestrator(
 
 object StatsOrchestrator {
 
+  private[orchestrators] def buildCSV(
+      arbo: List[ArborescenceNode],
+      results: Seq[(String, List[String], Int, Int)]
+  ): List[(String, String, Int, Int)] = {
+    val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
+
+    arbo.map { arborescenceNode =>
+      val res          = merged.find(_._1 == arborescenceNode.path.map(_._1.key).toList)
+      val count        = res.map(_._2).getOrElse(0)
+      val reclamations = res.map(_._3).getOrElse(0)
+      (
+        s"\"${arborescenceNode.path.head._1.label.replace("\"", "\"\"")}\"",
+        arborescenceNode.path.tail.map(_._1.label).map(_.replace("\"", "\"\"")).mkString("\"", ";", "\""),
+        count,
+        reclamations
+      )
+    }
+  }
+
   private[orchestrators] def buildReportNodes(
+      labels: List[SubcategoryLabel],
+      locale: Locale,
       arbo: List[ArborescenceNode],
       results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
-    val tree   = ReportNode("", 0, 0, List.empty, List.empty, None)
+    val tree   = ReportNode("", "", 0, 0, List.empty, List.empty, None)
 
     arbo.foreach { arborescenceNode =>
-      val res          = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
+      val res          = merged.find(_._1 == arborescenceNode.path.map(_._1.key).toList)
       val count        = res.map(_._2).getOrElse(0)
       val reclamations = res.map(_._3).getOrElse(0)
       createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
     }
 
-    val arboPathes = arbo.map(_.path.map(_._1).toList)
+    val arboPathes = arbo.map(_.path.map(_._1.key).toList)
     merged.foreach { case (path, count, reclamations) =>
-      if (!arboPathes.contains(path)) createOrUpdateReportNodeOld(path, count, reclamations, tree)
+      if (!arboPathes.contains(path))
+        createOrUpdateReportNodeOld(labels, locale, List.empty, path, count, reclamations, tree)
     }
 
     tree.children
@@ -280,7 +303,7 @@ object StatsOrchestrator {
         tree.children.find(_.name == path.key) match {
           case Some(child) => createOrUpdateReportNode(rest, count, reclamations, child)
           case None =>
-            val reportNode = ReportNode(path.key, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
+            val reportNode = ReportNode(path.key, path.label, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
             tree.children = reportNode :: tree.children
             createOrUpdateReportNode(rest, count, reclamations, reportNode)
 
@@ -291,21 +314,32 @@ object StatsOrchestrator {
 
   @tailrec
   private def createOrUpdateReportNodeOld(
-      subcats: List[String],
+      labels: List[SubcategoryLabel],
+      locale: Locale,
+      currentPath: List[String],
+      paths: List[String],
       count: Int,
       reclamations: Int,
       tree: ReportNode
   ): Unit = {
     tree.count += count
     tree.reclamations += reclamations
-    subcats match {
+    paths match {
       case path :: rest =>
         tree.children.find(_.name == path) match {
-          case Some(child) => createOrUpdateReportNodeOld(rest, count, reclamations, child)
+          case Some(child) =>
+            createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, child)
           case None =>
-            val reportNode = ReportNode(path, 0, 0, List.empty, List.empty, None)
+            val cat     = currentPath.headOption.getOrElse(path)
+            val subcats = currentPath.drop(1)
+            val label = labels
+              .find(label => label.category == cat && label.subcategories == subcats)
+              .flatMap(label => if (locale == Locale.FRENCH) label.subcategoryLabelsFr else label.subcategoryLabelsEn)
+              .flatMap(_.lastOption)
+              .getOrElse(path)
+            val reportNode = ReportNode(path, label, 0, 0, List.empty, List.empty, None)
             tree.children = reportNode :: tree.children
-            createOrUpdateReportNodeOld(rest, count, reclamations, reportNode)
+            createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, reportNode)
 
         }
       case _ => ()

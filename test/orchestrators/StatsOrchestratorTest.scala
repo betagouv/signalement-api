@@ -11,6 +11,7 @@ import org.specs2.mutable.Specification
 
 import java.sql.Timestamp
 import java.time.LocalDate
+import java.util.Locale
 
 class StatsOrchestratorTest extends Specification {
 
@@ -27,8 +28,8 @@ class StatsOrchestratorTest extends Specification {
         ArborescenceNode(
           None,
           Vector(
-            CategoryInfo("cat2", "Cat 2")        -> NodeInfo("2", List.empty),
-            CategoryInfo("subcat21", "Subcat 1") -> NodeInfo("2.1", List("tag2"))
+            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty),
+            CategoryInfo("subcat21", "Subcat 21") -> NodeInfo("2.1", List("tag2"))
           )
         ),
         ArborescenceNode(
@@ -46,24 +47,26 @@ class StatsOrchestratorTest extends Specification {
 
       val expected =
         List(
-          ReportNode("cat4", 10, 5, List.empty, List.empty, None),
-          ReportNode("cat3", 0, 0, List.empty, List.empty, Some("3")),
+          ReportNode("cat4", "cat4", 10, 5, List.empty, List.empty, None),
+          ReportNode("cat3", "Cat 3", 0, 0, List.empty, List.empty, Some("3")),
           ReportNode(
             "cat2",
+            "Cat 2",
             3,
             2,
             List(
-              ReportNode("subcat22", 2, 1, List.empty, List.empty, Some("2.2")),
-              ReportNode("subcat21", 1, 1, List.empty, List("tag2"), Some("2.1"))
+              ReportNode("subcat22", "Subcat 22", 2, 1, List.empty, List.empty, Some("2.2")),
+              ReportNode("subcat21", "Subcat 21", 1, 1, List.empty, List("tag2"), Some("2.1"))
             ),
             List.empty,
             Some("2")
           ),
           ReportNode(
             "cat1",
+            "Cat 1",
             1,
             0,
-            List(ReportNode("subcat11", 1, 0, List.empty, List.empty, Some("1.1"))),
+            List(ReportNode("subcat11", "Subcat 11", 1, 0, List.empty, List.empty, Some("1.1"))),
             List("tag1"),
             Some("1")
           )
@@ -74,7 +77,7 @@ class StatsOrchestratorTest extends Specification {
         ("cat2", List("subcat21"), 1, 1),
         ("cat1", List("subcat11"), 1, 0)
       )
-      val res = buildReportNodes(arborescence, inputs)
+      val res = buildReportNodes(List.empty, Locale.FRENCH, arborescence, inputs)
 
       res shouldEqual expected
     }
