@@ -19,7 +19,7 @@ object AppErrorTransformer {
     formatMessage(request, maybeUser, appError.messageInLogs)
 
   private def formatMessage[R <: Request[_]](request: R, maybeUser: Option[UUID], message: String): String =
-    s"$message (User ${maybeUser.getOrElse("not connected")}, uri ${request.uri})"
+    s"$message (User ${maybeUser.getOrElse("not connected")}, uri ${request.uri}  ${request.body.toString})"
 
   def handleError[R <: Request[_]](request: R, err: Throwable, maybeUserId: Option[UUID] = None): Result =
     err match {
