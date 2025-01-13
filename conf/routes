@@ -28,6 +28,7 @@ GET           /api/stats/dgccrf-controls                              controller
 GET           /api/stats/count-by-adminactions                        controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
 GET           /api/reports/count-by-departments                       controllers.StatisticController.countByDepartments()
 GET           /api/reports/count-by-subcategories                     controllers.StatisticController.reportsCountBySubcategories()
+GET           /api/reports/count-by-subcategories/download            controllers.StatisticController.downloadReportsCountBySubcategories(lang: String)
 
 
 # Reports list API
