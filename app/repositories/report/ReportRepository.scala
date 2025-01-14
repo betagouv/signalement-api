@@ -132,11 +132,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db.run(
       ReportTable
         .table(Some(user))
-        .filterOpt(filters.start) { case (table, s) =>
-          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        .filterOpt(filters.start) { case (table, start) =>
+          table.creationDate >= start
         }
-        .filterOpt(filters.end) { case (table, e) =>
-          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        .filterOpt(filters.end) { case (table, end) =>
+          table.creationDate <= end
         }
         .filter { table =>
           lang match {
