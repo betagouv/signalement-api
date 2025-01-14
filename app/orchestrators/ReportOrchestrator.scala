@@ -186,15 +186,21 @@ class ReportOrchestrator(
     }.sequence
   }
 
-  def validateAndCreateReport(draftReport: ReportDraft, consumerIp: ConsumerIp): Future[Report] =
+  def validateAndCreateReport(draft: ReportDraft, consumerIp: ConsumerIp): Future[Report] =
     for {
-      _             <- validateCompany(draftReport)
-      _             <- validateSpamSimilarReport(draftReport)
-      _             <- validateReportIdentification(draftReport)
-      _             <- validateConsumerEmail(draftReport)
-      _             <- validateNumberOfAttachments(draftReport)
-      createdReport <- createReport(draftReport, consumerIp)
+      _ <- validateCompany(draft)
+      _ <- validateSpamSimilarReport(draft)
+      _ <- validateReportIdentification(draft)
+      _ <- validateConsumerEmail(draft)
+      _ <- validateNumberOfAttachments(draft)
+      cleanDraft = sanitizeDraft(draft)
+      createdReport <- createReport(cleanDraft, consumerIp)
     } yield createdReport
+
+  private def sanitizeDraft(draft: ReportDraft): ReportDraft =
+    draft.copy(
+      phone = draft.phone.map(PhoneNumberUtils.sanitizeIncomingPhoneNumber)
+    )
 
   private def validateReportIdentification(draftReport: ReportDraft) =
     if (ReportDraft.isValid(draftReport)) {
