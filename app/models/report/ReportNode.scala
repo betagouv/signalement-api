@@ -7,6 +7,7 @@ import play.api.libs.json.OWrites
 case class ReportNode(
     name: String,
     label: String,
+    overriddenCategory: Option[String],
     var count: Int,
     var reclamations: Int,
     var children: List[ReportNode],
