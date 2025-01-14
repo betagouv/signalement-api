@@ -13,6 +13,7 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
+import utils.PhoneNumberUtils
 import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
@@ -40,7 +41,13 @@ class ReportedPhoneController(
   ) =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
       reportRepository
-        .getPhoneReports(q, DateUtils.parseDate(start), DateUtils.parseDate(end), offset, limit)
+        .getPhoneReports(
+          readPhoneParam(q),
+          DateUtils.parseDate(start),
+          DateUtils.parseDate(end),
+          offset,
+          limit
+        )
         .map(reports =>
           Ok(
             Json.toJson(
@@ -66,8 +73,15 @@ class ReportedPhoneController(
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))
         .map { file =>
           reportedPhonesExtractActor ! ReportedPhonesExtractActor
-            .ExtractRequest(file.id, request.identity, RawFilters(q, start, end))
+            .ExtractRequest(
+              file.id,
+              request.identity,
+              RawFilters(readPhoneParam(q), start, end)
+            )
         }
         .map(_ => Ok)
     }
+
+  private def readPhoneParam(q: Option[String]) =
+    q.map(PhoneNumberUtils.sanitizeIncomingPhoneNumber)
 }

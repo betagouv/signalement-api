@@ -59,7 +59,7 @@ object ReportFilter {
       departments = mapper.seq("departments"),
       email = mapper.string("email", trimmed = true),
       websiteURL = hostFromWebsiteFilter(mapper.string("websiteURL", trimmed = true)),
-      phone = mapper.string("phone", trimmed = true),
+      phone = mapper.phoneNumber("phone"),
       siretSirenList = mapper.seq("siretSirenList", cleanAllWhitespaces = true),
       companyName = mapper.string("companyName", trimmed = true),
       companyCountries = mapper.seq("companyCountries"),
