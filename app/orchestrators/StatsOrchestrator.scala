@@ -340,16 +340,24 @@ object StatsOrchestrator {
           case Some(child) =>
             createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, child)
           case None =>
-            val cat     = currentPath.headOption.getOrElse(path)
-            val subcats = currentPath.drop(1)
-            val label = labels
+            val fullPath = currentPath :+ path
+            val cat      = fullPath.headOption.getOrElse(path)
+            val subcats  = fullPath.drop(1)
+
+            val subcategoryLabel = labels
               .find(label => label.category == cat && label.subcategories == subcats)
-              .flatMap(label => if (locale == Locale.FRENCH) label.subcategoryLabelsFr else label.subcategoryLabelsEn)
-              .flatMap(_.lastOption)
-              .getOrElse(path)
+
+            val label = subcategoryLabel match {
+              case Some(SubcategoryLabel(c, Nil, clfr, clen, _, _)) =>
+                (if (locale == Locale.FRENCH) clfr else clen).getOrElse(c)
+              case Some(SubcategoryLabel(_, sl, _, _, slfr, slen)) =>
+                (if (locale == Locale.FRENCH) slfr else slen).flatMap(_.lastOption).getOrElse(sl.last)
+              case None => path
+            }
+
             val reportNode = ReportNode(path, label, None, 0, 0, List.empty, List.empty, None)
             tree.children = reportNode :: tree.children
-            createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, reportNode)
+            createOrUpdateReportNodeOld(labels, locale, fullPath, rest, count, reclamations, reportNode)
 
         }
       case _ => ()

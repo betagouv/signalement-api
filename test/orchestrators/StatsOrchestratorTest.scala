@@ -8,6 +8,7 @@ import models.report.ReportNode
 import orchestrators.StatsOrchestrator.formatStatData
 import orchestrators.StatsOrchestrator.buildReportNodes
 import org.specs2.mutable.Specification
+import repositories.subcategorylabel.SubcategoryLabel
 
 import java.sql.Timestamp
 import java.time.LocalDate
@@ -42,21 +43,52 @@ class StatsOrchestratorTest extends Specification {
         ArborescenceNode(
           None,
           Vector(CategoryInfo("cat3", "Cat 3") -> NodeInfo("3", List.empty))
+        ),
+        ArborescenceNode(
+          Some(CategoryInfo("overridden", "Overridden")),
+          Vector(
+            CategoryInfo("cat5", "Cat 5")         -> NodeInfo("5", List("tag5")),
+            CategoryInfo("subcat51", "Subcat 51") -> NodeInfo("5.1", List.empty)
+          )
         )
       )
 
       val expected =
         List(
-          ReportNode("cat4", "cat4", 10, 5, List.empty, List.empty, None),
-          ReportNode("cat3", "Cat 3", 0, 0, List.empty, List.empty, Some("3")),
+          ReportNode("cat4", "cat4", None, 10, 5, List.empty, List.empty, None),
+          ReportNode(
+            "cat6",
+            "Cat 6",
+            None,
+            2,
+            0,
+            List(
+              ReportNode("subcat62", "subcat62", None, 1, 0, List.empty, List.empty, None),
+              ReportNode("subcat61", "Subcat 6.1", None, 1, 0, List.empty, List.empty, None)
+            ),
+            List.empty,
+            None
+          ),
+          ReportNode(
+            "cat5",
+            "Cat 5",
+            Some("Overridden"),
+            1,
+            0,
+            List(ReportNode("subcat51", "Subcat 51", Some("Overridden"), 1, 0, List.empty, List.empty, Some("5.1"))),
+            List("tag5"),
+            Some("5")
+          ),
+          ReportNode("cat3", "Cat 3", None, 0, 0, List.empty, List.empty, Some("3")),
           ReportNode(
             "cat2",
             "Cat 2",
+            None,
             3,
             2,
             List(
-              ReportNode("subcat22", "Subcat 22", 2, 1, List.empty, List.empty, Some("2.2")),
-              ReportNode("subcat21", "Subcat 21", 1, 1, List.empty, List("tag2"), Some("2.1"))
+              ReportNode("subcat22", "Subcat 22", None, 2, 1, List.empty, List.empty, Some("2.2")),
+              ReportNode("subcat21", "Subcat 21", None, 1, 1, List.empty, List("tag2"), Some("2.1"))
             ),
             List.empty,
             Some("2")
@@ -64,20 +96,32 @@ class StatsOrchestratorTest extends Specification {
           ReportNode(
             "cat1",
             "Cat 1",
+            None,
             1,
             0,
-            List(ReportNode("subcat11", "Subcat 11", 1, 0, List.empty, List.empty, Some("1.1"))),
+            List(ReportNode("subcat11", "Subcat 11", None, 1, 0, List.empty, List.empty, Some("1.1"))),
             List("tag1"),
             Some("1")
           )
         )
       val inputs = Seq(
+        ("cat6", List("subcat61"), 1, 0),
+        ("cat6", List("subcat62"), 1, 0),
+        ("cat5", List("subcat51"), 1, 0),
         ("cat4", List.empty, 10, 5),
         ("cat2", List("subcat22"), 2, 1),
         ("cat2", List("subcat21"), 1, 1),
         ("cat1", List("subcat11"), 1, 0)
       )
-      val res = buildReportNodes(List.empty, Locale.FRENCH, arborescence, inputs)
+      val res = buildReportNodes(
+        List(
+          SubcategoryLabel("cat6", List.empty, Some("Cat 6"), None, None, None),
+          SubcategoryLabel("cat6", List("subcat61"), Some("Cat 6"), None, Some(List("Subcat 6.1")), None)
+        ),
+        Locale.FRENCH,
+        arborescence,
+        inputs
+      )
 
       res shouldEqual expected
     }
