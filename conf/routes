@@ -164,6 +164,7 @@ GET           /api/companies/connected-user                           controller
 GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
 GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
 GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
+GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
 POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
 POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
 POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
