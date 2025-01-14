@@ -271,13 +271,13 @@ object StatsOrchestrator {
       results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
-    val tree   = ReportNode("", "", 0, 0, List.empty, List.empty, None)
+    val tree   = ReportNode("", "", None, 0, 0, List.empty, List.empty, None)
 
     arbo.foreach { arborescenceNode =>
       val res          = merged.find(_._1 == arborescenceNode.path.map(_._1.key).toList)
       val count        = res.map(_._2).getOrElse(0)
       val reclamations = res.map(_._3).getOrElse(0)
-      createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
+      createOrUpdateReportNode(arborescenceNode.overriddenCategory, arborescenceNode.path, count, reclamations, tree)
     }
 
     val arboPathes = arbo.map(_.path.map(_._1.key).toList)
@@ -291,6 +291,7 @@ object StatsOrchestrator {
 
   @tailrec
   private def createOrUpdateReportNode(
+      overriddenCategory: Option[CategoryInfo],
       subcats: Vector[(CategoryInfo, NodeInfo)],
       count: Int,
       reclamations: Int,
@@ -301,11 +302,20 @@ object StatsOrchestrator {
     subcats match {
       case (path, nodeInfo) +: rest =>
         tree.children.find(_.name == path.key) match {
-          case Some(child) => createOrUpdateReportNode(rest, count, reclamations, child)
+          case Some(child) => createOrUpdateReportNode(overriddenCategory, rest, count, reclamations, child)
           case None =>
-            val reportNode = ReportNode(path.key, path.label, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
+            val reportNode = ReportNode(
+              path.key,
+              path.label,
+              overriddenCategory.map(_.label),
+              0,
+              0,
+              List.empty,
+              nodeInfo.tags,
+              Some(nodeInfo.id)
+            )
             tree.children = reportNode :: tree.children
-            createOrUpdateReportNode(rest, count, reclamations, reportNode)
+            createOrUpdateReportNode(overriddenCategory, rest, count, reclamations, reportNode)
 
         }
       case _ => ()
@@ -330,16 +340,24 @@ object StatsOrchestrator {
           case Some(child) =>
             createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, child)
           case None =>
-            val cat     = currentPath.headOption.getOrElse(path)
-            val subcats = currentPath.drop(1)
-            val label = labels
+            val fullPath = currentPath :+ path
+            val cat      = fullPath.headOption.getOrElse(path)
+            val subcats  = fullPath.drop(1)
+
+            val subcategoryLabel = labels
               .find(label => label.category == cat && label.subcategories == subcats)
-              .flatMap(label => if (locale == Locale.FRENCH) label.subcategoryLabelsFr else label.subcategoryLabelsEn)
-              .flatMap(_.lastOption)
-              .getOrElse(path)
-            val reportNode = ReportNode(path, label, 0, 0, List.empty, List.empty, None)
+
+            val label = subcategoryLabel match {
+              case Some(SubcategoryLabel(c, Nil, clfr, clen, _, _)) =>
+                (if (locale == Locale.FRENCH) clfr else clen).getOrElse(c)
+              case Some(SubcategoryLabel(_, sl, _, _, slfr, slen)) =>
+                (if (locale == Locale.FRENCH) slfr else slen).flatMap(_.lastOption).getOrElse(sl.last)
+              case None => path
+            }
+
+            val reportNode = ReportNode(path, label, None, 0, 0, List.empty, List.empty, None)
             tree.children = reportNode :: tree.children
-            createOrUpdateReportNodeOld(labels, locale, currentPath :+ path, rest, count, reclamations, reportNode)
+            createOrUpdateReportNodeOld(labels, locale, fullPath, rest, count, reclamations, reportNode)
 
         }
       case _ => ()
