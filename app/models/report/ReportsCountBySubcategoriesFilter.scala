@@ -2,13 +2,13 @@ package models.report
 
 import utils.QueryStringMapper
 
-import java.time.LocalDate
+import java.time.OffsetDateTime
 import scala.util.Try
 
 case class ReportsCountBySubcategoriesFilter(
     departments: Seq[String] = Seq.empty,
-    start: Option[LocalDate] = None,
-    end: Option[LocalDate] = None
+    start: Option[OffsetDateTime] = None,
+    end: Option[OffsetDateTime] = None
 )
 
 object ReportsCountBySubcategoriesFilter {
@@ -16,8 +16,8 @@ object ReportsCountBySubcategoriesFilter {
     val mapper = new QueryStringMapper(q)
     ReportsCountBySubcategoriesFilter(
       departments = mapper.seq("departments"),
-      start = mapper.localDate("start"),
-      end = mapper.localDate("end")
+      start = mapper.timeWithLocalDateRetrocompatStartOfDay("start"),
+      end = mapper.timeWithLocalDateRetrocompatEndOfDay("end")
     )
   }
 }
