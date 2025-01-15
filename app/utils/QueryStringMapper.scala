@@ -15,6 +15,9 @@ class QueryStringMapper(q: Map[String, Seq[String]]) {
   def string(k: String, trimmed: Boolean = false): Option[String] =
     q.get(k).flatMap(_.headOption).map(s => if (trimmed) s.trim else s)
 
+  def phoneNumber(k: String): Option[String] =
+    string(k).map(PhoneNumberUtils.sanitizeIncomingPhoneNumber)
+
   def nonEmptyString(k: String, trimmed: Boolean = false): Option[String] =
     string(k, trimmed).filter(_.nonEmpty)
 
