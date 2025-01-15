@@ -12,6 +12,8 @@ import scala.util.Try
 case class ReportFilter(
     departments: Seq[String] = Seq.empty,
     email: Option[String] = None,
+    consumerPhone: Option[String] = None,
+    hasConsumerPhone: Option[Boolean] = None,
     websiteURL: Option[String] = None,
     phone: Option[String] = None,
     siretSirenList: Seq[String] = Seq.empty,
@@ -58,6 +60,8 @@ object ReportFilter {
     ReportFilter(
       departments = mapper.seq("departments"),
       email = mapper.string("email", trimmed = true),
+      consumerPhone = mapper.phoneNumber("consumerPhone"),
+      hasConsumerPhone = mapper.boolean("hasConsumerPhone"),
       websiteURL = hostFromWebsiteFilter(mapper.string("websiteURL", trimmed = true)),
       phone = mapper.phoneNumber("phone"),
       siretSirenList = mapper.seq("siretSirenList", cleanAllWhitespaces = true),
@@ -103,6 +107,8 @@ object ReportFilter {
     for {
       departments       <- (jsValue \ "departments").validateOpt[Seq[String]]
       email             <- (jsValue \ "email").validateOpt[String]
+      consumerPhone     <- (jsValue \ "consumerPhone").validateOpt[String]
+      hasConsumerPhone  <- (jsValue \ "hasConsumerPhone").validateOpt[Boolean]
       websiteURL        <- (jsValue \ "websiteURL").validateOpt[String]
       phone             <- (jsValue \ "phone").validateOpt[String]
       siretSirenList    <- (jsValue \ "siretSirenList").validateOpt[Seq[String]]
@@ -129,6 +135,8 @@ object ReportFilter {
     } yield ReportFilter(
       departments = departments.getOrElse(Seq.empty),
       email = email,
+      consumerPhone = consumerPhone,
+      hasConsumerPhone = hasConsumerPhone,
       websiteURL = websiteURL,
       phone = phone,
       siretSirenList = siretSirenList.getOrElse(Seq.empty),

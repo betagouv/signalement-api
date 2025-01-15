@@ -640,6 +640,12 @@ object ReportRepository {
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
       }
+      .filterOpt(filter.consumerPhone) { case (table, consumerPhone) =>
+        table.consumerPhone === consumerPhone
+      }
+      .filterOpt(filter.hasConsumerPhone) { case (table, hasConsumerPhone) =>
+        table.consumerPhone.isDefined === hasConsumerPhone
+      }
       .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
         table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
       }
