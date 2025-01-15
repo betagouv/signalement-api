@@ -180,8 +180,8 @@ class StatisticController(
   def countByDepartments() =
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
       val mapper = new QueryStringMapper(request.queryString)
-      val start  = mapper.localDate("start")
-      val end    = mapper.localDate("end")
+      val start  = mapper.timeWithLocalDateRetrocompatStartOfDay("start")
+      val end    = mapper.timeWithLocalDateRetrocompatEndOfDay("end")
       statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
     }
 
