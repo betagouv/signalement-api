@@ -34,7 +34,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       extendedEmailComparison: Boolean
   ): Future[List[Report]]
 
-  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]]
+  def countByDepartments(start: Option[OffsetDateTime], end: Option[OffsetDateTime]): Future[Seq[(String, Int)]]
 
   def count(user: Option[User], filter: ReportFilter): Future[Int]
 

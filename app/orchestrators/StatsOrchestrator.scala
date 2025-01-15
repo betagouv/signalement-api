@@ -81,7 +81,7 @@ class StatsOrchestrator(
         .map(StatsOrchestrator.buildReportNodes(labels, Locale.ENGLISH, minimizedAnomalies.en, _))
     } yield ReportNodes(reportNodesFr, reportNodesEn)
 
-  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+  def countByDepartments(start: Option[OffsetDateTime], end: Option[OffsetDateTime]): Future[Seq[(String, Int)]] =
     for {
       postalCodeReportCountTuple <- reportRepository.countByDepartments(start, end)
       departmentsReportCountMap = formatCountByDepartments(postalCodeReportCountTuple)
