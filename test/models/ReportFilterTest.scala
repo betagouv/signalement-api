@@ -48,6 +48,8 @@ class ReportFilterTest extends Specification {
       val expectedReportFilter = ReportFilter(
         departments = Seq("75016", "78210"),
         email = Some("sc@signal.conso.gouv.fr"),
+        consumerPhone = Some("0123456789"),
+        hasConsumerPhone = Some(true),
         websiteURL = Some("signal.conso.gouv.fr"),
         phone = Some("0100000000"),
         hasWebsite = Some(true),
@@ -71,6 +73,8 @@ class ReportFilterTest extends Specification {
       val input = Map[String, Seq[String]](
         "departments"       -> expectedReportFilter.departments,
         "email"             -> expectedReportFilter.email.toSeq,
+        "consumerPhone"     -> expectedReportFilter.consumerPhone.toSeq,
+        "hasConsumerPhone"  -> expectedReportFilter.hasConsumerPhone.toSeq.map(_.toString),
         "websiteURL"        -> websiteURL.toSeq,
         "phone"             -> expectedReportFilter.phone.toSeq,
         "hasWebsite"        -> expectedReportFilter.hasWebsite.toSeq.map(_.toString),
