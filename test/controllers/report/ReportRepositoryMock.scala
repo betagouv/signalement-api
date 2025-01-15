@@ -35,7 +35,10 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   ): Future[List[Report]] =
     ???
 
-  override def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] = ???
+  override def countByDepartments(
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
+  ): Future[Seq[(String, Int)]] = ???
 
   override def count(user: Option[User], filter: ReportFilter): Future[Int] = ???
 
