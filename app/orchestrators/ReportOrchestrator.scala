@@ -199,7 +199,9 @@ class ReportOrchestrator(
 
   private def sanitizeDraft(draft: ReportDraft): ReportDraft =
     draft.copy(
-      phone = draft.phone.map(PhoneNumberUtils.sanitizeIncomingPhoneNumber)
+      phone = draft.phone.map(PhoneNumberUtils.sanitizeIncomingPhoneNumber),
+      consumerPhone = draft.consumerPhone.map(PhoneNumberUtils.sanitizeIncomingPhoneNumber).filterNot(_.isEmpty),
+      consumerReferenceNumber = draft.consumerReferenceNumber.map(_.trim).filterNot(_.isEmpty)
     )
 
   private def validateReportIdentification(draftReport: ReportDraft) =
