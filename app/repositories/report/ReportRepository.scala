@@ -136,7 +136,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           table.creationDate >= start
         }
         .filterOpt(filters.end) { case (table, end) =>
-          table.creationDate <= end
+          table.creationDate < end
         }
         .filter { table =>
           lang match {
@@ -170,14 +170,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
   }
 
-  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+  def countByDepartments(start: Option[OffsetDateTime], end: Option[OffsetDateTime]): Future[Seq[(String, Int)]] =
     db.run(
       table
-        .filterOpt(start) { case (table, s) =>
-          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= start
         }
-        .filterOpt(end) { case (table, e) =>
-          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < end
         }
         .groupBy(_.companyPostalCode.getOrElse(""))
         .map { case (department, group) => (department, group.length) }
@@ -686,7 +686,7 @@ object ReportRepository {
         table.creationDate >= start
       }
       .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate <= end
+        table.creationDate < end
       }
       .filterOpt(filter.category) { case (table, category) =>
         // Condition pour récupérer les achats en sur internet soit dans la nouvelle catégorie,
