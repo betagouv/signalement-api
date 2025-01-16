@@ -44,7 +44,7 @@ object ReportGenerator {
   )
 
   // Generate a random report
-  def generateReport(
+  private def generateReport(
       category: ReportCategory,
       companyOrPostalCode: Either[String, Company],
       website: Option[URL],
@@ -100,14 +100,17 @@ object ReportGenerator {
     )
 
   private def generateConsumerUser: ConsumerUser = {
-    val i = Random.nextInt(100)
+    val firstName = weirdRandomName()
+    val lastName  = weirdRandomName()
     ConsumerUser(
-      firstName = s"Prénom$i",
-      lastName = s"Nom$i",
-      email = EmailAddress(s"dev.signalconso+sample_consumer${i}@gmail.com"),
-      contactAgreement = i % 2 == 0,
-      employeeConsumer = false,
-      gender = if (i % 2 == 0) Some(Male) else Some(Female)
+      firstName = firstName,
+      lastName = lastName,
+      email = EmailAddress(
+        s"dev.signalconso+${firstName.toLowerCase}_${lastName.toLowerCase}${Random.nextInt(100)}@gmail.com"
+      ),
+      contactAgreement = Random.nextDouble() > 0.3,
+      employeeConsumer = Random.nextDouble() > 0.1,
+      gender = if (Random.nextBoolean()) Some(Male) else Some(Female)
     )
   }
 
@@ -193,4 +196,23 @@ object ReportGenerator {
         )
     }.toList
 
+  private def weirdRandomName() = {
+    val syllables = Seq(
+      "za",
+      "me",
+      "mi",
+      "zo",
+      "ku",
+      "zou",
+      "zazou",
+      "zopi",
+      "zamba",
+      "zapo",
+      "zur",
+      "kig",
+      "zag",
+      "zom"
+    )
+    Random.shuffle(syllables).take(Random.between(1, 4)).mkString("").capitalize
+  }
 }
