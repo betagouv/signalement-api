@@ -78,30 +78,30 @@ class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)
         _ <- readReport(reportExpiredButAlreadyClosed).map(_.isDefined must beTrue)
         _ <- readReport(reportNotExpired).map(_.isDefined must beTrue)
 
-        _ <- userRepository.get(sampleDataService.proUser1.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser2.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser3.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser4.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser5.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser6.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserA.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserB.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserC.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserD.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserE.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(sampleDataService.proUserF.id).map(_.isDefined must beTrue)
 
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser1)
+          .fetchCompaniesWithLevel(sampleDataService.proUserA)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser2)
+          .fetchCompaniesWithLevel(sampleDataService.proUserB)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser3)
+          .fetchCompaniesWithLevel(sampleDataService.proUserC)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser4)
+          .fetchCompaniesWithLevel(sampleDataService.proUserD)
           .map(_.nonEmpty must beTrue)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser5)
+          .fetchCompaniesWithLevel(sampleDataService.proUserE)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser6)
+          .fetchCompaniesWithLevel(sampleDataService.proUserF)
           .map(validateCompanyAndReport)
 
       } yield ()

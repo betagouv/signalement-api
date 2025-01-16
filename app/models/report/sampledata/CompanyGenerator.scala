@@ -11,7 +11,7 @@ import scala.util.Random
 
 object CompanyGenerator {
 
-  def randomCompany(
+  private def randomCompany(
       siren: SIREN,
       name: String,
       address: Address,
@@ -33,11 +33,11 @@ object CompanyGenerator {
       establishmentCommercialName = Some(s"Nom établissement commercial ${name}")
     )
 
-  def createCompany = {
+  def createLoneCompany(name: String) = {
     val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
     randomCompany(
       siren = randomSiren,
-      name = s"MAISON MERE ${randomSiren.value}",
+      name = name,
       address = AddressGenerator.frenchAddress(),
       isHeadOffice = true,
       isOpen = true,
@@ -45,12 +45,12 @@ object CompanyGenerator {
     )
   }
 
-  def createCompanies(subsidiaryCount: Int) = {
+  def createMegacorpCompanyAndSubsidiaries(subsidiaryCount: Int) = {
 
     val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
     val headOffice = randomCompany(
       siren = randomSiren,
-      name = s"MAISON MERE ${randomSiren.value}",
+      name = s"MEGACORP UNLIMITED",
       address = AddressGenerator.frenchAddress(),
       isHeadOffice = true,
       isOpen = true,
@@ -62,7 +62,7 @@ object CompanyGenerator {
     for (i <- 1 to subsidiaryCount) {
       val c = randomCompany(
         siren = randomSiren,
-        name = s" FILLIALE $randomSiren n$i",
+        name = s"MEGACORP FILIALE #$i",
         address = AddressGenerator.frenchAddress(),
         isHeadOffice = false,
         isOpen = true,
