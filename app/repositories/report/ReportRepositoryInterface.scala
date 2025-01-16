@@ -93,7 +93,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       end: Option[LocalDate],
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]]
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String]), Int)]]
 
   def reportsCountBySubcategories(
       user: User,

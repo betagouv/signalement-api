@@ -100,7 +100,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       end: Option[LocalDate],
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] = ???
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String]), Int)]] = ???
 
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 
