@@ -94,6 +94,8 @@ object Constants {
         extends ActionEventValue("Email « Nouveau signalement non consulté » envoyé au professionnel")
     object EMAIL_PRO_REMIND_NO_ACTION
         extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
+    object EMAIL_LAST_CHANCE_REMINDER_ACTION
+      extends ActionEventValue("EmailLastChanceProReminder")
 
     object REPORT_COMPANY_CHANGE    extends ActionEventValue("Modification du commerçant")
     object REPORT_COUNTRY_CHANGE    extends ActionEventValue("Modification du pays")

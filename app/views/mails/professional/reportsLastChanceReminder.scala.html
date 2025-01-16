@@ -1,4 +1,3 @@
-@import models.report.Report
 @import utils.FrontRoute
 @import models.report.Report
 @import java.time.Period
@@ -6,7 +5,7 @@
 @import java.time.Duration
 @(reports: List[Report], delay: Period)(implicit frontRoute: FrontRoute)
 
-@views.html.mails.layout(s"Nouveaux signalements") {
+@views.html.mails.layout(s"Expiration de signalement(s).") {
     <p>
         Bonjour,
     </p>
@@ -16,13 +15,11 @@
     </p>
 
     <p style="text-align: center;">
-    @views.html.fragments.addressFromReport(reports.head, includeSiret = true)
+        @views.html.fragments.addressFromReport(reports.head, includeSiret = true)
     </p>
 
     <p>
-        <strong>
-            Vous n'avez pas encore répondu à @plural(reports, "ce signalement", "ces signalements").
-        </strong>
+        @plural(reports, "Ce signalement expire", "Ces signalements expirent") demain. Passé ce délai, vous pourrez toujours @plural(reports, "le", "les") lire mais vous ne pourrez plus y répondre.
     </p>
 
     <p>
@@ -31,22 +28,12 @@
     </p>
 
     <p>
-        Pour apporter une réponse, allez dans le détail de chaque signalement et cliquez sur le bouton "Répondre".
-    </p>
-
-    <p>
         <em>Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser directement depuis la page de connexion.</em>
     </p>
 
     <p>
-        @plural(reports, "Ce signalement expire", "Ces signalements expirent") bientôt. Passé ce délai, vous pourrez toujours @plural(reports, "le", "les") lire mais vous ne pourrez plus y répondre.
+        Pour apporter une réponse, allez sur votre Espace Professionnel. Dans le détail de chaque signalement, cliquez sur le bouton “Répondre”.
     </p>
-
-    <ul>
-        @reports.groupBy(_.expirationDate.toLocalDate).map { case (_, groupedReports) =>
-            <li>@groupedReports.length @plural(groupedReports, "signalement expire", "signalements expirent") le @highlight_expiration(groupedReports.head.expirationDate)</li>
-        }
-    </ul>
 
     <p>
         Vous pouvez également indiquer si vous estimez qu'un signalement est infondé ou ne concerne pas votre entreprise.
@@ -54,7 +41,7 @@
 
     <p>
         Ce service public est facultatif et gratuit.
-        À travers SignalConso, notre objectif est d'établir un rapport de confiance et de
+        À travers SignalConso, notre objectif est d’établir un rapport de confiance et de
         transparence entre les consommateurs, les professionnels et les services de la DGCCRF.
     </p>
 
@@ -69,16 +56,16 @@
 
 @plural(reports: List[Report], s: String, p: String) = {
     @if(reports.length > 1) {
-        @p
+      @p
     } else {
-        @s
+      @s
     }
 }
 
 @highlight_expiration(expirationDate: OffsetDateTime) = {
-    @if(Duration.between(OffsetDateTime.now(), expirationDate).getSeconds <= 604800) {
-        <strong style="color: tomato">@expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
-    } else {
-        <strong>@expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
-    }
+  @if(Duration.between(OffsetDateTime.now(), expirationDate).getSeconds <= 604800) {
+      <strong style="color: tomato">@expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+  } else {
+      <strong>@expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+  }
 }
