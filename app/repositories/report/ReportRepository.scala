@@ -514,7 +514,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       end: Option[LocalDate],
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String], String), Int)]] =
+  ): Future[PaginatedResult[((Option[String], Option[SIRET], Option[String]), Int)]] =
     table
       .filter(_.phone.isDefined)
       .filterOpt(q) { case (table, p) =>
@@ -526,7 +526,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .filterOpt(end) { case (table, end) =>
         table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
-      .groupBy(a => (a.phone, a.companySiret, a.companyName, a.category))
+      .groupBy(a => (a.phone, a.companySiret, a.companyName))
       .map { case (a, b) => (a, b.length) }
       .sortBy(_._2.desc)
       .withPagination(db)(

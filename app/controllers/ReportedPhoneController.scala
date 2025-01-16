@@ -52,12 +52,11 @@ class ReportedPhoneController(
           Ok(
             Json.toJson(
               reports
-                .mapEntities { case ((phone, siretOpt, companyNameOpt, category), count) =>
+                .mapEntities { case ((phone, siretOpt, companyNameOpt), count) =>
                   Json.obj(
                     "phone"       -> phone,
                     "siret"       -> siretOpt,
                     "companyName" -> companyNameOpt,
-                    "category"    -> category,
                     "count"       -> count
                   )
                 }
