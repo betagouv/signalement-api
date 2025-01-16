@@ -979,6 +979,9 @@ class SignalConsoComponents(
     companyReportCountViewRefresherTask.schedule()
   }
 
+
+  reportReminderTask.runTask()
+
   override def config: Config = ConfigFactory.load()
 
   override def httpFilters: Seq[EssentialFilter] =
