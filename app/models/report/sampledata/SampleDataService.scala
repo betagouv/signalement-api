@@ -147,7 +147,7 @@ class SampleDataService(
         _ = logger.info(
           s"--- Company access given to user"
         )
-        reports = ReportGenerator.visibleReports(c)
+        reports = ReportGenerator.generateReportsForCompany(c)
         createdReports <- reports.traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
         _ = logger.info(
           s"--- Pending reports created"
@@ -209,7 +209,7 @@ class SampleDataService(
   }
   private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
     createdReports <- ReportGenerator
-      .visibleReports(c)
+      .generateReportsForCompany(c)
       .traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
     _ = logger.info(
       s"--- Closed reports created"

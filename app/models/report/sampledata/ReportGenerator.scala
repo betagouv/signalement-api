@@ -10,6 +10,17 @@ import models.report.ReportDraft
 import models.report.ReportTag
 import models.report.Gender.Female
 import models.report.Gender.Male
+import models.report.ReportCategory.AchatMagasin
+import models.report.ReportCategory.CafeRestaurant
+import models.report.ReportCategory.DemarchageAbusif
+import models.report.ReportCategory.TelEauGazElec
+import models.report.ReportTag.DemarchageTelephonique
+import models.report.ReportTag.Influenceur
+import models.report.ReportTag.Internet
+import models.report.ReportTag.LitigeContractuel
+import models.report.ReportTag.OpenFoodFacts
+import models.report.ReportTag.ProduitDangereux
+import models.report.ReportTag.ReponseConso
 import models.report.SocialNetworkSlug.TikTok
 import models.report.sampledata.SampleDescriptions.sampleDescriptions
 import utils.EmailAddress
@@ -45,40 +56,41 @@ object ReportGenerator {
 
   // Generate a random report
   private def generateReport(
+      conso: ConsumerUser,
+      company: Company,
       category: ReportCategory,
-      companyOrPostalCode: Either[String, Company],
-      website: Option[URL],
-      phone: Option[String],
-      influencer: Option[Influencer],
-      consumerUser: ConsumerUser,
       tags: List[ReportTag],
-      french: Boolean
-  ): ReportDraft =
+      website: Option[URL] = None,
+      phone: Option[String] = None,
+      influencer: Option[Influencer] = None,
+      french: Boolean = true
+  ): ReportDraft = {
+    val c = company
     ReportDraft(
-      gender = consumerUser.gender,
+      gender = conso.gender,
       category = category.label,
       subcategories = List(subcategories(Random.nextInt(subcategories.size))),
       details = generateDetailValues(),
       influencer = influencer,
-      companyName = companyOrPostalCode.map(_.name).toOption,
-      companyCommercialName = companyOrPostalCode.map(_.commercialName).toOption.flatten,
-      companyEstablishmentCommercialName = companyOrPostalCode.map(_.establishmentCommercialName).toOption.flatten,
-      companyBrand = companyOrPostalCode.map(_.brand).toOption.flatten,
-      companyAddress = companyOrPostalCode.map(_.address).toOption,
-      companySiret = companyOrPostalCode.map(_.siret).toOption,
-      companyActivityCode = companyOrPostalCode.map(_.activityCode).toOption.flatten,
-      companyIsHeadOffice = companyOrPostalCode.map(_.isHeadOffice).toOption,
-      companyIsOpen = companyOrPostalCode.map(_.isOpen).toOption,
-      companyIsPublic = companyOrPostalCode.map(_.isPublic).toOption,
+      companyName = Some(c.name),
+      companyCommercialName = c.commercialName,
+      companyEstablishmentCommercialName = c.establishmentCommercialName,
+      companyBrand = c.brand,
+      companyAddress = Some(c.address),
+      companySiret = Some(c.siret),
+      companyActivityCode = c.activityCode,
+      companyIsHeadOffice = Some(c.isHeadOffice),
+      companyIsOpen = Some(c.isOpen),
+      companyIsPublic = Some(c.isPublic),
       websiteURL = website,
       phone = phone,
-      firstName = consumerUser.firstName,
-      lastName = consumerUser.lastName,
-      email = consumerUser.email,
-      contactAgreement = consumerUser.contactAgreement,
+      firstName = conso.firstName,
+      lastName = conso.lastName,
+      email = conso.email,
+      contactAgreement = conso.contactAgreement,
       consumerPhone = None,
       consumerReferenceNumber = None,
-      employeeConsumer = consumerUser.employeeConsumer,
+      employeeConsumer = conso.employeeConsumer,
       forwardToReponseConso = tags.contains(ReportTag.ReponseConso).some,
       fileIds = List.empty,
       vendor = None,
@@ -98,8 +110,9 @@ object ReportGenerator {
       station = None,
       rappelConsoId = None
     )
+  }
 
-  private def generateConsumerUser: ConsumerUser = {
+  private def generateConsumerUser(): ConsumerUser = {
     val firstName = weirdRandomName()
     val lastName  = weirdRandomName()
     ConsumerUser(
@@ -114,87 +127,54 @@ object ReportGenerator {
     )
   }
 
-  def visibleReports(company: Company) =
-    ReportTag.values.collect {
-      case ReportTag.LitigeContractuel =>
-        generateReport(
-          ReportCategory.TelEauGazElec,
-          Right(company),
-          website = None,
-          phone = None,
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(ReportTag.LitigeContractuel),
-          french = true
-        )
-      case tag @ ReportTag.ProduitDangereux =>
-        generateReport(
-          ReportCategory.CafeRestaurant,
-          Right(company),
-          website = None,
-          phone = None,
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-      case tag @ ReportTag.DemarchageTelephonique =>
-        generateReport(
-          ReportCategory.DemarchageAbusif,
-          Right(company),
-          website = None,
-          phone = Some("0900000000"),
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-      case tag @ ReportTag.Influenceur =>
-        generateReport(
-          ReportCategory.AchatMagasin,
-          Right(company),
-          website = None,
-          phone = None,
-          influencer = Some(Influencer(Some(TikTok), None, "InfluencerPseudo")),
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-      case tag @ ReportTag.ReponseConso =>
-        generateReport(
-          ReportCategory.AchatMagasin,
-          Right(company),
-          website = None,
-          phone = None,
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-      case tag @ ReportTag.Internet =>
-        generateReport(
-          ReportCategory.AchatInternet,
-          Right(company),
-          website = Some(URL("http://arnaques.com")),
-          phone = None,
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-
-      case tag @ ReportTag.OpenFoodFacts =>
-        generateReport(
-          ReportCategory.AchatMagasin,
-          Right(company),
-          website = None,
-          phone = None,
-          influencer = None,
-          consumerUser = generateConsumerUser,
-          tags = List(tag),
-          french = true
-        )
-    }.toList
+  def generateReportsForCompany(company: Company) =
+    List(
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        TelEauGazElec,
+        tags = List(LitigeContractuel)
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        CafeRestaurant,
+        tags = List(ProduitDangereux)
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        DemarchageAbusif,
+        phone = Some("0900000000"),
+        tags = List(DemarchageTelephonique)
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        AchatMagasin,
+        tags = List(Influenceur),
+        influencer = Some(Influencer(Some(TikTok), None, "InfluencerPseudo"))
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        AchatMagasin,
+        tags = List(ReponseConso)
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        ReportCategory.AchatInternet,
+        tags = List(Internet),
+        website = Some(URL("http://arnaques.com"))
+      ),
+      generateReport(
+        conso = generateConsumerUser(),
+        company,
+        AchatMagasin,
+        tags = List(OpenFoodFacts)
+      )
+    )
 
   private def weirdRandomName() = {
     val syllables = Seq(
