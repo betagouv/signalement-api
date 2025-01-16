@@ -11,7 +11,9 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
-import services.emails.EmailDefinitionsPro.{ProReportsLastChanceReminder, ProReportsReadReminder, ProReportsUnreadReminder}
+import services.emails.EmailDefinitionsPro.ProReportsLastChanceReminder
+import services.emails.EmailDefinitionsPro.ProReportsReadReminder
+import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
 import services.emails.BaseEmail
 import services.emails.MailServiceInterface
 import tasks.ScheduledTask
@@ -89,32 +91,34 @@ class ReportRemindersTask(
     for {
       successesOrFailuresList <- Future.sequence(reportsPerCompanyPerUsers.toList.flatMap {
         case (users, reportsPerCompany) =>
-          reportsPerCompany.map { reports =>
-            val (reportsClosingTomorrow, otherReports) =
-              reports.partition(r => taskRunDate.toLocalDate.plusDays(1).isAfter(r.expirationDate.toLocalDate))
-            val (readByPros, notReadByPros) = otherReports.partition(_.isReadByPro)
+          reportsPerCompany
+            .map {
+              reports =>
+                val (reportsClosingTomorrow, otherReports) =
+                  reports.partition(r => taskRunDate.toLocalDate.plusDays(1).isAfter(r.expirationDate.toLocalDate))
+                val (readByPros, notReadByPros) = otherReports.partition(_.isReadByPro)
 
-            for {
-              reportsClosingTomorrowSent <- sendReminderEmailIfAtLeastOneReport(
-                reportsClosingTomorrow,
-                users,
-                ProReportsLastChanceReminder.Email,
-                EMAIL_LAST_CHANCE_REMINDER_ACTION
-              )
-              readByProsSent <- sendReminderEmailIfAtLeastOneReport(
-                readByPros,
-                users,
-                ProReportsReadReminder.Email,
-                EMAIL_PRO_REMIND_NO_ACTION
-              )
-              notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
-                notReadByPros,
-                users,
-                ProReportsUnreadReminder.Email,
-                EMAIL_PRO_REMIND_NO_READING
-              )
-            } yield List(readByProsSent, notReadByProsSent,reportsClosingTomorrowSent).flatten
-          }
+                for {
+                  reportsClosingTomorrowSent <- sendReminderEmailIfAtLeastOneReport(
+                    reportsClosingTomorrow,
+                    users,
+                    ProReportsLastChanceReminder.Email,
+                    EMAIL_LAST_CHANCE_REMINDER_ACTION
+                  )
+                  readByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                    readByPros,
+                    users,
+                    ProReportsReadReminder.Email,
+                    EMAIL_PRO_REMIND_NO_ACTION
+                  )
+                  notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                    notReadByPros,
+                    users,
+                    ProReportsUnreadReminder.Email,
+                    EMAIL_PRO_REMIND_NO_READING
+                  )
+                } yield List(readByProsSent, notReadByProsSent, reportsClosingTomorrowSent).flatten
+            }
       })
       (failures, successes) = successesOrFailuresList.flatten.partitionMap(identity)
     } yield (failures, successes)
