@@ -979,7 +979,6 @@ class SignalConsoComponents(
     companyReportCountViewRefresherTask.schedule()
   }
 
-
   reportReminderTask.runTask()
 
   override def config: Config = ConfigFactory.load()

@@ -94,8 +94,8 @@ class ReportRemindersTask(
           reportsPerCompany
             .map {
               reports =>
-                val (reportsClosingTomorrow, otherReports) =  reports.partition(isLastDay(_, taskRunDate))
-                val (readByPros, notReadByPros) = otherReports.partition(_.isReadByPro)
+                val (reportsClosingTomorrow, otherReports) = reports.partition(isLastDay(_, taskRunDate))
+                val (readByPros, notReadByPros)            = otherReports.partition(_.isReadByPro)
 
                 for {
                   reportsClosingTomorrowSent <- sendReminderEmailIfAtLeastOneReport(
