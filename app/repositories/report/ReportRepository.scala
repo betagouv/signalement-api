@@ -93,30 +93,33 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       after: OffsetDateTime,
       extendedEmailComparison: Boolean
   ): Future[List[Report]] = {
+    val emailAddressSplitted = report.email.split
 
     val similarReportQuery =
-      if (extendedEmailComparison) {
-        val emailAddressSplitted = report.email.split
-        table
-          .filter(_.category === report.category)
-          .filterOpt(report.companySiret)((report, siret) =>
-            SubstrSQLFunction(report.companySiret.asColumnOf[String], 0.bind, 10.bind) === SIREN.fromSIRET(siret).value
-          )
-          .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
-          .filter(_.creationDate >= after)
-          .result
-          // We do this check after because we want to compare 'root' addresses for gmail (without . and +)
-          .map(_.filter(report => emailAddressSplitted.isEquivalentTo(report.email.value)))
-      } else {
-        table
-          .filter(_.email === report.email)
-          .filter(_.category === report.category)
-          .filterOpt(report.companySiret)(_.companySiret === _)
-          .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
-          .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
-          .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
-          .filter(_.creationDate >= after)
-          .result
+      emailAddressSplitted match {
+        case Right(emailAddressSplitted) if extendedEmailComparison =>
+          table
+            .filter(_.category === report.category)
+            .filterOpt(report.companySiret)((report, siret) =>
+              SubstrSQLFunction(report.companySiret.asColumnOf[String], 0.bind, 10.bind) === SIREN
+                .fromSIRET(siret)
+                .value
+            )
+            .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
+            .filter(_.creationDate >= after)
+            .result
+            // We do this check after because we want to compare 'root' addresses for gmail (without . and +)
+            .map(_.filter(report => emailAddressSplitted.isEquivalentTo(report.email.value)))
+        case _ =>
+          table
+            .filter(_.email === report.email)
+            .filter(_.category === report.category)
+            .filterOpt(report.companySiret)(_.companySiret === _)
+            .filterIf(report.companySiret.isEmpty)(_.companySiret.isEmpty)
+            .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
+            .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
+            .filter(_.creationDate >= after)
+            .result
       }
 
     db.run(similarReportQuery.map(_.toList))
