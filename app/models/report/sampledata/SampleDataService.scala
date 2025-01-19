@@ -6,12 +6,12 @@ import models.User
 import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
-import models.report.ExistingResponseDetails.REMBOURSEMENT_OU_AVOIR
 import models.report.ConsumerIp
 import models.report.IncomingReportResponse
-import models.report.ReportResponseType.ACCEPTED
-import models.report.ReportResponseType.NOT_CONCERNED
-import models.report.ReportResponseType.REJECTED
+import models.report.Report
+import models.report.sampledata.ReponseGenerator.acceptedResponse
+import models.report.sampledata.ReponseGenerator.notConcernedResponse
+import models.report.sampledata.ReponseGenerator.rejectedResponse
 import models.report.sampledata.UserGenerator.generateSampleUser
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
@@ -139,73 +139,27 @@ class SampleDataService(
     logger.info(
       s"Creation of companies ${groupCompanies.map(_.name).mkString(",")} and reports and accesses for ${proUsers.map(_.firstName).toList.mkString(", ")} "
     )
+    val respondant = proUsers.head
     groupCompanies.traverse(c =>
       for {
         _ <- companyRepository.create(c)
-        _ = logger.info(
-          s"--- Company created"
-        )
+        _ = logger.info(s"--- Company created")
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
-        _ = logger.info(
-          s"--- Company access given to user"
-        )
-        reports = ReportGenerator.generateReportsForCompany(c)
-        createdReports <- reports.traverse(reportOrchestrator.createReport(_, consoIp))
-        _ = logger.info(
-          s"--- Pending reports created"
-        )
-        _ <- createdReports.traverse { r =>
-          val creationDate = OffsetDateTime.now().minusDays(Random.between(1L, 20L))
-          reportRepository.update(
-            r.id,
-            r.copy(
-              creationDate = creationDate,
-              expirationDate = reportOrchestrator.chooseExpirationDate(creationDate, companyHasUsers = true)
-            )
-          )
-        }
-        _ = logger.info(
-          s"--- Pending reports updated with new expiration date"
-        )
-        acceptedResponse = IncomingReportResponse(
-          responseType = ACCEPTED,
-          consumerDetails = "Consumer details",
-          dgccrfDetails = Some("CCRF details"),
-          fileIds = List.empty,
-          responseDetails = Some(REMBOURSEMENT_OU_AVOIR)
-        )
-        rejectedResponse = IncomingReportResponse(
-          REJECTED,
-          "Consumer details",
-          Some("CCRF details"),
-          List.empty,
-          None
-        )
-        notConcernedResponse = IncomingReportResponse(
-          NOT_CONCERNED,
-          "Consumer details",
-          Some("CCRF details"),
-          List.empty,
-          None
-        )
-        _ = logger.info(
-          s"--- Closed reports creation"
-        )
-        _ <- createProcessedReports(c, acceptedResponse, proUsers.head)
-        _ = logger.info(
-          s"--- accepted reports created"
-        )
-        _ <- createProcessedReports(c, rejectedResponse, proUsers.head)
-        _ = logger.info(
-          s"--- rejected reports created"
-        )
-        _ <- createProcessedReports(c, notConcernedResponse, proUsers.head)
-        _ = logger.info(
-          s"--- notConcerned reports created"
-        )
-        _ = logger.info(
-          s"--- Closed reports created"
-        )
+        _ = logger.info(s"--- Company access given to user")
+        createdReports <- ReportGenerator
+          .generateReportsForCompany(c)
+          .traverse(reportOrchestrator.createReport(_, consoIp))
+        _ = logger.info(s"--- Pending reports created")
+        _ <- createdReports.traverse(setCreationAndExpirationDate(_))
+        _ = logger.info(s"--- Pending reports updated with new expiration date")
+        _ = logger.info(s"--- Closed reports creation")
+        _ <- createProcessedReports(c, acceptedResponse(), respondant)
+        _ = logger.info(s"--- accepted reports created")
+        _ <- createProcessedReports(c, rejectedResponse(), respondant)
+        _ = logger.info(s"--- rejected reports created")
+        _ <- createProcessedReports(c, notConcernedResponse(), respondant)
+        _ = logger.info(s"--- notConcerned reports created")
+        _ = logger.info(s"--- Closed reports created")
       } yield ()
     )
   }
@@ -213,26 +167,11 @@ class SampleDataService(
     createdReports <- ReportGenerator
       .generateReportsForCompany(c)
       .traverse(reportOrchestrator.createReport(_, consoIp))
-    _ = logger.info(
-      s"--- Closed reports created"
-    )
-    updateReports <- createdReports.traverse { r =>
-      val creationDate = OffsetDateTime.now().minusWeeks(Random.between(1L, 101L))
-      reportRepository.update(
-        r.id,
-        r.copy(
-          creationDate = creationDate,
-          expirationDate = reportOrchestrator.chooseExpirationDate(creationDate, companyHasUsers = true)
-        )
-      )
-    }
-    _ = logger.info(
-      s"--- Closed reports expiration date updated"
-    )
-    _ <- updateReports.traverse(reportOrchestrator.handleReportResponse(_, response, proUser))
-    _ = logger.info(
-      s"--- Closed reports expiration pro response updated"
-    )
+    _ = logger.info(s"--- Closed reports created")
+    updateReports <- createdReports.traverse(r => setCreationAndExpirationDate(r, quiteOld = true))
+    _ = logger.info(s"--- Closed reports expiration date updated")
+    _ <- updateReports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
+    _ = logger.info(s"--- Closed reports expiration pro response updated")
   } yield ()
 
   private def createUsers(users: Seq[User]) =
@@ -284,6 +223,21 @@ class SampleDataService(
       _ = logger.info("DELETING previous data done")
     } yield ()
 
+  }
+
+  private def setCreationAndExpirationDate(r: Report, quiteOld: Boolean = false): Future[Report] = {
+    val now = OffsetDateTime.now()
+    val creationDate =
+      if (quiteOld) now.minusWeeks(Random.between(1L, 101L))
+      else now.minusDays(Random.between(1L, 20L))
+
+    reportRepository.update(
+      r.id,
+      r.copy(
+        creationDate = creationDate,
+        expirationDate = reportOrchestrator.chooseExpirationDate(creationDate, companyHasUsers = true)
+      )
+    )
   }
 
 }
