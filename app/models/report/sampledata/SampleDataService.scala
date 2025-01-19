@@ -3,7 +3,6 @@ package models.report.sampledata
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import models.User
-import models.UserRole.Professionnel
 import models.company.AccessLevel
 import models.company.Company
 import models.report.ConsumerIp
@@ -12,7 +11,12 @@ import models.report.Report
 import models.report.sampledata.ReponseGenerator.acceptedResponse
 import models.report.sampledata.ReponseGenerator.notConcernedResponse
 import models.report.sampledata.ReponseGenerator.rejectedResponse
-import models.report.sampledata.UserGenerator.generateSampleUser
+import models.report.sampledata.UserGenerator.proUserA
+import models.report.sampledata.UserGenerator.proUserB
+import models.report.sampledata.UserGenerator.proUserC
+import models.report.sampledata.UserGenerator.proUserD
+import models.report.sampledata.UserGenerator.proUserE
+import models.report.sampledata.UserGenerator.proUserF
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.ActorSystem
@@ -27,7 +31,6 @@ import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 
 import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
@@ -48,52 +51,6 @@ class SampleDataService(
 
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("io-dispatcher")
-
-  val proUserA = generateSampleUser(
-    UUID.fromString("8a87f4f4-185a-47c4-a71d-7e27577d7483"),
-    "André",
-    "Andlard",
-    "dev.signalconso+SAMPLE_PRO1@gmail.com",
-    Professionnel
-  )
-  val proUserB = generateSampleUser(
-    UUID.fromString("0920b263-223f-40ae-a5a1-9efe5b624966"),
-    "Brigitte",
-    "Briguenier",
-    "dev.signalconso+SAMPLE_PRO2@gmail.com",
-    Professionnel
-  )
-  val proUserC = generateSampleUser(
-    UUID.fromString("3f80c538-676b-4f2b-a318-7625379e0040"),
-    "Camille",
-    "Camion",
-    "dev.signalconso+SAMPLE_PRO3@gmail.com",
-    Professionnel
-  )
-
-  val proUserD = generateSampleUser(
-    UUID.fromString("6a17610b-2fb5-4d0e-b4b6-a700d1b446a7"),
-    "Damien",
-    "Damont",
-    "dev.signalconso+SAMPLE_PRO4@gmail.com",
-    Professionnel
-  )
-
-  val proUserE = generateSampleUser(
-    UUID.fromString("b5dead94-d3ee-4718-a181-97dcb6c5b867"),
-    "Élodie",
-    "Elovirard",
-    "dev.signalconso+SAMPLE_PRO5@gmail.com",
-    Professionnel
-  )
-
-  val proUserF = generateSampleUser(
-    UUID.fromString("d91520ec-b1d6-4163-9f70-ebd9117f06bc"),
-    "François",
-    "Français",
-    "dev.signalconso+SAMPLE_PRO6@gmail.com",
-    Professionnel
-  )
 
   val consoIp = ConsumerIp("1.1.1.1")
 
@@ -146,33 +103,50 @@ class SampleDataService(
         _ = logger.info(s"--- Company created")
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
         _ = logger.info(s"--- Company access given to user")
-        createdReports <- ReportGenerator
-          .generateReportsForCompany(c)
-          .traverse(reportOrchestrator.createReport(_, consoIp))
+        _ = logger.info(s"--- Pending reports creation")
+        _ <- createReports(c)
         _ = logger.info(s"--- Pending reports created")
-        _ <- createdReports.traverse(setCreationAndExpirationDate(_))
-        _ = logger.info(s"--- Pending reports updated with new expiration date")
-        _ = logger.info(s"--- Closed reports creation")
-        _ <- createProcessedReports(c, acceptedResponse(), respondant)
-        _ = logger.info(s"--- accepted reports created")
-        _ <- createProcessedReports(c, rejectedResponse(), respondant)
-        _ = logger.info(s"--- rejected reports created")
-        _ <- createProcessedReports(c, notConcernedResponse(), respondant)
-        _ = logger.info(s"--- notConcerned reports created")
-        _ = logger.info(s"--- Closed reports created")
+        _ = logger.info(s"--- Reports with response creation")
+        _ <- createReportsWithResponse(c, acceptedResponse(), respondant)
+        _ = logger.info(s"--- Accepted reports created")
+        _ <- createReportsWithResponse(c, rejectedResponse(), respondant)
+        _ = logger.info(s"--- Rejected reports created")
+        _ <- createReportsWithResponse(c, notConcernedResponse(), respondant)
+        _ = logger.info(s"--- NotConcerned reports created")
+        _ = logger.info(s"--- Reports with response created")
       } yield ()
     )
   }
-  private def createProcessedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
-    createdReports <- ReportGenerator
-      .generateReportsForCompany(c)
-      .traverse(reportOrchestrator.createReport(_, consoIp))
-    _ = logger.info(s"--- Closed reports created")
-    updateReports <- createdReports.traverse(r => setCreationAndExpirationDate(r, quiteOld = true))
-    _ = logger.info(s"--- Closed reports expiration date updated")
-    _ <- updateReports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
+
+  private def createReports(c: Company): Future[List[Report]] =
+    for {
+      reports <- ReportGenerator
+        .generateReportsForCompany(c)
+        .traverse(reportOrchestrator.createReport(_, consoIp))
+      _ = logger.info(s"--- ${reports.length} reports created")
+      updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
+    } yield updatedReports
+
+  private def createReportsWithResponse(c: Company, response: IncomingReportResponse, proUser: User) = for {
+    reports <- createReports(c)
+    _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
     _ = logger.info(s"--- Closed reports expiration pro response updated")
   } yield ()
+
+  private def setCreationAndExpirationDate(r: Report, quiteOld: Boolean = false): Future[Report] = {
+    val now = OffsetDateTime.now()
+    val creationDate =
+      if (quiteOld) now.minusWeeks(Random.between(1L, 101L))
+      else now.minusDays(Random.between(1L, 20L))
+
+    reportRepository.update(
+      r.id,
+      r.copy(
+        creationDate = creationDate,
+        expirationDate = reportOrchestrator.chooseExpirationDate(creationDate, companyHasUsers = true)
+      )
+    )
+  }
 
   private def createUsers(users: Seq[User]) =
     users.traverse(createUser)
@@ -223,21 +197,6 @@ class SampleDataService(
       _ = logger.info("DELETING previous data done")
     } yield ()
 
-  }
-
-  private def setCreationAndExpirationDate(r: Report, quiteOld: Boolean = false): Future[Report] = {
-    val now = OffsetDateTime.now()
-    val creationDate =
-      if (quiteOld) now.minusWeeks(Random.between(1L, 101L))
-      else now.minusDays(Random.between(1L, 20L))
-
-    reportRepository.update(
-      r.id,
-      r.copy(
-        creationDate = creationDate,
-        expirationDate = reportOrchestrator.chooseExpirationDate(creationDate, companyHasUsers = true)
-      )
-    )
   }
 
 }
