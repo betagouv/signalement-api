@@ -62,8 +62,7 @@ class SampleDataService(
       _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
-        NonEmptyList.of(proUserA, proUserB),
-        reportsAmountFactor = 5
+        NonEmptyList.of(proUserA, proUserB)
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
@@ -71,7 +70,7 @@ class SampleDataService(
         reportsAmountFactor = 2
       )
       _ <- createCompanyWithNoReports(
-        CompanyGenerator.createLoneCompany("DELICE FRANCE"),
+        CompanyGenerator.createLoneCompany("DELICE VIDE FRANCE"),
         proUserD
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
@@ -85,9 +84,7 @@ class SampleDataService(
   }
 
   private def createCompanyWithNoReports(c: Company, proUser: User) = {
-    logger.info(
-      s"Creation of company ${c.id}, without reports, and accesses for ${proUser.firstName} "
-    )
+    logger.info(s"Creation of company ${c.id} (without reports) and accesses for ${proUser.firstName} ")
     for {
       _ <- companyRepository.create(c)
       _ <- accessTokenRepository.giveCompanyAccess(c, proUser, AccessLevel.ADMIN)
@@ -100,26 +97,22 @@ class SampleDataService(
       reportsAmountFactor: Double = 1
   ): Future[List[Unit]] = {
     logger.info(
-      s"Creation of companies ${groupCompanies.map(_.name).mkString(",")} and reports and accesses for ${proUsers.map(_.firstName).toList.mkString(", ")} "
+      s"--- Creation of companies ${groupCompanies.map(_.name).mkString(",")} and reports and accesses for ${proUsers.map(_.firstName).toList.mkString(", ")} "
     )
     val respondant = proUsers.head
     groupCompanies.traverse(c =>
       for {
         _ <- companyRepository.create(c)
-        _ = logger.info(s"--- Company created")
+        _ = logger.info(s"--- Company ${c.name} created")
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
         _ = logger.info(s"--- Company access given to user")
-        _ = logger.info(s"--- Pending reports creation")
+        _ = logger.info(s"--- Creating reports without response")
         _ <- createReports(c, reportsAmountFactor)
-        _ = logger.info(s"--- Pending reports created")
-        _ = logger.info(s"--- Reports with response creation")
+        _ = logger.info(s"--- Creating reports with response")
         _ <- createReportsWithResponse(c, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
-        _ = logger.info(s"--- Accepted reports created")
         _ <- createReportsWithResponse(c, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
-        _ = logger.info(s"--- Rejected reports created")
         _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
-        _ = logger.info(s"--- NotConcerned reports created")
-        _ = logger.info(s"--- Reports with response created")
+        _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
     )
   }
@@ -129,7 +122,7 @@ class SampleDataService(
       reports <- ReportGenerator
         .generateRandomNumberOfReports(c, reportsAmountFactor)
         .traverse(reportOrchestrator.createReport(_, consoIp))
-      _ = logger.info(s"--- ${reports.length} reports created")
+      _ = logger.info(s"--- ${reports.length} reports created for ${c.name}")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
     } yield updatedReports
   private def createReportsWithResponse(
@@ -140,7 +133,6 @@ class SampleDataService(
   ) = for {
     reports <- createReports(c, reportsAmountFactor)
     _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
-    _ = logger.info(s"--- Closed reports expiration pro response updated")
   } yield ()
 
   private def setCreationAndExpirationDate(r: Report, quiteOld: Boolean = false): Future[Report] = {
