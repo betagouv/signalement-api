@@ -52,28 +52,33 @@ class SampleDataService(
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("io-dispatcher")
 
-  val consoIp = ConsumerIp("1.1.1.1")
+  private val consoIp = ConsumerIp("1.1.1.1")
 
   def genSampleData() = {
-
     val megacorpCompanies = CompanyGenerator.createMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
-
     logger.info("BEGIN Sample service creation")
     for {
       _ <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
-      _ <- createCompaniesWithReportsAndGiveAccess(megacorpCompanies, NonEmptyList.of(proUserA, proUserB))
+      _ <- createCompaniesWithReportsAndGiveAccess(
+        megacorpCompanies,
+        NonEmptyList.of(proUserA, proUserB),
+        reportsAmountFactor = 5
+      )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
-        NonEmptyList.one(proUserC)
+        NonEmptyList.one(proUserC),
+        reportsAmountFactor = 2
       )
-      _ <- createCompanyWithNoReports(CompanyGenerator.createLoneCompany("DELICE FRANCE"), proUserD)
+      _ <- createCompanyWithNoReports(
+        CompanyGenerator.createLoneCompany("DELICE FRANCE"),
+        proUserD
+      )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("FIFRELET")),
         NonEmptyList.of(proUserF, proUserE)
       )
     } yield ()
-
   }.recoverWith { case error =>
     logger.error("Error creating sample data", error)
     Future.successful(())
@@ -91,7 +96,8 @@ class SampleDataService(
 
   private def createCompaniesWithReportsAndGiveAccess(
       groupCompanies: List[Company],
-      proUsers: NonEmptyList[User]
+      proUsers: NonEmptyList[User],
+      reportsAmountFactor: Double = 1
   ): Future[List[Unit]] = {
     logger.info(
       s"Creation of companies ${groupCompanies.map(_.name).mkString(",")} and reports and accesses for ${proUsers.map(_.firstName).toList.mkString(", ")} "
@@ -104,31 +110,35 @@ class SampleDataService(
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
         _ = logger.info(s"--- Company access given to user")
         _ = logger.info(s"--- Pending reports creation")
-        _ <- createReports(c)
+        _ <- createReports(c, reportsAmountFactor)
         _ = logger.info(s"--- Pending reports created")
         _ = logger.info(s"--- Reports with response creation")
-        _ <- createReportsWithResponse(c, acceptedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
         _ = logger.info(s"--- Accepted reports created")
-        _ <- createReportsWithResponse(c, rejectedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
         _ = logger.info(s"--- Rejected reports created")
-        _ <- createReportsWithResponse(c, notConcernedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
         _ = logger.info(s"--- NotConcerned reports created")
         _ = logger.info(s"--- Reports with response created")
       } yield ()
     )
   }
 
-  private def createReports(c: Company): Future[List[Report]] =
+  private def createReports(c: Company, reportsAmountFactor: Double): Future[List[Report]] =
     for {
       reports <- ReportGenerator
-        .generateReportsForCompany(c)
+        .generateRandomNumberOfReports(c, reportsAmountFactor)
         .traverse(reportOrchestrator.createReport(_, consoIp))
       _ = logger.info(s"--- ${reports.length} reports created")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
     } yield updatedReports
-
-  private def createReportsWithResponse(c: Company, response: IncomingReportResponse, proUser: User) = for {
-    reports <- createReports(c)
+  private def createReportsWithResponse(
+      c: Company,
+      reportsAmountFactor: Double,
+      response: IncomingReportResponse,
+      proUser: User
+  ) = for {
+    reports <- createReports(c, reportsAmountFactor)
     _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
     _ = logger.info(s"--- Closed reports expiration pro response updated")
   } yield ()
@@ -138,7 +148,6 @@ class SampleDataService(
     val creationDate =
       if (quiteOld) now.minusWeeks(Random.between(1L, 101L))
       else now.minusDays(Random.between(1L, 20L))
-
     reportRepository.update(
       r.id,
       r.copy(
@@ -150,6 +159,7 @@ class SampleDataService(
 
   private def createUsers(users: Seq[User]) =
     users.traverse(createUser)
+
   private def createUser(user: User) = {
     logger.info(s"Creation pro user ${user.firstName} ${user.email}")
     userRepository

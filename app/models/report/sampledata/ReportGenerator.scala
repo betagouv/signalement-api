@@ -128,8 +128,13 @@ object ReportGenerator {
     )
   }
 
-  def generateReportsForCompany(company: Company) =
-    List(
+  def generateRandomNumberOfReports(company: Company, reportsAmountFactor: Double = 1): List[ReportDraft] = {
+    val n = Math.max(1, Math.round(Random.between(1, 4) * reportsAmountFactor).toInt)
+    (1 to n).map(_ => generateRandomReport(company)).toList
+  }
+
+  private def generateRandomReport(company: Company) = {
+    val randomReportsList = List(
       generateReport(
         conso = generateConsumerUser(),
         company,
@@ -176,6 +181,8 @@ object ReportGenerator {
         tags = List(OpenFoodFacts)
       )
     )
+    Random.shuffle(randomReportsList).head
+  }
 
   private def weirdRandomName() = {
     val syllables = Seq(
