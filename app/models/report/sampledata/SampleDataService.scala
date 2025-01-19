@@ -95,6 +95,8 @@ class SampleDataService(
     Professionnel
   )
 
+  val consoIp = ConsumerIp("1.1.1.1")
+
   def genSampleData() = {
 
     val megacorpCompanies = CompanyGenerator.createMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
@@ -148,7 +150,7 @@ class SampleDataService(
           s"--- Company access given to user"
         )
         reports = ReportGenerator.generateReportsForCompany(c)
-        createdReports <- reports.traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
+        createdReports <- reports.traverse(reportOrchestrator.createReport(_, consoIp))
         _ = logger.info(
           s"--- Pending reports created"
         )
@@ -210,7 +212,7 @@ class SampleDataService(
   private def createProcessedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
     createdReports <- ReportGenerator
       .generateReportsForCompany(c)
-      .traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))
+      .traverse(reportOrchestrator.createReport(_, consoIp))
     _ = logger.info(
       s"--- Closed reports created"
     )
