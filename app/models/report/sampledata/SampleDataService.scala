@@ -189,15 +189,15 @@ class SampleDataService(
         _ = logger.info(
           s"--- Closed reports creation"
         )
-        _ <- processedReports(c, acceptedResponse, proUsers.head)
+        _ <- createProcessedReports(c, acceptedResponse, proUsers.head)
         _ = logger.info(
           s"--- accepted reports created"
         )
-        _ <- processedReports(c, rejectedResponse, proUsers.head)
+        _ <- createProcessedReports(c, rejectedResponse, proUsers.head)
         _ = logger.info(
           s"--- rejected reports created"
         )
-        _ <- processedReports(c, notConcernedResponse, proUsers.head)
+        _ <- createProcessedReports(c, notConcernedResponse, proUsers.head)
         _ = logger.info(
           s"--- notConcerned reports created"
         )
@@ -207,7 +207,7 @@ class SampleDataService(
       } yield ()
     )
   }
-  private def processedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
+  private def createProcessedReports(c: Company, response: IncomingReportResponse, proUser: User) = for {
     createdReports <- ReportGenerator
       .generateReportsForCompany(c)
       .traverse(reportOrchestrator.createReport(_, ConsumerIp("1.1.1.1")))

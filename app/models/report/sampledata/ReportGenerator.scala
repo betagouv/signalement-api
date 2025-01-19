@@ -40,9 +40,9 @@ object ReportGenerator {
 
   // Example detail values to use in reports
   private def generateDetailValues() = List(
-    DetailInputValue("Detail A :", "Value A"),
-    DetailInputValue("Detail B :", "Value B"),
-    DetailInputValue("Description :", Random.shuffle(sampleDescriptions).head)
+    ("Detail A :", "Value A"),
+    ("Detail B :", "Value B"),
+    ("Description :", Random.shuffle(sampleDescriptions).head)
   )
 
   case class ConsumerUser(
@@ -60,6 +60,7 @@ object ReportGenerator {
       company: Company,
       category: ReportCategory,
       tags: List[ReportTag],
+      details: Seq[(String, String)] = generateDetailValues(),
       website: Option[URL] = None,
       phone: Option[String] = None,
       influencer: Option[Influencer] = None,
@@ -70,7 +71,7 @@ object ReportGenerator {
       gender = conso.gender,
       category = category.label,
       subcategories = List(subcategories(Random.nextInt(subcategories.size))),
-      details = generateDetailValues(),
+      details = details.map { case (k, v) => DetailInputValue(k, v) }.toList,
       influencer = influencer,
       companyName = Some(c.name),
       companyCommercialName = c.commercialName,
