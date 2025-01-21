@@ -122,8 +122,8 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       override def load(context: ApplicationLoader.Context): Application = {
         components = new SignalConsoComponents(context) {
-          override def reportRepository: ReportRepositoryInterface         = mockReportRepository
-          override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
+          override val reportRepository: ReportRepositoryInterface         = mockReportRepository
+          override val reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
           override def configuration: Configuration                        = super.configuration
         }
         components.application

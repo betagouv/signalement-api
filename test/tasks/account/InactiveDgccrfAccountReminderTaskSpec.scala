@@ -43,7 +43,7 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
 
         override lazy val mailRetriesService: MailRetriesService = mockMailRetriesService
 
-        override def eventRepository: EventRepositoryInterface = mockEventRepository
+        override val eventRepository: EventRepositoryInterface = mockEventRepository
 
         override val userRepository: UserRepositoryInterface = mockUserRepository
 
