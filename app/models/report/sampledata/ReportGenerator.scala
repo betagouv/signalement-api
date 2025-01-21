@@ -1,8 +1,6 @@
 package models.report.sampledata
 
 import models.barcode.BarcodeProduct
-import models.company.Company
-import models.report.ReportDraft
 import models.report.ReportCategory.AchatInternet
 import models.report.ReportCategory.AchatMagasin
 import models.report.ReportCategory.DemarchageAbusif
@@ -14,7 +12,7 @@ import models.report.ReportTag.Internet
 import models.report.ReportTag.LitigeContractuel
 import models.report.ReportTag.ProduitAlimentaire
 import models.report.ReportTag.ProduitDangereux
-import models.report.sampledata.SampleDataUtils.buildSampleReport
+import models.report.sampledata.SampleDataUtils.SampleReportBlueprint
 import models.report.sampledata.SampleDataUtils.randomConsumerUser
 import utils.URL
 
@@ -23,22 +21,20 @@ import scala.util.Random
 object ReportGenerator {
 
   def generateRandomNumberOfReports(
-      company: Company,
       barcodeProduct: BarcodeProduct,
       reportsAmountFactor: Double = 1
-  ): List[ReportDraft] = {
+  ): List[SampleReportBlueprint] = {
     val n = Math.max(1, Math.round(Random.between(1, 4) * reportsAmountFactor).toInt)
-    (1 to n).map(_ => generateRandomReport(company, barcodeProduct)).toList
+    (1 to n).map(_ => generateRandomReport(barcodeProduct)).toList
   }
 
-  private def generateRandomReport(company: Company, barcodeProduct: BarcodeProduct) = {
+  private def generateRandomReport(barcodeProduct: BarcodeProduct): SampleReportBlueprint = {
 
     // We try to keep realistic data
     // Those are real reports taken from prod, with names, urls, amounts etc. changed for anonymity
 
     val reportSomethingNotDelivered =
-      buildSampleReport(
-        company,
+      SampleReportBlueprint(
         conso = randomConsumerUser(),
         category = AchatInternet,
         subcategories = List("Une_commande_effectuee", "Commande_jamais_livree_et_le_site_est_toujours_ouvert"),
@@ -49,8 +45,7 @@ object ReportGenerator {
         website = Some(URL("https://boba-paris.com"))
       )
 
-    val reportDemarcheAdministratives = buildSampleReport(
-      company,
+    val reportDemarcheAdministratives = SampleReportBlueprint(
       conso = randomConsumerUser(contactAgreement = false),
       category = DemarchesAdministratives,
       subcategories =
@@ -62,8 +57,7 @@ object ReportGenerator {
       website = Some(URL("https://sitepouravoircartegrise.com"))
     )
 
-    val reportDemarcheTelephonique = buildSampleReport(
-      company,
+    val reportDemarcheTelephonique = SampleReportBlueprint(
       conso = randomConsumerUser(contactAgreement = false, phone = Some("0627339834")),
       category = DemarchageAbusif,
       subcategories = List(
@@ -83,8 +77,7 @@ object ReportGenerator {
       phone = Some("0165194512")
     )
 
-    val reportProduitDangereuxAlimentaire = buildSampleReport(
-      company,
+    val reportProduitDangereuxAlimentaire = SampleReportBlueprint(
       conso = randomConsumerUser(contactAgreement = false),
       category = AchatMagasin,
       subcategories = List(

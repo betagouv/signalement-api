@@ -8,11 +8,15 @@ import models.barcode.BarcodeProduct
 import models.company.AccessLevel
 import models.company.Company
 import models.report.ConsumerIp
+import models.report.DetailInputValue
 import models.report.IncomingReportResponse
 import models.report.Report
+import models.report.ReportDraft
+import models.report.ReportTag
 import models.report.sampledata.ReponseGenerator.acceptedResponse
 import models.report.sampledata.ReponseGenerator.notConcernedResponse
 import models.report.sampledata.ReponseGenerator.rejectedResponse
+import models.report.sampledata.SampleDataUtils.SampleReportBlueprint
 import models.report.sampledata.UserGenerator.proUserA
 import models.report.sampledata.UserGenerator.proUserB
 import models.report.sampledata.UserGenerator.proUserC
@@ -35,6 +39,7 @@ import repositories.website.WebsiteRepositoryInterface
 import utils.FutureUtils.RichSeq
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
@@ -136,8 +141,9 @@ class SampleDataService(
   ): Future[List[Report]] =
     for {
       reports <- ReportGenerator
-        .generateRandomNumberOfReports(c, barcodeProduct, reportsAmountFactor)
-        .runSequentially(report => reportOrchestrator.createReport(report, consoIp))
+        .generateRandomNumberOfReports(barcodeProduct, reportsAmountFactor)
+        .map(r => buildDraft(c, r))
+        .runSequentially(r => reportOrchestrator.createReport(r, consoIp))
       _ = logger.info(s"--- ${reports.length} reports created for ${c.name}")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
     } yield updatedReports
@@ -225,6 +231,51 @@ class SampleDataService(
       maybeProduct <- barcodeOrchestrator.getByGTIN(gtin)
       product = maybeProduct.getOrElse(throw new ServerError(s"Couldn't find product $gtin for sample data"))
     } yield product
+  }
+
+  private def buildDraft(company: Company, report: SampleReportBlueprint): ReportDraft = {
+    val c     = company
+    val r     = report
+    val conso = r.conso
+    ReportDraft(
+      gender = conso.gender,
+      category = r.category.label,
+      subcategories = r.subcategories,
+      details = r.details.map { case (k, v) => DetailInputValue(k, v) }.toList,
+      influencer = None,
+      companyName = Some(c.name),
+      companyCommercialName = c.commercialName,
+      companyEstablishmentCommercialName = c.establishmentCommercialName,
+      companyBrand = c.brand,
+      companyAddress = Some(c.address),
+      companySiret = Some(c.siret),
+      companyActivityCode = c.activityCode,
+      companyIsHeadOffice = Some(c.isHeadOffice),
+      companyIsOpen = Some(c.isOpen),
+      companyIsPublic = Some(c.isPublic),
+      websiteURL = r.website,
+      phone = r.phone,
+      firstName = conso.firstName,
+      lastName = conso.lastName,
+      email = conso.email,
+      contactAgreement = conso.contactAgreement,
+      consumerPhone = conso.phone,
+      consumerReferenceNumber = None,
+      employeeConsumer = conso.employeeConsumer,
+      forwardToReponseConso = Some(r.tags.contains(ReportTag.ReponseConso)),
+      fileIds = List.empty,
+      vendor = None,
+      tags = r.tags,
+      reponseconsoCode = None,
+      ccrfCode = None,
+      lang = Some(Locale.FRENCH),
+      barcodeProductId = r.barcodeProductId,
+      metadata = None,
+      train = None,
+      station = None,
+      rappelConsoId = None
+    )
+
   }
 
 }
