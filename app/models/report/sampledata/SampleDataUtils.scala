@@ -8,7 +8,6 @@ import models.report.ReportTag
 import utils.EmailAddress
 import utils.URL
 
-import java.util.UUID
 import scala.util.Random
 
 object SampleDataUtils {
@@ -54,7 +53,7 @@ object SampleDataUtils {
       subcategories: List[String],
       website: Option[URL] = None,
       phone: Option[String] = None,
-      barcodeProductId: Option[UUID] = None
+      barcodeProductGtin: Option[String] = None
   )
 
 }

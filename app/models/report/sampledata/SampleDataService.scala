@@ -73,13 +73,11 @@ class SampleDataService(
       _       <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
-        product,
         NonEmptyList.of(proUserA, proUserB),
         reportsAmountFactor = 4
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
-        product,
         NonEmptyList.one(proUserC),
         reportsAmountFactor = 2
       )
@@ -89,7 +87,6 @@ class SampleDataService(
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("FIFRELET")),
-        product,
         NonEmptyList.of(proUserF, proUserE)
       )
     } yield ()
@@ -108,7 +105,6 @@ class SampleDataService(
 
   private def createCompaniesWithReportsAndGiveAccess(
       groupCompanies: List[Company],
-      product: BarcodeProduct,
       proUsers: NonEmptyList[User],
       reportsAmountFactor: Double = 1
   ): Future[_] = {
@@ -124,11 +120,11 @@ class SampleDataService(
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
         _ = logger.info(s"--- Company access given to user")
         _ = logger.info(s"--- Creating reports without response")
-        _ <- createReports(c, product, reportsAmountFactor)
+        _ <- createReports(c, reportsAmountFactor)
         _ = logger.info(s"--- Creating reports with response")
-        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
-        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
-        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
+        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
         _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
     }
@@ -136,13 +132,13 @@ class SampleDataService(
 
   private def createReports(
       c: Company,
-      barcodeProduct: BarcodeProduct,
       reportsAmountFactor: Double
   ): Future[List[Report]] =
     for {
-      reports <- ReportGenerator
-        .generateRandomNumberOfReports(barcodeProduct, reportsAmountFactor)
-        .map(r => buildDraft(c, r))
+      reportsDrafts <- ReportGenerator
+        .generateRandomNumberOfReports(reportsAmountFactor)
+        .runSequentially(buildDraft(c, _))
+      reports <- reportsDrafts
         .runSequentially(r => reportOrchestrator.createReport(r, consoIp))
       _ = logger.info(s"--- ${reports.length} reports created for ${c.name}")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
@@ -150,12 +146,11 @@ class SampleDataService(
 
   private def createReportsWithResponse(
       c: Company,
-      product: BarcodeProduct,
       reportsAmountFactor: Double,
       response: IncomingReportResponse,
       proUser: User
   ) = for {
-    reports <- createReports(c, product, reportsAmountFactor)
+    reports <- createReports(c, reportsAmountFactor)
     _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
   } yield ()
 
@@ -233,48 +228,54 @@ class SampleDataService(
     } yield product
   }
 
-  private def buildDraft(company: Company, report: SampleReportBlueprint): ReportDraft = {
+  private def buildDraft(company: Company, report: SampleReportBlueprint): Future[ReportDraft] = {
     val c     = company
     val r     = report
     val conso = r.conso
-    ReportDraft(
-      gender = conso.gender,
-      category = r.category.label,
-      subcategories = r.subcategories,
-      details = r.details.map { case (k, v) => DetailInputValue(k, v) }.toList,
-      influencer = None,
-      companyName = Some(c.name),
-      companyCommercialName = c.commercialName,
-      companyEstablishmentCommercialName = c.establishmentCommercialName,
-      companyBrand = c.brand,
-      companyAddress = Some(c.address),
-      companySiret = Some(c.siret),
-      companyActivityCode = c.activityCode,
-      companyIsHeadOffice = Some(c.isHeadOffice),
-      companyIsOpen = Some(c.isOpen),
-      companyIsPublic = Some(c.isPublic),
-      websiteURL = r.website,
-      phone = r.phone,
-      firstName = conso.firstName,
-      lastName = conso.lastName,
-      email = conso.email,
-      contactAgreement = conso.contactAgreement,
-      consumerPhone = conso.phone,
-      consumerReferenceNumber = None,
-      employeeConsumer = conso.employeeConsumer,
-      forwardToReponseConso = Some(r.tags.contains(ReportTag.ReponseConso)),
-      fileIds = List.empty,
-      vendor = None,
-      tags = r.tags,
-      reponseconsoCode = None,
-      ccrfCode = None,
-      lang = Some(Locale.FRENCH),
-      barcodeProductId = r.barcodeProductId,
-      metadata = None,
-      train = None,
-      station = None,
-      rappelConsoId = None
-    )
+
+    for {
+      maybeBarcodeProductId <- report.barcodeProductGtin
+        .map(barcodeOrchestrator.getByGTIN)
+        .getOrElse(Future.successful(None))
+      reportDraft = ReportDraft(
+        gender = conso.gender,
+        category = r.category.label,
+        subcategories = r.subcategories,
+        details = r.details.map { case (k, v) => DetailInputValue(k, v) }.toList,
+        influencer = None,
+        companyName = Some(c.name),
+        companyCommercialName = c.commercialName,
+        companyEstablishmentCommercialName = c.establishmentCommercialName,
+        companyBrand = c.brand,
+        companyAddress = Some(c.address),
+        companySiret = Some(c.siret),
+        companyActivityCode = c.activityCode,
+        companyIsHeadOffice = Some(c.isHeadOffice),
+        companyIsOpen = Some(c.isOpen),
+        companyIsPublic = Some(c.isPublic),
+        websiteURL = r.website,
+        phone = r.phone,
+        firstName = conso.firstName,
+        lastName = conso.lastName,
+        email = conso.email,
+        contactAgreement = conso.contactAgreement,
+        consumerPhone = conso.phone,
+        consumerReferenceNumber = None,
+        employeeConsumer = conso.employeeConsumer,
+        forwardToReponseConso = Some(r.tags.contains(ReportTag.ReponseConso)),
+        fileIds = List.empty,
+        vendor = None,
+        tags = r.tags,
+        reponseconsoCode = None,
+        ccrfCode = None,
+        lang = Some(Locale.FRENCH),
+        barcodeProductId = maybeBarcodeProductId.map(_.id),
+        metadata = None,
+        train = None,
+        station = None,
+        rappelConsoId = None
+      )
+    } yield reportDraft
 
   }
 

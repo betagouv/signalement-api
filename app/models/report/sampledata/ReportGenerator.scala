@@ -1,6 +1,5 @@
 package models.report.sampledata
 
-import models.barcode.BarcodeProduct
 import models.report.ReportCategory.AchatInternet
 import models.report.ReportCategory.AchatMagasin
 import models.report.ReportCategory.DemarchageAbusif
@@ -21,14 +20,13 @@ import scala.util.Random
 object ReportGenerator {
 
   def generateRandomNumberOfReports(
-      barcodeProduct: BarcodeProduct,
       reportsAmountFactor: Double = 1
   ): List[SampleReportBlueprint] = {
     val n = Math.max(1, Math.round(Random.between(1, 4) * reportsAmountFactor).toInt)
-    (1 to n).map(_ => generateRandomReport(barcodeProduct)).toList
+    (1 to n).map(_ => generateRandomReport()).toList
   }
 
-  private def generateRandomReport(barcodeProduct: BarcodeProduct): SampleReportBlueprint = {
+  private def generateRandomReport(): SampleReportBlueprint = {
 
     // We try to keep realistic data
     // Those are real reports taken from prod, with names, urls, amounts etc. changed for anonymity
@@ -93,7 +91,7 @@ object ReportGenerator {
         "Avez-vous déjà contacté le commerçant ou le fabricant pour ce problème :"               -> "Oui",
         "Description :" -> "Bonjour, Je souhaite signaler une erreur d'étiquetage d'un pain qui était censé être un pain aux figues mais qui était un pain \"sportif\" dans un mauvais emballage. Nous l'avons acheté à FRANCHOUILLE MAGASIN à Anse (69480) et c'est la deuxième fois que cela nous arrive. \nJe tiens à préciser que le pain sportif contient des fruits à coque, des allergènes qui peuvent provoquer un choc anaphylactique aux gens allergiques comportant un risque vital. Je considère cette erreur du Franchouille gravissime. Cela doit être signalé.\nCordialement"
       ),
-      barcodeProductId = Some(barcodeProduct.id)
+      barcodeProductGtin = Some("3474341105842")
     )
 
     Random
