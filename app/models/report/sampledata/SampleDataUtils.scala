@@ -13,38 +13,25 @@ import scala.util.Random
 
 object SampleDataUtils {
 
-  private def randomWeirdName() = {
-    val syllables = Seq(
-      "za",
-      "me",
-      "mi",
-      "zo",
-      "ku",
-      "zou",
-      "zazou",
-      "zopi",
-      "zamba",
-      "zapo",
-      "zur",
-      "kig",
-      "zag",
-      "zom"
-    )
-    Random.shuffle(syllables).take(Random.between(1, 4)).mkString("").capitalize
-  }
-
   def randomConsumerUser(contactAgreement: Boolean = true, phone: Option[String] = None): ConsumerUser = {
-    val firstName = randomWeirdName()
-    val lastName  = randomWeirdName()
+    val gender = if (Random.nextBoolean()) Male else Female
+
+    val number = Random.nextInt(100)
+    val firstName = gender match {
+      case Male   => "Firmin"
+      case Female => "Honorine"
+    }
+
+    val lastName = s"Conso${number}"
     ConsumerUser(
       firstName = firstName,
       lastName = lastName,
       email = EmailAddress(
-        s"dev.signalconso+${firstName.toLowerCase}_${lastName.toLowerCase}${Random.nextInt(100)}@gmail.com"
+        s"dev.signalconso+${firstName.toLowerCase}_${lastName.toLowerCase}}@gmail.com"
       ),
       contactAgreement = contactAgreement,
       employeeConsumer = Random.nextDouble() > 0.1,
-      gender = if (Random.nextBoolean()) Some(Male) else Some(Female),
+      gender = Some(gender),
       phone = phone
     )
   }
