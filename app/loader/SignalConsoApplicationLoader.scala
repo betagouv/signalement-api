@@ -93,6 +93,7 @@ import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.signalconsoreview.SignalConsoReviewRepository
 import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
+import repositories.siretextraction.SiretExtractionRepository
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subcategorylabel.SubcategoryLabelRepository
@@ -128,6 +129,7 @@ import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
 import tasks.report.SampleDataGenerationTask
 import tasks.subcategorylabel.SubcategoryLabelTask
+import tasks.website.SiretExtractionTask
 import utils.CustomIpFilter
 import utils.EmailAddress
 import utils.FrontRoute
@@ -255,6 +257,8 @@ class SignalConsoComponents(
 
   val albertClassificationRepository = new AlbertClassificationRepository(dbConfig)
 
+  val siretExtractionRepository = new SiretExtractionRepository(dbConfig)
+
   val crypter = new JcaCrypter(applicationConfiguration.crypter)
   val signer  = new JcaSigner(applicationConfiguration.signer)
 
@@ -319,6 +323,8 @@ class SignalConsoComponents(
     pdfService,
     attachmentService
   )
+
+  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
 
   // Orchestrator
 
@@ -723,6 +729,14 @@ class SignalConsoComponents(
     taskRepository
   )
 
+  val siretExtractionTask = new SiretExtractionTask(
+    actorSystem,
+    taskConfiguration,
+    taskRepository,
+    siretExtractionRepository,
+    siretExtractorService
+  )
+
   // Controller
 
   val blacklistedEmailsController =
@@ -894,9 +908,13 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
   val siretExtractorController =
-    new SiretExtractorController(siretExtractorService, cookieAuthenticator, controllerComponents)
+    new SiretExtractorController(
+      siretExtractionRepository,
+      siretExtractorService,
+      cookieAuthenticator,
+      controllerComponents
+    )
 
   val importOrchestrator = new ImportOrchestrator(
     companyRepository,
@@ -982,6 +1000,7 @@ class SignalConsoComponents(
     subcategoryLabelTask.schedule()
     companyAlbertLabelTask.schedule()
     companyReportCountViewRefresherTask.schedule()
+    siretExtractionTask.schedule()
   }
 
   override def config: Config = ConfigFactory.load()
