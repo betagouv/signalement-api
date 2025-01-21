@@ -13,6 +13,7 @@ import utils.EmailAddress
 import utils.URL
 
 import java.util.Locale
+import java.util.UUID
 import scala.util.Random
 
 object SampleDataUtils {
@@ -37,7 +38,7 @@ object SampleDataUtils {
     Random.shuffle(syllables).take(Random.between(1, 4)).mkString("").capitalize
   }
 
-  def randomConsumerUser(): ConsumerUser = {
+  def randomConsumerUser(contactAgreement: Boolean = true, phone: Option[String] = None): ConsumerUser = {
     val firstName = randomWeirdName()
     val lastName  = randomWeirdName()
     ConsumerUser(
@@ -46,9 +47,10 @@ object SampleDataUtils {
       email = EmailAddress(
         s"dev.signalconso+${firstName.toLowerCase}_${lastName.toLowerCase}${Random.nextInt(100)}@gmail.com"
       ),
-      contactAgreement = Random.nextDouble() > 0.3,
+      contactAgreement = contactAgreement,
       employeeConsumer = Random.nextDouble() > 0.1,
-      gender = if (Random.nextBoolean()) Some(Male) else Some(Female)
+      gender = if (Random.nextBoolean()) Some(Male) else Some(Female),
+      phone = phone
     )
   }
 
@@ -58,7 +60,8 @@ object SampleDataUtils {
       email: EmailAddress,
       contactAgreement: Boolean,
       employeeConsumer: Boolean,
-      gender: Option[Gender]
+      gender: Option[Gender],
+      phone: Option[String]
   )
   def buildSampleReport(
       company: Company,
@@ -70,6 +73,7 @@ object SampleDataUtils {
       website: Option[URL] = None,
       phone: Option[String] = None,
       influencer: Option[Influencer] = None,
+      barcodeProductId: Option[UUID] = None,
       french: Boolean = true
   ): ReportDraft = {
     val c = company
@@ -95,7 +99,7 @@ object SampleDataUtils {
       lastName = conso.lastName,
       email = conso.email,
       contactAgreement = conso.contactAgreement,
-      consumerPhone = None,
+      consumerPhone = conso.phone,
       consumerReferenceNumber = None,
       employeeConsumer = conso.employeeConsumer,
       forwardToReponseConso = Some(tags.contains(ReportTag.ReponseConso)),
@@ -111,7 +115,7 @@ object SampleDataUtils {
           Locale.ENGLISH
         }
       },
-      barcodeProductId = None,
+      barcodeProductId = barcodeProductId,
       metadata = None,
       train = None,
       station = None,

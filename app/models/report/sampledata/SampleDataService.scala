@@ -2,7 +2,9 @@ package models.report.sampledata
 
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
+import controllers.error.AppError.ServerError
 import models.User
+import models.barcode.BarcodeProduct
 import models.company.AccessLevel
 import models.company.Company
 import models.report.ConsumerIp
@@ -17,6 +19,7 @@ import models.report.sampledata.UserGenerator.proUserC
 import models.report.sampledata.UserGenerator.proUserD
 import models.report.sampledata.UserGenerator.proUserE
 import models.report.sampledata.UserGenerator.proUserF
+import orchestrators.BarcodeOrchestrator
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.ActorSystem
@@ -41,6 +44,7 @@ class SampleDataService(
     userRepository: UserRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
+    barcodeOrchestrator: BarcodeOrchestrator,
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
@@ -59,15 +63,18 @@ class SampleDataService(
     val megacorpCompanies = CompanyGenerator.createMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
     logger.info("BEGIN Sample service creation")
     for {
-      _ <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
-      _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
+      product <- createBarcodeProduct()
+      _       <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
+      _       <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
+        product,
         NonEmptyList.of(proUserA, proUserB),
         reportsAmountFactor = 4
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
+        product,
         NonEmptyList.one(proUserC),
         reportsAmountFactor = 2
       )
@@ -77,6 +84,7 @@ class SampleDataService(
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("FIFRELET")),
+        product,
         NonEmptyList.of(proUserF, proUserE)
       )
     } yield ()
@@ -95,6 +103,7 @@ class SampleDataService(
 
   private def createCompaniesWithReportsAndGiveAccess(
       groupCompanies: List[Company],
+      product: BarcodeProduct,
       proUsers: NonEmptyList[User],
       reportsAmountFactor: Double = 1
   ): Future[_] = {
@@ -110,31 +119,37 @@ class SampleDataService(
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
         _ = logger.info(s"--- Company access given to user")
         _ = logger.info(s"--- Creating reports without response")
-        _ <- createReports(c, reportsAmountFactor)
+        _ <- createReports(c, product, reportsAmountFactor)
         _ = logger.info(s"--- Creating reports with response")
-        _ <- createReportsWithResponse(c, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
-        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
-        _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
+        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
+        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
+        _ <- createReportsWithResponse(c, product, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
         _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
     }
   }
 
-  private def createReports(c: Company, reportsAmountFactor: Double): Future[List[Report]] =
+  private def createReports(
+      c: Company,
+      barcodeProduct: BarcodeProduct,
+      reportsAmountFactor: Double
+  ): Future[List[Report]] =
     for {
       reports <- ReportGenerator
-        .generateRandomNumberOfReports(c, reportsAmountFactor)
+        .generateRandomNumberOfReports(c, barcodeProduct, reportsAmountFactor)
         .runSequentially(report => reportOrchestrator.createReport(report, consoIp))
       _ = logger.info(s"--- ${reports.length} reports created for ${c.name}")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
     } yield updatedReports
+
   private def createReportsWithResponse(
       c: Company,
+      product: BarcodeProduct,
       reportsAmountFactor: Double,
       response: IncomingReportResponse,
       proUser: User
   ) = for {
-    reports <- createReports(c, reportsAmountFactor)
+    reports <- createReports(c, product, reportsAmountFactor)
     _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
   } yield ()
 
@@ -202,6 +217,14 @@ class SampleDataService(
       _ = logger.info("DELETING previous data done")
     } yield ()
 
+  }
+
+  private def createBarcodeProduct(): Future[BarcodeProduct] = {
+    val gtin = "3474341105842"
+    for {
+      maybeProduct <- barcodeOrchestrator.getByGTIN(gtin)
+      product = maybeProduct.getOrElse(throw new ServerError(s"Couldn't find product $gtin for sample data"))
+    } yield product
   }
 
 }
