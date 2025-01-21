@@ -2,12 +2,14 @@ package models.report.sampledata
 
 import models.report.ReportCategory.AchatInternet
 import models.report.ReportCategory.AchatMagasin
+import models.report.ReportCategory.CafeRestaurant
 import models.report.ReportCategory.DemarchageAbusif
 import models.report.ReportCategory.DemarchesAdministratives
 import models.report.ReportCategory.Immobilier
 import models.report.ReportTag.AppelCommercial
 import models.report.ReportTag.CommandeEffectuee
 import models.report.ReportTag.DemarchageTelephonique
+import models.report.ReportTag.Hygiene
 import models.report.ReportTag.Internet
 import models.report.ReportTag.LitigeContractuel
 import models.report.ReportTag.ProduitAlimentaire
@@ -99,12 +101,26 @@ object ReportGenerator {
     val reportReponseConso = SampleReportBlueprint(
       conso = randomConsumerUser(contactAgreement = false),
       category = Immobilier,
-      subcategories = List("Agence immobilière", "J'ai un problème en tant que locataire", "Charges / honoraires"),
+      subcategories = List("Agence immobilière", "Jai_un_probleme_en_tant_que_locataire", "Charges_honoraires"),
       tags = List(ReponseConso),
       details = List(
         "Date du constat :" -> "20/01/2025",
         "Description :" -> "Je rejoins une collocation, ce qui nécessite de générer un avenant au contrat pour changement de locataire; l'agence réclame 450€ pour cet avenant ; alors qu'il n'y a aucune démarche à faire à part la génération de l'avenant (pas d'état des lieux, pas de déplacement, etc.)",
         "Votre question :" -> "Puis-je demander la réduction de ces frais? \nMerci,"
+      )
+    )
+
+    val reportInformateurInterneHygiene = SampleReportBlueprint(
+      conso = randomConsumerUser(contactAgreement = false),
+      category = CafeRestaurant,
+      subcategories = List("Hygiène", "Probleme_de_temperature"),
+      tags = List(Hygiene),
+      details = List(
+        "Date du constat :"               -> "10/03/2024",
+        "Heure du constat (facultatif) :" -> "de 8h à 9h",
+        "Quel est le problème :"          -> "Stockage à température ambiante de produits frais ou congelés",
+        "Pouvez-vous préciser :" -> "Armoire positive en panne , venaison chasse ne passe par des contrôles sanitaires.",
+        "Description :" -> "Bonjour,  je travaillais l année dernière dans cette établissement,  le patron mr Champ pignon et chasseur , il tue sont propre gibier et le mets directement à la consommation dans son établissement, sans contrôle vétérinaire,  le gibier et stocker dans un congélateur , aucune date sur le sous vide , cerf et sanglier  , l état des congélateur et lamentable,  du sang partout , les chaînes du froid ne sont pas respecté le gibier et transvaser de véhicule en véhicule pour atterrir dans les congélateur. De plus l état de la cuisine à l époque laisse à désiré. Autres point les grenouilles cuisses,  arrivée fraîche, mérite d être contrôler ce monsieur possede un étang mais je doute que toutes les grenouilles viennent du même étang,  abattage dans une caves par des retraités. Conditionnement boîte type plastique à emporter,  chaînes du froids non respecté,  pas de dlc , quand trop de quantité congélateur,  congelé, décongelée, et recongeler !!!"
       )
     )
 
@@ -115,7 +131,8 @@ object ReportGenerator {
           reportDemarcheAdministratives,
           reportDemarcheTelephonique,
           reportProduitDangereuxAlimentaire,
-          reportReponseConso
+          reportReponseConso,
+          reportInformateurInterneHygiene
         )
       )
       .head
