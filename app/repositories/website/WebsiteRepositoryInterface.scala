@@ -7,6 +7,7 @@ import models.website.Website
 import models.website.WebsiteId
 import models.website.IdentificationStatus
 import repositories.TypedCRUDRepositoryInterface
+import tasks.website.ExtractionResultApi
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -41,7 +42,7 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       hasAssociation: Option[Boolean],
       isOpen: Option[Boolean],
       isMarketplace: Option[Boolean]
-  ): Future[PaginatedResult[((Website, Option[Company]), Int)]]
+  ): Future[PaginatedResult[(Website, Option[Company], Option[ExtractionResultApi], Int)]]
 
   def searchValidAssociationByHost(host: String): Future[Seq[Website]]
 

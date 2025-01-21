@@ -5,6 +5,7 @@ import models.company.Company
 import models.investigation.InvestigationStatus
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
+import tasks.website.ExtractionResultApi
 import utils.Country
 
 import java.time.OffsetDateTime
@@ -23,15 +24,18 @@ case class WebsiteCompanyReportCount(
     kind: String,
     company: Option[Company],
     investigationStatus: InvestigationStatus,
-    count: Int
+    count: Int,
+    siretExtraction: Option[ExtractionResultApi]
 )
 
 object WebsiteCompanyReportCount {
 
   implicit val WebsiteCompanyCountWrites: Writes[WebsiteCompanyReportCount] = Json.writes[WebsiteCompanyReportCount]
 
-  def toApi(countByWebsiteCompany: ((Website, Option[Company]), Int)): WebsiteCompanyReportCount = {
-    val ((website, maybeCompany), count) = countByWebsiteCompany
+  def toApi(
+      countByWebsiteCompany: (Website, Option[Company], Option[ExtractionResultApi], Int)
+  ): WebsiteCompanyReportCount = {
+    val (website, maybeCompany, maybeSiretExtraction, count) = countByWebsiteCompany
     website
       .into[WebsiteCompanyReportCount]
       .withFieldComputed(_.id, _.id)
@@ -39,6 +43,7 @@ object WebsiteCompanyReportCount {
       .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromCode(_)))
       .withFieldConst(_.count, count)
       .withFieldConst(_.kind, IdentificationStatus.toKind(website.identificationStatus))
+      .withFieldConst(_.siretExtraction, maybeSiretExtraction)
       .transform
   }
 }
