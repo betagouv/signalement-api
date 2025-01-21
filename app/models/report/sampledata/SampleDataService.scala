@@ -63,7 +63,8 @@ class SampleDataService(
       _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
-        NonEmptyList.of(proUserA, proUserB)
+        NonEmptyList.of(proUserA, proUserB),
+        reportsAmountFactor = 4
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
         List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
