@@ -4,6 +4,7 @@ import models.report.ReportCategory.AchatInternet
 import models.report.ReportCategory.AchatMagasin
 import models.report.ReportCategory.DemarchageAbusif
 import models.report.ReportCategory.DemarchesAdministratives
+import models.report.ReportCategory.Immobilier
 import models.report.ReportTag.AppelCommercial
 import models.report.ReportTag.CommandeEffectuee
 import models.report.ReportTag.DemarchageTelephonique
@@ -11,6 +12,7 @@ import models.report.ReportTag.Internet
 import models.report.ReportTag.LitigeContractuel
 import models.report.ReportTag.ProduitAlimentaire
 import models.report.ReportTag.ProduitDangereux
+import models.report.ReportTag.ReponseConso
 import models.report.sampledata.SampleDataUtils.SampleReportBlueprint
 import models.report.sampledata.SampleDataUtils.randomConsumerUser
 import utils.URL
@@ -94,13 +96,26 @@ object ReportGenerator {
       barcodeProductGtin = Some("3474341105842")
     )
 
+    val reportReponseConso = SampleReportBlueprint(
+      conso = randomConsumerUser(contactAgreement = false),
+      category = Immobilier,
+      subcategories = List("Agence immobilière", "J'ai un problème en tant que locataire", "Charges / honoraires"),
+      tags = List(ReponseConso),
+      details = List(
+        "Date du constat :" -> "20/01/2025",
+        "Description :" -> "Je rejoins une collocation, ce qui nécessite de générer un avenant au contrat pour changement de locataire; l'agence réclame 450€ pour cet avenant ; alors qu'il n'y a aucune démarche à faire à part la génération de l'avenant (pas d'état des lieux, pas de déplacement, etc.)",
+        "Votre question :" -> "Puis-je demander la réduction de ces frais? \nMerci,"
+      )
+    )
+
     Random
       .shuffle(
         List(
           reportSomethingNotDelivered,
           reportDemarcheAdministratives,
           reportDemarcheTelephonique,
-          reportProduitDangereuxAlimentaire
+          reportProduitDangereuxAlimentaire,
+          reportReponseConso
         )
       )
       .head
