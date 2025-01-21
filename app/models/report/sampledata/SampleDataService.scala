@@ -29,6 +29,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
+import utils.FutureUtils.RichSeq
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -95,13 +96,14 @@ class SampleDataService(
       groupCompanies: List[Company],
       proUsers: NonEmptyList[User],
       reportsAmountFactor: Double = 1
-  ): Future[List[Unit]] = {
+  ): Future[_] = {
     logger.info(
       s"--- Creation of companies ${groupCompanies.map(_.name).mkString(",")} and reports and accesses for ${proUsers.map(_.firstName).toList.mkString(", ")} "
     )
     val respondant = proUsers.head
-    groupCompanies.traverse(c =>
+    groupCompanies.runSequentially { c =>
       for {
+        _ <- Future.successful(logger.info(s"--- Working on company ${c.name}"))
         _ <- companyRepository.create(c)
         _ = logger.info(s"--- Company ${c.name} created")
         _ <- proUsers.traverse(accessTokenRepository.giveCompanyAccess(c, _, AccessLevel.ADMIN))
@@ -114,14 +116,14 @@ class SampleDataService(
         _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
         _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
-    )
+    }
   }
 
   private def createReports(c: Company, reportsAmountFactor: Double): Future[List[Report]] =
     for {
       reports <- ReportGenerator
         .generateRandomNumberOfReports(c, reportsAmountFactor)
-        .traverse(reportOrchestrator.createReport(_, consoIp))
+        .runSequentially(report => reportOrchestrator.createReport(report, consoIp))
       _ = logger.info(s"--- ${reports.length} reports created for ${c.name}")
       updatedReports <- reports.traverse(setCreationAndExpirationDate(_))
     } yield updatedReports
