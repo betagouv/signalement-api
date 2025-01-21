@@ -171,9 +171,8 @@ object ReportGenerator {
         conso = generateConsumerUser(),
         company,
         ReportCategory.AchatInternet,
-        tags = List(Internet)
-        // doesn't work anymore, it seems to break some db constraint ?
-//        website = Some(URL("http://arnaques.com"))
+        tags = List(Internet),
+        website = Some(URL("http://arnaques.com"))
       ),
       generateReport(
         conso = generateConsumerUser(),
