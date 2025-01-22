@@ -239,7 +239,7 @@ class SampleDataService(
         .getOrElse(Future.successful(None))
       reportDraft = ReportDraft(
         gender = conso.gender,
-        category = r.category.label,
+        category = r.category.entryName,
         subcategories = r.subcategories,
         details = r.details.map { case (k, v) => DetailInputValue(k, v) }.toList,
         influencer = None,
