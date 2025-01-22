@@ -618,14 +618,14 @@ class ReportOrchestrator(
       updatedReport <- updateReportCompany(
         existingReport,
         reportCompany,
-        requestingUserId
+        Some(requestingUserId)
       )
     } yield updatedReport
 
   def updateReportCompanyForWebsite(
       existingReport: Report,
       reportCompany: ReportCompany,
-      adminUserId: UUID
+      adminUserId: Option[UUID]
   ) =
     if (isReportTooOld(existingReport)) {
       logger.debug(s"Report ${existingReport.id} is too old to be updated")
@@ -636,7 +636,7 @@ class ReportOrchestrator(
   private def updateReportCompany(
       existingReport: Report,
       reportCompany: ReportCompany,
-      adminUserId: UUID
+      adminUserId: Option[UUID]
   ): Future[Report] = {
     val updateDateTime = OffsetDateTime.now()
 
@@ -687,9 +687,9 @@ class ReportOrchestrator(
               UUID.randomUUID(),
               Some(updatedReport.id),
               Some(company.id),
-              Some(adminUserId),
+              adminUserId,
               updateDateTime,
-              Constants.EventType.ADMIN,
+              if (adminUserId.isDefined) Constants.EventType.ADMIN else Constants.EventType.SYSTEM,
               Constants.ActionEvent.REPORT_COMPANY_CHANGE,
               stringToDetailsJsValue(
                 s"Entreprise précédente : Siret ${existingReport.companySiret

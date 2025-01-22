@@ -223,16 +223,16 @@ class SignalConsoComponents(
   val authAttemptRepository: AuthAttemptRepositoryInterface             = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface                 = new AuthTokenRepository(dbConfig)
   val proConnectSessionRepository: ProConnectSessionRepositoryInterface = new ProConnectSessionRepository(dbConfig)
-  val companyRepository: CompanyRepositoryInterface                     = new CompanyRepository(dbConfig)
+  def companyRepository: CompanyRepositoryInterface                     = new CompanyRepository(dbConfig)
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
-  val eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
+  def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
   val ratingRepository: RatingRepositoryInterface                 = new RatingRepository(dbConfig)
   val influencerRepository: InfluencerRepositoryInterface         = new InfluencerRepository(dbConfig)
-  val reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
+  def reportRepository: ReportRepositoryInterface                 = new ReportRepository(dbConfig)
   val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
   val bookmarkRepository: BookmarkRepositoryInterface             = new BookmarkRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
@@ -241,9 +241,9 @@ class SignalConsoComponents(
     new ResponseConsumerReviewRepository(dbConfig)
   val reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface =
     new ReportEngagementReviewRepository(dbConfig)
-  val reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
+  def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
-  val userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
+  def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
 

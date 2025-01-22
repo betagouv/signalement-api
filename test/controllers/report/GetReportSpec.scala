@@ -416,14 +416,14 @@ trait GetReportContext extends AppSpec {
     override def load(context: ApplicationLoader.Context): Application = {
       components = new SignalConsoComponents(context) {
 
-        override val reportRepository: ReportRepositoryInterface         = mockReportRepository
-        override val companyRepository: CompanyRepositoryInterface       = mockCompanyRepository
-        override val reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
+        override def reportRepository: ReportRepositoryInterface         = mockReportRepository
+        override def companyRepository: CompanyRepositoryInterface       = mockCompanyRepository
+        override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
         override lazy val mailRetriesService: MailRetriesService         = mockMailRetriesService
-        override val eventRepository: EventRepositoryInterface           = mockEventRepository
+        override def eventRepository: EventRepositoryInterface           = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
-        override val userRepository: UserRepositoryInterface = mockUserRepository
+        override def userRepository: UserRepositoryInterface = mockUserRepository
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",

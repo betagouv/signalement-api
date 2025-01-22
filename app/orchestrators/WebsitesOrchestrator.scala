@@ -64,7 +64,7 @@ class WebsitesOrchestrator(
         identificationStatus = IdentificationStatus.Identified
       )
       createdWebsite <- repository.create(website)
-      _              <- updatePreviousReportsAssociatedToWebsite(website.host, createdCompany, user.id)
+      _              <- updatePreviousReportsAssociatedToWebsite(website.host, createdCompany, Some(user.id))
     } yield createdWebsite
 
   def searchByHost(host: String): Future[Seq[Country]] =
@@ -135,7 +135,7 @@ class WebsitesOrchestrator(
             .getOrElse(Future.successful(None))
           _ = logger.debug(s"Company Siret is ${maybeCompany.map(_.siret)}")
           _ <- maybeCompany
-            .map(company => updatePreviousReportsAssociatedToWebsite(website.host, company, user.id))
+            .map(company => updatePreviousReportsAssociatedToWebsite(website.host, company, Some(user.id)))
             .getOrElse(Future.unit)
         } yield ()
       } else Future.unit
@@ -152,7 +152,11 @@ class WebsitesOrchestrator(
     } yield website
   }
 
-  def updateCompany(websiteId: WebsiteId, companyToAssign: CompanyCreation, user: User): Future[WebsiteAndCompany] =
+  def updateCompany(
+      websiteId: WebsiteId,
+      companyToAssign: CompanyCreation,
+      user: Option[User]
+  ): Future[WebsiteAndCompany] =
     for {
       company <- {
         logger.debug(s"Updating website (id ${websiteId}) with company siret : ${companyToAssign.siret}")
@@ -171,7 +175,7 @@ class WebsitesOrchestrator(
         companyId = Some(company.id)
       )
       updatedWebsite <- updateIdentification(websiteToUpdate, user)
-      _              <- updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
+      _              <- updatePreviousReportsAssociatedToWebsite(website.host, company, user.map(_.id))
     } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String, user: User): Future[WebsiteAndCompany] = for {
@@ -188,17 +192,17 @@ class WebsitesOrchestrator(
       companyCountry = Some(companyCountry),
       companyId = None
     )
-    updatedWebsite <- updateIdentification(websiteToUpdate, user)
+    updatedWebsite <- updateIdentification(websiteToUpdate, Some(user))
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
 
-  def updateIdentification(website: Website, user: User): Future[Website] = {
+  def updateIdentification(website: Website, user: Option[User]): Future[Website] = {
     logger.debug(s"Removing other websites with the same host : ${website.host}")
     for {
       _ <- repository
         .removeOtherNonIdentifiedWebsitesWithSameHost(website)
       _ = logger.debug(s"updating identification status when Admin is updating identification")
       websiteToUpdate =
-        if (UserRole.isAdmin(user.userRole)) website.copy(identificationStatus = Identified) else website
+        if (user.map(_.userRole).forall(UserRole.isAdmin)) website.copy(identificationStatus = Identified) else website
       _ = logger.debug(s"Website to update : ${websiteToUpdate}")
       updatedWebsite <- update(websiteToUpdate)
       _ = logger.debug(s"Website company country successfully updated")
@@ -264,7 +268,7 @@ class WebsitesOrchestrator(
   def updatePreviousReportsAssociatedToWebsite(
       websiteHost: String,
       company: Company,
-      userId: UUID
+      userId: Option[UUID]
   ): Future[Unit] = {
     val reportCompany = ReportCompany(
       name = company.name,

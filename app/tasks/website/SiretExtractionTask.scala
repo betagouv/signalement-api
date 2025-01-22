@@ -35,13 +35,18 @@ class SiretExtractionTask(
 
   override val taskSettings: TaskSettings = FrequentTaskSettings(interval = 1.hour)
 
-  def matchingExtraction(company: Company, extractions: List[SiretExtractionApi]): Option[CompanySearchResult] = {
-    val a = extractions.find { extraction =>
-      extraction.sirene match {
-        case Some(sirene) => sirene.siret == company.siret
-        case None         => false
+  def findMatchingAndValidExtraction(
+      company: Company,
+      extractions: List[SiretExtractionApi]
+  ): Option[CompanySearchResult] = {
+    val a = extractions
+      .filter(extraction => extraction.siret.forall(_.valid) && extraction.siren.forall(_.valid))
+      .find { extraction =>
+        extraction.sirene match {
+          case Some(sirene) => sirene.siret == company.siret && company.isOpen
+          case None         => false
+        }
       }
-    }
     a.flatMap(_.sirene)
   }
 
@@ -63,23 +68,28 @@ class SiretExtractionTask(
           }
         }
     )
+    // Sauvegarde des résultats en DB
     _ <- results.traverse { case (_, extraction) => siretExtractionRepository.insertOrReplace(extraction) }
 
-    test = results.collect {
-      case (Website(id, _, _, _, _, Some(companyId), _, _, _), ExtractionResultApi(_, _, _, Some(l))) =>
-        (id, companyId, l)
+    // Association automatique si :
+    // - Un siret trouvé est valide et présent dans SIRENE
+    // - Le conso a fourni la même entreprise
+    // - L'entreprise est ouverte
+    companyIdsAndExtractions = results.collect {
+      case (Website(id, _, _, _, _, Some(companyId), _, _, _), ExtractionResultApi(_, _, _, Some(extractions))) =>
+        (id, companyId, extractions)
     }
-    test2 <- test.traverse { case (websiteId, companyId, l) =>
+    companyAndExtractions <- companyIdsAndExtractions.traverse { case (websiteId, companyId, extractions) =>
       companyRepository
         .get(companyId)
         .flatMap(_.liftTo[Future](CompanyNotFound(companyId)))
-        .map(company => (websiteId, company, l))
+        .map(company => (websiteId, company, extractions))
     }
-    test3 = test2.flatMap { case (websiteId, company, extractions) =>
-      matchingExtraction(company, extractions).map(a => websiteId -> a)
+    websiteIdAndFoundCompany = companyAndExtractions.flatMap { case (websiteId, company, extractions) =>
+      findMatchingAndValidExtraction(company, extractions).map(companySearchResult => websiteId -> companySearchResult)
     }
-    _ <- test3.traverse { case (websiteId, companySearchResult) =>
-      val a = CompanyCreation(
+    _ <- websiteIdAndFoundCompany.traverse { case (websiteId, companySearchResult) =>
+      val companyCreation = CompanyCreation(
         siret = companySearchResult.siret,
         name = companySearchResult.name.getOrElse(""),
         address = companySearchResult.address,
@@ -91,7 +101,7 @@ class SiretExtractionTask(
         commercialName = companySearchResult.commercialName,
         establishmentCommercialName = companySearchResult.establishmentCommercialName
       )
-      websitesOrchestrator.updateCompany(websiteId, a, null) // TODO
+      websitesOrchestrator.updateCompany(websiteId, companyCreation, None)
     }
   } yield ()
 }

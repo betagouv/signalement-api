@@ -137,7 +137,7 @@ class WebsiteController(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           company =>
             websitesOrchestrator
-              .updateCompany(websiteId, company, request.identity)
+              .updateCompany(websiteId, company, Some(request.identity))
               .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
         )
     }
