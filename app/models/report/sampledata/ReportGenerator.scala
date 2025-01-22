@@ -25,6 +25,8 @@ import scala.util.Random
 
 object ReportGenerator {
 
+  val sampleGtin = "3474341105842"
+
   case class SampleReportBlueprint(
       conso: ConsumerUser,
       category: ReportCategory,
@@ -108,7 +110,7 @@ object ReportGenerator {
         "Avez-vous déjà contacté le commerçant ou le fabricant pour ce problème :"               -> "Oui",
         "Description :" -> "Bonjour, Je souhaite signaler une erreur d'étiquetage d'un pain qui était censé être un pain aux figues mais qui était un pain \"sportif\" dans un mauvais emballage. Nous l'avons acheté à FRANCHOUILLE MAGASIN à Anse (69480) et c'est la deuxième fois que cela nous arrive. \nJe tiens à préciser que le pain sportif contient des fruits à coque, des allergènes qui peuvent provoquer un choc anaphylactique aux gens allergiques comportant un risque vital. Je considère cette erreur du Franchouille gravissime. Cela doit être signalé.\nCordialement"
       ),
-      barcodeProductGtin = Some("3474341105842")
+      barcodeProductGtin = Some(sampleGtin)
     )
 
     val reportReponseConso = SampleReportBlueprint(
