@@ -635,17 +635,15 @@ class SignalConsoComponents(
 
   private val reportOrchestratorWithFakeMailer = buildReportOrchestrator(_ => Future.unit)
 
-
-  val openFoodFactsService = new OpenFoodFactsService
-  val openBeautyFactsService = new OpenBeautyFactsService
+  val openFoodFactsService     = new OpenFoodFactsService
+  val openBeautyFactsService   = new OpenBeautyFactsService
   val barcodeProductRepository = new BarcodeProductRepository(dbConfig)
-  val gs1Service = new GS1Service(applicationConfiguration.gs1)
+  val gs1Service               = new GS1Service(applicationConfiguration.gs1)
   val gs1AuthTokenActor: typed.ActorRef[actors.GS1AuthTokenActor.Command] = actorSystem.spawn(
     GS1AuthTokenActor(gs1Service),
     "gs1-auth-token-actor"
   )
   implicit val timeout: Timeout = 30.seconds
-
 
   val barcodeOrchestrator =
     new BarcodeOrchestrator(
@@ -655,7 +653,6 @@ class SignalConsoComponents(
       openBeautyFactsService,
       barcodeProductRepository
     )
-
 
   val sampleDataService = new SampleDataService(
     companyRepository,
