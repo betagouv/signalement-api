@@ -4,6 +4,7 @@ import cats.implicits.toTraverseOps
 import models.company.CompanyWithAccess
 import models.report.Report
 import models.report.ReportStatus
+import models.report.sampledata.ProUserGenerator._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
@@ -78,30 +79,30 @@ class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)
         _ <- readReport(reportExpiredButAlreadyClosed).map(_.isDefined must beTrue)
         _ <- readReport(reportNotExpired).map(_.isDefined must beTrue)
 
-        _ <- userRepository.get(sampleDataService.proUserA.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUserB.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUserC.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUserD.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUserE.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUserF.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserA.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserB.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserC.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserD.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserE.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserF.id).map(_.isDefined must beTrue)
 
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserA)
+          .fetchCompaniesWithLevel(proUserA)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserB)
+          .fetchCompaniesWithLevel(proUserB)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserC)
+          .fetchCompaniesWithLevel(proUserC)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserD)
+          .fetchCompaniesWithLevel(proUserD)
           .map(_.nonEmpty must beTrue)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserE)
+          .fetchCompaniesWithLevel(proUserE)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUserF)
+          .fetchCompaniesWithLevel(proUserF)
           .map(validateCompanyAndReport)
 
       } yield ()
