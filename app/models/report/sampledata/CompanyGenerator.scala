@@ -11,13 +11,11 @@ import scala.util.Random
 
 object CompanyGenerator {
 
-  def randomCompany(
+  private def randomCompany(
       siren: SIREN,
       name: String,
       address: Address,
-      isHeadOffice: Boolean,
-      isOpen: Boolean,
-      isPublic: Boolean
+      isHeadOffice: Boolean
   ): Company =
     Company(
       id = UUID.randomUUID(),
@@ -26,53 +24,51 @@ object CompanyGenerator {
       address = address,
       activityCode = Random.shuffle(List("40.7Z", "12.4A", "62.01Z")).headOption,
       isHeadOffice = isHeadOffice,
-      isOpen = isOpen,
-      isPublic = isPublic,
+      isOpen = true,
+      isPublic = true,
       brand = Some(s"Marque ${name}"),
       commercialName = Some(s"Nom commercial ${name}"),
       establishmentCommercialName = Some(s"Nom établissement commercial ${name}")
     )
 
-  def createCompany = {
+  def buildLoneCompany(name: String) = {
     val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
     randomCompany(
       siren = randomSiren,
-      name = s"MAISON MERE ${randomSiren.value}",
-      address = AddressGenerator.frenchAddress(),
-      isHeadOffice = true,
-      isOpen = true,
-      isPublic = true
+      name = name,
+      address = randomFrenchAddress(),
+      isHeadOffice = true
     )
   }
 
-  def createCompanies(subsidiaryCount: Int) = {
-
+  def buildMegacorpCompanyAndSubsidiaries(subsidiaryCount: Int) = {
     val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
     val headOffice = randomCompany(
       siren = randomSiren,
-      name = s"MAISON MERE ${randomSiren.value}",
-      address = AddressGenerator.frenchAddress(),
-      isHeadOffice = true,
-      isOpen = true,
-      isPublic = true
+      name = s"MEGACORP UNLIMITED",
+      address = randomFrenchAddress(),
+      isHeadOffice = true
     )
-
     val companies = ListBuffer(headOffice)
-
     for (i <- 1 to subsidiaryCount) {
       val c = randomCompany(
         siren = randomSiren,
-        name = s" FILLIALE $randomSiren n$i",
-        address = AddressGenerator.frenchAddress(),
-        isHeadOffice = false,
-        isOpen = true,
-        isPublic = true
+        name = s"MEGACORP FILIALE #$i",
+        address = randomFrenchAddress(),
+        isHeadOffice = false
       )
       companies += c
     }
-
     companies.toList
-
   }
 
+  private def randomFrenchAddress(): Address =
+    Address(
+      number = Some("789"),
+      street = Some("Rue de la Paix"),
+      addressSupplement = Some("Appartement 12, Bâtiment C"),
+      postalCode = Some("75008"),
+      city = Some("Paris"),
+      country = None
+    )
 }
