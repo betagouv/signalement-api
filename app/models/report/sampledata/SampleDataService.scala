@@ -2,9 +2,7 @@ package models.report.sampledata
 
 import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
-import controllers.error.AppError.ServerError
 import models.User
-import models.barcode.BarcodeProduct
 import models.company.AccessLevel
 import models.company.Company
 import models.report._
@@ -58,9 +56,8 @@ class SampleDataService(
     val megacorpCompanies = CompanyGenerator.buildMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
     logger.info("BEGIN Sample service creation")
     for {
-      product <- createBarcodeProduct()
-      _       <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
-      _       <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
+      _ <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
+      _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
         NonEmptyList.of(proUserA, proUserB),
@@ -208,14 +205,6 @@ class SampleDataService(
       _ = logger.info("DELETING previous data done")
     } yield ()
 
-  }
-
-  private def createBarcodeProduct(): Future[BarcodeProduct] = {
-    val gtin = "3474341105842"
-    for {
-      maybeProduct <- barcodeOrchestrator.getByGTIN(gtin)
-      product = maybeProduct.getOrElse(throw new ServerError(s"Couldn't find product $gtin for sample data"))
-    } yield product
   }
 
   private def buildDraft(company: Company, report: SampleReportBlueprint): Future[ReportDraft] = {
