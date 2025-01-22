@@ -77,9 +77,6 @@ class SampleDataService(
         NonEmptyList.of(proUserF, proUserE)
       )
     } yield ()
-  }.recoverWith { case error =>
-    logger.error("Error creating sample data", error)
-    Future.successful(())
   }
 
   private def createCompanyWithNoReports(c: Company, proUser: User) = {
