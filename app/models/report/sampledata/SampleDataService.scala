@@ -237,7 +237,7 @@ class SampleDataService(
         contactAgreement = conso.contactAgreement,
         consumerPhone = conso.phone,
         consumerReferenceNumber = None,
-        employeeConsumer = conso.employeeConsumer,
+        employeeConsumer = r.employeeConsumer,
         forwardToReponseConso = Some(r.tags.contains(ReportTag.ReponseConso)),
         fileIds = List.empty,
         vendor = None,
