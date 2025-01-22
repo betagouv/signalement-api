@@ -7,22 +7,12 @@ import models.User
 import models.barcode.BarcodeProduct
 import models.company.AccessLevel
 import models.company.Company
-import models.report.ConsumerIp
-import models.report.DetailInputValue
-import models.report.IncomingReportResponse
-import models.report.Report
-import models.report.ReportDraft
-import models.report.ReportTag
-import models.report.sampledata.ReponseGenerator.acceptedResponse
-import models.report.sampledata.ReponseGenerator.notConcernedResponse
-import models.report.sampledata.ReponseGenerator.rejectedResponse
-import models.report.sampledata.SampleDataUtils.SampleReportBlueprint
-import models.report.sampledata.UserGenerator.proUserA
-import models.report.sampledata.UserGenerator.proUserB
-import models.report.sampledata.UserGenerator.proUserC
-import models.report.sampledata.UserGenerator.proUserD
-import models.report.sampledata.UserGenerator.proUserE
-import models.report.sampledata.UserGenerator.proUserF
+import models.report._
+import models.report.sampledata.ProUserGenerator._
+import models.report.sampledata.ResponseGenerator.acceptedResponse
+import models.report.sampledata.ResponseGenerator.notConcernedResponse
+import models.report.sampledata.ResponseGenerator.rejectedResponse
+import models.report.sampledata.ReportGenerator.SampleReportBlueprint
 import orchestrators.BarcodeOrchestrator
 import orchestrators.ReportAdminActionOrchestrator
 import orchestrators.ReportOrchestrator
@@ -65,7 +55,7 @@ class SampleDataService(
   private val consoIp = ConsumerIp("1.1.1.1")
 
   def genSampleData() = {
-    val megacorpCompanies = CompanyGenerator.createMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
+    val megacorpCompanies = CompanyGenerator.buildMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
     logger.info("BEGIN Sample service creation")
     for {
       product <- createBarcodeProduct()
@@ -77,16 +67,16 @@ class SampleDataService(
         reportsAmountFactor = 4
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
-        List(CompanyGenerator.createLoneCompany("COQUELICOT S.A.R.L")),
+        List(CompanyGenerator.buildLoneCompany("COQUELICOT S.A.R.L")),
         NonEmptyList.one(proUserC),
         reportsAmountFactor = 2
       )
       _ <- createCompanyWithNoReports(
-        CompanyGenerator.createLoneCompany("DELICE VIDE FRANCE"),
+        CompanyGenerator.buildLoneCompany("DELICE VIDE FRANCE"),
         proUserD
       )
       _ <- createCompaniesWithReportsAndGiveAccess(
-        List(CompanyGenerator.createLoneCompany("FIFRELET")),
+        List(CompanyGenerator.buildLoneCompany("FIFRELET")),
         NonEmptyList.of(proUserF, proUserE)
       )
     } yield ()

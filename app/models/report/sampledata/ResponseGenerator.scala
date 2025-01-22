@@ -6,7 +6,7 @@ import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportResponseType.NOT_CONCERNED
 import models.report.ReportResponseType.REJECTED
 
-object ReponseGenerator {
+object ResponseGenerator {
 
   def acceptedResponse() =
     IncomingReportResponse(

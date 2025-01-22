@@ -6,6 +6,8 @@ import models.report.ReportCategory.CafeRestaurant
 import models.report.ReportCategory.DemarchageAbusif
 import models.report.ReportCategory.DemarchesAdministratives
 import models.report.ReportCategory.Immobilier
+import models.report.ReportCategory
+import models.report.ReportTag
 import models.report.ReportTag.AppelCommercial
 import models.report.ReportTag.CommandeEffectuee
 import models.report.ReportTag.DemarchageTelephonique
@@ -15,13 +17,24 @@ import models.report.ReportTag.LitigeContractuel
 import models.report.ReportTag.ProduitAlimentaire
 import models.report.ReportTag.ProduitDangereux
 import models.report.ReportTag.ReponseConso
-import models.report.sampledata.SampleDataUtils.SampleReportBlueprint
-import models.report.sampledata.SampleDataUtils.randomConsumerUser
+import models.report.sampledata.ConsoUserGenerator.ConsumerUser
+import models.report.sampledata.ConsoUserGenerator.randomConsumerUser
 import utils.URL
 
 import scala.util.Random
 
 object ReportGenerator {
+
+  case class SampleReportBlueprint(
+      conso: ConsumerUser,
+      category: ReportCategory,
+      tags: List[ReportTag],
+      details: Seq[(String, String)],
+      subcategories: List[String],
+      website: Option[URL] = None,
+      phone: Option[String] = None,
+      barcodeProductGtin: Option[String] = None
+  )
 
   def generateRandomNumberOfReports(
       reportsAmountFactor: Double = 1

@@ -9,23 +9,23 @@ import utils.EmailAddress
 import java.time.OffsetDateTime
 import java.util.UUID
 
-object UserGenerator {
+object ProUserGenerator {
 
-  val proUserA = generateSampleUser(
+  val proUserA = buildProUser(
     UUID.fromString("8a87f4f4-185a-47c4-a71d-7e27577d7483"),
     "André",
     "Andlard",
     "dev.signalconso+SAMPLE_PRO1@gmail.com",
     Professionnel
   )
-  val proUserB = generateSampleUser(
+  val proUserB = buildProUser(
     UUID.fromString("0920b263-223f-40ae-a5a1-9efe5b624966"),
     "Brigitte",
     "Briguenier",
     "dev.signalconso+SAMPLE_PRO2@gmail.com",
     Professionnel
   )
-  val proUserC = generateSampleUser(
+  val proUserC = buildProUser(
     UUID.fromString("3f80c538-676b-4f2b-a318-7625379e0040"),
     "Camille",
     "Camion",
@@ -33,7 +33,7 @@ object UserGenerator {
     Professionnel
   )
 
-  val proUserD = generateSampleUser(
+  val proUserD = buildProUser(
     UUID.fromString("6a17610b-2fb5-4d0e-b4b6-a700d1b446a7"),
     "Damien",
     "Damont",
@@ -41,7 +41,7 @@ object UserGenerator {
     Professionnel
   )
 
-  val proUserE = generateSampleUser(
+  val proUserE = buildProUser(
     UUID.fromString("b5dead94-d3ee-4718-a181-97dcb6c5b867"),
     "Élodie",
     "Elovirard",
@@ -49,7 +49,7 @@ object UserGenerator {
     Professionnel
   )
 
-  val proUserF = generateSampleUser(
+  val proUserF = buildProUser(
     UUID.fromString("d91520ec-b1d6-4163-9f70-ebd9117f06bc"),
     "François",
     "Français",
@@ -57,7 +57,7 @@ object UserGenerator {
     Professionnel
   )
 
-  private def generateSampleUser(
+  private def buildProUser(
       id: UUID,
       firstName: String,
       lastName: String,
