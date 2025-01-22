@@ -6,11 +6,13 @@ import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
+import config.TaskConfiguration
 import controllers.error.AppError
 import models._
 import models.admin.ReportInputList
 import models.event.Event
 import models.report._
+import models.report.sampledata.SampleDataService
 import orchestrators.EmailNotificationOrchestrator
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
@@ -58,12 +60,14 @@ class AdminController(
     mailService: MailService,
     pdfService: PDFService,
     emailConfiguration: EmailConfiguration,
+    taskConfiguration: TaskConfiguration,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     emailNotificationOrchestrator: EmailNotificationOrchestrator,
     ipBlackListRepository: IpBlackListRepositoryInterface,
     albertClassificationRepository: AlbertClassificationRepositoryInterface,
     albertService: AlbertService,
+    sampleDataService: SampleDataService,
     implicit val frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -336,5 +340,15 @@ class AdminController(
     albertClassificationRepository
       .getByReportId(reportId)
       .map(maybeClassification => Ok(Json.toJson(maybeClassification)))
+  }
+
+  def regenSampleData() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+    if (taskConfiguration.sampleData.active) {
+      for {
+        _ <-
+          sampleDataService.genSampleData()
+      } yield Ok
+    } else Future.successful(BadRequest)
+
   }
 }

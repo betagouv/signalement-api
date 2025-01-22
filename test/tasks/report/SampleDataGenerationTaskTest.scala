@@ -1,14 +1,22 @@
 package tasks.report
 
 import cats.implicits.toTraverseOps
+import loader.SignalConsoComponents
+import models.barcode.gs1.OAuthAccessToken
 import models.company.CompanyWithAccess
 import models.report.Report
 import models.report.ReportStatus
+import models.report.sampledata.ProUserGenerator._
+import models.report.sampledata.ReportGenerator.sampleGtin
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
+import play.api.Application
+import play.api.ApplicationLoader
+import play.api.libs.json.Json
 import play.api.mvc.Results
 import play.api.test.WithApplication
+import services.GS1ServiceInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
@@ -24,7 +32,66 @@ class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val (app, components) = TestApp.buildApp()
+  val oauthAccessToken = OAuthAccessToken("dummyToken")
+  val exampleGs1Response = Json.parse("""
+      {
+      "isA": [
+        "gs1:Offer",
+        "s:Offer"
+      ],
+      "itemOffered": {
+        "isA": [
+          "gs1:Product",
+          "s:Product"
+        ],
+        "gtin": "3474341105842",
+        "brandOwner": {
+          "isA": [
+            "gs1:Organization",
+            "s:Organization"
+          ],
+          "license": {
+            "key": "347434"
+          },
+          "companyName": "MONBANA",
+          "globalLocationNumber": "3014743400109"
+        },
+        "postalAddress": {
+          "isA": "gs1:PostalAddress",
+          "postalCode": "53500",
+          "addressCountry": "France",
+          "addressLocality": {
+            "lang": "fr",
+            "value": "ERNEE"
+          }
+        },
+        "additionalPartyIdentificationValue": "562100032"
+      }
+    }
+      """)
+  val mockGs1Service: GS1ServiceInterface = mock[GS1ServiceInterface]
+
+  mockGs1Service.authenticate(
+  ) returns Future.successful(oauthAccessToken)
+
+  mockGs1Service.getProductByGTIN(
+    oauthAccessToken,
+    sampleGtin
+  ) returns Future.successful(Right(Some(exampleGs1Response)))
+
+  class FakeApplicationLoader extends ApplicationLoader {
+    var components: SignalConsoComponents = _
+    override def load(context: ApplicationLoader.Context): Application = {
+      components = new SignalConsoComponents(context) {
+        override def gs1Service: GS1ServiceInterface = mockGs1Service
+      }
+      components.application
+    }
+  }
+
+  val appLoader                         = new FakeApplicationLoader()
+  val app: Application                  = TestApp.buildApp(appLoader)
+  val components: SignalConsoComponents = appLoader.components
 
   lazy val reportRepository         = components.reportRepository
   lazy val sampleDataGenerationTask = components.sampleDataGenerationTask
@@ -78,30 +145,30 @@ class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)
         _ <- readReport(reportExpiredButAlreadyClosed).map(_.isDefined must beTrue)
         _ <- readReport(reportNotExpired).map(_.isDefined must beTrue)
 
-        _ <- userRepository.get(sampleDataService.proUser1.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser2.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser3.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser4.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser5.id).map(_.isDefined must beTrue)
-        _ <- userRepository.get(sampleDataService.proUser6.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserA.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserB.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserC.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserD.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserE.id).map(_.isDefined must beTrue)
+        _ <- userRepository.get(proUserF.id).map(_.isDefined must beTrue)
 
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser1)
+          .fetchCompaniesWithLevel(proUserA)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser2)
+          .fetchCompaniesWithLevel(proUserB)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser3)
+          .fetchCompaniesWithLevel(proUserC)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser4)
+          .fetchCompaniesWithLevel(proUserD)
           .map(_.nonEmpty must beTrue)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser5)
+          .fetchCompaniesWithLevel(proUserE)
           .map(validateCompanyAndReport)
         _ <- companyAccessRepository
-          .fetchCompaniesWithLevel(sampleDataService.proUser6)
+          .fetchCompaniesWithLevel(proUserF)
           .map(validateCompanyAndReport)
 
       } yield ()

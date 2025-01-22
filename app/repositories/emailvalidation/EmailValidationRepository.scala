@@ -9,10 +9,12 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import cats.implicits.toTraverseOps
 import slick.basic.DatabaseConfig
 
 class EmailValidationRepository(
@@ -28,26 +30,25 @@ class EmailValidationRepository(
   override def findByEmail(email: EmailAddress): Future[Option[EmailValidation]] =
     db.run(table.filter(_.email === email).result.headOption)
 
-  def findSimilarEmail(email: EmailAddress, createdAfter: OffsetDateTime): Future[Option[EmailValidation]] = {
-
-    val rootGmailAddress = s"${email.split.rootAddress}@gmail.com"
-
-    db.run(
-      table
-        .filter(_.creationDate >= createdAfter)
-        .filter(emailValidation =>
-          Case If SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 2) === "gmail.com"
-            Then ReplaceSQLFunction(
-              SplitPartSQLFunction(SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 1), "+", 1),
-              ".",
-              ""
-            ) ++ "@gmail.com" === rootGmailAddress
-            Else emailValidation.email === email
+  def findSimilarEmail(email: EmailAddress, createdAfter: OffsetDateTime): Future[Option[EmailValidation]] =
+    email.split.map(splittedEmail => s"${splittedEmail.rootAddress}@gmail.com").toOption.flatTraverse {
+      rootGmailAddress =>
+        db.run(
+          table
+            .filter(_.creationDate >= createdAfter)
+            .filter(emailValidation =>
+              Case If SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 2) === "gmail.com"
+                Then ReplaceSQLFunction(
+                  SplitPartSQLFunction(SplitPartSQLFunction(emailValidation.email.asColumnOf[String], "@", 1), "+", 1),
+                  ".",
+                  ""
+                ) ++ "@gmail.com" === rootGmailAddress
+                Else emailValidation.email === email
+            )
+            .result
+            .headOption
         )
-        .result
-        .headOption
-    )
-  }
+    }
 
   override def validate(email: EmailAddress): Future[Option[EmailValidation]] = {
     val action = (for {

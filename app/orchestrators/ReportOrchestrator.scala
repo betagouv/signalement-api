@@ -58,6 +58,7 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Logs.RichLogger
 import utils._
+import cats.syntax.either._
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -274,12 +275,11 @@ class ReportOrchestrator(
   private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
     for {
       blacklistFromDb <- blacklistedEmailsRepository.list()
-    } yield {
-      val fullBlacklist = blacklistFromDb.map(_.email)
       // Small optimisation to only computed the splitted email once
       // Instead of multiple times in the exists loop
-      val splittedEmailAddress = emailAddress.split
-
+      splittedEmailAddress <- emailAddress.split.liftTo[Future]
+      fullBlacklist = blacklistFromDb.map(_.email)
+    } yield
       if (
         emailConfiguration.extendedComparison &&
         fullBlacklist.exists(blacklistedEmail => splittedEmailAddress.isEquivalentTo(blacklistedEmail))
@@ -288,7 +288,6 @@ class ReportOrchestrator(
       } else if (fullBlacklist.contains(emailAddress.value)) {
         throw SpammerEmailBlocked(emailAddress)
       } else ()
-    }
 
   private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] = {
 

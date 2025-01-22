@@ -86,6 +86,7 @@ POST          /api/admin/emails/reportAckToConsumer                   controller
 POST          /api/admin/emails/proAckToConsumer                      controllers.AdminController.sendProAckToConsumer()
 POST          /api/admin/emails/newReportToPro                        controllers.AdminController.sendNewReportToPro()
 POST          /api/admin/emails/resend                                controllers.AdminController.resend(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
+POST          /api/admin/regen-sample-data                            controllers.AdminController.regenSampleData()
 
 # Async files API
 GET           /api/async-files                                        controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
@@ -242,6 +243,5 @@ GET           /api/reports/:uuid/engagement/review/exists             controller
 
 POST          /api/albert/classification/:reportId                    controllers.AdminController.classifyAndSummarize(reportId: java.util.UUID)
 GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertClassification(reportId: java.util.UUID)
-
 
 GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)

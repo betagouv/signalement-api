@@ -182,6 +182,32 @@ object EmailDefinitionsPro {
 
   }
 
+  case object ProReportsLastChanceReminder extends EmailDefinition {
+    override val category = Pro
+
+    override def examples = {
+      val report1 = genReport
+      val report2 = genReport.copy(companyId = report1.companyId)
+      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
+      Seq(
+        "reports_last_chance_reminder" -> ((recipient, _) =>
+          Email(List(recipient), List(report1, report2, report3), Period.ofDays(7))
+        )
+      )
+    }
+
+    final case class Email(
+        recipients: List[EmailAddress],
+        reports: List[Report],
+        period: Period
+    ) extends ProFilteredEmailMultipleReport {
+      override val subject: String = EmailSubjects.REPORT_LAST_CHANCE_REMINDER
+
+      override def getBody: (FrontRoute, EmailAddress) => String =
+        (frontRoute, _) => views.html.mails.professional.reportsLastChanceReminder(reports, period)(frontRoute).toString
+    }
+  }
+
   case object ProReportsReadReminder extends EmailDefinition {
     override val category = Pro
 

@@ -11,6 +11,7 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.tasklock.TaskRepositoryInterface
+import services.emails.EmailDefinitionsPro.ProReportsLastChanceReminder
 import services.emails.EmailDefinitionsPro.ProReportsReadReminder
 import services.emails.EmailDefinitionsPro.ProReportsUnreadReminder
 import services.emails.BaseEmail
@@ -50,6 +51,7 @@ class ReportRemindersTask(
   // At J+0, the pro receives the "new report" email
   // At J+8 during the night, the pro receives a reminder email
   // At J+16 during the night, the pro receives the second reminder email
+  // At J+24 last reminder
   // At J+25 the report is closed
   val delayBetweenReminderEmails: Period = Period.ofDays(7)
   val maxReminderCount                   = 2
@@ -74,11 +76,12 @@ class ReportRemindersTask(
         shouldSendReminderEmail(report, taskRunDate, eventsByReportId)
       }
       _ = logger.info(s"Found ${finalReportsWithUsers.size} reports for which we should send a reminder")
-      result <- sendReminderEmailsWithErrorHandling(finalReportsWithUsers)
+      result <- sendReminderEmailsWithErrorHandling(taskRunDate, finalReportsWithUsers)
     } yield result
   }
 
   private def sendReminderEmailsWithErrorHandling(
+      taskRunDate: OffsetDateTime,
       reportsWithUsers: List[(Report, List[User])]
   ): Future[(List[List[UUID]], List[List[UUID]])] = {
     logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
@@ -88,24 +91,33 @@ class ReportRemindersTask(
     for {
       successesOrFailuresList <- Future.sequence(reportsPerCompanyPerUsers.toList.flatMap {
         case (users, reportsPerCompany) =>
-          reportsPerCompany.map { reports =>
-            val (readByPros, notReadByPros) = reports.partition(_.isReadByPro)
+          reportsPerCompany
+            .map {
+              reports =>
+                val (reportsClosingTomorrow, otherReports) = reports.partition(isLastDay(_, taskRunDate))
+                val (readByPros, notReadByPros)            = otherReports.partition(_.isReadByPro)
 
-            for {
-              readByProsSent <- sendReminderEmailIfAtLeastOneReport(
-                readByPros,
-                users,
-                ProReportsReadReminder.Email,
-                EMAIL_PRO_REMIND_NO_ACTION
-              )
-              notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
-                notReadByPros,
-                users,
-                ProReportsUnreadReminder.Email,
-                EMAIL_PRO_REMIND_NO_READING
-              )
-            } yield List(readByProsSent, notReadByProsSent).flatten
-          }
+                for {
+                  reportsClosingTomorrowSent <- sendReminderEmailIfAtLeastOneReport(
+                    reportsClosingTomorrow,
+                    users,
+                    ProReportsLastChanceReminder.Email,
+                    EMAIL_LAST_CHANCE_REMINDER_ACTION
+                  )
+                  readByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                    readByPros,
+                    users,
+                    ProReportsReadReminder.Email,
+                    EMAIL_PRO_REMIND_NO_ACTION
+                  )
+                  notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                    notReadByPros,
+                    users,
+                    ProReportsUnreadReminder.Email,
+                    EMAIL_PRO_REMIND_NO_READING
+                  )
+                } yield List(readByProsSent, notReadByProsSent, reportsClosingTomorrowSent).flatten
+            }
       })
       (failures, successes) = successesOrFailuresList.flatten.partitionMap(identity)
     } yield (failures, successes)
@@ -147,9 +159,13 @@ class ReportRemindersTask(
       previousEmailsEvents.count(e => reminderEmailsActions.contains(e.action)) >= maxReminderCount
     val hadARecentEmail =
       previousEmailsEvents.exists(_.creationDate.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
-    val shouldSendEmail = !hadMaxReminderEmails && !hadARecentEmail
+
+    val shouldSendEmail = (!hadMaxReminderEmails && !hadARecentEmail) || isLastDay(report, taskRunDate)
     shouldSendEmail
   }
+
+  private def isLastDay(report: Report, taskRunDate: OffsetDateTime) =
+    taskRunDate.toLocalDate.plusDays(1).isEqual(report.expirationDate.toLocalDate)
 
   private def sendReminderEmail(
       reports: List[Report],
