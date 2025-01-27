@@ -45,7 +45,7 @@ class InactiveDgccrfAccountReminderTaskSpec(implicit ee: ExecutionEnv)
 
         override def eventRepository: EventRepositoryInterface = mockEventRepository
 
-        override val userRepository: UserRepositoryInterface = mockUserRepository
+        override def userRepository: UserRepositoryInterface = mockUserRepository
 
         override def configuration: Configuration = Configuration(
           "slick.dbs.default.db.connectionPool" -> "disabled",

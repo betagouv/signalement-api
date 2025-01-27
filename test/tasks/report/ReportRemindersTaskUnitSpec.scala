@@ -5,6 +5,7 @@ import config.ExportReportsToSFTPConfiguration
 import config.ProbeConfiguration
 import config.ReportRemindersTaskConfiguration
 import config.SampleDataConfiguration
+import config.SiretExtractionConfiguration
 import config.SubcategoryLabelsTaskConfiguration
 import config.TaskConfiguration
 import models.company.AccessLevel
@@ -61,6 +62,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
     probe = ProbeConfiguration(false),
     exportReportsToSFTP = ExportReportsToSFTPConfiguration("./reports.csv", LocalTime.of(3, 30)),
     subcategoryLabels = SubcategoryLabelsTaskConfiguration(startTime = LocalTime.of(2, 0), interval = 1.day),
+    siretExtraction = SiretExtractionConfiguration(interval = 1.day, websiteCount = 1),
     sampleData = SampleDataConfiguration(true, LocalTime.of(3, 30))
   )
 

@@ -18,6 +18,7 @@ case class TaskConfiguration(
     probe: ProbeConfiguration,
     exportReportsToSFTP: ExportReportsToSFTPConfiguration,
     subcategoryLabels: SubcategoryLabelsTaskConfiguration,
+    siretExtraction: SiretExtractionConfiguration,
     sampleData: SampleDataConfiguration
 )
 
@@ -62,6 +63,11 @@ case class ReportRemindersTaskConfiguration(
 case class SubcategoryLabelsTaskConfiguration(
     startTime: LocalTime,
     interval: FiniteDuration
+)
+
+case class SiretExtractionConfiguration(
+    interval: FiniteDuration,
+    websiteCount: Int
 )
 
 case class ProbeConfiguration(active: Boolean)

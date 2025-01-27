@@ -13,10 +13,12 @@ import repositories.PaginateOps
 import repositories.TypedCRUDRepository
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
+import repositories.siretextraction.SiretExtractionTable
 import repositories.website.WebsiteColumnType._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
+import tasks.website.ExtractionResultApi
 import utils.URL
 
 import java.time._
@@ -147,7 +149,7 @@ class WebsiteRepository(
       hasAssociation: Option[Boolean],
       isOpen: Option[Boolean],
       isMarketplace: Option[Boolean]
-  ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
+  ): Future[PaginatedResult[(Website, Option[Company], Option[ExtractionResultApi], Int)]] = {
 
     val baseQuery =
       WebsiteTable.table
@@ -169,26 +171,28 @@ class WebsiteRepository(
         }
         .joinLeft(CompanyTable.table)
         .on(_.companyId === _.id)
+        .joinLeft(SiretExtractionTable.table)
+        .on(_._1.host === _.host)
         .joinLeft(ReportTable.table)
         .on { (tupleTable, reportTable) =>
-          val (websiteTable, _) = tupleTable
+          val ((websiteTable, _), _) = tupleTable
           websiteTable.host === reportTable.host && reportTable.host.isDefined
         }
-        .filterOpt(isOpen) { case (((_, companyTable), _), isOpenFilter) =>
+        .filterOpt(isOpen) { case ((((_, companyTable), _), _), isOpenFilter) =>
           companyTable.map(_.isOpen === isOpenFilter)
         }
-        .filterOpt(start) { case (((websiteTable, _), reportTable), start) =>
+        .filterOpt(start) { case ((((websiteTable, _), _), reportTable), start) =>
           reportTable.map(_.creationDate >= start).getOrElse(websiteTable.creationDate >= start)
         }
-        .filterOpt(end) { case (((websiteTable, _), reportTable), end) =>
+        .filterOpt(end) { case ((((websiteTable, _), _), reportTable), end) =>
           reportTable.map(_.creationDate <= end).getOrElse(websiteTable.creationDate <= end)
         }
 
     val query = baseQuery
       .groupBy(_._1)
-      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+      .map { case (grouped, all) => (grouped._1._1, grouped._1._2, grouped._2, all.map(_._2).size) }
       .sortBy { tupleTable =>
-        val ((websiteTable, _), reportCount) = tupleTable
+        val (websiteTable, _, _, reportCount) = tupleTable
         (reportCount.desc, websiteTable.host.desc, websiteTable.id.desc)
       }
       .to[Seq]
