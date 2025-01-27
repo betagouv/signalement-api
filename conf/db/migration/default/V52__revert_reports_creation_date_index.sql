@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS reports_creation_date_desc_idx;
