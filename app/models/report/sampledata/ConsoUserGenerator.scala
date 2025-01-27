@@ -13,7 +13,6 @@ object ConsoUserGenerator {
       lastName: String,
       email: EmailAddress,
       contactAgreement: Boolean,
-      employeeConsumer: Boolean,
       gender: Option[Gender],
       phone: Option[String]
   )
@@ -32,7 +31,6 @@ object ConsoUserGenerator {
         s"dev.signalconso+${firstName.toLowerCase}_${lastName.toLowerCase}}@gmail.com"
       ),
       contactAgreement = contactAgreement,
-      employeeConsumer = Random.nextDouble() > 0.1,
       gender = Some(gender),
       phone = phone
     )

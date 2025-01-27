@@ -35,7 +35,8 @@ object ReportGenerator {
       subcategories: List[String],
       website: Option[URL] = None,
       phone: Option[String] = None,
-      barcodeProductGtin: Option[String] = None
+      barcodeProductGtin: Option[String] = None,
+      employeeConsumer: Boolean = false
   )
 
   def generateRandomNumberOfReports(
@@ -136,7 +137,8 @@ object ReportGenerator {
         "Quel est le problème :"          -> "Stockage à température ambiante de produits frais ou congelés",
         "Pouvez-vous préciser :" -> "Armoire positive en panne , venaison chasse ne passe par des contrôles sanitaires.",
         "Description :" -> "Bonjour,  je travaillais l année dernière dans cette établissement,  le patron mr Champ pignon et chasseur , il tue sont propre gibier et le mets directement à la consommation dans son établissement, sans contrôle vétérinaire,  le gibier et stocker dans un congélateur , aucune date sur le sous vide , cerf et sanglier  , l état des congélateur et lamentable,  du sang partout , les chaînes du froid ne sont pas respecté le gibier et transvaser de véhicule en véhicule pour atterrir dans les congélateur. De plus l état de la cuisine à l époque laisse à désiré. Autres point les grenouilles cuisses,  arrivée fraîche, mérite d être contrôler ce monsieur possede un étang mais je doute que toutes les grenouilles viennent du même étang,  abattage dans une caves par des retraités. Conditionnement boîte type plastique à emporter,  chaînes du froids non respecté,  pas de dlc , quand trop de quantité congélateur,  congelé, décongelée, et recongeler !!!"
-      )
+      ),
+      employeeConsumer = true
     )
 
     Random
