@@ -33,9 +33,9 @@ class SiretExtractionTask(
 )(implicit executionContext: ExecutionContext)
     extends ScheduledTask(14, "siret_extraction_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val taskSettings: TaskSettings = FrequentTaskSettings(interval = 1.hour)
+  override val taskSettings: TaskSettings = FrequentTaskSettings(interval = 15.minutes)
 
-  def findMatchingAndValidExtraction(
+  private def findMatchingAndValidExtraction(
       company: Company,
       extractions: List[SiretExtractionApi]
   ): Option[CompanySearchResult] = {
