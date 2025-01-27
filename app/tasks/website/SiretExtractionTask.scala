@@ -18,7 +18,6 @@ import tasks.company.CompanySearchResult
 import tasks.model.TaskSettings
 import tasks.model.TaskSettings.FrequentTaskSettings
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -33,7 +32,7 @@ class SiretExtractionTask(
 )(implicit executionContext: ExecutionContext)
     extends ScheduledTask(14, "siret_extraction_task", taskRepository, actorSystem, taskConfiguration) {
 
-  override val taskSettings: TaskSettings = FrequentTaskSettings(interval = 15.minutes)
+  override val taskSettings: TaskSettings = FrequentTaskSettings(interval = taskConfiguration.siretExtraction.interval)
 
   private def findMatchingAndValidExtraction(
       company: Company,
@@ -51,7 +50,7 @@ class SiretExtractionTask(
   }
 
   override def runTask(): Future[Unit] = for {
-    websites <- siretExtractionRepository.listUnextractedWebsiteHosts(10)
+    websites <- siretExtractionRepository.listUnextractedWebsiteHosts(taskConfiguration.siretExtraction.websiteCount)
     _ = logger.debug(s"Found ${websites.length} websites to handle (siret extraction)")
     results <- websites.traverse(website =>
       siretExtractorService
