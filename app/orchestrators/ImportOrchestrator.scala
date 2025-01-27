@@ -131,8 +131,12 @@ class ImportOrchestrator(
                       companyId = Some(company.id),
                       isMarketplace = true
                     )
-                    updatedWebsite <- websitesOrchestrator.updateIdentification(websiteToUpdate, user)
-                    _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
+                    updatedWebsite <- websitesOrchestrator.updateIdentification(websiteToUpdate, Some(user))
+                    _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(
+                      website.host,
+                      company,
+                      Some(user.id)
+                    )
                   } yield updatedWebsite
               }
             case Nil =>
@@ -145,7 +149,7 @@ class ImportOrchestrator(
               )
               for {
                 createdWebsite <- websiteRepository.create(website)
-                _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
+                _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(website.host, company, Some(user.id))
               } yield createdWebsite
 
           }
