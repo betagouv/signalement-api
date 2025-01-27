@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS reports_creation_date_desc_idx ON reports (creation_date desc);
