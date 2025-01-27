@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   postgres:
-    image: "postgres:14"
+    image: "postgres:15"
     ports:
       # exposed on 5432 by default, but you can override with the env variable
       - "${TEST_PGPORT:-5432}:5432"
