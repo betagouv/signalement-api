@@ -31,6 +31,7 @@ class SiretExtractorController(
             response.body match {
               case Left(body) => Future.successful(Status(response.code.code)(body.getMessage))
               case Right(body) =>
+                logger.debug(s"Saving siret extraction result (${body.status}) in DB before returning")
                 siretExtractionRepository.insertOrReplace(body).map(_ => Status(response.code.code)(Json.toJson(body)))
             }
           }
