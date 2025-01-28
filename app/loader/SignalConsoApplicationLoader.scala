@@ -895,6 +895,8 @@ class SignalConsoComponents(
       controllerComponents
     )
 
+  val staticController = new StaticController(cookieAuthenticator, controllerComponents)
+
   val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
 
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
@@ -946,37 +948,38 @@ class SignalConsoComponents(
     new _root_.router.Routes(
       httpErrorHandler,
       new HealthController(controllerComponents),
-      assets,
-      reportController,
-      socialNetworkController,
-      barcodeController,
-      reportConsumerReviewController,
-      engagementController,
-      emailValidationController,
-      ratingController,
-      constantController,
-      reportListController,
-      bookmarkController,
-      asyncFileController,
-      eventsController,
-      reportFileController,
-      adminController,
+      staticController,
       statisticController,
       companyAccessController,
-      authController,
-      accountController,
-      blacklistedEmailsController,
-      companyController,
-      importController,
-      reportBlockedNotificationController,
-      subscriptionController,
-      websiteController,
-      siretExtractorController,
-      reportedPhoneController,
-      mobileAppController,
+      reportListController,
+      reportFileController,
+      reportController,
+      reportConsumerReviewController,
+      eventsController,
+      bookmarkController,
       reportToExternalController,
       dataEconomieController,
-      signalConsoReviewController
+      adminController,
+      asyncFileController,
+      constantController,
+      socialNetworkController,
+      mobileAppController,
+      authController,
+      accountController,
+      emailValidationController,
+      companyController,
+      ratingController,
+      subscriptionController,
+      websiteController,
+      reportedPhoneController,
+      reportBlockedNotificationController,
+      blacklistedEmailsController,
+      signalConsoReviewController,
+      siretExtractorController,
+      importController,
+      barcodeController,
+      engagementController,
+      assets
     )
 
   def scheduleTasks() = {
