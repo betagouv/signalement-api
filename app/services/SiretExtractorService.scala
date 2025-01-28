@@ -17,6 +17,7 @@ import sttp.model.Header
 import tasks.website.ExtractionResultApi
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 class SiretExtractorService(siretExtractorConfiguration: SiretExtractorConfiguration) {
 
@@ -30,6 +31,7 @@ class SiretExtractorService(siretExtractorConfiguration: SiretExtractorConfigura
     logger.debug(s"Calling siret extractor with website $website")
     val url = uri"${siretExtractorConfiguration.url}/extract"
     val request = basicRequest
+      .readTimeout(30.minutes) // scrapping can last a long time
       .headers(Header("X-Api-Key", siretExtractorConfiguration.apiKey))
       .post(url)
       .response(asJson[JsValue])

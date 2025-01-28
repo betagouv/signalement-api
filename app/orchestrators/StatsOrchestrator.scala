@@ -13,7 +13,6 @@ import models.report.delete.ReportAdminActionType
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import orchestrators.StatsOrchestrator.restrictToReliableDates
 import orchestrators.StatsOrchestrator.toPercentage
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
@@ -126,17 +125,6 @@ class StatsOrchestrator(
       baseCount <- reportRepository.count(user, basePercentageFilter)
     } yield toPercentage(count, baseCount)
 
-  def getReportCountPercentageWithinReliableDates(
-      user: Option[User],
-      filter: ReportFilter,
-      basePercentageFilter: ReportFilter
-  ): Future[Int] =
-    getReportCountPercentage(
-      user,
-      restrictToReliableDates(filter),
-      restrictToReliableDates(basePercentageFilter)
-    )
-
   def getReportsCountCurve(
       user: Option[User],
       reportFilter: ReportFilter,
@@ -147,21 +135,6 @@ class StatsOrchestrator(
       case CurveTickDuration.Month => reportRepository.getMonthlyCount(user, reportFilter, ticks)
       case CurveTickDuration.Week  => reportRepository.getWeeklyCount(user, reportFilter, ticks)
       case CurveTickDuration.Day   => reportRepository.getDailyCount(user, reportFilter, ticks)
-    }
-
-  def getReportsCountPercentageCurve(
-      user: Option[User],
-      reportFilter: ReportFilter,
-      baseFilter: ReportFilter
-  ): Future[Seq[CountByDate]] =
-    for {
-      rawCurve  <- getReportsCountCurve(user, reportFilter)
-      baseCurve <- getReportsCountCurve(user, baseFilter)
-    } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
-      CountByDate(
-        count = toPercentage(a.count, b.count),
-        date = a.date
-      )
     }
 
   def getReportsTagsDistribution(companyId: Option[UUID], user: User): Future[Map[ReportTag, Int]] =
@@ -194,9 +167,6 @@ class StatsOrchestrator(
         )
       }
     }
-
-  def getReadAvgDelay(companyId: Option[UUID] = None) =
-    eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
 
   def getResponseAvgDelay(companyId: Option[UUID] = None, userRole: UserRole): Future[Option[Duration]] = {
     val onlyProShareable = userRole == UserRole.Professionnel
