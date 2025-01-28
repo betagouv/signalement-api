@@ -10,6 +10,7 @@ import play.api.mvc.PathBindable
 import play.api.mvc.QueryStringBindable
 import play.api.mvc.Request
 import cats.syntax.either._
+import models.PublicStat
 import models.extractUUID
 import models.report.ReportFileOrigin
 import models.report.ReportResponseType
@@ -88,6 +89,13 @@ package object controllers {
       .transform[ReportAdminActionType](
         reportAdminActionType => ReportAdminActionType.withNameInsensitive(reportAdminActionType),
         reportAdminActionType => reportAdminActionType.entryName
+      )
+
+  implicit val PublicStatQueryStringBindable: QueryStringBindable[PublicStat] =
+    QueryStringBindable.bindableString
+      .transform[PublicStat](
+        publicStat => PublicStat.withNameInsensitive(publicStat),
+        publicStat => publicStat.entryName
       )
 
   implicit class RequestOps[T <: JsValue](request: Request[T])(implicit ec: ExecutionContext) {
