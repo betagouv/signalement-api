@@ -38,9 +38,9 @@ class WebsiteRepository(
 
   import dbConfig._
 
-  override def validateAndCreate(newWebsite: Website): Future[Website] =
-    db.run(
-      table
+  override def validateAndCreate(newWebsite: Website): Future[Website] = db.run(
+    (for {
+      maybeWebsite <- table
         .filter(_.host === newWebsite.host)
         .filter { website =>
           val hasBeenAlreadyIdentifiedByConso =
@@ -55,10 +55,12 @@ class WebsiteRepository(
         }
         .result
         .headOption
-    ).flatMap {
-      case Some(website) => Future.successful(website)
-      case None          => create(newWebsite)
-    }
+      website <- maybeWebsite match {
+        case Some(website) => DBIO.successful(website)
+        case None          => table returning table += newWebsite
+      }
+    } yield website).transactionally
+  )
 
   override def searchValidAssociationByHost(host: String): Future[Seq[Website]] =
     db.run(
