@@ -895,8 +895,6 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val staticController = new StaticController(cookieAuthenticator, controllerComponents)
-
   val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
 
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
@@ -948,38 +946,37 @@ class SignalConsoComponents(
     new _root_.router.Routes(
       httpErrorHandler,
       new HealthController(controllerComponents),
-      staticController,
+      assets,
+      reportController,
+      socialNetworkController,
+      barcodeController,
+      reportConsumerReviewController,
+      engagementController,
+      emailValidationController,
+      ratingController,
+      constantController,
+      reportListController,
+      bookmarkController,
+      asyncFileController,
+      eventsController,
+      reportFileController,
+      adminController,
       statisticController,
       companyAccessController,
-      reportListController,
-      reportFileController,
-      reportController,
-      reportConsumerReviewController,
-      eventsController,
-      bookmarkController,
-      reportToExternalController,
-      dataEconomieController,
-      adminController,
-      asyncFileController,
-      constantController,
-      socialNetworkController,
-      mobileAppController,
       authController,
       accountController,
-      emailValidationController,
+      blacklistedEmailsController,
       companyController,
-      ratingController,
+      importController,
+      reportBlockedNotificationController,
       subscriptionController,
       websiteController,
-      reportedPhoneController,
-      reportBlockedNotificationController,
-      blacklistedEmailsController,
-      signalConsoReviewController,
       siretExtractorController,
-      importController,
-      barcodeController,
-      engagementController,
-      assets
+      reportedPhoneController,
+      mobileAppController,
+      reportToExternalController,
+      dataEconomieController,
+      signalConsoReviewController
     )
 
   def scheduleTasks() = {
