@@ -67,7 +67,7 @@ POST          /api/reports/:uuid/assign/:userId                       controller
 ########################################################################
 
 # button "download all attachments"
-GET           /api/reports/files                                      controllers.ReportFileController.downloadZip(reportId: java.util.UUID, origin :  Option[ReportFileOrigin])
+GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for direct download of a single attachment
 GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 # for deletion of a single attachment
@@ -131,8 +131,8 @@ GET           /api/stats/dgccrf-active-account                        controller
 GET           /api/stats/dgccrf-subscriptions                         controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
 GET           /api/stats/dgccrf-controls                              controllers.StatisticController.dgccrfControlsCurve(ticks: Option[Int])
 # tab "Signalements par sous-categories"
-GET           /api/reports/count-by-subcategories                     controllers.StatisticController.reportsCountBySubcategories()
-GET           /api/reports/count-by-subcategories/download            controllers.StatisticController.downloadReportsCountBySubcategories(lang: String)
+GET           /api/stats/reports/count-by-subcategories               controllers.StatisticController.reportsCountBySubcategories()
+GET           /api/stats/reports/count-by-subcategories/download      controllers.StatisticController.downloadReportsCountBySubcategories(lang: String)
 
 #####################################
 ########## PAGE "OUTILS" ############
