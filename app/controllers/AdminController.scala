@@ -315,32 +315,34 @@ class AdminController(
       } yield Created(Json.toJson(blackListedIp))
     }
 
-  def classifyAndSummarize(reportId: UUID) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
-    for {
-      maybeReport          <- reportRepository.get(reportId)
-      report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
-      albertClassification <- albertService.classifyReport(report)
-      albertCodeConsoRes   <- albertService.qualifyReportBasedOnCodeConso(report)
-      maybeClassification = albertClassification.map(classificationJsonStr =>
-        AlbertClassification
-          .fromAlbertApi(
-            reportId,
-            Json.parse(classificationJsonStr),
-            albertCodeConsoRes.map(Json.parse)
-          )
-      )
-      _ <- maybeClassification match {
-        case Some(albert) => albertClassificationRepository.createOrUpdate(albert)
-        case None         => Future.unit
-      }
-    } yield NoContent
-  }
+  def classifyAndSummarize(reportId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
+      for {
+        maybeReport          <- reportRepository.get(reportId)
+        report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
+        albertClassification <- albertService.classifyReport(report)
+        albertCodeConsoRes   <- albertService.qualifyReportBasedOnCodeConso(report)
+        maybeClassification = albertClassification.map(classificationJsonStr =>
+          AlbertClassification
+            .fromAlbertApi(
+              reportId,
+              Json.parse(classificationJsonStr),
+              albertCodeConsoRes.map(Json.parse)
+            )
+        )
+        _ <- maybeClassification match {
+          case Some(albert) => albertClassificationRepository.createOrUpdate(albert)
+          case None         => Future.unit
+        }
+      } yield NoContent
+    }
 
-  def getAlbertClassification(reportId: UUID) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
-    albertClassificationRepository
-      .getByReportId(reportId)
-      .map(maybeClassification => Ok(Json.toJson(maybeClassification)))
-  }
+  def getAlbertClassification(reportId: UUID) =
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
+      albertClassificationRepository
+        .getByReportId(reportId)
+        .map(maybeClassification => Ok(Json.toJson(maybeClassification)))
+    }
 
   def regenSampleData() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
     if (taskConfiguration.sampleData.active) {
