@@ -39,7 +39,6 @@ routesImport ++= Seq(
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",
   "models.report.delete.ReportAdminActionType",
-  "models.PublicStat",
   "controllers.IdentificationStatusQueryStringBindable",
   "controllers.WebsiteIdPathBindable",
   "controllers.UUIDPathBindable",
@@ -48,8 +47,7 @@ routesImport ++= Seq(
   "controllers.ReportFileIdPathBindable",
   "controllers.ReportResponseTypeQueryStringBindable",
   "controllers.ReportAdminActionTypeQueryStringBindable",
-  "controllers.ReportFileOriginQueryStringBindable",
-  "controllers.PublicStatQueryStringBindable"
+  "controllers.ReportFileOriginQueryStringBindable"
 )
 
 semanticdbVersion := scalafixSemanticdb.revision
