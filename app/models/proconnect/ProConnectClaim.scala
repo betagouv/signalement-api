@@ -17,8 +17,6 @@ case class ProConnectClaim(
     idp_id: String
 )
 
-
-
 object ProConnectClaim {
 
   implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(JsonNaming.SnakeCase)
