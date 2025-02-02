@@ -151,12 +151,6 @@ GET           /api/blacklisted-ips                                    controller
 POST          /api/blacklisted-ips                                    controllers.AdminController.createBlacklistedIp()
 DELETE        /api/blacklisted-ips/:ip                                controllers.AdminController.deleteBlacklistedIp(ip: String)
 
-# Those 3 seem unused. Probably ancien versions of "/api/admin/emails/resend"
-POST          /api/admin/emails/reportAckToConsumer                   controllers.AdminController.sendReportAckToConsumer()
-POST          /api/admin/emails/proAckToConsumer                      controllers.AdminController.sendProAckToConsumer()
-POST          /api/admin/emails/newReportToPro                        controllers.AdminController.sendNewReportToPro()
-
-
 ##############################
 ######## AUTHENTICATION ######
 ##############################
