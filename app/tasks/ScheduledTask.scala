@@ -20,8 +20,8 @@ import scala.util.Failure
 import scala.util.Success
 
 abstract class ScheduledTask(
-    taskId: Int,
-    taskName: String,
+    val taskId: Int,
+    val taskName: String,
     taskRepository: TaskRepositoryInterface,
     actorSystem: ActorSystem,
     taskConfiguration: TaskConfiguration
@@ -97,4 +97,5 @@ abstract class ScheduledTask(
     val nextRunApproximateTime = computeDateTimeCorrespondingToDelay(initialDelay)
     logger.info(s"Task $taskName scheduled for $nextRunApproximateTime (in $initialDelay) and then every $interval")
   }
+
 }

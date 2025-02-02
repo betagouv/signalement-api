@@ -20,7 +20,7 @@ class CompanyReportCountViewRefresherTask(
 )(implicit
     executionContext: ExecutionContext
 ) extends ScheduledTask(
-      13,
+      15,
       "company_report_count_view_refresher_task",
       taskRepository,
       actorSystem,

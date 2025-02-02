@@ -117,6 +117,7 @@ import sttp.client3.HttpClientFutureBackend
 import sttp.client3.SttpBackend
 import tasks.EngagementEmailTask
 import tasks.ExportReportsToSFTPTask
+import tasks.ScheduledTask
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
@@ -979,28 +980,35 @@ class SignalConsoComponents(
       signalConsoReviewController
     )
 
-  def scheduleTasks() = {
-    companyUpdateTask.schedule()
-    reportNotificationTask.schedule()
-    inactiveAccountTask.schedule()
-    engagementEmailTask.schedule()
-    exportReportsToSFTPTask.schedule()
-    reportClosureTask.schedule()
-    reportReminderTask.schedule()
-    orphanReportFileDeletionTask.schedule()
-    oldReportExportDeletionTask.schedule()
-    oldReportsRgpdDeletionTask.schedule()
-    if (applicationConfiguration.task.probe.active) {
-      probeOrchestrator.scheduleProbeTasks()
-    }
-    if (applicationConfiguration.task.sampleData.active) {
-      sampleDataGenerationTask.schedule()
-    }
-    subcategoryLabelTask.schedule()
-    companyAlbertLabelTask.schedule()
-    companyReportCountViewRefresherTask.schedule()
-    siretExtractionTask.schedule()
-  }
+  val allTasks: List[ScheduledTask] =
+    List(
+      List(
+        companyUpdateTask,
+        reportNotificationTask,
+        inactiveAccountTask,
+        engagementEmailTask,
+        exportReportsToSFTPTask,
+        reportClosureTask,
+        reportReminderTask,
+        orphanReportFileDeletionTask,
+        oldReportExportDeletionTask,
+        oldReportsRgpdDeletionTask,
+        subcategoryLabelTask,
+        companyAlbertLabelTask,
+        companyReportCountViewRefresherTask,
+        siretExtractionTask
+      ),
+      if (applicationConfiguration.task.probe.active) {
+        probeOrchestrator.buildAllTasks()
+      } else
+        Nil,
+      if (applicationConfiguration.task.sampleData.active) {
+        List(sampleDataGenerationTask)
+      } else Nil
+    ).flatten
+
+  def scheduleTasks() =
+    allTasks.foreach(_.schedule())
 
   override def config: Config = ConfigFactory.load()
 
