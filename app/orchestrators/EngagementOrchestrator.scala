@@ -1,10 +1,10 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import cats.implicits.catsSyntaxOptionId
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.EngagementNotFound
 import controllers.error.AppError.ReportNotFound
-import controllers.error.AppError.ServerError
 import models.User
 import models.engagement.EngagementApi
 import models.engagement.EngagementId
@@ -122,7 +122,13 @@ class EngagementOrchestrator(
         logger.info(s"No engagement review found for report $reportId")
         None
       case review :: Nil => Some(review)
-      case _             => throw ServerError(s"More than one engagement review for report id $reportId")
+      case engagementReviews =>
+        io.sentry.Sentry.captureException(
+          new Exception(
+            s"More than one engagement review for report id $reportId, this is not and expected behavior it should be investigated"
+          )
+        )
+        engagementReviews.maxBy(_.creationDate).some
     }
 
   def findEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
