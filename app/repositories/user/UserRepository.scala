@@ -149,7 +149,12 @@ class UserRepository(
   override def delete(id: UUID): Future[Int] = softDelete(id)
 
   override def softDelete(id: UUID): Future[Int] = db.run(
-    table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now()))
+    table
+      .filter(_.id === id)
+      .map { c =>
+        (c.deletionDate, c.password)
+      }
+      .update((Some(OffsetDateTime.now()), ""))
   )
 
   override def hardDelete(id: UUID): Future[Int] = db.run(table.filter(_.id === id).delete)
