@@ -138,7 +138,7 @@ class SampleDataGenerationTaskTest(implicit ee: ExecutionEnv)
     def check(): Future[Unit] =
       for {
         // Old reports should still exists
-        x <- readReport(reportExpired)
+        _ <- readReport(reportExpired)
         _ = println(s"------------------ x = ${reportExpired.id} ------------------")
         _ <- readReport(reportExpired).map(_.isDefined must beTrue)
         _ <- readReport(reportExpiredSeenByPro).map(_.isDefined must beTrue)
