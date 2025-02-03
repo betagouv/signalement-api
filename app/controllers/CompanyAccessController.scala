@@ -54,6 +54,12 @@ class CompanyAccessController(
       .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
   }
 
+  def listAccessesMostActive(siret: String) = withCompanyAccess(siret).async { implicit request =>
+    companyAccessOrchestrator
+      .listAccessesMostActive(request.company, request.identity)
+      .map(mostActive => Ok(Json.toJson(mostActive)))
+  }
+
   def countAccesses(siret: String) = withCompanyAccess(siret).async { implicit request =>
     companyAccessOrchestrator
       .listAccesses(request.company, request.identity)

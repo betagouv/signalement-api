@@ -32,6 +32,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]]
 
+  def countCompanyEventsByUsers(companyId: UUID, usersIds: List[UUID], filter: EventFilter): Future[Map[UUID, Int]]
   def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]]
 
   def fetchEventsOfReports(reports: List[Report]): Future[Map[UUID, List[Event]]]

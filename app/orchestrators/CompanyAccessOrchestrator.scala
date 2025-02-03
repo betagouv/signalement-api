@@ -7,6 +7,8 @@ import controllers.error.AppError.TooMuchCompanyActivationAttempts
 import models.AccessToken
 import models.User
 import models.access.ActivationLinkRequest
+import models.access.UserWithAccessLevel
+import models.access.UserWithAccessLevelAndNbResponse
 
 import java.time.OffsetDateTime.now
 import cats.implicits.catsSyntaxApplicativeId
@@ -19,7 +21,6 @@ import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
 import models.UserRole.ReadOnlyAdmin
 import models.UserRole.SuperAdmin
-import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.company.AccessLevel
 import models.company.Company
@@ -29,6 +30,9 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
+import repositories.event.EventFilter
+import repositories.event.EventRepositoryInterface
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.SIREN
 import utils.SIRET
 
@@ -42,6 +46,7 @@ class CompanyAccessOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface,
+    val eventsRepository: EventRepositoryInterface,
     val accessesOrchestrator: ProAccessTokenOrchestrator
 )(implicit val ec: ExecutionContext) {
 
@@ -132,6 +137,20 @@ class CompanyAccessOrchestrator(
           )
         } yield filteredHeadOfficeAccess.getOrElse(List.empty) ++ subsidiaryUserAccess
     }
+
+  def listAccessesMostActive(company: Company, user: User): Future[List[UserWithAccessLevelAndNbResponse]] =
+    for {
+      accesses <- listAccesses(company, user)
+      nbResponsesByUserIds <- eventsRepository.countCompanyEventsByUsers(
+        companyId = company.id,
+        usersIds = accesses.map(_.userId),
+        EventFilter(action = Some(REPORT_PRO_RESPONSE))
+      )
+      accessesWithNbResponses = accesses.map(access =>
+        UserWithAccessLevelAndNbResponse.build(access, nbResponsesByUserIds.getOrElse(access.userId, 0))
+      )
+      mostActive = accessesWithNbResponses.sortBy(-_.nbResponses).take(3)
+    } yield mostActive
 
   private def getHeadOffice(company: Company): Future[Option[Company]] =
     companyRepository

@@ -128,6 +128,24 @@ class EventRepository(
         .result
     }
 
+  override def countCompanyEventsByUsers(
+      companyId: UUID,
+      usersIds: List[UUID],
+      filter: EventFilter
+  ): Future[Map[UUID, Int]] =
+    db.run {
+      getRawEvents(filter)
+        .filter(_.companyId === companyId)
+        .filter(
+          _.userId inSetBind usersIds
+        )
+        .groupBy(_.userId)
+        .map { case (userId, events) =>
+          userId.get -> events.length
+        }
+        .result
+    }.map(_.toMap)
+
   override def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
     db.run(
       table

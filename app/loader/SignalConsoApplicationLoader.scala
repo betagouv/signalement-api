@@ -371,6 +371,7 @@ class SignalConsoComponents(
       companyRepository,
       accessTokenRepository,
       companyActivationAttemptRepository,
+      eventRepository,
       proAccessTokenOrchestrator
     )
 
@@ -962,8 +963,8 @@ class SignalConsoComponents(
       eventsController,
       reportFileController,
       adminController,
-      statisticController,
       companyAccessController,
+      statisticController,
       authController,
       accountController,
       blacklistedEmailsController,
