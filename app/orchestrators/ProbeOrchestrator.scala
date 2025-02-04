@@ -79,8 +79,8 @@ class ProbeOrchestrator(
     }: Unit
   }
 
-  def scheduleProbeTasks(): Unit = {
-    val tasks = Seq(
+  def buildAllTasks(): List[ScheduledTask] = {
+    List(
       buildProbe(
         100,
         "reponseconso_probe",
@@ -324,7 +324,7 @@ class ProbeOrchestrator(
             .map(n => Some(n.toDouble))
       )
     )
-    tasks.foreach(_.schedule())
+
   }
 
   private def buildProbeAtLeastOneReport(

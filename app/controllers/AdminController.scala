@@ -9,7 +9,6 @@ import config.EmailConfiguration
 import config.TaskConfiguration
 import controllers.error.AppError
 import models._
-import models.admin.ReportInputList
 import models.event.Event
 import models.report._
 import models.report.sampledata.SampleDataService
@@ -20,7 +19,6 @@ import play.api.i18n.Lang
 import play.api.i18n.Messages
 import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.twirl.api.Html
@@ -196,20 +194,6 @@ class AdminController(
       }.sequence
     } yield ()
 
-  def sendProAckToConsumer =
-    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
-      request.body
-        .validate[ReportInputList](Json.reads[ReportInputList])
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          results =>
-            for {
-              reports <- reportRepository.getReportsByIds(results.reportIds)
-              _       <- _sendProAckToConsumer(reports)
-            } yield Ok
-        )
-    }
-
   private def _sendNewReportToPro(reports: List[Report]) = {
     val reportAndCompanyIdList = reports.flatMap(report => report.companyId.map(c => (report, c)))
     for {
@@ -227,14 +211,6 @@ class AdminController(
           Future.unit
       }.sequence
     } yield ()
-  }
-
-  def sendNewReportToPro = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
-    for {
-      reportInputList <- request.parseBody[ReportInputList]()
-      reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
-      _               <- _sendNewReportToPro(reports)
-    } yield Ok
   }
 
   private def _sendReportAckToConsumer(reportsMap: Map[Report, List[ReportFile]]) = {
@@ -267,20 +243,6 @@ class AdminController(
       _ <- emailsToSend.toList.map(mailService.send).sequence
     } yield ()
   }
-
-  def sendReportAckToConsumer =
-    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
-      logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
-      for {
-        reportInputList <- request.parseBody[ReportInputList]()
-        reports         <- reportRepository.getReportsByIds(reportInputList.reportIds)
-        reportFiles     <- reportFileOrchestrator.prefetchReportsFiles(reports.map(_.id))
-        _ <- _sendReportAckToConsumer(
-          reports.map(report => (report, reportFiles.getOrElse(report.id, List.empty))).toMap
-        )
-      } yield Ok
-
-    }
 
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
     SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { implicit request =>

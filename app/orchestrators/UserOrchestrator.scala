@@ -109,7 +109,16 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       .flatMap {
         case Some(user) if user.deletionDate.isDefined =>
           // Reactivating user
-          userRepository.restore(user)
+          userRepository.restore(
+            user.copy(
+              password = "",
+              email = emailAddress,
+              userRole = role,
+              authProvider = ProConnect,
+              authProviderId = None,
+              lastEmailValidation = Some(OffsetDateTime.now())
+            )
+          )
         case Some(_) => Future.failed(UserAccountEmailAlreadyExist)
         case None =>
           val user = User(
