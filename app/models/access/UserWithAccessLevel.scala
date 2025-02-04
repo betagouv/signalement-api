@@ -32,3 +32,26 @@ object UserWithAccessLevel {
       .withFieldConst(_.isHeadOffice, isHeadOffice)
       .transform
 }
+
+case class UserWithAccessLevelAndNbResponse(
+    userId: UUID,
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    level: String,
+    editable: Boolean,
+    isHeadOffice: Boolean,
+    nbResponses: Int
+)
+
+object UserWithAccessLevelAndNbResponse {
+
+  implicit val UserWithAccessLevelAndNbResponsesWrites: Writes[UserWithAccessLevelAndNbResponse] =
+    Json.writes[UserWithAccessLevelAndNbResponse]
+
+  def build(access: UserWithAccessLevel, nbResponses: Int): UserWithAccessLevelAndNbResponse =
+    access
+      .into[UserWithAccessLevelAndNbResponse]
+      .withFieldConst(_.nbResponses, nbResponses)
+      .transform
+}

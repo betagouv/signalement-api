@@ -102,7 +102,7 @@ GET           /api/albert/classification/:reportId                    controller
 ###############################
 
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
-# various stats for the company page
+GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
 GET           /api/stats/reports/delay/responsed                      controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/tags                                 controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                               controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
