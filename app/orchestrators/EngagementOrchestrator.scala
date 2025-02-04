@@ -14,7 +14,6 @@ import models.report.ReportStatus.hasResponse
 import models.report.review.EngagementReview
 import models.report.review.ConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
-import models.report.review.ResponseEvaluation
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.engagement.EngagementRepositoryInterface
@@ -160,7 +159,7 @@ class EngagementOrchestrator(
         case Some(review) =>
           updateEngagementReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
         case None =>
-          createEngagementReview(reportId, reviewApi.evaluation)
+          createEngagementReview(reportId, reviewApi)
       }
     } yield ()
   }
@@ -181,15 +180,15 @@ class EngagementOrchestrator(
         details = review.details
       )
     )
-  private def createEngagementReview(reportId: UUID, evaluation: ResponseEvaluation): Future[Event] =
+  private def createEngagementReview(reportId: UUID, review: ConsumerReviewApi): Future[Event] =
     reportEngagementReviewRepository
       .createOrUpdate(
         EngagementReview(
           ResponseConsumerReviewId.generateId(),
           reportId,
-          evaluation,
+          evaluation = review.evaluation,
           creationDate = OffsetDateTime.now(),
-          None
+          details = review.details
         )
       )
       .flatMap(_ =>

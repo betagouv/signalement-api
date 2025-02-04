@@ -11,8 +11,12 @@ import models.report.sampledata.ResponseGenerator.acceptedResponse
 import models.report.sampledata.ResponseGenerator.notConcernedResponse
 import models.report.sampledata.ResponseGenerator.rejectedResponse
 import models.report.sampledata.ReportGenerator.SampleReportBlueprint
+import models.report.sampledata.ReviewGenerator.randomConsumerReview
+import models.report.sampledata.ReviewGenerator.randomEngagementReview
 import orchestrators.BarcodeOrchestrator
+import orchestrators.EngagementOrchestrator
 import orchestrators.ReportAdminActionOrchestrator
+import orchestrators.ReportConsumerReviewOrchestrator
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
@@ -41,6 +45,8 @@ class SampleDataService(
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportAdminActionOrchestrator: ReportAdminActionOrchestrator,
+    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+    engagementOrchestrator: EngagementOrchestrator,
     websiteRepository: WebsiteRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     engagementRepository: EngagementRepositoryInterface
@@ -106,9 +112,15 @@ class SampleDataService(
         _ = logger.info(s"--- Creating reports without response")
         _ <- createReports(c, reportsAmountFactor)
         _ = logger.info(s"--- Creating reports with response")
-        _ <- createReportsWithResponse(c, reportsAmountFactor * 1.5, acceptedResponse(), respondant)
         _ <- createReportsWithResponse(c, reportsAmountFactor * 0.5, rejectedResponse(), respondant)
         _ <- createReportsWithResponse(c, reportsAmountFactor * 0.3, notConcernedResponse(), respondant)
+        reportsWithAcceptedResponse <- createReportsWithResponse(
+          c,
+          reportsAmountFactor * 1.5,
+          acceptedResponse(),
+          respondant
+        )
+        _ <- addReviews(reportsWithAcceptedResponse)
         _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
     }
@@ -136,7 +148,17 @@ class SampleDataService(
   ) = for {
     reports <- createReports(c, reportsAmountFactor)
     _       <- reports.traverse(r => reportOrchestrator.handleReportResponse(r, response, proUser))
-  } yield ()
+  } yield reports
+
+  private def addReviews(reports: List[Report]): Future[_] =
+    for {
+      _ <- reports.filter(_ => Random.nextDouble() > 0.6).runSequentially { r =>
+        reportConsumerReviewOrchestrator.handleReviewOnReportResponse(r.id, randomConsumerReview())
+      }
+      _ <- reports.filter(_ => Random.nextDouble() > 0.2).runSequentially { r =>
+        engagementOrchestrator.handleEngagementReview(r.id, randomEngagementReview())
+      }
+    } yield ()
 
   private def setCreationAndExpirationDate(r: Report, quiteOld: Boolean = false): Future[Report] = {
     val now = OffsetDateTime.now()

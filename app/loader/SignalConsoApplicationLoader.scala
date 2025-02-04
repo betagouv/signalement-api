@@ -671,6 +671,8 @@ class SignalConsoComponents(
     reportRepository,
     companyAccessRepository,
     reportAdminActionOrchestrator,
+    reportConsumerReviewOrchestrator,
+    engagementOrchestrator,
     websiteRepository,
     eventRepository,
     engagementRepository
