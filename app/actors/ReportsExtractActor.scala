@@ -151,8 +151,8 @@ object ReportsExtractActor {
       reportIds = paginatedReports.map(_.id)
       reportFilesMap       <- reportFileRepository.prefetchReportsFiles(reportIds)
       reportEventsMap      <- eventRepository.getEventsWithUsersMap(reportIds, EventFilter.Empty)
-      consumerReviewsMap   <- reportConsumerReviewOrchestrator.find(reportIds)
-      engagementReviewsMap <- engagementOrchestrator.findEngagementReviews(reportIds)
+      consumerReviewsMap   <- reportConsumerReviewOrchestrator.getReviews(reportIds)
+      engagementReviewsMap <- engagementOrchestrator.getEngagementReviews(reportIds)
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)

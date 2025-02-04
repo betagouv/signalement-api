@@ -1,7 +1,6 @@
 package orchestrators
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.CompanySiretNotFound
-import controllers.error.AppError.ReportNotFound
 import io.scalaland.chimney.dsl._
 import models.User
 import models.UserRole
@@ -12,7 +11,6 @@ import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepositoryInterface
 import utils.Constants.ActionEvent.REPORT_ASSIGNED
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -44,8 +42,8 @@ trait EventsOrchestratorInterface {
 }
 
 class EventsOrchestrator(
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     eventRepository: EventRepositoryInterface,
-    reportRepository: ReportRepositoryInterface,
     companyRepository: CompanyRepositoryInterface
 )(implicit
     val ec: ExecutionContext
@@ -59,11 +57,8 @@ class EventsOrchestrator(
       user: User
   ): Future[List[EventWithUser]] =
     for {
-      maybeReportWithMetadata <- reportRepository.getFor(Some(user), reportId)
-      maybeReport = maybeReportWithMetadata.map(_.report)
-      _           = logger.debug("Checking if report exists")
-      _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
-      _      = logger.debug("Found report")
+      _ <- Future.successful(())
+      _ <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
       filter = buildEventFilter(eventType)
       _      = logger.debug("Fetching events")
       events <- eventRepository.getEventsWithUsers(List(reportId), filter)

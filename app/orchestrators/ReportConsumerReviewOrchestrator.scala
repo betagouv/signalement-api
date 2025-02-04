@@ -3,9 +3,10 @@ package orchestrators
 import org.apache.pekko.Done
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ServerError
+import models.User
 import models.report.ReportStatus.hasResponse
-import models.report.review.ResponseConsumerReview
 import models.report.review.ConsumerReviewApi
+import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewId
 import play.api.Logger
 import utils.Constants.ActionEvent
@@ -21,6 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportConsumerReviewOrchestrator(
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface
@@ -30,22 +32,37 @@ class ReportConsumerReviewOrchestrator(
   val logger = Logger(this.getClass)
 
   def remove(reportId: UUID): Future[Done] =
-    find(reportId).flatMap {
+    getReview(reportId).flatMap {
       case Some(responseConsumerReview) =>
         responseConsumerReviewRepository.delete(responseConsumerReview.id).map(_ => Done)
       case None => Future.successful(Done)
     }
 
-  def find(reportId: UUID): Future[Option[ResponseConsumerReview]] =
-    responseConsumerReviewRepository.findByReportId(reportId) map {
-      case Nil =>
-        logger.info(s"No review found for report $reportId")
-        None
-      case review :: Nil => Some(review)
-      case _             => throw ServerError(s"More than one consumer review for report id $reportId")
-    }
+  def getVisibleReview(reportId: UUID, user: User): Future[Option[ResponseConsumerReview]] =
+    for {
+      _           <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
+      maybeReview <- getReview(reportId)
+    } yield maybeReview
 
-  def find(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
+  def doesReviewExists(reportId: UUID): Future[Boolean] =
+    for {
+      maybeReview <- getReview(reportId)
+      hasNonEmptyReview = maybeReview.exists(_.details.nonEmpty)
+    } yield hasNonEmptyReview
+
+  private def getReview(reportId: UUID): Future[Option[ResponseConsumerReview]] =
+    for {
+      reviews <- responseConsumerReviewRepository.findByReportId(reportId)
+      maybeReview = reviews match {
+        case Nil =>
+          logger.info(s"No review found for report $reportId")
+          None
+        case review :: Nil => Some(review)
+        case _             => throw ServerError(s"More than one consumer review for report id $reportId")
+      }
+    } yield maybeReview
+
+  def getReviews(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
     responseConsumerReviewRepository.findByReportIds(reportIds)
 
   def handleReviewOnReportResponse(

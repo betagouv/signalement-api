@@ -50,6 +50,7 @@ class ReportController(
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents,
     reportWithDataOrchestrator: ReportWithDataOrchestrator,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     massImportService: ReportZipExportService,
     htmlFromTemplateGenerator: HtmlFromTemplateGenerator
 )(implicit val ec: ExecutionContext)
@@ -118,7 +119,7 @@ class ReportController(
         logger.debug(s"reportResponse ${uuid}")
         for {
           reportResponse     <- request.parseBody[IncomingReportResponse]()
-          visibleReportExtra <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+          visibleReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
           visibleReport = visibleReportExtra.map(_.report)
           updatedReport <- visibleReport
             .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
@@ -130,7 +131,7 @@ class ReportController(
     }
 
   def createReportAction(uuid: UUID): Action[JsValue] =
-    SecuredAction.andThen(WithRole(UserRole.EveryoneButReadOnlyAdmin)).andThen(ForbidImpersonation).async(parse.json) {
+    SecuredAction.andThen(WithRole(UserRole.AdminsAndAgents)).andThen(ForbidImpersonation).async(parse.json) {
       implicit request =>
         for {
           reportAction       <- request.parseBody[ReportAction]()
@@ -150,7 +151,7 @@ class ReportController(
     SecuredAction.async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
-        maybeReportWithMetadata <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        maybeReportWithMetadata <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         viewedReportWithMetadata <- maybeReportWithMetadata
           .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
           .getOrElse(Future.successful(None))

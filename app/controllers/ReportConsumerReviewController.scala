@@ -37,7 +37,7 @@ class ReportConsumerReviewController(
   def getReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report response review for report id : ${reportUUID}")
     for {
-      maybeReview <- reportConsumerReviewOrchestrator.find(reportUUID)
+      maybeReview <- reportConsumerReviewOrchestrator.getVisibleReview(reportUUID, request.identity)
     } yield maybeReview
       .map { review =>
         val writes = responseConsumerReviewWrites(Some(request.identity.userRole))
@@ -49,7 +49,7 @@ class ReportConsumerReviewController(
 
   def reviewExists(reportUUID: UUID): Action[AnyContent] = IpRateLimitedAction2.async { _ =>
     logger.debug(s"Check if review exists for report id : ${reportUUID}")
-    reportConsumerReviewOrchestrator.find(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
+    reportConsumerReviewOrchestrator.doesReviewExists(reportUUID).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))
     }
 
