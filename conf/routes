@@ -11,33 +11,38 @@ GET           /assets/*file                                           controller
 
 POST          /api/reports                                            controllers.ReportController.createReport()
 # Recherche de nom d'influenceur pour voir s'il existe
-GET           /api/certified-influencer                               controllers.SocialNetworkController.get(name:String, socialNetwork: String)
+GET           /api/certified-influencer                               controllers.SocialNetworkController.checkIfInfluencerExists(name:String, socialNetwork: String)
 # Recherche de code barres
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
+# Recherche de site web
+GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
+GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
 # to post his review
-POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.createConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists               controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
-POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.reviewEngagementOnReportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.createEngagementReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review/exists             controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)
 # validation of the conso's email
-POST          /api/email-validation/check                             controllers.EmailValidationController.check()
-POST          /api/email-validation/validate                          controllers.EmailValidationController.validate()
-POST          /api/email-validation/check-and-validate                controllers.EmailValidationController.checkAndValidate()
-# pour poster une évaluation (thumbs up/down) sur une sous-cat
-POST          /api/rating                                             controllers.RatingController.rate()
+POST          /api/email-validation/check                             controllers.EmailValidationController.checkIsEmailValidAndMaybeSendEmail()
+POST          /api/email-validation/check-and-validate                controllers.EmailValidationController.checkEmailCodeAndValidateEmail()
+# pour poster une évaluation (thumbs up/down) sur une sous-cat avec un "blockingInfo"
+POST          /api/rating                                             controllers.RatingController.rateBlockingInfoInSubcategoryUsefulness()
 # egalement utilisé dans le dashboard
 GET           /api/constants/countries                                controllers.ConstantController.getCountries()
+# for direct download of a single attachment
+# egalement utilisé dans le dashboard
+GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 
 
 ###########################################
 ########## REPORTS SEARCH/LIST PAGE #######
 ###########################################
 
-GET           /api/reports                                            controllers.ReportListController.getReports()
-POST          /api/reports/extract                                    controllers.ReportListController.extractReports()
+GET           /api/reports                                            controllers.ReportListController.searchReports()
+POST          /api/reports/extract                                    controllers.ReportListController.createReportsSearchExcelExtract()
 # button "download" which appears after selecting some reports
 # also for the report page, button "download", if there are no attached files (or if there are but you pick the option to not get them)
-GET           /api/reports/download                                   controllers.ReportController.reportsAsPDF()
+GET           /api/reports/download                                   controllers.ReportController.downloadReportsAsMergedPdf()
 GET           /api/reports/bookmarks/count                            controllers.BookmarkController.countBookmarks()
 # also used in the report page
 DELETE        /api/reports/:uuid/bookmark                             controllers.BookmarkController.removeBookmark(uuid: java.util.UUID)
@@ -52,13 +57,13 @@ GET           /api/async-files                                        controller
 
 GET           /api/reports/:uuid                                      controllers.ReportController.getReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                               controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
-GET           /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.getReview(uuid: java.util.UUID)
+GET           /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.getConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review                    controllers.EngagementController.getEngagementReview(uuid: java.util.UUID)
-GET           /api/barcode/:id                                        controllers.BarcodeController.getById(id: java.util.UUID)
+GET           /api/barcode/:id                                        controllers.BarcodeController.getProductById(id: java.util.UUID)
 # button "download", if there's attached files and you pick the corresponding option
-GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.reportAsZip(reportId: java.util.UUID)
+GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.downloadReportAsZipWithFiles(reportId: java.util.UUID)
 # for the pro, to post his response
-POST          /api/reports/:uuid/response                             controllers.ReportController.reportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/response                             controllers.ReportController.createReportResponse(uuid: java.util.UUID)
 # for the pro to assign a report
 POST          /api/reports/:uuid/assign/:userId                       controllers.ReportController.updateReportAssignedUser(uuid: java.util.UUID, userId: java.util.UUID)
 
@@ -67,9 +72,7 @@ POST          /api/reports/:uuid/assign/:userId                       controller
 ########################################################################
 
 # button "download all attachments"
-GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
-# for direct download of a single attachment
-GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
+GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for deletion of a single attachment
 DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 # for adding a single attachment (for both pro and admin)
@@ -91,18 +94,20 @@ GET           /api/reports/:uuid/consumer-email-pdf                   controller
 POST          /api/reports/reopen                                     controllers.ReportController.reopenReport()
 # for "Action administrateur" popin. Note : it is not always a deletion!
 DELETE        /api/reports/:uuid                                      controllers.ReportController.deleteReport(uuid: java.util.UUID)
-# fourre-tout de diverses action admin/agent/pro (ajout de pièces jointes, commentaires, marquer un contrôle effectué)
+# fourre-tout de diverses action admin/agent (ajout de pièces jointes, commentaires, marquer un contrôle effectué)
 POST          /api/reports/:uuid/action                               controllers.ReportController.createReportAction(uuid: java.util.UUID)
 # Analyse IA
-POST          /api/albert/classification/:reportId                    controllers.AdminController.classifyAndSummarize(reportId: java.util.UUID)
-GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertClassification(reportId: java.util.UUID)
+POST          /api/albert/classification/:reportId                    controllers.AdminController.generateAlbertReportAnalysis(reportId: java.util.UUID)
+GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertReportAnalysis(reportId: java.util.UUID)
 
 ###############################
 ########## COMPANY PAGE #######
 ###############################
 
+GET           /api/companies/$companyId<[-0-9a-f]{36}>                   controllers.CompanyController.getCompany(companyId: java.util.UUID)
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
+GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
 GET           /api/stats/reports/delay/responsed                      controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/tags                                 controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                               controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
@@ -110,7 +115,11 @@ GET           /api/stats/reports/accepted                             controller
 GET           /api/stats/reports/reviews                              controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/engagement-reviews                   controllers.StatisticController.getReportEngagementReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/count-by-adminactions                        controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
-GET           /api/reports/cloudword/:companyId                       controllers.ReportController.cloudWord(companyId: java.util.UUID)
+GET           /api/reports/cloudword/:companyId                       controllers.ReportController.getCompanyCloudWord(companyId: java.util.UUID)
+GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
+GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
+GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
+GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
 
 #####################################
 #### PAGE "STATISTIQUES" ############
@@ -119,12 +128,12 @@ GET           /api/reports/cloudword/:companyId                       controller
 # tab "Signalements"
 GET           /api/stats/reports/count                                controllers.StatisticController.getReportsCount()
 GET           /api/stats/reports/curve                                controllers.StatisticController.getReportsCountCurve()
-GET           /api/stats/reports/count-by-departments                 controllers.StatisticController.countByDepartments()
+GET           /api/stats/reports/count-by-departments                 controllers.StatisticController.getReportsCountByDepartments()
 # tab "Professionnels"
 GET           /api/stats/reports/pro-totransmit                       controllers.StatisticController.getProReportToTransmitStat()
 GET           /api/stats/reports/pro-transmitted                      controllers.StatisticController.getProReportTransmittedStat()
 GET           /api/stats/reports/pro-response                         controllers.StatisticController.getProReportResponseStat(responseStatusQuery: Option[List[ReportResponseType]])
-GET           /api/stats/pro-account-rate                             controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
+GET           /api/stats/pro-account-rate                             controllers.CompanyAccessController.getProFirstActivationCount(ticks: Option[Int])
 # tab "DGGCCRF"
 GET           /api/stats/dgccrf-account                               controllers.StatisticController.dgccrfAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-active-account                        controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
@@ -145,10 +154,10 @@ GET           /api/admin/test-pdf                                     controller
 POST          /api/admin/test-pdf                                     controllers.AdminController.sendTestPdf(templateRef)
 # tab "Outils d'administration"
 POST          /api/admin/regen-sample-data                            controllers.AdminController.regenSampleData()
-POST          /api/admin/emails/resend                                controllers.AdminController.resend(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
+POST          /api/admin/emails/resend                                controllers.AdminController.resendEmails(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
 DELETE        /api/reports                                            controllers.ReportController.deleteSpamReport()
-GET           /api/blacklisted-ips                                    controllers.AdminController.blackListedIPs()
-POST          /api/blacklisted-ips                                    controllers.AdminController.createBlacklistedIp()
+GET           /api/blacklisted-ips                                    controllers.AdminController.getBlacklistedIps()
+POST          /api/blacklisted-ips                                    controllers.AdminController.addBlacklistedIp()
 DELETE        /api/blacklisted-ips/:ip                                controllers.AdminController.deleteBlacklistedIp(ip: String)
 
 ##############################
@@ -175,21 +184,21 @@ POST          /api/account/activation                                 controller
 ######## USER ACCESSES TO COMPANY ####
 ######################################
 
-GET           /api/accesses/connected-user                            controllers.CompanyAccessController.myCompanies()
-GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
-POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
-DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
+# seems unused, will remove in later commit
+GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
 
-GET           /api/accesses/:siret                                    controllers.CompanyAccessController.listAccesses(siret: String)
-GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
+# onglet "Accès utilisateurs" sur la page d'une entreprise
+GET           /api/accesses/$siret<[0-9]{14}>                         controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                            controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
 DELETE        /api/accesses/:siret/:userId                            controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
+# bouton inviter
+POST          /api/accesses/:siret/invitation                         controllers.CompanyAccessController.sendInvitation(siret: String)
+# c'est probablement le process d'invitation ?
 GET           /api/accesses/:siret/token                              controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
 POST          /api/accesses/:siret/send-activation-link               controllers.CompanyAccessController.sendActivationLink(siret: String)
 POST          /api/accesses/:siret/token/accept                       controllers.CompanyAccessController.acceptToken(siret: String)
 DELETE        /api/accesses/:siret/token/:tokenId                     controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
-POST          /api/accesses/:siret/invitation                         controllers.CompanyAccessController.sendInvitation(siret: String)
 
 ###########################################
 ######## PAGE "UTILISATEURS" ##############
@@ -208,13 +217,19 @@ GET           /api/account/agent/pending                              controller
 GET           /api/account/admin/users                                controllers.AccountController.fetchAdminUsers()
 POST          /api/account/admin/invitation                           controllers.AccountController.sendAdminInvitation(role: UserRole)
 # tab "Consos non validés"
-GET           /api/email-validation/search                            controllers.EmailValidationController.search()
+GET           /api/email-validation/search                            controllers.EmailValidationController.searchEmailValidations()
+POST          /api/email-validation/validate                          controllers.EmailValidationController.forceValidateEmail()
 # tab "Historique de connexion"
 GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int])
 # tab "Liste noire des consos"
 GET           /api/blacklisted-emails                                 controllers.BlacklistedEmailsController.list()
 POST          /api/blacklisted-emails                                 controllers.BlacklistedEmailsController.add()
 DELETE        /api/blacklisted-emails/:uuid                           controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
+
+# page "Utilisateurs" dans sa version Pros
+GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
+POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
+DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
 
 
 ###################################
@@ -230,26 +245,32 @@ PUT           /api/account/update-email/:token                        controller
 ######## PAGE "ENTREPRISES" #############
 #########################################
 
-POST          /api/companies                                          controllers.CompanyController.create()
-GET           /api/companies                                          controllers.CompanyController.searchRegistered()
-GET           /api/companies/connected-user                           controllers.CompanyController.visibleCompanies()
-GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
-GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
-GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
-GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
-POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
-POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
-POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
-POST          /api/companies/follow-up-posted                         controllers.CompanyController.confirmFollowUp()
-GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)
-GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
+# onglet "Entreprises identifiées"
+GET           /api/companies                                          controllers.CompanyController.searchCompanies()
+# bouton "Enregistrer une entreprise" qui apparait aux admins
+# quand on met des filtres et qu'on a aucun résultat
+POST          /api/companies                                          controllers.CompanyController.manuallyRegisterCompany()
+# bouton "modifier l'adresse", dans le menu avec trois petits points
 PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
-GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
-GET           /api/companies/:companyId                               controllers.CompanyController.searchById(companyId: java.util.UUID)
-GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
 # bouton "Ouvrir des acces"
-POST          /api/import/companies                                   controllers.ImportController.importUsers()
-# gestion des "Notifications par email" (pour le pro)
+POST          /api/import/companies                                   controllers.ImportController.giveAccessToCompaniesToUsers()
+
+# onglet "En attente d'activation"
+GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
+POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
+POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
+
+# onglet "Entreprises inactives"
+GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
+POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
+POST          /api/companies/follow-up-posted                         controllers.CompanyController.confirmFollowUp()
+
+
+# Page "Mes entreprises" pour les Pros
+# également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
+GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
+
+# Gestion des notifications
 GET           /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.getAll()
 POST          /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.create()
 POST          /api/report-blocked-notification/delete                 controllers.ReportBlockedNotificationController.delete()
@@ -270,7 +291,6 @@ DELETE        /api/subscriptions/:subscriptionId                      controller
 
 GET           /api/websites                                           controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean],isOpen: Option[Boolean],isMarketplace: Option[Boolean])
 POST          /api/websites                                           controllers.WebsiteController.create()
-GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                              controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/unregistered/extract                      controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                               controllers.WebsiteController.updateCompany(id: WebsiteId)
@@ -309,10 +329,20 @@ GET           /api/constants/categoriesByStatus                       controller
 ########################################
 
 # celui-ci est marqué deprecated dans le code, qui dit d'utiliser /api/ext/reports (lui même remplacé par V2 ?)
+# pas utilisé dans les 30 derniers jours d'après New Relic
 GET /api/ext/reports/siret/:siret controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
+
+# très utilisé. Principalement pour filtrer sur le tag ReponseConso, donc ça doit être RéponseConso qui l'utilise ?
 GET /api/ext/reports              controllers.ReportToExternalController.searchReportsToExternal()
+
+# pas utilisé dans les 30 derniers jours d'après New Relic
+# curieux, alors que c'est censé être une V2 par rapport au précédent ?
 GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
+
+# utilisé une fois par jour vers minuit
 GET /api/ext/reports/extract      controllers.DataEconomieController.reportDataEcomonie()
+
+# très utilisé
 GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getReportToExternal(uuid)
 
 ##############################################################
@@ -324,3 +354,5 @@ POST          /api/import/marketplaces                                controller
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
 # semble inutilisé (table vide en prod)
 GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
+# semble inutilisé (aucune trace dans le code front, ni d'appel dans New Relic)
+GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)

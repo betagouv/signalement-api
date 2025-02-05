@@ -27,35 +27,28 @@ class EmailValidationController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def check(): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
-    logger.debug("Calling checking email API")
-    for {
-      validateEmail <- request.parseBody[ValidateEmail]()
-      validationResult <- emailValidationOrchestrator.checkEmail(
-        validateEmail.email,
-        validateEmail.lang
-      )
-    } yield Ok(Json.toJson(validationResult))
+  def checkIsEmailValidAndMaybeSendEmail(): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
+    implicit request =>
+      logger.debug("Calling checking email API")
+      for {
+        validateEmail <- request.parseBody[ValidateEmail]()
+        validationResult <- emailValidationOrchestrator.checkEmail(
+          validateEmail.email,
+          validateEmail.lang
+        )
+      } yield Ok(Json.toJson(validationResult))
   }
 
-  def checkAndValidate(): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
-    logger.debug("Calling validate email API")
-    for {
-      validateEmailCode <- request.parseBody[ValidateEmailCode]()
-      validationResult  <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
-    } yield Ok(Json.toJson(validationResult))
-  }
-
-  def validate(): Action[JsValue] =
-    Act.secured.admins.async(parse.json) { implicit request =>
+  def checkEmailCodeAndValidateEmail(): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
+    implicit request =>
       logger.debug("Calling validate email API")
       for {
-        body             <- request.parseBody[ValidateEmail]()
-        validationResult <- emailValidationOrchestrator.validateEmail(body.email)
+        validateEmailCode <- request.parseBody[ValidateEmailCode]()
+        validationResult  <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
       } yield Ok(Json.toJson(validationResult))
-    }
+  }
 
-  def search() = Act.secured.adminsAndReadonly.async { implicit request =>
+  def searchEmailValidations() = Act.secured.adminsAndReadonly.async { implicit request =>
     EmailValidationFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
@@ -70,4 +63,13 @@ class EmailValidationController(
           } yield Ok(Json.toJson(res)(paginatedResultWrites))
       )
   }
+
+  def forceValidateEmail(): Action[JsValue] =
+    Act.secured.admins.async(parse.json) { implicit request =>
+      logger.debug("Calling validate email API")
+      for {
+        body             <- request.parseBody[ValidateEmail]()
+        validationResult <- emailValidationOrchestrator.validateEmail(body.email)
+      } yield Ok(Json.toJson(validationResult))
+    }
 }

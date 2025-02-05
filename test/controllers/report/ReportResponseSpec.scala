@@ -349,7 +349,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   def postReportResponse(reportResponse: IncomingReportResponse) =
     Await.result(
       components.reportController
-        .reportResponse(reportFixture.id)
+        .createReportResponse(reportFixture.id)
         .apply(
           someUser
             .map(user => FakeRequest().withAuthCookie(user.email, components.cookieAuthenticator))
