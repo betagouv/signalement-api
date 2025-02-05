@@ -7,7 +7,6 @@ import models.report.ReportStatus.hasResponse
 import models.report.review.ResponseConsumerReview
 import models.report.review.ConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
-import models.report.review.ResponseEvaluation
 import play.api.Logger
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -75,7 +74,7 @@ class ReportConsumerReviewOrchestrator(
         case Some(review) =>
           updateReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
         case None =>
-          createReview(reportId, reviewApi.evaluation)
+          createReview(reportId, reviewApi)
       }
     } yield ()
   }
@@ -97,15 +96,15 @@ class ReportConsumerReviewOrchestrator(
       )
     )
 
-  private def createReview(reportId: UUID, evaluation: ResponseEvaluation): Future[Event] =
+  private def createReview(reportId: UUID, review: ConsumerReviewApi): Future[Event] =
     responseConsumerReviewRepository
       .createOrUpdate(
         ResponseConsumerReview(
           ResponseConsumerReviewId.generateId(),
           reportId,
-          evaluation,
+          evaluation = review.evaluation,
           creationDate = OffsetDateTime.now(),
-          None
+          details = review.details
         )
       )
       .flatMap(_ =>
