@@ -56,6 +56,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       .sample
       .get
       .copy(
+        host = "marketplace.com",
         companyCountry = None,
         companyId = Some(marketplaceCompany.id),
         identificationStatus = IdentificationStatus.Identified,
