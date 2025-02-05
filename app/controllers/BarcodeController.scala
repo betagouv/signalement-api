@@ -17,13 +17,13 @@ class BarcodeController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def getProductByGTIN(gtin: String) = IpRateLimitedAction3.async { _ =>
+  def getProductByGTIN(gtin: String) = Act.public.tightLimit.async { _ =>
     barcodeOrchestrator
       .getByGTIN(gtin)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
   }
 
-  def getById(id: UUID) = SecuredAction.async { _ =>
+  def getById(id: UUID) = Act.secured.all.allowImpersonation.async { _ =>
     barcodeOrchestrator
       .get(id)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToDashboard))).getOrElse(NotFound))

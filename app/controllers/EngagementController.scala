@@ -1,8 +1,6 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.ImpersonationAction.ForbidImpersonation
-import authentication.actions.UserAction.WithRole
 import models.User
 import models.UserRole
 import models.engagement.EngagementId
@@ -26,22 +24,22 @@ class EngagementController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def list() = SecuredAction.andThen(WithRole(UserRole.Professionnel)).async { implicit request =>
+  def list() = Act.secured.pros.allowImpersonation.async { implicit request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     engagementOrchestrator.listForUser(request.identity).map(engagements => Ok(Json.toJson(engagements)))
   }
 
   def check(id: EngagementId) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
+    Act.secured.pros.forbidImpersonation.async { implicit request =>
       engagementOrchestrator.check(request.identity, id).map(_ => NoContent)
     }
 
   def uncheck(id: EngagementId) =
-    SecuredAction.andThen(WithRole(UserRole.Professionnel)).andThen(ForbidImpersonation).async { implicit request =>
+    Act.secured.pros.forbidImpersonation.async { implicit request =>
       engagementOrchestrator.uncheck(request.identity, id).map(_ => NoContent)
     }
 
-  def reviewEngagementOnReportResponse(reportUUID: UUID): Action[JsValue] = IpRateLimitedAction2.async(parse.json) {
+  def reviewEngagementOnReportResponse(reportUUID: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
     implicit request =>
       logger.debug(s"Push report engagement review for report id : $reportUUID")
       for {
@@ -50,7 +48,7 @@ class EngagementController(
       } yield Ok
   }
 
-  def getEngagementReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
+  def getEngagementReview(reportUUID: UUID): Action[AnyContent] = Act.secured.all.allowImpersonation.async { request =>
     logger.debug(s"Get report engagement review for report id : $reportUUID")
     for {
       maybeReview <- engagementOrchestrator.getVisibleEngagementReview(reportUUID, request.identity)
@@ -62,7 +60,7 @@ class EngagementController(
       .getOrElse(NotFound)
   }
 
-  def engagementReviewExists(reportUUID: UUID): Action[AnyContent] = IpRateLimitedAction2.async { _ =>
+  def engagementReviewExists(reportUUID: UUID): Action[AnyContent] = Act.public.standardLimit.async { _ =>
     logger.debug(s"Check if engagement review exists for report id : $reportUUID")
     engagementOrchestrator.doesEngagementReviewExists(reportUUID).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))

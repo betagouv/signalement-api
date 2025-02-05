@@ -5,7 +5,6 @@ import models.email.ValidateEmailCode
 import models.EmailValidationFilter
 import models.PaginatedSearch
 import models.User
-import models.UserRole
 import orchestrators.EmailValidationOrchestrator
 import play.api._
 import _root_.controllers.error.AppError.MalformedQueryParams
@@ -15,7 +14,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import models.PaginatedResult.paginatedResultWrites
-import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -29,7 +27,7 @@ class EmailValidationController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def check(): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
+  def check(): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     logger.debug("Calling checking email API")
     for {
       validateEmail <- request.parseBody[ValidateEmail]()
@@ -40,7 +38,7 @@ class EmailValidationController(
     } yield Ok(Json.toJson(validationResult))
   }
 
-  def checkAndValidate(): Action[JsValue] = IpRateLimitedAction2.async(parse.json) { implicit request =>
+  def checkAndValidate(): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()
@@ -49,7 +47,7 @@ class EmailValidationController(
   }
 
   def validate(): Action[JsValue] =
-    SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
+    Act.secured.admins.async(parse.json) { implicit request =>
       logger.debug("Calling validate email API")
       for {
         body             <- request.parseBody[ValidateEmail]()
@@ -57,7 +55,7 @@ class EmailValidationController(
       } yield Ok(Json.toJson(validationResult))
     }
 
-  def search() = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { implicit request =>
+  def search() = Act.secured.adminsAndReadonly.async { implicit request =>
     EmailValidationFilter
       .fromQueryString(request.queryString)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))

@@ -860,6 +860,8 @@ class SignalConsoComponents(
       reportRepository
     )
 
+  val healthController = new HealthController(cookieAuthenticator, controllerComponents)
+
   val reportController = new ReportController(
     reportOrchestrator,
     reportAssignmentOrchestrator,
@@ -960,7 +962,7 @@ class SignalConsoComponents(
   lazy val router: Router =
     new _root_.router.Routes(
       httpErrorHandler,
-      new HealthController(controllerComponents),
+      healthController,
       assets,
       reportController,
       socialNetworkController,

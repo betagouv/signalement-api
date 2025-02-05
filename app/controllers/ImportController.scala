@@ -3,7 +3,6 @@ package controllers
 import authentication.Authenticator
 import controllers.error.AppError.EmptyEmails
 import models.User
-import models.UserRole
 import orchestrators.ImportOrchestratorInterface
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -11,7 +10,6 @@ import play.api.mvc.ControllerComponents
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
-import authentication.actions.UserAction.WithRole
 import models.company.AccessLevel
 
 import scala.concurrent.ExecutionContext
@@ -52,7 +50,7 @@ class ImportController(
       case (siren, sirets, emails) => Future.successful((siren, sirets, emails, input.onlyHeadOffice, input.level))
     }
 
-  def importUsers = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
+  def importUsers = Act.secured.admins.async(parse.json) { implicit request =>
     for {
       importInput                                    <- request.parseBody[ImportInput]()
       (siren, sirets, emails, onlyHeadOffice, level) <- validateInput(importInput)
@@ -61,7 +59,7 @@ class ImportController(
   }
 
   def importMarketplaces() =
-    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+    Act.secured.superAdmins.async(parse.json) { implicit request =>
       for {
         input <- request.parseBody[List[MarketplaceImportInput]]()
         res   <- importOrchestrator.importMarketplaces(input.map(i => i.siret -> i.host), request.identity)

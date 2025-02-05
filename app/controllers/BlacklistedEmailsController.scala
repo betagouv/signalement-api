@@ -4,13 +4,11 @@ import authentication.Authenticator
 import models.BlacklistedEmail
 import models.BlacklistedEmailInput
 import models.User
-import models.UserRole
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
-import authentication.actions.UserAction.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -25,13 +23,13 @@ class BlacklistedEmailsController(
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def list = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async {
+  def list = Act.secured.adminsAndReadonly.async {
     for {
       res <- blacklistedEmailsRepository.list()
     } yield Ok(Json.toJson(res))
   }
 
-  def add() = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { implicit request =>
+  def add() = Act.secured.admins.async(parse.json) { implicit request =>
     request.body
       .validate[BlacklistedEmailInput]
       .fold(
@@ -51,7 +49,7 @@ class BlacklistedEmailsController(
 
   }
 
-  def delete(uuid: UUID) = SecuredAction.andThen(WithRole(UserRole.Admins)).async {
+  def delete(uuid: UUID) = Act.secured.admins.async {
     for {
       item <- blacklistedEmailsRepository.get(uuid)
       _    <- blacklistedEmailsRepository.delete(uuid)

@@ -21,7 +21,7 @@ class EventsController(
 ) extends BaseController(authenticator, controllerComponents) {
 
   def getCompanyEvents(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
-    SecuredAction.async { implicit request =>
+    Act.secured.all.allowImpersonation.async { implicit request =>
       logger.info(s"Fetching events for company $siret with eventType $eventType")
       eventsOrchestrator
         .getCompanyEvents(siret = siret, eventType = eventType, userRole = request.identity.userRole)
@@ -29,7 +29,7 @@ class EventsController(
     }
 
   def getReportEvents(reportId: UUID, eventType: Option[String]): Action[AnyContent] =
-    SecuredAction.async { implicit request =>
+    Act.secured.all.allowImpersonation.async { implicit request =>
       logger.info(s"Fetching events for report $reportId with eventType $eventType")
       eventsOrchestrator
         .getReportsEvents(reportId = reportId, eventType = eventType, user = request.identity)

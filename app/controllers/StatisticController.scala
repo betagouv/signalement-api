@@ -16,7 +16,6 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Results
 import utils.QueryStringMapper
-import authentication.actions.UserAction.WithRole
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -35,7 +34,7 @@ class StatisticController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportsCount() = SecuredAction.async { request =>
+  def getReportsCount() = Act.secured.all.allowImpersonation.async { request =>
     ReportFilter
       .fromQueryString(request.queryString)
       .fold(
@@ -52,7 +51,7 @@ class StatisticController(
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = SecuredAction.async { request =>
+  def getReportsCountCurve() = Act.secured.all.allowImpersonation.async { request =>
     ReportFilter
       .fromQueryString(request.queryString)
       .fold(
@@ -74,37 +73,37 @@ class StatisticController(
       )
   }
 
-  def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction.async { request =>
+  def getDelayReportResponseInHours(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
     statsOrchestrator
       .getResponseAvgDelay(companyId: Option[UUID], request.identity.userRole)
       .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction.async {
+  def getReportResponseReviews(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async {
     statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportEngagementReviews(companyId: Option[UUID]) = SecuredAction.async {
+  def getReportEngagementReviews(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async {
     statsOrchestrator.getReportEngagementReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+  def getReportsTagsDistribution(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
     statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+  def getReportsStatusDistribution(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
   }
 
   def getAcceptedResponsesDistribution(companyId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
       statsOrchestrator
         .getAcceptedResponsesDistribution(companyId, request.identity)
         .map(x => Ok(Json.toJson(x)))
     }
 
   def getProReportToTransmitStat() =
-    SecuredAction.async { request =>
+    Act.secured.all.allowImpersonation.async { request =>
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(
@@ -115,14 +114,14 @@ class StatisticController(
         .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getProReportTransmittedStat() = SecuredAction.async { request =>
+  def getProReportTransmittedStat() = Act.secured.all.allowImpersonation.async { request =>
     statsOrchestrator
       .getReportsCountCurve(Some(request.identity), transmittedReportsFilter)
       .map(curve => Ok(Json.toJson(curve)))
   }
 
   def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
-    SecuredAction.async(parse.empty) { request =>
+    Act.secured.all.allowImpersonation.async(parse.empty) { request =>
       val statusFilter = responseTypeQuery
         .filter(_.nonEmpty)
         .map(_.map(ReportStatus.fromResponseType))
@@ -133,24 +132,24 @@ class StatisticController(
         .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfAccountsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
     statsOrchestrator.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
-  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
     statsOrchestrator.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
-  def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfSubscription(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
     statsOrchestrator.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
-  def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfControlsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
     statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def countByDepartments() =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
+    Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { implicit request =>
       val mapper = new QueryStringMapper(request.queryString)
       val start  = mapper.timeWithLocalDateRetrocompatStartOfDay("start")
       val end    = mapper.timeWithLocalDateRetrocompatEndOfDay("end")
@@ -158,7 +157,7 @@ class StatisticController(
     }
 
   def reportsCountBySubcategories() =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
@@ -171,7 +170,7 @@ class StatisticController(
     }
 
   def downloadReportsCountBySubcategories(lang: String) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { implicit request =>
       ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
         case Failure(error) =>
           logger.error("Cannot parse querystring" + request.queryString, error)
@@ -185,7 +184,7 @@ class StatisticController(
     }
 
   def fetchAdminActionEvents(companyId: UUID, reportAdminActionType: ReportAdminActionType) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       statsOrchestrator
         .fetchAdminActionEvents(companyId, reportAdminActionType)
         .map(count => Ok(Json.obj("value" -> count)))

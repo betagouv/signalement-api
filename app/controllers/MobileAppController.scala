@@ -19,7 +19,7 @@ class MobileAppController(
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getRequirements = IpRateLimitedAction2 {
+  def getRequirements = Act.public.standardLimit {
     val json = JsObject(
       Seq(
         "minAppVersion" -> JsObject(

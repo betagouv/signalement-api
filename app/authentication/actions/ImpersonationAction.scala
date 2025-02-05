@@ -1,9 +1,11 @@
 package authentication.actions
 
+import authentication.actions.MaybeUserAction.MaybeUserRequest
 import models.User
 import play.api.mvc.Results.Forbidden
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
+import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -11,15 +13,27 @@ import scala.concurrent.Future
 object ImpersonationAction {
   type UserRequest[A] = IdentifiedRequest[User, A]
 
-  def ForbidImpersonation(implicit ec: ExecutionContext): ActionFilter[UserRequest] = new ActionFilter[UserRequest] {
-    override protected def executionContext: ExecutionContext = ec
+  def forbidImpersonationFilter(implicit ec: ExecutionContext): ActionFilter[UserRequest] =
+    new ActionFilter[UserRequest] {
+      override protected def executionContext: ExecutionContext = ec
+      override protected def filter[A](request: UserRequest[A]): Future[Option[Result]] =
+        handleImpersonator(request.identity.impersonator)
 
-    override protected def filter[A](request: UserRequest[A]): Future[Option[Result]] =
-      Future.successful(
-        request.identity.impersonator match {
-          case Some(_) => Some(Forbidden)
-          case None    => None
-        }
-      )
-  }
+    }
+
+  def forbidImpersonationOnMaybeUserFilter(implicit ec: ExecutionContext): ActionFilter[MaybeUserRequest] =
+    new ActionFilter[MaybeUserRequest] {
+      override protected def executionContext: ExecutionContext = ec
+      override protected def filter[A](request: MaybeUserRequest[A]): Future[Option[Result]] =
+        handleImpersonator(request.identity.flatMap(_.impersonator))
+    }
+
+  private def handleImpersonator(maybeImpersonator: Option[EmailAddress]) =
+    Future.successful(
+      maybeImpersonator match {
+        case Some(_) => Some(Forbidden)
+        case None    => None
+      }
+    )
+
 }

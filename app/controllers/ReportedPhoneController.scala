@@ -14,7 +14,6 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
 import utils.PhoneNumberUtils
-import authentication.actions.UserAction.WithRole
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -39,7 +38,7 @@ class ReportedPhoneController(
       offset: Option[Long],
       limit: Option[Int]
   ) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { _ =>
+    Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { _ =>
       reportRepository
         .getPhoneReports(
           readPhoneParam(q),
@@ -66,7 +65,7 @@ class ReportedPhoneController(
     }
 
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndCCRF)).async { implicit request =>
+    Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       asyncFileRepository
         .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))

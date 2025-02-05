@@ -17,7 +17,7 @@ class AsyncFileController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>
+  def listAsyncFiles(kind: Option[String]) = Act.secured.all.allowImpersonation.async { implicit request =>
     for {
       asyncFiles <- asyncFileRepository.list(request.identity, kind.map(AsyncFileKind.withName))
     } yield Ok(Json.toJson(asyncFiles.map { asyncFile: AsyncFile =>

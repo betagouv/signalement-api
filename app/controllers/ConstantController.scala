@@ -16,15 +16,15 @@ class ConstantController(authenticator: Authenticator[User], controllerComponent
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def getCountries = IpRateLimitedAction2 {
+  def getCountries = Act.public.standardLimit {
     Ok(Json.toJson(Country.countries))
   }
 
-  def getCategories = IpRateLimitedAction2 {
+  def getCategories = Act.public.standardLimit {
     Ok(Json.toJson(ReportCategory.values.filter(_.status != ReportCategoryStatus.Legacy)))
   }
 
-  def getCategoriesByStatus() = IpRateLimitedAction2 {
+  def getCategoriesByStatus() = Act.public.standardLimit {
     val legacy   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Legacy)
     val closed   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Closed)
     val inactive = ReportCategory.values.filter(_.status == ReportCategoryStatus.Inactive)
