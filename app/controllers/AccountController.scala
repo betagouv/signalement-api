@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.CookieAuthenticator
+import authentication.actions.ImpersonationAction.forbidImpersonationFilter
 import cats.implicits.catsSyntaxOption
 import config.EmailConfiguration
 import models._
