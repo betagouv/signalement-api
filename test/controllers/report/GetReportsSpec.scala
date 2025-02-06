@@ -212,7 +212,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def getReports(status: Option[String] = None) = {
     val request = FakeRequest(
       play.api.http.HttpVerbs.GET,
-      controllers.routes.ReportListController.getReports().toString + status.map(x => s"?status=$x").getOrElse("")
+      controllers.routes.ReportListController.searchReports().toString + status.map(x => s"?status=$x").getOrElse("")
     )
     val loggedRequest =
       someUser.map(user => request.withAuthCookie(user.email, components.cookieAuthenticator)).getOrElse(request)
