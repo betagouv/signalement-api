@@ -108,7 +108,7 @@ class ReportController(
       } yield result
     }
 
-  def reportResponse(uuid: UUID): Action[JsValue] =
+  def createReportResponse(uuid: UUID): Action[JsValue] =
     Act.secured.pros.forbidImpersonation.async(parse.json) { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")

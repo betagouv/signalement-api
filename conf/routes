@@ -57,7 +57,7 @@ GET           /api/barcode/:id                                        controller
 # button "download", if there's attached files and you pick the corresponding option
 GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.downloadReportAsZipWithFiles(reportId: java.util.UUID)
 # for the pro, to post his response
-POST          /api/reports/:uuid/response                             controllers.ReportController.reportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/response                             controllers.ReportController.createReportResponse(uuid: java.util.UUID)
 # for the pro to assign a report
 POST          /api/reports/:uuid/assign/:userId                       controllers.ReportController.updateReportAssignedUser(uuid: java.util.UUID, userId: java.util.UUID)
 
@@ -66,7 +66,7 @@ POST          /api/reports/:uuid/assign/:userId                       controller
 ########################################################################
 
 # button "download all attachments"
-GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
+GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for direct download of a single attachment
 GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 # for deletion of a single attachment
