@@ -19,7 +19,8 @@ object UserRole extends PlayEnum[UserRole] {
   val AdminsAndReadOnly          = ReadOnlyAdmin +: Admins
   val AdminsAndReadOnlyAndCCRF   = DGCCRF +: AdminsAndReadOnly
   val AdminsAndReadOnlyAndAgents = DGAL +: AdminsAndReadOnlyAndCCRF
-  val EveryoneButReadOnlyAdmin   = List(SuperAdmin, Admin, DGCCRF, DGAL, Professionnel)
+  val Agents                     = List(DGAL, DGCCRF)
+  val AdminsAndAgents            = Admins ++ Agents
 
   def isAdminOrAgent(userRole: UserRole) = AdminsAndReadOnlyAndAgents.contains(userRole)
   def isAdmin(userRole: UserRole)        = AdminsAndReadOnly.contains(userRole)

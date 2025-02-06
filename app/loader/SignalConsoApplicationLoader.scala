@@ -390,11 +390,18 @@ class SignalConsoComponents(
     tokenConfiguration
   )
 
+  val visibleReportOrchestrator = new VisibleReportOrchestrator(
+    reportRepository,
+    companyRepository,
+    companiesVisibilityOrchestrator
+  )
+
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(reportRepository)
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
 
-  val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
+  val eventsOrchestrator =
+    new EventsOrchestrator(visibleReportOrchestrator, eventRepository, companyRepository)
 
   val reportBlockedNotificationOrchestrator = new ReportBlockedNotificationOrchestrator(
     reportNotificationBlockedRepository
@@ -402,6 +409,7 @@ class SignalConsoComponents(
 
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(
+      visibleReportOrchestrator,
       reportRepository,
       eventRepository,
       responseConsumerReviewRepository
@@ -424,19 +432,19 @@ class SignalConsoComponents(
       antivirusService
     )
 
+  val bookmarkOrchestrator = new BookmarkOrchestrator(reportRepository, bookmarkRepository)
+
+  val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
+
   val engagementOrchestrator =
     new EngagementOrchestrator(
       engagementRepository,
+      visibleReportOrchestrator,
       companiesVisibilityOrchestrator,
       eventRepository,
       reportRepository,
       reportEngagementReviewRepository
     )
-
-  val bookmarkOrchestrator = new BookmarkOrchestrator(reportRepository, bookmarkRepository)
-
-  val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
-
   private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
     reportConsumerReviewOrchestrator,
@@ -465,7 +473,7 @@ class SignalConsoComponents(
   val reportOrchestrator = buildReportOrchestrator(mailService)
 
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
-    reportOrchestrator,
+    visibleReportOrchestrator,
     companiesVisibilityOrchestrator,
     mailService,
     reportMetadataRepository,
@@ -475,7 +483,7 @@ class SignalConsoComponents(
 
   val reportWithDataOrchestrator =
     new ReportWithDataOrchestrator(
-      reportOrchestrator,
+      visibleReportOrchestrator,
       companyRepository,
       eventRepository,
       reportFileRepository,
@@ -844,6 +852,7 @@ class SignalConsoComponents(
   val reportFileController =
     new ReportFileController(
       reportFileOrchestrator,
+      visibleReportOrchestrator,
       cookieAuthenticator,
       signalConsoConfiguration,
       controllerComponents,
@@ -864,6 +873,7 @@ class SignalConsoComponents(
     cookieAuthenticator,
     controllerComponents,
     reportWithDataOrchestrator,
+    visibleReportOrchestrator,
     reportZipExportService,
     htmlFromTemplateGenerator
   )

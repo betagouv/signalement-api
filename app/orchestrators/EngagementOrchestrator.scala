@@ -30,6 +30,7 @@ import scala.concurrent.Future
 
 class EngagementOrchestrator(
     engagementRepository: EngagementRepositoryInterface,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
@@ -107,7 +108,7 @@ class EngagementOrchestrator(
 
   def removeEngagement(reportId: UUID): Future[Unit] =
     for {
-      _ <- findEngagementReview(reportId).flatMap {
+      _ <- getEngagementReview(reportId).flatMap {
         case Some(engagementReview) =>
           reportEngagementReviewRepository.delete(engagementReview.id).map(_ => ())
         case None => Future.unit
@@ -115,7 +116,13 @@ class EngagementOrchestrator(
       _ <- engagementRepository.remove(reportId)
     } yield ()
 
-  def findEngagementReview(reportId: UUID): Future[Option[EngagementReview]] =
+  def getVisibleEngagementReview(reportId: UUID, user: User): Future[Option[EngagementReview]] =
+    for {
+      _           <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
+      maybeReview <- getEngagementReview(reportId)
+    } yield maybeReview
+
+  private def getEngagementReview(reportId: UUID): Future[Option[EngagementReview]] =
     reportEngagementReviewRepository.findByReportId(reportId) map {
       case Nil =>
         logger.info(s"No engagement review found for report $reportId")
@@ -130,16 +137,14 @@ class EngagementOrchestrator(
         engagementReviews.maxBy(_.creationDate).some
     }
 
-  def findEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
+  def getEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
     reportEngagementReviewRepository.findByReportIds(reportIds)
 
   def handleEngagementReview(
       reportId: UUID,
       reviewApi: ConsumerReviewApi
   ): Future[Unit] = {
-
     logger.info(s"Engagement for report $reportId - the consumer give a review on engagement")
-
     for {
       report <- reportRepository.get(reportId)
       _ = logger.debug(s"Validating report")
@@ -171,6 +176,12 @@ class EngagementOrchestrator(
       case _           => Future.unit
     }
   } yield ()
+
+  def doesEngagementReviewExists(reportId: UUID): Future[Boolean] =
+    for {
+      maybeReview <- getEngagementReview(reportId)
+      hasNonEmptyReview = maybeReview.exists(_.details.nonEmpty)
+    } yield hasNonEmptyReview
 
   private def updateEngagementReview(review: EngagementReview) =
     reportEngagementReviewRepository.update(

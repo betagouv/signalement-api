@@ -53,7 +53,7 @@ class EngagementController(
   def getEngagementReview(reportUUID: UUID): Action[AnyContent] = SecuredAction.async { request =>
     logger.debug(s"Get report engagement review for report id : $reportUUID")
     for {
-      maybeReview <- engagementOrchestrator.findEngagementReview(reportUUID)
+      maybeReview <- engagementOrchestrator.getVisibleEngagementReview(reportUUID, request.identity)
     } yield maybeReview
       .map { review =>
         val writes = engagementReviewWrites(Some(request.identity.userRole))
@@ -64,7 +64,7 @@ class EngagementController(
 
   def engagementReviewExists(reportUUID: UUID): Action[AnyContent] = IpRateLimitedAction2.async { _ =>
     logger.debug(s"Check if engagement review exists for report id : $reportUUID")
-    engagementOrchestrator.findEngagementReview(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
+    engagementOrchestrator.doesEngagementReviewExists(reportUUID).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))
     }
   }

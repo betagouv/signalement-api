@@ -4,7 +4,6 @@ import org.apache.pekko.Done
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import config.SignalConsoConfiguration
-import controllers.error.AppError
 import controllers.error.AppError.FileNameTooLong
 import controllers.error.AppError.FileTooLarge
 import controllers.error.AppError.InvalidFileExtension
@@ -14,6 +13,7 @@ import models.report.ReportFile.MaxFileNameLength
 import models.report._
 import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator
+import orchestrators.VisibleReportOrchestrator
 import play.api.Logger
 import play.api.libs.Files
 import play.api.libs.json.JsError
@@ -34,6 +34,7 @@ import scala.concurrent.Future
 
 class ReportFileController(
     reportFileOrchestrator: ReportFileOrchestrator,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     authenticator: Authenticator[User],
     signalConsoConfiguration: SignalConsoConfiguration,
     controllerComponents: ControllerComponents,
@@ -66,9 +67,10 @@ class ReportFileController(
       )
   }
 
-  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = IpRateLimitedAction1.async { _ =>
+  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = SecuredAction.async { request =>
     for {
-      report <- reportRepository.get(reportId).flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
+      reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
+      report = reportExtra.report
       stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
     } yield Ok
       .chunked(stream)

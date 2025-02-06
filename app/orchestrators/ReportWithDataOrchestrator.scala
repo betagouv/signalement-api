@@ -35,7 +35,7 @@ case class ReportWithData(
 )
 
 class ReportWithDataOrchestrator(
-    reportOrchestrator: ReportOrchestrator,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
@@ -45,7 +45,7 @@ class ReportWithDataOrchestrator(
   val logger = Logger(this.getClass)
 
   def getReportFull(uuid: UUID, userToCheckAuthorization: User): Future[Option[ReportWithData]] =
-    reportOrchestrator
+    visibleReportOrchestrator
       .getVisibleReportForUser(uuid, userToCheckAuthorization)
       .flatMap { maybeReport =>
         maybeReport.map { reportExtra =>

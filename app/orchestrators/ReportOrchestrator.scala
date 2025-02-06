@@ -11,7 +11,6 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
-import models.UserRole.Professionnel
 import models._
 import models.company.AccessLevel
 import models.company.Address
@@ -1013,8 +1012,8 @@ class ReportOrchestrator(
 
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
       assignedUsers      <- userRepository.findByIds(assignedUsersIds)
-      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reportsId)
-      engagementReviews  <- engagementOrchestrator.findEngagementReviews(reportsId)
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.getReviews(reportsId)
+      engagementReviews  <- engagementOrchestrator.getEngagementReviews(reportsId)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
@@ -1075,33 +1074,6 @@ class ReportOrchestrator(
       _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.mapEntities(r => toApi(r, reportFilesMap))
-
-  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportExtra]] =
-    for {
-      reportWithMetadata <- reportRepository.getFor(Some(user), reportId)
-      report = reportWithMetadata.map(_.report)
-      company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
-      address = Address.merge(company.map(_.address), report.map(_.companyAddress))
-      reportExtra = reportWithMetadata.map(r =>
-        ReportExtra
-          .from(r, company)
-          .setAddress(address)
-      )
-      visibleReportExtra <-
-        user.userRole match {
-          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
-            Future.successful(reportExtra)
-          case Professionnel =>
-            companiesVisibilityOrchestrator
-              .fetchVisibleCompanies(user)
-              .map(_.map(v => Some(v.company.siret)))
-              .map { visibleSirets =>
-                reportExtra
-                  .filter(r => visibleSirets.contains(r.report.companySiret))
-                  .map(_.copy(companyAlbertActivityLabel = None))
-              }
-        }
-    } yield visibleReportExtra
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     for {

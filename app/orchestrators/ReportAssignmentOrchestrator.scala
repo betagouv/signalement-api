@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportAssignmentOrchestrator(
-    reportOrchestrator: ReportOrchestrator,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     mailService: MailService,
     reportMetadataRepository: ReportMetadataRepositoryInterface,
@@ -41,7 +41,7 @@ class ReportAssignmentOrchestrator(
   ): Future[User] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
-      maybeReportExtra <- reportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
+      maybeReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
       reportExtra      <- maybeReportExtra.liftTo[Future](AppError.ReportNotFound(reportId))
       newAssignedUser  <- checkAssignableToUser(reportExtra, newAssignedUserId)
       _                <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
