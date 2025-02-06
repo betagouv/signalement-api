@@ -175,7 +175,7 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def reportsAsPDF() = Act.secured.all.allowImpersonation.async { implicit request =>
+  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
     val reportFutures = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
