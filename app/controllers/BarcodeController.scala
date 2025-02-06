@@ -23,7 +23,7 @@ class BarcodeController(
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToWebsite))).getOrElse(NotFound))
   }
 
-  def getById(id: UUID) = Act.secured.all.allowImpersonation.async { _ =>
+  def getProductById(id: UUID) = Act.secured.all.allowImpersonation.async { _ =>
     barcodeOrchestrator
       .get(id)
       .map(_.map(product => Ok(Json.toJson(product)(BarcodeProduct.writesToDashboard))).getOrElse(NotFound))
