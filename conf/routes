@@ -55,7 +55,7 @@ GET           /api/reports/:uuid/response/review                      controller
 GET           /api/reports/:uuid/engagement/review                    controllers.EngagementController.getEngagementReview(uuid: java.util.UUID)
 GET           /api/barcode/:id                                        controllers.BarcodeController.getProductById(id: java.util.UUID)
 # button "download", if there's attached files and you pick the corresponding option
-GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.reportAsZip(reportId: java.util.UUID)
+GET           /api/reports/download-with-attachments/:reportId        controllers.ReportController.downloadReportAsZipWithFiles(reportId: java.util.UUID)
 # for the pro, to post his response
 POST          /api/reports/:uuid/response                             controllers.ReportController.reportResponse(uuid: java.util.UUID)
 # for the pro to assign a report

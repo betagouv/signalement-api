@@ -194,7 +194,7 @@ class ReportController(
       )
   }
 
-  def reportAsZip(reportId: UUID) =
+  def downloadReportAsZipWithFiles(reportId: UUID) =
     Act.secured.all.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
