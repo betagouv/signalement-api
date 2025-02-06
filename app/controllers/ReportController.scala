@@ -195,7 +195,7 @@ class ReportController(
   }
 
   def downloadReportAsZipWithFiles(reportId: UUID) =
-    Act.secured.all.allowImpersonation.async(parse.empty) { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
         .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
