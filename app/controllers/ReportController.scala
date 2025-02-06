@@ -58,7 +58,6 @@ class ReportController(
 
   def createReport: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
-
     for {
       draftReport <- request.parseBody[ReportDraft]()
       consumerIp = ConsumerIp(request.remoteAddress)
@@ -69,7 +68,6 @@ class ReportController(
         case err => throw err
       }
     } yield Ok(Json.toJson(createdReport))
-
   }
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =

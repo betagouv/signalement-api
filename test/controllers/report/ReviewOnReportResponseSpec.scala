@@ -161,7 +161,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   def postReview(reviewOnReportResponse: ConsumerReviewApi) =
     Await.result(
       components.reportConsumerReviewController
-        .reviewOnReportResponse(reportId)
+        .createConsumerReview(reportId)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review")
             .withBody(Json.toJson(reviewOnReportResponse)(consumerReviewApiWrites(Admin)))

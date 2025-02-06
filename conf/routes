@@ -15,7 +15,7 @@ GET           /api/certified-influencer                               controller
 # Recherche de code barres
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
 # to post his review
-POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.createConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists               controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
 POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.reviewEngagementOnReportResponse(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review/exists             controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)

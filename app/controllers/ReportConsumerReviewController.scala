@@ -26,7 +26,7 @@ class ReportConsumerReviewController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def reviewOnReportResponse(reportUUID: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
+  def createConsumerReview(reportUUID: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
     implicit request =>
       for {
         review <- request.parseBody[ConsumerReviewApi]()
