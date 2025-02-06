@@ -51,7 +51,7 @@ GET           /api/async-files                                        controller
 
 GET           /api/reports/:uuid                                      controllers.ReportController.getReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                               controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
-GET           /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.getReview(uuid: java.util.UUID)
+GET           /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.getConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review                    controllers.EngagementController.getEngagementReview(uuid: java.util.UUID)
 GET           /api/barcode/:id                                        controllers.BarcodeController.getById(id: java.util.UUID)
 # button "download", if there's attached files and you pick the corresponding option

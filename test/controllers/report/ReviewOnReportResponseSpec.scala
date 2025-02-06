@@ -76,7 +76,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
   def e1 = {
     val result = route(
       app,
-      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id).toString)
+      FakeRequest(GET, routes.ReportConsumerReviewController.getConsumerReview(reportWithExistingReview.id).toString)
         .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     ).get
 

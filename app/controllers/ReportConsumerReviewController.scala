@@ -34,7 +34,7 @@ class ReportConsumerReviewController(
       } yield Ok
   }
 
-  def getReview(reportUUID: UUID): Action[AnyContent] = Act.secured.all.allowImpersonation.async { request =>
+  def getConsumerReview(reportUUID: UUID): Action[AnyContent] = Act.secured.all.allowImpersonation.async { request =>
     logger.debug(s"Get report response review for report id : ${reportUUID}")
     for {
       maybeReview <- reportConsumerReviewOrchestrator.getVisibleReview(reportUUID, request.identity)
