@@ -20,9 +20,8 @@ GET           /api/reports/:uuid/response/review/exists               controller
 POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.createEngagementReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review/exists             controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)
 # validation of the conso's email
-POST          /api/email-validation/check                             controllers.EmailValidationController.check()
-POST          /api/email-validation/validate                          controllers.EmailValidationController.validate()
-POST          /api/email-validation/check-and-validate                controllers.EmailValidationController.checkAndValidate()
+POST          /api/email-validation/check                             controllers.EmailValidationController.checkIsEmailValidAndMaybeSendEmail()
+POST          /api/email-validation/check-and-validate                controllers.EmailValidationController.checkEmailCodeAndValidateEmail()
 # pour poster une évaluation (thumbs up/down) sur une sous-cat
 POST          /api/rating                                             controllers.RatingController.rate()
 # egalement utilisé dans le dashboard
@@ -208,7 +207,8 @@ GET           /api/account/agent/pending                              controller
 GET           /api/account/admin/users                                controllers.AccountController.fetchAdminUsers()
 POST          /api/account/admin/invitation                           controllers.AccountController.sendAdminInvitation(role: UserRole)
 # tab "Consos non validés"
-GET           /api/email-validation/search                            controllers.EmailValidationController.search()
+GET           /api/email-validation/search                            controllers.EmailValidationController.searchEmailValidations()
+POST          /api/email-validation/validate                          controllers.EmailValidationController.forceValidateEmail()
 # tab "Historique de connexion"
 GET           /api/auth-attempts                                      controllers.AuthController.listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int])
 # tab "Liste noire des consos"
