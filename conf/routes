@@ -11,7 +11,7 @@ GET           /assets/*file                                           controller
 
 POST          /api/reports                                            controllers.ReportController.createReport()
 # Recherche de nom d'influenceur pour voir s'il existe
-GET           /api/certified-influencer                               controllers.SocialNetworkController.get(name:String, socialNetwork: String)
+GET           /api/certified-influencer                               controllers.SocialNetworkController.checkIfInfluencerExists(name:String, socialNetwork: String)
 # Recherche de code barres
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
 # to post his review
