@@ -22,8 +22,8 @@ GET           /api/reports/:uuid/engagement/review/exists             controller
 # validation of the conso's email
 POST          /api/email-validation/check                             controllers.EmailValidationController.checkIsEmailValidAndMaybeSendEmail()
 POST          /api/email-validation/check-and-validate                controllers.EmailValidationController.checkEmailCodeAndValidateEmail()
-# pour poster une évaluation (thumbs up/down) sur une sous-cat
-POST          /api/rating                                             controllers.RatingController.rate()
+# pour poster une évaluation (thumbs up/down) sur une sous-cat avec un "blockingInfo"
+POST          /api/rating                                             controllers.RatingController.rateBlockingInfoInSubcategoryUsefulness()
 # egalement utilisé dans le dashboard
 GET           /api/constants/countries                                controllers.ConstantController.getCountries()
 
