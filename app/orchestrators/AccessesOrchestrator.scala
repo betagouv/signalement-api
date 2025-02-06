@@ -238,7 +238,7 @@ class AccessesOrchestrator(
         for {
           _ <- userOrchestrator.createProConnectUser(invitationRequest.email, UserRole.DGCCRF)
           _ <- mailService.send(
-            DgccrfAgentInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.welcome)
+            DgccrfAgentInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.loginProConnect)
           )
         } yield ()
       case _ => sendAdminOrAgentInvitation(invitationRequest.email, TokenKind.DGCCRFAccount)
