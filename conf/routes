@@ -26,6 +26,9 @@ POST          /api/email-validation/check-and-validate                controller
 POST          /api/rating                                             controllers.RatingController.rateBlockingInfoInSubcategoryUsefulness()
 # egalement utilisé dans le dashboard
 GET           /api/constants/countries                                controllers.ConstantController.getCountries()
+# for direct download of a single attachment
+# egalement utilisé dans le dashboard
+GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 
 
 ###########################################
@@ -67,8 +70,6 @@ POST          /api/reports/:uuid/assign/:userId                       controller
 
 # button "download all attachments"
 GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
-# for direct download of a single attachment
-GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
 # for deletion of a single attachment
 DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 # for adding a single attachment (for both pro and admin)
