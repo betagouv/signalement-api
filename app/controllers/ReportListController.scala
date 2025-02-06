@@ -58,7 +58,7 @@ class ReportListController(
       )
   }
 
-  def extractReports = Act.secured.all.allowImpersonation.async { implicit request =>
+  def createReportsSearchExcelExtract = Act.secured.all.allowImpersonation.async { implicit request =>
     for {
       reportFilter <- ReportFilter
         .fromQueryString(request.queryString)

@@ -33,7 +33,7 @@ GET           /api/constants/countries                                controller
 ###########################################
 
 GET           /api/reports                                            controllers.ReportListController.searchReports()
-POST          /api/reports/extract                                    controllers.ReportListController.extractReports()
+POST          /api/reports/extract                                    controllers.ReportListController.createReportsSearchExcelExtract()
 # button "download" which appears after selecting some reports
 # also for the report page, button "download", if there are no attached files (or if there are but you pick the option to not get them)
 GET           /api/reports/download                                   controllers.ReportController.reportsAsPDF()
