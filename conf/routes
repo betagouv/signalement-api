@@ -17,7 +17,7 @@ GET           /api/barcode/gtin/:gtin                                 controller
 # to post his review
 POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.createConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists               controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
-POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.reviewEngagementOnReportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/engagement/review                    controllers.EngagementController.createEngagementReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/engagement/review/exists             controllers.EngagementController.engagementReviewExists(uuid: java.util.UUID)
 # validation of the conso's email
 POST          /api/email-validation/check                             controllers.EmailValidationController.check()
