@@ -43,6 +43,7 @@ import repositories.report.ReportRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subcategorylabel.SubcategoryLabel
+import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
@@ -94,6 +95,7 @@ class ReportOrchestrator(
     companySyncService: CompanySyncServiceInterface,
     engagementRepository: EngagementRepositoryInterface,
     engagementOrchestrator: EngagementOrchestrator,
+    subcategoryLabelRepository: SubcategoryLabelRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -345,13 +347,14 @@ class ReportOrchestrator(
         reportCreationDate,
         expirationDate
       )
-      report <- reportRepository.create(reportToCreate)
+      report                <- reportRepository.create(reportToCreate)
+      maybeSubcategoryLabel <- subcategoryLabelRepository.get(report.category, report.subcategories)
       _ = logger.debug(s"Created report with id ${report.id}")
       _             <- createReportMetadata(draftReport, report, consumerIp)
       files         <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
-      _             <- emailNotificationOrchestrator.notifyDgccrfIfNeeded(updatedReport)
-      _             <- notifyConsumer(updatedReport, maybeCompany, files)
+      _             <- emailNotificationOrchestrator.notifyDgccrfIfNeeded(updatedReport, maybeSubcategoryLabel)
+      _             <- notifyConsumer(updatedReport, maybeSubcategoryLabel, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
@@ -383,7 +386,12 @@ class ReportOrchestrator(
     baseDate.plus(delay)
   }
 
-  private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) = {
+  private def notifyConsumer(
+      report: Report,
+      maybeSubcategoryLabel: Option[SubcategoryLabel],
+      maybeCompany: Option[Company],
+      reportAttachements: List[ReportFile]
+  ) = {
     val event = Event(
       UUID.randomUUID(),
       Some(report.id),
@@ -395,7 +403,14 @@ class ReportOrchestrator(
     )
     for {
       _ <- mailService.send(
-        ConsumerReportAcknowledgment.Email(report, maybeCompany, event, reportAttachements, messagesApi)
+        ConsumerReportAcknowledgment.Email(
+          report,
+          maybeSubcategoryLabel,
+          maybeCompany,
+          event,
+          reportAttachements,
+          messagesApi
+        )
       )
       _ <- eventRepository.create(event)
     } yield ()

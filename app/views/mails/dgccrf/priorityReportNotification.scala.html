@@ -5,7 +5,8 @@
 
 @import models.report.Report
 @import models.report.ReportCategory
-@(report: Report, label: String)(frontRoute: FrontRoute, contactAddress: EmailAddress)
+@import repositories.subcategorylabel.SubcategoryLabel
+@(report: Report, subcategoryLabel: Option[SubcategoryLabel], label: String)(frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
 
@@ -38,7 +39,7 @@
             <br/>
             @ReportCategory.displayValue(report.category)
             <br />
-            @report.subcategories.map { subcategory =>
+            @SubcategoryLabel.translateSubcategories(report, subcategoryLabel).subcategories.map { subcategory =>
                 @subcategory
                 <br />
             }

@@ -4,6 +4,7 @@ import cats.implicits.toTraverseOps
 import models.report.Report
 import models.report.ReportTag
 import play.api.Logger
+import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.emails.EmailDefinitionsDggcrf.DgccrfDangerousProductReportNotification
 import services.emails.EmailDefinitionsDggcrf.DgccrfPriorityReportNotification
@@ -24,13 +25,17 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
       tag == ReportTag.ProduitDangereux || tag == ReportTag.BauxPrecaire || tag == ReportTag.Shrinkflation
     )
 
-  private def getNotificationEmail(report: Report): Option[Seq[EmailAddress] => BaseEmail] = {
+  private def getNotificationEmail(
+      report: Report,
+      subcategoryLabel: Option[SubcategoryLabel]
+  ): Option[Seq[EmailAddress] => BaseEmail] = {
     val maybeTag = shouldNotifyDgccrf(report)
 
     maybeTag match {
-      case Some(ReportTag.ProduitDangereux) => Some(DgccrfDangerousProductReportNotification.Email(_, report))
-      case Some(tag)                        => Some(DgccrfPriorityReportNotification.Email(_, report, tag.translate()))
-      case None                             => None
+      case Some(ReportTag.ProduitDangereux) =>
+        Some(DgccrfDangerousProductReportNotification.Email(_, report, subcategoryLabel))
+      case Some(tag) => Some(DgccrfPriorityReportNotification.Email(_, report, subcategoryLabel, tag.translate()))
+      case None      => None
     }
   }
 
@@ -67,8 +72,8 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
     }
   }
 
-  def notifyDgccrfIfNeeded(report: Report): Future[Unit] =
-    getNotificationEmail(report) match {
+  def notifyDgccrfIfNeeded(report: Report, subcategoryLabel: Option[SubcategoryLabel]): Future[Unit] =
+    getNotificationEmail(report, subcategoryLabel) match {
       case Some(email) =>
         for {
           ddEmails <- getDDEmails(report)

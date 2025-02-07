@@ -10,6 +10,7 @@ import play.api.i18n.MessagesApi
 import play.api.i18n.MessagesImpl
 import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
+import repositories.subcategorylabel.SubcategoryLabel
 import services.AttachmentService
 import services.emails.EmailCategory.Consumer
 import services.emails.EmailsExamplesUtils._
@@ -52,6 +53,7 @@ object EmailDefinitionsConsumer {
         "report_ack" -> ((recipient, messagesApi) =>
           Email(
             genReport.copy(email = recipient),
+            None,
             Some(genCompany),
             genEvent,
             Nil,
@@ -62,6 +64,7 @@ object EmailDefinitionsConsumer {
           ((recipient, messagesApi) =>
             Email(
               genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -72,6 +75,7 @@ object EmailDefinitionsConsumer {
           ((recipient, messagesApi) =>
             Email(
               genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -86,6 +90,7 @@ object EmailDefinitionsConsumer {
                 tags = List(ReportTag.ProduitDangereux, ReportTag.BauxPrecaire),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -100,6 +105,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Italie)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -115,6 +121,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Islande)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -129,6 +136,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Andorre)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -144,6 +152,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Andorre)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -158,6 +167,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Suisse)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -172,6 +182,7 @@ object EmailDefinitionsConsumer {
               companyAddress = Address(country = Some(Country.Suisse)),
               email = recipient
             ),
+            None,
             Some(genCompany),
             genEvent,
             Nil,
@@ -186,6 +197,7 @@ object EmailDefinitionsConsumer {
                 email = recipient,
                 tags = List(ReportTag.CompagnieAerienne)
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -200,6 +212,7 @@ object EmailDefinitionsConsumer {
                 companyAddress = Address(country = Some(Country.Bahamas)),
                 email = recipient
               ),
+              None,
               Some(genCompany),
               genEvent,
               Nil,
@@ -214,6 +227,7 @@ object EmailDefinitionsConsumer {
               companyAddress = Address(country = Some(Country.Bahamas)),
               email = recipient
             ),
+            None,
             Some(genCompany),
             genEvent,
             Nil,
@@ -224,6 +238,7 @@ object EmailDefinitionsConsumer {
 
     final case class Email(
         report: Report,
+        subcategoryLabel: Option[SubcategoryLabel],
         maybeCompany: Option[Company],
         event: Event,
         files: Seq[ReportFile],
@@ -237,7 +252,7 @@ object EmailDefinitionsConsumer {
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
         views.html.mails.consumer
-          .reportAcknowledgment(report, maybeCompany, files.toList)(frontRoute, messagesProvider)
+          .reportAcknowledgment(report, subcategoryLabel, maybeCompany, files.toList)(frontRoute, messagesProvider)
           .toString
 
       override def getAttachements: AttachmentService => Seq[Attachment] =
