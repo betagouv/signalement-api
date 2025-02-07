@@ -7,7 +7,8 @@
 @import models.company.Company
 @import services.AttachmentService
 @import java.util.Locale
-@(report: Report, maybeCompany: Option[Company], files: List[ReportFile] = Nil, isPDF: Boolean = false)(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
+@import repositories.subcategorylabel.SubcategoryLabel
+@(report: Report, subcategoryLabel: Option[SubcategoryLabel], maybeCompany: Option[Company], files: List[ReportFile] = Nil, isPDF: Boolean = false)(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
 
 
 @contentBlock() = {
@@ -173,7 +174,7 @@
         <br/>
         @ReportCategory.displayValue(report.category)
         <br />
-        @report.subcategories.map { subcategory =>
+        @SubcategoryLabel.translateSubcategories(report, subcategoryLabel).subcategories.map { subcategory =>
             @subcategory
             <br />
         }

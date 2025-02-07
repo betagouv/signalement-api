@@ -273,8 +273,7 @@ class ReportController(
     SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnly)).async { implicit request =>
       for {
         maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
-        maybeReport = maybeReportWithMetadata.map(_.report)
-        company <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+        company <- maybeReportWithMetadata.flatMap(_.report.companyId).flatTraverse(r => companyRepository.get(r))
         files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
           reportId = uuid,
@@ -282,12 +281,18 @@ class ReportController(
           user = request.identity
         )
         proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
-        source = maybeReport
-          .map { report =>
-            val lang                                        = Lang(report.lang.getOrElse(Locale.FRENCH))
+        source = maybeReportWithMetadata
+          .map { reportWithMetadata =>
+            val lang = Lang(reportWithMetadata.report.lang.getOrElse(Locale.FRENCH))
             implicit val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
             val notificationHtml =
-              views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(
+              views.html.mails.consumer.reportAcknowledgment(
+                reportWithMetadata.report,
+                reportWithMetadata.subcategoryLabel,
+                company,
+                files,
+                isPDF = true
+              )(
                 frontRoute,
                 messagesProvider
               )

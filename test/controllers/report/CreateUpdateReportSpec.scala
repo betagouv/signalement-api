@@ -64,7 +64,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(company), Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, None, Some(company), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
@@ -100,7 +100,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(company), Nil).toString
+        views.html.mails.consumer.reportAcknowledgment(report, None, Some(company), Nil).toString
       )}
     """
 }
@@ -132,7 +132,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                      ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(anotherCompany), Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, None, Some(anotherCompany), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
@@ -163,7 +163,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, None, Some(existingCompany), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
@@ -205,7 +205,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, None, Some(existingCompany), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
