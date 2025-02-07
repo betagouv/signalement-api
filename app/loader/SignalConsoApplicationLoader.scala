@@ -467,6 +467,7 @@ class SignalConsoComponents(
     companySyncService,
     engagementRepository,
     engagementOrchestrator,
+    subcategoryLabelRepository,
     messagesApi
   )
 
@@ -774,13 +775,13 @@ class SignalConsoComponents(
     pdfService,
     emailConfiguration,
     taskConfiguration,
-    reportFileOrchestrator,
     companyRepository,
     emailNotificationOrchestrator,
     ipBlackListRepository,
     albertClassificationRepository,
     albertService,
     sampleDataService,
+    subcategoryLabelRepository,
     frontRoute,
     cookieAuthenticator,
     controllerComponents

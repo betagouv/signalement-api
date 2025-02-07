@@ -5,6 +5,7 @@ import models.User
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportTag
+import repositories.subcategorylabel.SubcategoryLabel
 import services.emails.EmailCategory.Dgccrf
 import services.emails.EmailsExamplesUtils._
 import utils.EmailAddress
@@ -77,17 +78,20 @@ object EmailDefinitionsDggcrf {
 
     override def examples =
       Seq(
-        "report_dangerous_product_notification" -> ((recipient, _) => Email(Seq(recipient), genReport))
+        "report_dangerous_product_notification" -> ((recipient, _) => Email(Seq(recipient), genReport, None))
       )
 
     final case class Email(
         recipients: Seq[EmailAddress],
-        report: Report
+        report: Report,
+        subcategoryLabel: Option[SubcategoryLabel]
     ) extends BaseEmail {
       override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, "[Produits dangereux] ")
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-        views.html.mails.dgccrf.reportDangerousProductNotification(report)(frontRoute, contact).toString
+        views.html.mails.dgccrf
+          .reportDangerousProductNotification(report, subcategoryLabel)(frontRoute, contact)
+          .toString
     }
   }
 
@@ -98,7 +102,7 @@ object EmailDefinitionsDggcrf {
       val report = genReport
       Seq(
         "priority_report_notification" -> ((recipient, _) =>
-          Email(Seq(recipient), report, report.tags.headOption.map(_.entryName).getOrElse(""))
+          Email(Seq(recipient), report, None, report.tags.headOption.map(_.entryName).getOrElse(""))
         )
       )
     }
@@ -106,12 +110,15 @@ object EmailDefinitionsDggcrf {
     final case class Email(
         recipients: Seq[EmailAddress],
         report: Report,
+        subcategoryLabel: Option[SubcategoryLabel],
         label: String
     ) extends BaseEmail {
       override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(1, s"[$label] ")
 
       override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
-        views.html.mails.dgccrf.priorityReportNotification(report, label)(frontRoute, contact).toString
+        views.html.mails.dgccrf
+          .priorityReportNotification(report, subcategoryLabel, label)(frontRoute, contact)
+          .toString
     }
   }
 

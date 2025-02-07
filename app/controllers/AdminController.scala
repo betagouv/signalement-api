@@ -13,7 +13,6 @@ import models.event.Event
 import models.report._
 import models.report.sampledata.SampleDataService
 import orchestrators.EmailNotificationOrchestrator
-import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.Messages
@@ -30,6 +29,8 @@ import repositories.event.EventRepositoryInterface
 import repositories.ipblacklist.BlackListedIp
 import repositories.ipblacklist.IpBlackListRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.subcategorylabel.SubcategoryLabel
+import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
 import services.AlbertService
 import services.PDFService
 import services.emails.EmailDefinitions.allEmailDefinitions
@@ -59,13 +60,13 @@ class AdminController(
     pdfService: PDFService,
     emailConfiguration: EmailConfiguration,
     taskConfiguration: TaskConfiguration,
-    reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     emailNotificationOrchestrator: EmailNotificationOrchestrator,
     ipBlackListRepository: IpBlackListRepositoryInterface,
     albertClassificationRepository: AlbertClassificationRepositoryInterface,
     albertService: AlbertService,
     sampleDataService: SampleDataService,
+    subcategoryLabelRepository: SubcategoryLabelRepositoryInterface,
     implicit val frontRoute: FrontRoute,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -213,7 +214,10 @@ class AdminController(
     } yield ()
   }
 
-  private def _sendReportAckToConsumer(reportsMap: Map[Report, List[ReportFile]]) = {
+  private def _sendReportAckToConsumer(
+      reportsMap: Map[Report, List[ReportFile]],
+      subcategoryLabels: List[SubcategoryLabel]
+  ) = {
     val reports = reportsMap.keys.toList
     for {
       events    <- eventRepository.fetchEventsOfReports(reports)
@@ -223,12 +227,15 @@ class AdminController(
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
         val event =
           events.get(report.id).flatMap(_.find(_.action == Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT))
+        val subcategoryLabel =
+          subcategoryLabels.find(sl => sl.category == report.category && sl.subcategories == report.subcategories)
 
         event match {
           case Some(evt) =>
             Some(
               ConsumerReportAcknowledgment.Email(
                 report,
+                subcategoryLabel,
                 maybeCompany,
                 evt,
                 reportAttachements,
@@ -244,6 +251,19 @@ class AdminController(
     } yield ()
   }
 
+  private def _sendReportToDgccrfIfNeeded(
+      reportsMap: Map[Report, List[ReportFile]],
+      subcategoryLabels: List[SubcategoryLabel]
+  ) = {
+    val reports = reportsMap.keys.toList
+
+    reports.traverse { report =>
+      val subcategoryLabel =
+        subcategoryLabels.find(sl => sl.category == report.category && sl.subcategories == report.subcategories)
+      emailNotificationOrchestrator.notifyDgccrfIfNeeded(report, subcategoryLabel)
+    }
+  }
+
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
     SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { implicit request =>
       for {
@@ -251,12 +271,15 @@ class AdminController(
           Some(request.identity),
           ReportFilter(start = Some(start), end = Some(end))
         )
+        reportsList = reports.keys.toList
+        subcategoryLabels <- reportsList
+          .traverse(report => subcategoryLabelRepository.get(report.category, report.subcategories))
+          .map(_.flatten)
         _ <- emailType match {
-          case ResendEmailType.NewReportAckToConsumer => _sendReportAckToConsumer(reports.toMap)
-          case ResendEmailType.NewReportAckToPro      => _sendNewReportToPro(reports.keys.toList)
-          case ResendEmailType.NotifyDGCCRF =>
-            Future.sequence(reports.keys.map(emailNotificationOrchestrator.notifyDgccrfIfNeeded))
-          case ResendEmailType.ReportProResponse => _sendProAckToConsumer(reports.keys.toList)
+          case ResendEmailType.NewReportAckToConsumer => _sendReportAckToConsumer(reports.toMap, subcategoryLabels)
+          case ResendEmailType.NewReportAckToPro      => _sendNewReportToPro(reportsList)
+          case ResendEmailType.NotifyDGCCRF           => _sendReportToDgccrfIfNeeded(reports.toMap, subcategoryLabels)
+          case ResendEmailType.ReportProResponse      => _sendProAckToConsumer(reportsList)
         }
       } yield NoContent
     }
