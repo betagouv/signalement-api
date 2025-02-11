@@ -283,7 +283,7 @@ class AdminController(
       } yield NoContent
     }
 
-  def blackListedIPs() = Act.secured.superAdmins.async { _ =>
+  def getBlacklistedIps() = Act.secured.superAdmins.async { _ =>
     ipBlackListRepository.list().map(blackListedIps => Ok(Json.toJson(blackListedIps)))
   }
 
@@ -291,7 +291,7 @@ class AdminController(
     ipBlackListRepository.delete(ip).map(_ => NoContent)
   }
 
-  def createBlacklistedIp() =
+  def addBlacklistedIp() =
     Act.secured.superAdmins.async(parse.json) { implicit request =>
       for {
         blacklistedIpRequest <- request.parseBody[BlackListedIp]()
