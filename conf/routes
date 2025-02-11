@@ -104,7 +104,6 @@ GET           /api/albert/classification/:reportId                    controller
 ########## COMPANY PAGE #######
 ###############################
 
-# we have to use regexp on this parameter, to avoid conflict with later routes
 GET           /api/companies/$companyId<[-0-9a-f]{36}>                   controllers.CompanyController.getCompany(companyId: java.util.UUID)
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
@@ -189,7 +188,7 @@ POST          /api/account/activation                                 controller
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
 
 # onglet "Accès utilisateurs" sur la page d'une entreprise
-GET           /api/accesses/:siret                                    controllers.CompanyAccessController.listAccesses(siret: String)
+GET           /api/accesses/$siret<[0-9]{14}>                         controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                            controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
 DELETE        /api/accesses/:siret/:userId                            controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
