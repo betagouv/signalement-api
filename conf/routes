@@ -115,7 +115,6 @@ GET           /api/reports/cloudword/:companyId                       controller
 GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
 
-
 #####################################
 #### PAGE "STATISTIQUES" ############
 #####################################
@@ -248,21 +247,19 @@ POST          /api/companies                                          controller
 
 # onglet "En attente d'activation"
 GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
+POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
+POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
 
 # onglet "Entreprises inactives"
 GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
-
+POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
+POST          /api/companies/follow-up-posted                         controllers.CompanyController.confirmFollowUp()
 
 # Page "Mes entreprise" pour les Pros
 # également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
 
-POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
-POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
-POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
-POST          /api/companies/follow-up-posted                         controllers.CompanyController.confirmFollowUp()
-GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)
 GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
 PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
@@ -345,3 +342,5 @@ POST          /api/import/marketplaces                                controller
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
 # semble inutilisé (table vide en prod)
 GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
+# semble inutilisé (aucune trace dans le code front, ni d'appel dans New Relic)
+GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)
