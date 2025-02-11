@@ -103,6 +103,7 @@ GET           /api/albert/classification/:reportId                    controller
 
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
+GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
 GET           /api/stats/reports/delay/responsed                      controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/tags                                 controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                               controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
@@ -178,14 +179,8 @@ POST          /api/account/activation                                 controller
 # seems unused, will remove in later commit
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
 
-# page "Utilisateurs" dans sa version Pros
-GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
-POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
-DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
-
 # onglet "Accès utilisateurs" sur la page d'une entreprise
 GET           /api/accesses/:siret                                    controllers.CompanyAccessController.listAccesses(siret: String)
-GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                            controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
 DELETE        /api/accesses/:siret/:userId                            controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
@@ -220,6 +215,11 @@ GET           /api/auth-attempts                                      controller
 GET           /api/blacklisted-emails                                 controllers.BlacklistedEmailsController.list()
 POST          /api/blacklisted-emails                                 controllers.BlacklistedEmailsController.add()
 DELETE        /api/blacklisted-emails/:uuid                           controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
+
+# page "Utilisateurs" dans sa version Pros
+GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
+POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
+DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
 
 
 ###################################
