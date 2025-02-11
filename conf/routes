@@ -116,6 +116,7 @@ GET           /api/stats/count-by-adminactions                        controller
 GET           /api/reports/cloudword/:companyId                       controllers.ReportController.getCompanyCloudWord(companyId: java.util.UUID)
 GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
+GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
 
 #####################################
 #### PAGE "STATISTIQUES" ############
@@ -246,6 +247,9 @@ GET           /api/companies                                          controller
 # bouton "Enregistrer une entreprise" qui apparait aux admins
 # quand on met des filtres et qu'on a aucun résultat
 POST          /api/companies                                          controllers.CompanyController.manuallyRegisterCompany()
+# bouton "modifier l'adresse", dans le menu avec trois petits points
+PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
+
 
 # onglet "En attente d'activation"
 GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
@@ -262,8 +266,6 @@ POST          /api/companies/follow-up-posted                         controller
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
 
-PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
-GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
 GET           /api/companies/:companyId                               controllers.CompanyController.searchById(companyId: java.util.UUID)
 GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
 # bouton "Ouvrir des acces"
