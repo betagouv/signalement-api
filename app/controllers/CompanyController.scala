@@ -40,7 +40,7 @@ class CompanyController(
     companyOrchestrator.fetchPhones(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def create() =
+  def manuallyRegisterCompany() =
     Act.secured.admins.async(parse.json) { implicit request =>
       request.body
         .validate[CompanyCreation]
@@ -53,7 +53,7 @@ class CompanyController(
         )
     }
 
-  def searchRegistered() = Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { request =>
+  def searchCompanies() = Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     CompanyRegisteredSearch
       .fromQueryString(request.queryString)
@@ -108,7 +108,7 @@ class CompanyController(
       .map(result => Ok(Json.toJson(result)))
   }
 
-  def visibleCompanies() = Act.secured.pros.allowImpersonation.async { implicit request =>
+  def getCompaniesOfPro() = Act.secured.pros.allowImpersonation.async { implicit request =>
     companyVisibilityOrch
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))

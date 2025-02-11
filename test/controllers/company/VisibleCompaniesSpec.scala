@@ -104,7 +104,7 @@ The get visible companies endpoint should
 """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.CompanyController.visibleCompanies().toString)
+    val request = FakeRequest(GET, routes.CompanyController.getCompaniesOfPro().toString)
       .withAuthCookie(proUserWithAccessToHeadOffice.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
@@ -116,7 +116,7 @@ The get visible companies endpoint should
   }
 
   def e2 = {
-    val request = FakeRequest(GET, routes.CompanyController.visibleCompanies().toString)
+    val request = FakeRequest(GET, routes.CompanyController.getCompaniesOfPro().toString)
       .withAuthCookie(proUserWithAccessToSubsidiary.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
