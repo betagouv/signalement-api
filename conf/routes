@@ -184,11 +184,13 @@ GET           /api/accesses/:siret                                    controller
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                            controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
 DELETE        /api/accesses/:siret/:userId                            controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
+# bouton inviter
+POST          /api/accesses/:siret/invitation                         controllers.CompanyAccessController.sendInvitation(siret: String)
+# c'est probablement le process d'invitation ?
 GET           /api/accesses/:siret/token                              controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
 POST          /api/accesses/:siret/send-activation-link               controllers.CompanyAccessController.sendActivationLink(siret: String)
 POST          /api/accesses/:siret/token/accept                       controllers.CompanyAccessController.acceptToken(siret: String)
 DELETE        /api/accesses/:siret/token/:tokenId                     controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
-POST          /api/accesses/:siret/invitation                         controllers.CompanyAccessController.sendInvitation(siret: String)
 
 ###########################################
 ######## PAGE "UTILISATEURS" ##############
