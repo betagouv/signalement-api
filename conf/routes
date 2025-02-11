@@ -119,7 +119,7 @@ GET           /api/reports/cloudword/:companyId                       controller
 # tab "Signalements"
 GET           /api/stats/reports/count                                controllers.StatisticController.getReportsCount()
 GET           /api/stats/reports/curve                                controllers.StatisticController.getReportsCountCurve()
-GET           /api/stats/reports/count-by-departments                 controllers.StatisticController.countByDepartments()
+GET           /api/stats/reports/count-by-departments                 controllers.StatisticController.getReportsCountByDepartments()
 # tab "Professionnels"
 GET           /api/stats/reports/pro-totransmit                       controllers.StatisticController.getProReportToTransmitStat()
 GET           /api/stats/reports/pro-transmitted                      controllers.StatisticController.getProReportTransmittedStat()
