@@ -90,8 +90,9 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "validate email successfully " in {
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
 
-          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
-            .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
+          val request =
+            FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
+              .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
@@ -102,8 +103,9 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
       "not validate blocked provider email" in {
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
-          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
-            .withJsonBody(Json.obj("email" -> "user@yopmail.com"))
+          val request =
+            FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
+              .withJsonBody(Json.obj("email" -> "user@yopmail.com"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
@@ -120,8 +122,9 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "validate email successfully " in {
         new WithApplication(app(skipValidation = true)) {
 
-          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
-            .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
+          val request =
+            FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
+              .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
@@ -134,8 +137,9 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "not validate malformed email" in {
         new WithApplication(app(skipValidation = true)) {
           val malformedEmail = "user@dgccrf"
-          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
-            .withJsonBody(Json.obj("email" -> malformedEmail))
+          val request =
+            FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
+              .withJsonBody(Json.obj("email" -> malformedEmail))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
