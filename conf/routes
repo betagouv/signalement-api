@@ -177,10 +177,13 @@ POST          /api/account/activation                                 controller
 
 # seems unused, will remove in later commit
 GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
+
+# page "Utilisateurs" dans sa version Pros
 GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
 POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
 DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
 
+# onglet "Accès utilisateurs" sur la page d'une entreprise
 GET           /api/accesses/:siret                                    controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
