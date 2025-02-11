@@ -91,11 +91,11 @@ GET           /api/reports/:uuid/consumer-email-pdf                   controller
 POST          /api/reports/reopen                                     controllers.ReportController.reopenReport()
 # for "Action administrateur" popin. Note : it is not always a deletion!
 DELETE        /api/reports/:uuid                                      controllers.ReportController.deleteReport(uuid: java.util.UUID)
-# fourre-tout de diverses action admin/agent/pro (ajout de pièces jointes, commentaires, marquer un contrôle effectué)
+# fourre-tout de diverses action admin/agent (ajout de pièces jointes, commentaires, marquer un contrôle effectué)
 POST          /api/reports/:uuid/action                               controllers.ReportController.createReportAction(uuid: java.util.UUID)
 # Analyse IA
-POST          /api/albert/classification/:reportId                    controllers.AdminController.classifyAndSummarize(reportId: java.util.UUID)
-GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertClassification(reportId: java.util.UUID)
+POST          /api/albert/classification/:reportId                    controllers.AdminController.generateAlbertReportAnalysis(reportId: java.util.UUID)
+GET           /api/albert/classification/:reportId                    controllers.AdminController.getAlbertReportAnalysis(reportId: java.util.UUID)
 
 ###############################
 ########## COMPANY PAGE #######

@@ -299,7 +299,7 @@ class AdminController(
       } yield Created(Json.toJson(blackListedIp))
     }
 
-  def classifyAndSummarize(reportId: UUID) =
+  def generateAlbertReportAnalysis(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       for {
         maybeReport          <- reportRepository.get(reportId)
@@ -321,7 +321,7 @@ class AdminController(
       } yield NoContent
     }
 
-  def getAlbertClassification(reportId: UUID) =
+  def getAlbertReportAnalysis(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       albertClassificationRepository
         .getByReportId(reportId)
