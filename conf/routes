@@ -175,7 +175,8 @@ POST          /api/account/activation                                 controller
 ######## USER ACCESSES TO COMPANY ####
 ######################################
 
-GET           /api/accesses/connected-user                            controllers.CompanyAccessController.myCompanies()
+# seems unused, will remove in later commit
+GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
 GET           /api/accesses/visible-users                             controllers.CompanyAccessController.visibleUsersToPro()
 POST          /api/accesses/visible-users/:email                      controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
 DELETE        /api/accesses/visible-users/:userId                     controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
