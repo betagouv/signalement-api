@@ -1,8 +1,6 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.ImpersonationAction.ForbidImpersonation
-import authentication.actions.UserAction.WithRole
 import models._
 import orchestrators._
 import play.api.Logger
@@ -22,20 +20,20 @@ class BookmarkController(
   val logger: Logger = Logger(this.getClass)
 
   def addBookmark(uuid: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).andThen(ForbidImpersonation).async { request =>
+    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation.async { request =>
       for {
         _ <- bookmarkOrchestrator.addBookmark(uuid, request.identity)
       } yield Ok
     }
 
   def removeBookmark(uuid: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).andThen(ForbidImpersonation).async { request =>
+    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation.async { request =>
       for {
         _ <- bookmarkOrchestrator.removeBookmark(uuid, request.identity)
       } yield Ok
     }
 
-  def countBookmarks() = SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { request =>
+  def countBookmarks() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
     for {
       count <- bookmarkOrchestrator.countBookmarks(request.identity)
     } yield Ok(Json.toJson(count))

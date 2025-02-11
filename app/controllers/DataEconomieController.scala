@@ -24,7 +24,7 @@ class DataEconomieController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def reportDataEcomonie() = SecuredAction.async(parse.empty) { _ =>
+  def reportDataEcomonie() = Act.securedbyApiKey.async(parse.empty) { _ =>
     val source: Source[ByteString, Any] =
       service
         .getReportDataEconomie()

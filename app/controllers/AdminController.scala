@@ -1,7 +1,6 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.UserAction.WithRole
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -131,11 +130,11 @@ class AdminController(
   private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)] =
     allEmailDefinitions.flatMap(readExamplesWithFullKey)
 
-  def getEmailCodes = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+  def getEmailCodes = Act.secured.superAdmins.async { _ =>
     val keys = allEmailExamples.map(_._1)
     Future.successful(Ok(Json.toJson(keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+  def sendTestEmail(templateRef: String, to: String) = Act.secured.superAdmins.async { _ =>
     val maybeEmail = allEmailExamples
       .find(_._1 == templateRef)
       .map(_._2(EmailAddress(to), controllerComponents.messagesApi))
@@ -154,10 +153,10 @@ class AdminController(
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }
 
-  def getPdfCodes = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)) { _ =>
+  def getPdfCodes = Act.secured.superAdmins { _ =>
     Ok(Json.toJson(availablePdfs.map(_._1)))
   }
-  def sendTestPdf(templateRef: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)) { _ =>
+  def sendTestPdf(templateRef: String) = Act.secured.superAdmins { _ =>
     availablePdfs.toMap
       .get(templateRef)
       .map { html =>
@@ -265,7 +264,7 @@ class AdminController(
   }
 
   def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
-    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { implicit request =>
+    Act.secured.superAdmins.async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(
           Some(request.identity),
@@ -284,16 +283,16 @@ class AdminController(
       } yield NoContent
     }
 
-  def blackListedIPs() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+  def blackListedIPs() = Act.secured.superAdmins.async { _ =>
     ipBlackListRepository.list().map(blackListedIps => Ok(Json.toJson(blackListedIps)))
   }
 
-  def deleteBlacklistedIp(ip: String) = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+  def deleteBlacklistedIp(ip: String) = Act.secured.superAdmins.async { _ =>
     ipBlackListRepository.delete(ip).map(_ => NoContent)
   }
 
   def createBlacklistedIp() =
-    SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async(parse.json) { implicit request =>
+    Act.secured.superAdmins.async(parse.json) { implicit request =>
       for {
         blacklistedIpRequest <- request.parseBody[BlackListedIp]()
         blackListedIp        <- ipBlackListRepository.create(blacklistedIpRequest)
@@ -301,7 +300,7 @@ class AdminController(
     }
 
   def classifyAndSummarize(reportId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       for {
         maybeReport          <- reportRepository.get(reportId)
         report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
@@ -323,13 +322,13 @@ class AdminController(
     }
 
   def getAlbertClassification(reportId: UUID) =
-    SecuredAction.andThen(WithRole(UserRole.AdminsAndReadOnlyAndAgents)).async { _ =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       albertClassificationRepository
         .getByReportId(reportId)
         .map(maybeClassification => Ok(Json.toJson(maybeClassification)))
     }
 
-  def regenSampleData() = SecuredAction.andThen(WithRole(UserRole.SuperAdmin)).async { _ =>
+  def regenSampleData() = Act.secured.superAdmins.async { _ =>
     if (taskConfiguration.sampleData.active) {
       for {
         _ <-

@@ -34,7 +34,7 @@ class ReportToExternalController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportToExternal(uuid: String) = SecuredAction.async { _ =>
+  def getReportToExternal(uuid: String) = Act.securedbyApiKey.async { _ =>
     logger.debug("Calling report to external")
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
@@ -56,7 +56,7 @@ class ReportToExternalController(
     }
   }
 
-  def searchReportsToExternal() = SecuredAction.async { implicit request =>
+  def searchReportsToExternal() = Act.securedbyApiKey.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
@@ -82,7 +82,7 @@ class ReportToExternalController(
     )
   }
 
-  def searchReportsToExternalV2() = SecuredAction.async { implicit request =>
+  def searchReportsToExternalV2() = Act.securedbyApiKey.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
@@ -116,7 +116,7 @@ class ReportToExternalController(
   /** @deprecated
     *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
     */
-  def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
+  def searchReportsToExternalBySiret(siret: String) = Act.securedbyApiKey.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = List(siret),

@@ -9,14 +9,28 @@ import models._
 import models.company.AccessLevel
 import models.company.Company
 import orchestrators.CompaniesVisibilityOrchestrator
+import play.api.mvc.ActionBuilder
 import play.api.mvc._
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 import ConsumerAction.ConsumerRequest
 import MaybeUserAction.MaybeUserRequest
 import UserAction.UserRequest
+import UserAction.WithAuthProvider
+import UserAction.WithRole
+import authentication.actions.ImpersonationAction.forbidImpersonationFilter
+import authentication.actions.ImpersonationAction.forbidImpersonationOnMaybeUserFilter
 import com.digitaltangible.playguard.IpRateLimitFilter
 import com.digitaltangible.ratelimit.RateLimiter
+import models.AuthProvider.ProConnect
+import models.AuthProvider.SignalConso
+import models.UserRole.Admins
+import models.UserRole.AdminsAndAgents
+import models.UserRole.AdminsAndReadOnly
+import models.UserRole.AdminsAndReadOnlyAndAgents
+import models.UserRole.AdminsAndReadOnlyAndCCRF
+import models.UserRole.Professionnel
+import models.UserRole.SuperAdmin
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -57,10 +71,16 @@ abstract class ApiKeyBaseController(
 
   implicit val ec: ExecutionContext
 
-  def SecuredAction = new ConsumerAction(
+  private val securedByApiKeyAction = new ConsumerAction(
     new BodyParsers.Default(controllerComponents.parsers),
     authenticator
   ) andThen new ErrorHandlerActionFunction[ConsumerRequest]()
+
+  trait ActDslApiKey {
+    val securedbyApiKey = securedByApiKeyAction
+
+  }
+  val Act = new ActDslApiKey {}
 }
 
 abstract class BaseController(
@@ -86,23 +106,65 @@ abstract class BaseController(
   override val Action: ActionBuilder[Request, AnyContent] =
     super.Action andThen new ErrorHandlerActionFunction[Request]()
 
-  def SecuredAction: ActionBuilder[UserRequest, AnyContent] = new UserAction(
+  protected val securedAction: ActionBuilder[UserRequest, AnyContent] = new UserAction(
     new BodyParsers.Default(controllerComponents.parsers),
     authenticator
   ) andThen new ErrorHandlerActionFunction[UserRequest]()
 
-  def UserAwareAction: ActionBuilder[MaybeUserRequest, AnyContent] = new MaybeUserAction(
+  private val userAwareAction: ActionBuilder[MaybeUserRequest, AnyContent] = new MaybeUserAction(
     new BodyParsers.Default(controllerComponents.parsers),
     authenticator
   ) andThen new ErrorHandlerActionFunction[MaybeUserRequest]()
 
-  // 72 = 12 pièces jointes * 3 pour la marge d'erreur * 2 car POST + GET systématique à chaque PJ
-  val IpRateLimitedAction1: ActionBuilder[Request, AnyContent] =
-    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](72, 1f / 5) else Action
-  val IpRateLimitedAction2: ActionBuilder[Request, AnyContent] =
-    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](16, 1f / 5) else Action
-  val IpRateLimitedAction3: ActionBuilder[Request, AnyContent] =
-    if (enableRateLimit) Action andThen ipRateLimitFilter[Request](3, 1f / 5) else Action
+  case class AskImpersonationDsl(private val actionBuilder: ActionBuilder[UserRequest, AnyContent]) {
+    val allowImpersonation  = actionBuilder
+    val forbidImpersonation = actionBuilder.andThen(forbidImpersonationFilter)
+  }
+
+  case class AskImpersonationDslOnMaybeUser(
+      private val actionBuilder: ActionBuilder[MaybeUserRequest, AnyContent]
+  ) {
+    val allowImpersonation  = actionBuilder
+    val forbidImpersonation = actionBuilder.andThen(forbidImpersonationOnMaybeUserFilter)
+  }
+
+  trait ActDsl {
+    object public {
+      val generousLimit: ActionBuilder[Request, AnyContent] =
+        // 72 = 12 pièces jointes * 3 pour la marge d'erreur * 2 car POST + GET systématique à chaque PJ
+        if (enableRateLimit) Action andThen ipRateLimitFilter[Request](72, 1f / 5) else Action
+      val standardLimit: ActionBuilder[Request, AnyContent] =
+        if (enableRateLimit) Action andThen ipRateLimitFilter[Request](16, 1f / 5) else Action
+      val tightLimit: ActionBuilder[Request, AnyContent] =
+        // for potentially expensive endpoints (call to external apis)
+        if (enableRateLimit) Action andThen ipRateLimitFilter[Request](3, 1f / 5) else Action
+
+    }
+    object secured {
+      val all = AskImpersonationDsl(securedAction)
+      val adminsAndReadonlyAndAgents = AskImpersonationDsl(
+        securedAction.andThen(WithRole(AdminsAndReadOnlyAndAgents))
+      )
+      val adminsAndReadonlyAndDgccrf = AskImpersonationDsl(
+        securedAction.andThen(WithRole(AdminsAndReadOnlyAndCCRF))
+      )
+      val pros            = AskImpersonationDsl(securedAction.andThen(WithRole(Professionnel)))
+      val adminsAndAgents = AskImpersonationDsl(securedAction.andThen(WithRole(AdminsAndAgents)))
+      // these roles cannot be impersonated
+      val admins            = securedAction.andThen(WithRole(Admins))
+      val superAdmins       = securedAction.andThen(WithRole(SuperAdmin))
+      val adminsAndReadonly = securedAction.andThen(WithRole(AdminsAndReadOnly))
+
+      object restrictByProvider {
+        val signalConso = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(SignalConso)))
+        val proConnect  = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(ProConnect)))
+      }
+
+    }
+    val userAware = AskImpersonationDslOnMaybeUser(userAwareAction)
+  }
+  val Act = new ActDsl {}
+
 }
 
 abstract class BaseCompanyController(
@@ -117,14 +179,16 @@ abstract class BaseCompanyController(
     def identity = request.identity
   }
 
-  def withCompanyAccess(siret: String, adminLevelOnly: Boolean = false) =
-    SecuredAction andThen new ActionRefiner[UserRequest, CompanyRequest] {
+  private def companyAccessActionRefiner(siret: String, adminLevelOnly: Boolean) =
+    new ActionRefiner[UserRequest, CompanyRequest] {
       val authorizedLevels =
         if (adminLevelOnly)
           Seq(AccessLevel.ADMIN)
         else
           Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+
       def executionContext = ec
+
       def refine[A](request: UserRequest[A]) =
         for {
           company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
@@ -147,4 +211,11 @@ abstract class BaseCompanyController(
           .map { case (c, l) => Right(new CompanyRequest[A](c, l, request)) }
           .getOrElse(Left(Forbidden))
     }
+
+  trait ActDslWithCompanyAccess extends ActDsl {
+    def securedWithCompanyAccess(siret: String, adminLevelOnly: Boolean = false) =
+      securedAction.andThen(companyAccessActionRefiner(siret, adminLevelOnly))
+  }
+  override val Act = new ActDslWithCompanyAccess {}
+
 }

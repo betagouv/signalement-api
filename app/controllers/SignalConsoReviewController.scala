@@ -19,7 +19,7 @@ class SignalConsoReviewController(
     val ec: ExecutionContext
 ) extends BaseController(authenticator, controllerComponents) {
 
-  def signalConsoReview() = IpRateLimitedAction2.async(parse.json) { implicit request =>
+  def signalConsoReview() = Act.public.standardLimit.async(parse.json) { implicit request =>
     for {
       reviewCreate <- request.parseBody[SignalConsoReviewCreate]()
       review = reviewCreate.into[SignalConsoReview].withFieldConst(_.id, SignalConsoReviewId.generateId()).transform

@@ -46,13 +46,14 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
-  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = IpRateLimitedAction1.async { _ =>
-    reportFileOrchestrator
-      .downloadReportAttachment(uuid, filename)
-      .map(signedUrl => Redirect(signedUrl))
+  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = Act.public.generousLimit.async {
+    _ =>
+      reportFileOrchestrator
+        .downloadReportAttachment(uuid, filename)
+        .map(signedUrl => Redirect(signedUrl))
   }
 
-  def retrieveReportFiles(): Action[JsValue] = UserAwareAction.async(parse.json) { request =>
+  def retrieveReportFiles(): Action[JsValue] = Act.userAware.allowImpersonation.async(parse.json) { request =>
     // Validate the incoming JSON request body against the expected format
     request.body
       .validate[List[ReportFileId]]
@@ -67,29 +68,30 @@ class ReportFileController(
       )
   }
 
-  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = SecuredAction.async { request =>
-    for {
-      reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
-      report = reportExtra.report
-      stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
-    } yield Ok
-      .chunked(stream)
-      .as("application/zip")
-      .withHeaders(
-        "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
-      )
+  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Act.secured.all.allowImpersonation.async {
+    request =>
+      for {
+        reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
+        report = reportExtra.report
+        stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
+      } yield Ok
+        .chunked(stream)
+        .as("application/zip")
+        .withHeaders(
+          "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
+        )
 
   }
 
-  def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UserAwareAction.async {
-    implicit request =>
+  def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.userAware.forbidImpersonation.async { implicit request =>
       reportFileOrchestrator
         .removeReportFile(uuid, filename, request.identity)
         .map(_ => NoContent)
-  }
+    }
 
   def uploadReportFile(reportFileId: Option[UUID]): Action[MultipartFormData[Files.TemporaryFile]] =
-    IpRateLimitedAction1.async(parse.multipartFormData) { request =>
+    Act.public.generousLimit.async(parse.multipartFormData) { request =>
       for {
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
         _ <-

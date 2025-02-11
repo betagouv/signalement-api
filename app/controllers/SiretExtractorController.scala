@@ -2,10 +2,8 @@ package controllers
 
 import authentication.Authenticator
 import models.User
-import models.UserRole
 import play.api.mvc.ControllerComponents
 import services.SiretExtractorService
-import authentication.actions.UserAction.WithRole
 import play.api.libs.json.Json
 import repositories.siretextraction.SiretExtractionRepositoryInterface
 
@@ -20,7 +18,7 @@ class SiretExtractorController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  def extractSiret() = SecuredAction.andThen(WithRole(UserRole.Admins)).async(parse.json) { request =>
+  def extractSiret() = Act.secured.admins.async(parse.json) { request =>
     val maybeWebsite = (request.body \ "website").asOpt[String]
 
     maybeWebsite match {
