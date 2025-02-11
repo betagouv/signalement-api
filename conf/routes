@@ -124,7 +124,7 @@ GET           /api/stats/reports/count-by-departments                 controller
 GET           /api/stats/reports/pro-totransmit                       controllers.StatisticController.getProReportToTransmitStat()
 GET           /api/stats/reports/pro-transmitted                      controllers.StatisticController.getProReportTransmittedStat()
 GET           /api/stats/reports/pro-response                         controllers.StatisticController.getProReportResponseStat(responseStatusQuery: Option[List[ReportResponseType]])
-GET           /api/stats/pro-account-rate                             controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
+GET           /api/stats/pro-account-rate                             controllers.CompanyAccessController.getProFirstActivationCount(ticks: Option[Int])
 # tab "DGGCCRF"
 GET           /api/stats/dgccrf-account                               controllers.StatisticController.dgccrfAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-active-account                        controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
