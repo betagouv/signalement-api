@@ -110,7 +110,7 @@ GET           /api/stats/reports/accepted                             controller
 GET           /api/stats/reports/reviews                              controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/engagement-reviews                   controllers.StatisticController.getReportEngagementReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/count-by-adminactions                        controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
-GET           /api/reports/cloudword/:companyId                       controllers.ReportController.cloudWord(companyId: java.util.UUID)
+GET           /api/reports/cloudword/:companyId                       controllers.ReportController.getCompanyCloudWord(companyId: java.util.UUID)
 
 #####################################
 #### PAGE "STATISTIQUES" ############

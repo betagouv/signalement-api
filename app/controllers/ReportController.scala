@@ -209,7 +209,7 @@ class ReportController(
         )
     }
 
-  def cloudWord(companyId: UUID) = Act.public.standardLimit.async(parse.empty) { _ =>
+  def getCompanyCloudWord(companyId: UUID) = Act.public.standardLimit.async(parse.empty) { _ =>
     reportOrchestrator
       .getCloudWord(companyId)
       .map(cloudword => Ok(Json.toJson(cloudword)))
