@@ -16,6 +16,7 @@ GET           /api/certified-influencer                               controller
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
 # Recherche de site web
 GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
+GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
 # to post his review
 POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.createConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists               controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
@@ -288,7 +289,6 @@ DELETE        /api/subscriptions/:subscriptionId                      controller
 
 GET           /api/websites                                           controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean],isOpen: Option[Boolean],isMarketplace: Option[Boolean])
 POST          /api/websites                                           controllers.WebsiteController.create()
-GET           /api/websites/search-url                                controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                              controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/unregistered/extract                      controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                               controllers.WebsiteController.updateCompany(id: WebsiteId)
@@ -327,10 +327,20 @@ GET           /api/constants/categoriesByStatus                       controller
 ########################################
 
 # celui-ci est marqué deprecated dans le code, qui dit d'utiliser /api/ext/reports (lui même remplacé par V2 ?)
+# pas utilisé dans les 30 derniers jours d'après New Relic
 GET /api/ext/reports/siret/:siret controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
+
+# très utilisé. Principalement pour filtrer sur le tag ReponseConso, donc ça doit être RéponseConso qui l'utilise ?
 GET /api/ext/reports              controllers.ReportToExternalController.searchReportsToExternal()
+
+# pas utilisé dans les 30 derniers jours d'après New Relic
+# curieux, alors que c'est censé être une V2 par rapport au précédent ?
 GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
+
+# utilisé une fois par jour vers minuit
 GET /api/ext/reports/extract      controllers.DataEconomieController.reportDataEcomonie()
+
+# très utilisé
 GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getReportToExternal(uuid)
 
 ##############################################################
