@@ -104,7 +104,8 @@ GET           /api/albert/classification/:reportId                    controller
 ########## COMPANY PAGE #######
 ###############################
 
-GET           /api/companies/:companyId                               controllers.CompanyController.getCompany(companyId: java.util.UUID)
+# we have to use regexp on this parameter, to avoid conflict with later routes
+GET           /api/companies/$companyId<[-0-9a-z]+>                   controllers.CompanyController.getCompany(companyId: java.util.UUID)
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
 GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
@@ -265,9 +266,11 @@ GET           /api/companies/inactive-companies                       controller
 POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
 POST          /api/companies/follow-up-posted                         controllers.CompanyController.confirmFollowUp()
 
-# Page "Mes entreprise" pour les Pros
+
+# Page "Mes entreprises" pour les Pros
 # également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
+
 # Gestion des notifications
 GET           /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.getAll()
 POST          /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.create()
