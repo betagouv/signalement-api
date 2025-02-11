@@ -263,7 +263,7 @@ class AdminController(
     }
   }
 
-  def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
+  def resendEmails(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
     Act.secured.superAdmins.async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(

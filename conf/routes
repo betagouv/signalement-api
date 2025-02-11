@@ -145,7 +145,7 @@ GET           /api/admin/test-pdf                                     controller
 POST          /api/admin/test-pdf                                     controllers.AdminController.sendTestPdf(templateRef)
 # tab "Outils d'administration"
 POST          /api/admin/regen-sample-data                            controllers.AdminController.regenSampleData()
-POST          /api/admin/emails/resend                                controllers.AdminController.resend(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
+POST          /api/admin/emails/resend                                controllers.AdminController.resendEmails(start: OffsetDateTime, end: OffsetDateTime, emailType: models.ResendEmailType)
 DELETE        /api/reports                                            controllers.ReportController.deleteSpamReport()
 GET           /api/blacklisted-ips                                    controllers.AdminController.blackListedIPs()
 POST          /api/blacklisted-ips                                    controllers.AdminController.createBlacklistedIp()
