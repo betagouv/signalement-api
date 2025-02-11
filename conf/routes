@@ -237,16 +237,23 @@ PUT           /api/account/update-email/:token                        controller
 ######## PAGE "ENTREPRISES" #############
 #########################################
 
+# onglet "Entreprises identifiées"
 GET           /api/companies                                          controllers.CompanyController.searchCompanies()
 # bouton "Enregistrer une entreprise" qui apparait aux admins
 # quand on met des filtres et qu'on a aucun résultat
 POST          /api/companies                                          controllers.CompanyController.manuallyRegisterCompany()
-# Page "Mes entreprise" (version Pro)
-# également utilisés dans la listes des signalements, pour proposer le filtre par entreprise
+
+# onglet "En attente d'activation"
+GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
+
+# onglet "Entreprises inactives"
+GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
+
+
+# Page "Mes entreprise" pour les Pros
+# également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
-GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
-GET           /api/companies/inactive-companies                       controllers.CompanyController.inactiveCompanies()
 GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
 POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
