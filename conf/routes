@@ -103,6 +103,7 @@ GET           /api/albert/classification/:reportId                    controller
 ########## COMPANY PAGE #######
 ###############################
 
+GET           /api/companies/:companyId                               controllers.CompanyController.getCompany(companyId: java.util.UUID)
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
 GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
@@ -266,7 +267,6 @@ POST          /api/companies/follow-up-posted                         controller
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
 
-GET           /api/companies/:companyId                               controllers.CompanyController.searchById(companyId: java.util.UUID)
 GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
 # bouton "Ouvrir des acces"
 POST          /api/import/companies                                   controllers.ImportController.importUsers()
