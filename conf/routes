@@ -14,6 +14,8 @@ POST          /api/reports                                            controller
 GET           /api/certified-influencer                               controllers.SocialNetworkController.checkIfInfluencerExists(name:String, socialNetwork: String)
 # Recherche de code barres
 GET           /api/barcode/gtin/:gtin                                 controllers.BarcodeController.getProductByGTIN(gtin)
+# Recherche de site web
+GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
 # to post his review
 POST          /api/reports/:uuid/response/review                      controllers.ReportConsumerReviewController.createConsumerReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists               controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
@@ -260,7 +262,6 @@ POST          /api/companies/follow-up-posted                         controller
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
 
-GET           /api/companies/hosts                                    controllers.CompanyController.searchCompanyOrSimilarWebsite(url: String)
 PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
 GET           /api/companies/:companyId                               controllers.CompanyController.searchById(companyId: java.util.UUID)
