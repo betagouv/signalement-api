@@ -112,6 +112,9 @@ GET           /api/stats/reports/reviews                              controller
 GET           /api/stats/reports/engagement-reviews                   controllers.StatisticController.getReportEngagementReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/count-by-adminactions                        controllers.StatisticController.fetchAdminActionEvents(companyId: java.util.UUID,reportAdminActionType: ReportAdminActionType)
 GET           /api/reports/cloudword/:companyId                       controllers.ReportController.getCompanyCloudWord(companyId: java.util.UUID)
+GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
+GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
+
 
 #####################################
 #### PAGE "STATISTIQUES" ############
@@ -254,8 +257,7 @@ GET           /api/companies/inactive-companies                       controller
 # également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
-GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
-GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
+
 POST          /api/companies/activation-document                      controllers.CompanyController.getActivationDocument()
 POST          /api/companies/follow-up-document                       controllers.CompanyController.getFollowUpDocument()
 POST          /api/companies/companies-posted                         controllers.CompanyController.confirmContactByPostOnCompanyList()
