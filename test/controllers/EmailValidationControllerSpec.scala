@@ -90,7 +90,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "validate email successfully " in {
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
 
-          val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
@@ -102,7 +102,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
       "not validate blocked provider email" in {
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
-          val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
             .withJsonBody(Json.obj("email" -> "user@yopmail.com"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
@@ -120,7 +120,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "validate email successfully " in {
         new WithApplication(app(skipValidation = true)) {
 
-          val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
@@ -134,7 +134,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "not validate malformed email" in {
         new WithApplication(app(skipValidation = true)) {
           val malformedEmail = "user@dgccrf"
-          val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+          val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
             .withJsonBody(Json.obj("email" -> malformedEmail))
           val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
@@ -152,7 +152,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       "create email validation entry and send email when email is new" in {
         val unknownEmail = Fixtures.genEmailAddress.sample.get
 
-        val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+        val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
           .withJsonBody(Json.obj("email" -> unknownEmail.value))
 
         val result = for {
@@ -178,7 +178,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
         val emailValidation             = EmailValidation(email = existingEmail)
 
-        val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+        val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
@@ -207,7 +207,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val emailValidation = EmailValidation(email = existingEmail)
           .copy(lastValidationDate = Some(oldDate))
 
-        val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+        val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
@@ -232,7 +232,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
       "valid email if it has been already validated" in {
         val existingEmail = Fixtures.genEmailAddress.sample.get
-        val request = FakeRequest(POST, routes.EmailValidationController.checkEmailCodeAndValidateEmail().toString)
+        val request = FakeRequest(POST, routes.EmailValidationController.checkIsEmailValidAndMaybeSendEmail().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
 
         val result = for {
