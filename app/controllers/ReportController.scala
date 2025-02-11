@@ -209,11 +209,12 @@ class ReportController(
         )
     }
 
-  def getCompanyCloudWord(companyId: UUID) = Act.public.standardLimit.async(parse.empty) { _ =>
-    reportOrchestrator
-      .getCloudWord(companyId)
-      .map(cloudword => Ok(Json.toJson(cloudword)))
-  }
+  def getCompanyCloudWord(companyId: UUID) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      reportOrchestrator
+        .getCloudWord(companyId)
+        .map(cloudword => Ok(Json.toJson(cloudword)))
+    }
 
   def deleteReport(uuid: UUID) =
     Act.secured.admins.async(parse.json) { request =>

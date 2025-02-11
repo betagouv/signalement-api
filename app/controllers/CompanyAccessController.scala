@@ -244,8 +244,9 @@ class CompanyAccessController(
       )
   }
 
-  def getProFirstActivationCount(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
-    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
-  }
+  def getProFirstActivationCount(ticks: Option[Int]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
+    }
 
 }

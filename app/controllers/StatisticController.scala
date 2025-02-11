@@ -34,7 +34,7 @@ class StatisticController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportsCount() = Act.secured.all.allowImpersonation.async { request =>
+  def getReportsCount() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
     ReportFilter
       .fromQueryString(request.queryString)
       .fold(
@@ -51,7 +51,7 @@ class StatisticController(
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = Act.secured.all.allowImpersonation.async { request =>
+  def getReportsCountCurve() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
     ReportFilter
       .fromQueryString(request.queryString)
       .fold(
@@ -87,9 +87,10 @@ class StatisticController(
     statsOrchestrator.getReportEngagementReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
-    statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
-  }
+  def getReportsTagsDistribution(companyId: Option[UUID]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
+      statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
+    }
 
   def getReportsStatusDistribution(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
@@ -103,7 +104,7 @@ class StatisticController(
     }
 
   def getProReportToTransmitStat() =
-    Act.secured.all.allowImpersonation.async { request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(
@@ -114,14 +115,14 @@ class StatisticController(
         .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getProReportTransmittedStat() = Act.secured.all.allowImpersonation.async { request =>
+  def getProReportTransmittedStat() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
     statsOrchestrator
       .getReportsCountCurve(Some(request.identity), transmittedReportsFilter)
       .map(curve => Ok(Json.toJson(curve)))
   }
 
   def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
-    Act.secured.all.allowImpersonation.async(parse.empty) { request =>
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { request =>
       val statusFilter = responseTypeQuery
         .filter(_.nonEmpty)
         .map(_.map(ReportStatus.fromResponseType))
@@ -132,21 +133,25 @@ class StatisticController(
         .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def dgccrfAccountsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
-    statsOrchestrator.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
-  }
+  def dgccrfAccountsCurve(ticks: Option[Int]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      statsOrchestrator.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    }
 
-  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
-    statsOrchestrator.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
-  }
+  def dgccrfActiveAccountsCurve(ticks: Option[Int]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      statsOrchestrator.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    }
 
-  def dgccrfSubscription(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
-    statsOrchestrator.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
-  }
+  def dgccrfSubscription(ticks: Option[Int]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      statsOrchestrator.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    }
 
-  def dgccrfControlsCurve(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
-    statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
-  }
+  def dgccrfControlsCurve(ticks: Option[Int]) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+      statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    }
 
   def getReportsCountByDepartments() =
     Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { implicit request =>
