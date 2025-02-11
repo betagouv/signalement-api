@@ -20,7 +20,6 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 import cats.syntax.either._
 import _root_.controllers.error.AppError._
-import authentication.actions.ImpersonationAction.forbidImpersonationFilter
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -67,19 +66,20 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def logout(): Action[AnyContent] = Act.secured.restrictByProvider.signalConso.async { implicit request =>
-    request.identity.impersonator match {
-      case Some(impersonator) =>
-        authOrchestrator
-          .logoutAs(impersonator)
-          .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
-      case None =>
-        Future.successful(authenticator.discard(NoContent))
-    }
+  def logout(): Action[AnyContent] = Act.secured.restrictByProvider.signalConso.allowImpersonation.async {
+    implicit request =>
+      request.identity.impersonator match {
+        case Some(impersonator) =>
+          authOrchestrator
+            .logoutAs(impersonator)
+            .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+        case None =>
+          Future.successful(authenticator.discard(NoContent))
+      }
   }
 
   def logoutProConnect(): Action[AnyContent] =
-    Act.secured.restrictByProvider.proConnect.async { implicit request =>
+    Act.secured.restrictByProvider.proConnect.allowImpersonation.async { implicit request =>
       request.identity.impersonator match {
         case Some(impersonator) =>
           authOrchestrator
@@ -123,7 +123,7 @@ class AuthController(
     }
 
   def changePassword =
-    Act.secured.restrictByProvider.signalConso.andThen(forbidImpersonationFilter).async(parse.json) { implicit request =>
+    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async(parse.json) { implicit request =>
       for {
         updatePassword <- request.parseBody[PasswordChange]()
         _              <- authOrchestrator.changePassword(request.identity, updatePassword)

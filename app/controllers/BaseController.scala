@@ -156,8 +156,8 @@ abstract class BaseController(
       val adminsAndReadonly = securedAction.andThen(WithRole(AdminsAndReadOnly))
 
       object restrictByProvider {
-        val signalConso = securedAction.andThen(WithAuthProvider(SignalConso))
-        val proConnect  = securedAction.andThen(WithAuthProvider(ProConnect))
+        val signalConso = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(SignalConso)))
+        val proConnect  = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(ProConnect)))
       }
 
     }

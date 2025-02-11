@@ -1,7 +1,6 @@
 package controllers
 
 import authentication.CookieAuthenticator
-import authentication.actions.ImpersonationAction.forbidImpersonationFilter
 import cats.implicits.catsSyntaxOption
 import config.EmailConfiguration
 import models._
@@ -149,7 +148,7 @@ class AccountController(
     }
 
   def edit() =
-    Act.secured.restrictByProvider.signalConso.andThen(forbidImpersonationFilter).async(parse.json) { implicit request =>
+    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async(parse.json) { implicit request =>
       for {
         userUpdate     <- request.parseBody[UserUpdate]()
         updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
@@ -168,14 +167,12 @@ class AccountController(
     }
 
   def updateEmailAddress(token: String) =
-    Act.secured.restrictByProvider.signalConso
-      .andThen(forbidImpersonationFilter)
-      .async { implicit request =>
-        for {
-          updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
-          cookie      <- authenticator.initSignalConsoCookie(updatedUser.email, None).liftTo[Future]
-        } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
-      }
+    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async { implicit request =>
+      for {
+        updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
+        cookie      <- authenticator.initSignalConsoCookie(updatedUser.email, None).liftTo[Future]
+      } yield authenticator.embed(cookie, Ok(Json.toJson(updatedUser)))
+    }
 
   def softDelete(id: UUID) =
     Act.secured.admins.async { request =>
