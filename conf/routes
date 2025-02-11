@@ -118,6 +118,7 @@ GET           /api/reports/cloudword/:companyId                       controller
 GET           /api/companies/hosts/:companyId                         controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 GET           /api/companies/phones/:companyId                        controllers.CompanyController.fetchPhones(companyId: java.util.UUID)
 GET           /api/companies/:id/response-rate                        controllers.CompanyController.getResponseRate(id: java.util.UUID)
+GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
 
 #####################################
 #### PAGE "STATISTIQUES" ############
@@ -250,7 +251,8 @@ GET           /api/companies                                          controller
 POST          /api/companies                                          controllers.CompanyController.manuallyRegisterCompany()
 # bouton "modifier l'adresse", dans le menu avec trois petits points
 PUT           /api/companies/:id/address                              controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
-
+# bouton "Ouvrir des acces"
+POST          /api/import/companies                                   controllers.ImportController.giveAccessToCompaniesToUsers()
 
 # onglet "En attente d'activation"
 GET           /api/companies/to-activate                              controllers.CompanyController.companiesToActivate()
@@ -267,9 +269,6 @@ POST          /api/companies/follow-up-posted                         controller
 GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
 
 
-GET           /api/companies/:id/albert-problems                      controllers.CompanyController.getProblemsSeenByAlbert(id: java.util.UUID)
-# bouton "Ouvrir des acces"
-POST          /api/import/companies                                   controllers.ImportController.importUsers()
 # gestion des "Notifications par email" (pour le pro)
 GET           /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.getAll()
 POST          /api/report-blocked-notification                        controllers.ReportBlockedNotificationController.create()
