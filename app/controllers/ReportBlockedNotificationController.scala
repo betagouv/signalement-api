@@ -24,27 +24,25 @@ class ReportBlockedNotificationController(
   }
 
   def create() =
-    Act.secured.pros.forbidImpersonation.async(parse.json) {
-      implicit request =>
-        request.body
-          .validate[ReportBlockedNotificationBody]
-          .fold(
-            errors => Future.successful(BadRequest(JsError.toJson(errors))),
-            body =>
-              orchestrator
-                .createIfNotExists(request.identity.id, body.companyIds)
-                .map(entity => Ok(Json.toJson(entity)))
-          )
+    Act.secured.pros.forbidImpersonation.async(parse.json) { implicit request =>
+      request.body
+        .validate[ReportBlockedNotificationBody]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          body =>
+            orchestrator
+              .createIfNotExists(request.identity.id, body.companyIds)
+              .map(entity => Ok(Json.toJson(entity)))
+        )
     }
 
   def delete() =
-    Act.secured.pros.forbidImpersonation.async(parse.json) {
-      implicit request =>
-        request.body
-          .validate[ReportBlockedNotificationBody]
-          .fold(
-            errors => Future.successful(BadRequest(JsError.toJson(errors))),
-            body => orchestrator.delete(request.identity.id, body.companyIds).map(_ => Ok)
-          )
+    Act.secured.pros.forbidImpersonation.async(parse.json) { implicit request =>
+      request.body
+        .validate[ReportBlockedNotificationBody]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          body => orchestrator.delete(request.identity.id, body.companyIds).map(_ => Ok)
+        )
     }
 }

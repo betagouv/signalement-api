@@ -68,17 +68,18 @@ class ReportFileController(
       )
   }
 
-  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Act.secured.all.allowImpersonation.async { request =>
-    for {
-      reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
-      report = reportExtra.report
-      stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
-    } yield Ok
-      .chunked(stream)
-      .as("application/zip")
-      .withHeaders(
-        "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
-      )
+  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Act.secured.all.allowImpersonation.async {
+    request =>
+      for {
+        reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
+        report = reportExtra.report
+        stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
+      } yield Ok
+        .chunked(stream)
+        .as("application/zip")
+        .withHeaders(
+          "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
+        )
 
   }
 
