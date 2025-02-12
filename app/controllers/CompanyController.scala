@@ -68,7 +68,7 @@ class CompanyController(
       )
   }
 
-  def getCompany(companyId: UUID) = Act.secured.all.allowImpersonation.async { request =>
+  def getCompany(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     companyOrchestrator
       .searchRegisteredById(companyId, request.identity)
