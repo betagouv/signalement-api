@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 class CompanyController(
     val companyOrchestrator: CompanyOrchestrator,
-    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     albertOrchestrator: AlbertOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -101,7 +101,7 @@ class CompanyController(
   }
 
   def getCompaniesOfPro() = Act.secured.pros.allowImpersonation.async { implicit request =>
-    companyVisibilityOrchestrator
+    companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))
   }
