@@ -77,13 +77,17 @@ object Fixtures {
   val genDgalUser   = genUser.map(_.copy(userRole = UserRole.DGAL))
 
   val genSiren = for {
-    randInt <- Gen.choose(0, 999999999)
-  } yield SIREN.fromUnsafe("" + randInt takeRight 9)
+    nineDigits <- genStringOfDigits(9)
+  } yield SIREN.fromUnsafe(nineDigits)
 
-  def genSiret(siren: Option[SIREN] = None) = for {
-    randInt  <- Gen.choose(0, 99999)
-    sirenGen <- genSiren
-  } yield SIRET.fromUnsafe(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
+  def genSiret(siren: Option[SIREN] = None) =
+    for {
+      generatedSiren <- genSiren
+      fiveDigits     <- genStringOfDigits(5)
+    } yield SIRET.fromUnsafe(siren.getOrElse(generatedSiren).value + fiveDigits)
+
+  def genStringOfDigits(size: Int): Gen[String] =
+    Gen.listOfN(size, Gen.choose(0, 9).map(_.toString)).map(_.mkString)
 
   def genAddress(postalCode: Option[String] = Some("37500")) = for {
     number            <- arbString.arbitrary
