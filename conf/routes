@@ -184,9 +184,6 @@ POST          /api/account/activation                                 controller
 ######## USER ACCESSES TO COMPANY ####
 ######################################
 
-# seems unused, will remove in later commit
-GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
-
 # onglet "Accès utilisateurs" sur la page d'une entreprise
 GET           /api/accesses/$siret<[0-9]{14}>                         controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/pending                            controllers.CompanyAccessController.listPendingTokens(siret: String)
