@@ -78,12 +78,6 @@ class CompanyController(
 
   }
 
-  def searchCompanyByWebsite(url: String) = Act.public.standardLimit.async { _ =>
-    companyOrchestrator
-      .searchCompanyByWebsite(url)
-      .map(results => Ok(Json.toJson(results)))
-  }
-
   def searchCompanyOrSimilarWebsite(url: String) = Act.public.standardLimit.async { _ =>
     companyOrchestrator
       .searchSimilarCompanyByWebsite(url)

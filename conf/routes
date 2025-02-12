@@ -351,5 +351,3 @@ POST          /api/import/marketplaces                                controller
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
 # semble inutilisé (table vide en prod)
 GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
-# semble inutilisé (aucune trace dans le code front, ni d'appel dans New Relic)
-GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)
