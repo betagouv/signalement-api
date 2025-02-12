@@ -835,7 +835,13 @@ class SignalConsoComponents(
   val emailValidationController =
     new EmailValidationController(cookieAuthenticator, emailValidationOrchestrator, controllerComponents)
 
-  val eventsController = new EventsController(eventsOrchestrator, cookieAuthenticator, controllerComponents)
+  val eventsController = new EventsController(
+    companyOrchestrator,
+    companiesVisibilityOrchestrator,
+    eventsOrchestrator,
+    cookieAuthenticator,
+    controllerComponents
+  )
   val ratingController = new RatingController(ratingRepository, cookieAuthenticator, controllerComponents)
   val reportBlockedNotificationController =
     new ReportBlockedNotificationController(

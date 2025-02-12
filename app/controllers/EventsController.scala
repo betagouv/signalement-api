@@ -2,6 +2,8 @@ package controllers
 
 import authentication.Authenticator
 import models.User
+import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.CompanyOrchestrator
 import orchestrators.EventsOrchestratorInterface
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -13,15 +15,17 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 class EventsController(
+    val companyOrchestrator: CompanyOrchestrator,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     eventsOrchestrator: EventsOrchestratorInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit
     val ec: ExecutionContext
-) extends BaseController(authenticator, controllerComponents) {
+) extends BaseCompanyController(authenticator, controllerComponents) {
 
   def getCompanyEvents(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
-    Act.secured.all.allowImpersonation.async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret.toString).async { implicit request =>
       logger.info(s"Fetching events for company $siret with eventType $eventType")
       eventsOrchestrator
         .getCompanyEvents(siret = siret, eventType = eventType, userRole = request.identity.userRole)

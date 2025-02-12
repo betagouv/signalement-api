@@ -172,7 +172,7 @@ abstract class BaseCompanyController(
     override val controllerComponents: ControllerComponents
 ) extends BaseController(authenticator, controllerComponents) {
   def companyOrchestrator: CompanyOrchestrator
-  def companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator
+  def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: UserRequest[A])
       extends WrappedRequest[A](request) {
@@ -199,7 +199,7 @@ abstract class BaseCompanyController(
               case UserRole.DGAL | UserRole.Professionnel =>
                 company
                   .map(c =>
-                    companyVisibilityOrchestrator
+                    companiesVisibilityOrchestrator
                       .fetchVisibleCompanies(request.identity)
                       .map(_.find(_.company.id == c.id).map(_.level))
                   )
