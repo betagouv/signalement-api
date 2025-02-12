@@ -51,7 +51,7 @@ class StatisticController(
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
+  def getReportsCountCurve() = Act.secured.all.allowImpersonation.async { request =>
     ReportFilter
       .fromQueryString(request.queryString)
       .fold(
