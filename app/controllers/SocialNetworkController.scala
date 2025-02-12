@@ -20,7 +20,7 @@ class SocialNetworkController(
 ) extends BaseController(authenticator, controllerComponents) {
   val logger: Logger = Logger(this.getClass)
 
-  def get(name: String, socialNetwork: String) = Act.public.tightLimit.async { _ =>
+  def checkIfInfluencerExists(name: String, socialNetwork: String) = Act.public.tightLimit.async { _ =>
     SocialNetworkSlug
       .withNameInsensitiveOption(socialNetwork)
       .traverse(socialNetworkSlug => influencerOrchestrator.exist(name, socialNetworkSlug))

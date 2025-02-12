@@ -34,7 +34,7 @@ class ReportListController(
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
   val logger: Logger                                  = Logger(this.getClass)
 
-  def getReports() = Act.secured.all.allowImpersonation.async { implicit request =>
+  def searchReports() = Act.secured.all.allowImpersonation.async { implicit request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     ReportFilter
       .fromQueryString(request.queryString)
@@ -58,7 +58,7 @@ class ReportListController(
       )
   }
 
-  def extractReports = Act.secured.all.allowImpersonation.async { implicit request =>
+  def createReportsSearchExcelExtract = Act.secured.all.allowImpersonation.async { implicit request =>
     for {
       reportFilter <- ReportFilter
         .fromQueryString(request.queryString)

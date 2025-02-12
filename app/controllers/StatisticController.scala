@@ -148,7 +148,7 @@ class StatisticController(
     statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
-  def countByDepartments() =
+  def getReportsCountByDepartments() =
     Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { implicit request =>
       val mapper = new QueryStringMapper(request.queryString)
       val start  = mapper.timeWithLocalDateRetrocompatStartOfDay("start")

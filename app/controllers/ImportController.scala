@@ -15,7 +15,7 @@ import models.company.AccessLevel
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-case class ImportInput(
+case class AccessesImportInput(
     siren: Option[SIREN],
     sirets: List[SIRET],
     emails: List[EmailAddress],
@@ -28,8 +28,8 @@ case class MarketplaceImportInput(
     siret: SIRET
 )
 
-object ImportInput {
-  implicit val importInputFormat: OFormat[ImportInput] = Json.format[ImportInput]
+object AccessesImportInput {
+  implicit val importInputFormat: OFormat[AccessesImportInput] = Json.format[AccessesImportInput]
 }
 
 object MarketplaceImportInput {
@@ -43,16 +43,16 @@ class ImportController(
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
-  private def validateInput(input: ImportInput) =
+  private def validateInput(input: AccessesImportInput) =
     (input.siren, input.sirets, input.emails) match {
       case (_, _, Nil)             => Future.failed(EmptyEmails)
       case (None, Nil, _)          => Future.failed(EmptyEmails)
       case (siren, sirets, emails) => Future.successful((siren, sirets, emails, input.onlyHeadOffice, input.level))
     }
 
-  def importUsers = Act.secured.admins.async(parse.json) { implicit request =>
+  def giveAccessToCompaniesToUsers = Act.secured.admins.async(parse.json) { implicit request =>
     for {
-      importInput                                    <- request.parseBody[ImportInput]()
+      importInput                                    <- request.parseBody[AccessesImportInput]()
       (siren, sirets, emails, onlyHeadOffice, level) <- validateInput(importInput)
       _ <- importOrchestrator.importUsers(siren, sirets, emails, onlyHeadOffice, level)
     } yield NoContent
