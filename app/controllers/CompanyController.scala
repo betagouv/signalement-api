@@ -82,7 +82,7 @@ class CompanyController(
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def getResponseRate(companyId: UUID) = Act.secured.all.allowImpersonation.async { request =>
+  def getResponseRate(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
     companyOrchestrator
       .getCompanyResponseRate(companyId, request.identity)
       .map(results => Ok(Json.toJson(results)))
