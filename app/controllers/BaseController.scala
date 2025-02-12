@@ -9,9 +9,9 @@ import models._
 import models.company.AccessLevel
 import models.company.Company
 import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.CompanyOrchestrator
 import play.api.mvc.ActionBuilder
 import play.api.mvc._
-import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 import ConsumerAction.ConsumerRequest
 import MaybeUserAction.MaybeUserRequest
@@ -171,15 +171,15 @@ abstract class BaseCompanyController(
     authenticator: Authenticator[User],
     override val controllerComponents: ControllerComponents
 ) extends BaseController(authenticator, controllerComponents) {
-  def companyRepository: CompanyRepositoryInterface
-  def companyVisibilityOrch: CompaniesVisibilityOrchestrator
+  def companyOrchestrator: CompanyOrchestrator
+  def companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: UserRequest[A])
       extends WrappedRequest[A](request) {
     def identity = request.identity
   }
 
-  private def companyAccessActionRefiner(siret: String, adminLevelOnly: Boolean) =
+  private def companyAccessActionRefiner(idOrSiret: Either[SIRET, UUID], adminLevelOnly: Boolean) =
     new ActionRefiner[UserRequest, CompanyRequest] {
       val authorizedLevels =
         if (adminLevelOnly)
@@ -191,7 +191,7 @@ abstract class BaseCompanyController(
 
       def refine[A](request: UserRequest[A]) =
         for {
-          company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
+          company <- companyOrchestrator.getByIdOrSiret(idOrSiret)
           accessLevel <-
             request.identity.userRole match {
               case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.DGCCRF =>
@@ -199,7 +199,7 @@ abstract class BaseCompanyController(
               case UserRole.DGAL | UserRole.Professionnel =>
                 company
                   .map(c =>
-                    companyVisibilityOrch
+                    companyVisibilityOrchestrator
                       .fetchVisibleCompanies(request.identity)
                       .map(_.find(_.company.id == c.id).map(_.level))
                   )
@@ -213,8 +213,10 @@ abstract class BaseCompanyController(
     }
 
   trait ActDslWithCompanyAccess extends ActDsl {
-    def securedWithCompanyAccess(siret: String, adminLevelOnly: Boolean = false) =
-      securedAction.andThen(companyAccessActionRefiner(siret, adminLevelOnly))
+    def securedWithCompanyAccessBySiret(siret: String, adminLevelOnly: Boolean = false) =
+      securedAction.andThen(companyAccessActionRefiner(Left(SIRET.fromUnsafe(siret)), adminLevelOnly))
+    def securedWithCompanyAccessById(id: UUID, adminLevelOnly: Boolean = false) =
+      securedAction.andThen(companyAccessActionRefiner(Right(id), adminLevelOnly))
   }
   override val Act = new ActDslWithCompanyAccess {}
 

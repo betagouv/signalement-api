@@ -811,6 +811,7 @@ class SignalConsoComponents(
       companyRepository,
       companyAccessRepository,
       accessTokenRepository,
+      companyOrchestrator,
       proAccessTokenOrchestrator,
       companiesVisibilityOrchestrator,
       companyAccessOrchestrator,
@@ -822,7 +823,6 @@ class SignalConsoComponents(
   val companyController = new CompanyController(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
-    companyRepository,
     albertOrchestrator,
     cookieAuthenticator,
     controllerComponents
@@ -905,7 +905,14 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val statisticController = new StatisticController(statsOrchestrator, cookieAuthenticator, controllerComponents)
+  val statisticController =
+    new StatisticController(
+      companyOrchestrator,
+      statsOrchestrator,
+      companiesVisibilityOrchestrator,
+      cookieAuthenticator,
+      controllerComponents
+    )
 
   val subscriptionOrchestrator = new SubscriptionOrchestrator(subscriptionRepository)
   val subscriptionController =

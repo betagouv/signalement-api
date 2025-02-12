@@ -39,4 +39,5 @@ object SIRET {
     )
   implicit val siretWrites: Writes[SIRET] = Json.valueWrites[SIRET]
   implicit val siretReads: Reads[SIRET]   = Reads.StringReads.map(SIRET.fromUnsafe) // To use the apply method
+
 }

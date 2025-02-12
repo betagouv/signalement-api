@@ -10,6 +10,7 @@ import models.company.AccessLevel
 import models.event.Event
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
+import orchestrators.CompanyOrchestrator
 import orchestrators.ProAccessTokenOrchestrator
 import play.api.Logger
 import play.api.libs.json._
@@ -31,11 +32,12 @@ import scala.concurrent.Future
 
 class CompanyAccessController(
     userRepository: UserRepositoryInterface,
-    val companyRepository: CompanyRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
+    val companyOrchestrator: CompanyOrchestrator,
     accessesOrchestrator: ProAccessTokenOrchestrator,
-    val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
+    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
     eventRepository: EventRepositoryInterface,
     authenticator: Authenticator[User],
@@ -45,19 +47,19 @@ class CompanyAccessController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def listAccesses(siret: String) = Act.securedWithCompanyAccess(siret).async { implicit request =>
+  def listAccesses(siret: String) = Act.securedWithCompanyAccessBySiret(siret).async { implicit request =>
     companyAccessOrchestrator
       .listAccesses(request.company, request.identity)
       .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
   }
 
-  def listAccessesMostActive(siret: String) = Act.securedWithCompanyAccess(siret).async { implicit request =>
+  def listAccessesMostActive(siret: String) = Act.securedWithCompanyAccessBySiret(siret).async { implicit request =>
     companyAccessOrchestrator
       .listAccessesMostActive(request.company, request.identity)
       .map(mostActive => Ok(Json.toJson(mostActive)))
   }
 
-  def countAccesses(siret: String) = Act.securedWithCompanyAccess(siret).async { implicit request =>
+  def countAccesses(siret: String) = Act.securedWithCompanyAccessBySiret(siret).async { implicit request =>
     companyAccessOrchestrator
       .listAccesses(request.company, request.identity)
       .map(_.length)
@@ -66,7 +68,7 @@ class CompanyAccessController(
 
   def visibleUsersToPro = Act.secured.pros.allowImpersonation.async { implicit request =>
     for {
-      companiesWithAccesses <- companyVisibilityOrch.fetchVisibleCompanies(request.identity)
+      companiesWithAccesses <- companyVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
       onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
       usersAccessesPerCompanyMap <- companyAccessRepository.fetchUsersByCompanyIds(onlyAdminCompanies.map(_.company.id))
     } yield {
@@ -98,7 +100,7 @@ class CompanyAccessController(
       for {
         maybeUser             <- userRepository.get(userId)
         user                  <- maybeUser.liftTo[Future](UserNotFoundById(userId))
-        companiesWithAccesses <- companyVisibilityOrch.fetchVisibleCompanies(request.identity)
+        companiesWithAccesses <- companyVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
         onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
         usersAccesses <- companyAccessRepository.getUserAccesses(onlyAdminCompanies.map(_.company.id), userId)
         _             <- usersAccesses.traverse(c => removeAccessFor(c.companyId, user, request.identity))
@@ -123,7 +125,7 @@ class CompanyAccessController(
     } yield ()
 
   def updateAccess(siret: String, userId: UUID) =
-    Act.securedWithCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).async { implicit request =>
       request.body.asJson
         .map(json => (json \ "level").as[AccessLevel])
         .map(level =>
@@ -138,7 +140,7 @@ class CompanyAccessController(
     }
 
   def removeAccess(siret: String, userId: UUID) =
-    Act.securedWithCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).async { implicit request =>
       for {
         maybeUser <- userRepository.get(userId)
         user      <- maybeUser.liftTo[Future](UserNotFoundById(userId))
@@ -163,7 +165,7 @@ class CompanyAccessController(
   case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
   def sendInvitation(siret: String) =
-    Act.securedWithCompanyAccess(siret, adminLevelOnly = true).async(parse.json) { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).async(parse.json) { implicit request =>
       implicit val reads = Json.reads[AccessInvitation]
       request.body
         .validate[AccessInvitation]
@@ -177,14 +179,14 @@ class CompanyAccessController(
     }
 
   def listPendingTokens(siret: String) =
-    Act.securedWithCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).async { implicit request =>
       accessesOrchestrator
         .listProPendingToken(request.company, request.identity)
         .map(tokens => Ok(Json.toJson(tokens)))
     }
 
   def removePendingToken(siret: String, tokenId: UUID) =
-    Act.securedWithCompanyAccess(siret, adminLevelOnly = true).async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).async { implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)
         _     <- token.map(accessTokenRepository.invalidateToken).getOrElse(Future.unit)

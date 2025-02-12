@@ -13,7 +13,6 @@ import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.ControllerComponents
-import repositories.company.CompanyRepositoryInterface
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -21,9 +20,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyController(
-    companyOrchestrator: CompanyOrchestrator,
-    val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val companyRepository: CompanyRepositoryInterface,
+    val companyOrchestrator: CompanyOrchestrator,
+    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     albertOrchestrator: AlbertOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -103,7 +101,7 @@ class CompanyController(
   }
 
   def getCompaniesOfPro() = Act.secured.pros.allowImpersonation.async { implicit request =>
-    companyVisibilityOrch
+    companyVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))
   }

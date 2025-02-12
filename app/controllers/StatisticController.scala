@@ -10,6 +10,8 @@ import models.report.ReportStatus
 import models.report.ReportsCountBySubcategoriesFilter
 import models.report.ReportStatus.statusWithProResponse
 import models.report.delete.ReportAdminActionType
+import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.CompanyOrchestrator
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -26,11 +28,13 @@ import scala.util.Failure
 import scala.util.Success
 
 class StatisticController(
+    val companyOrchestrator: CompanyOrchestrator,
     statsOrchestrator: StatsOrchestrator,
+    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController(authenticator, controllerComponents) {
+    extends BaseCompanyController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -73,18 +77,19 @@ class StatisticController(
       )
   }
 
-  def getDelayReportResponseInHours(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
-    statsOrchestrator
-      .getResponseAvgDelay(companyId: Option[UUID], request.identity.userRole)
-      .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
+  def getDelayReportResponseInHours(companyId: UUID) =
+    Act.securedWithCompanyAccessById(companyId).async { request =>
+      statsOrchestrator
+        .getResponseAvgDelay(companyId, request.identity.userRole)
+        .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
+    }
+
+  def getReportResponseReviews(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async {
+    statsOrchestrator.getReportResponseReview(Some(companyId)).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportResponseReviews(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async {
-    statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
-  }
-
-  def getReportEngagementReviews(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async {
-    statsOrchestrator.getReportEngagementReview(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportEngagementReviews(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async {
+    statsOrchestrator.getReportEngagementReview(Some(companyId)).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) =
@@ -92,8 +97,8 @@ class StatisticController(
       statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
     }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = Act.secured.all.allowImpersonation.async { request =>
-    statsOrchestrator.getReportsStatusDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
+  def getReportsStatusDistribution(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
+    statsOrchestrator.getReportsStatusDistribution(Some(companyId), request.identity).map(x => Ok(Json.toJson(x)))
   }
 
   def getAcceptedResponsesDistribution(companyId: UUID) =
