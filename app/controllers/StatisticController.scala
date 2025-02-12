@@ -30,7 +30,7 @@ import scala.util.Success
 class StatisticController(
     val companyOrchestrator: CompanyOrchestrator,
     statsOrchestrator: StatsOrchestrator,
-    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)

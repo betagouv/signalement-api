@@ -37,7 +37,7 @@ class CompanyAccessController(
     accessTokenRepository: AccessTokenRepositoryInterface,
     val companyOrchestrator: CompanyOrchestrator,
     accessesOrchestrator: ProAccessTokenOrchestrator,
-    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
     eventRepository: EventRepositoryInterface,
     authenticator: Authenticator[User],
@@ -68,7 +68,7 @@ class CompanyAccessController(
 
   def visibleUsersToPro = Act.secured.pros.allowImpersonation.async { implicit request =>
     for {
-      companiesWithAccesses <- companyVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
+      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
       onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
       usersAccessesPerCompanyMap <- companyAccessRepository.fetchUsersByCompanyIds(onlyAdminCompanies.map(_.company.id))
     } yield {
@@ -100,7 +100,7 @@ class CompanyAccessController(
       for {
         maybeUser             <- userRepository.get(userId)
         user                  <- maybeUser.liftTo[Future](UserNotFoundById(userId))
-        companiesWithAccesses <- companyVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
+        companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(request.identity)
         onlyAdminCompanies = companiesWithAccesses.filter(_.level == AccessLevel.ADMIN)
         usersAccesses <- companyAccessRepository.getUserAccesses(onlyAdminCompanies.map(_.company.id), userId)
         _             <- usersAccesses.traverse(c => removeAccessFor(c.companyId, user, request.identity))

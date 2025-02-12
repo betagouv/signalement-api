@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 class CompanyController(
     val companyOrchestrator: CompanyOrchestrator,
-    val companyVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     albertOrchestrator: AlbertOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -68,7 +68,7 @@ class CompanyController(
       )
   }
 
-  def getCompany(companyId: UUID) = Act.secured.all.allowImpersonation.async { request =>
+  def getCompany(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     companyOrchestrator
       .searchRegisteredById(companyId, request.identity)
@@ -82,7 +82,7 @@ class CompanyController(
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def getResponseRate(companyId: UUID) = Act.secured.all.allowImpersonation.async { request =>
+  def getResponseRate(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
     companyOrchestrator
       .getCompanyResponseRate(companyId, request.identity)
       .map(results => Ok(Json.toJson(results)))
@@ -101,7 +101,7 @@ class CompanyController(
   }
 
   def getCompaniesOfPro() = Act.secured.pros.allowImpersonation.async { implicit request =>
-    companyVisibilityOrchestrator
+    companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))
   }
