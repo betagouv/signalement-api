@@ -50,6 +50,9 @@ POST          /api/reports/:uuid/bookmark                             controller
 # pour visualiser les exports excels qui sont générés en asynchrone
 # également utilisé pour les pages Excel "Sites non identifiés" et les "Téléphones signalés"
 GET           /api/async-files                                        controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
+# pour construire les filtres
+# également utilisé pour les subscriptions
+GET           /api/constants/categoriesByStatus                       controllers.ConstantController.getCategoriesByStatus()
 
 ##############################
 ########## REPORT PAGE #######
@@ -318,8 +321,6 @@ POST          /api/engagements/:id/uncheck                            controller
 #####################
 
 GET           /api/mobileapp/requirements                             controllers.MobileAppController.getRequirements()
-GET           /api/constants/categories                               controllers.ConstantController.getCategories()
-GET           /api/constants/categoriesByStatus                       controllers.ConstantController.getCategoriesByStatus()
 
 ########################################
 ########## FOR EXTERNAL SIs ############
@@ -351,3 +352,5 @@ POST          /api/import/marketplaces                                controller
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
 # semble inutilisé (table vide en prod)
 GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
+# semble inutilisé, pas de trace dans le code, probablement remplacé par categoriesByStatus
+GET           /api/constants/categories                               controllers.ConstantController.getCategories()
