@@ -39,6 +39,7 @@ import tasks.company.CompanySearchResultApi
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.FrontRoute
+import utils.SIRET
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -68,6 +69,14 @@ class CompanyOrchestrator(
   val reportReminderByPostDelay = Period.ofDays(28)
 
   val contactAddress = emailConfiguration.contactAddress
+
+  def getByIdOrSiret(idOrSiret: Either[SIRET, UUID]): Future[Option[Company]] =
+    for {
+      company <- idOrSiret match {
+        case Left(siret) => companyRepository.findBySiret(siret)
+        case Right(id)   => companyRepository.get(id)
+      }
+    } yield company
 
   def create(companyCreation: CompanyCreation): Future[Company] =
     companyRepository

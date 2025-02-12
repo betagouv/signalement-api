@@ -168,11 +168,11 @@ class StatsOrchestrator(
       }
     }
 
-  def getResponseAvgDelay(companyId: Option[UUID] = None, userRole: UserRole): Future[Option[Duration]] = {
+  def getResponseAvgDelay(companyId: UUID, userRole: UserRole): Future[Option[Duration]] = {
     val onlyProShareable = userRole == UserRole.Professionnel
     eventRepository.getAvgTimeUntilEvent(
       action = ActionEvent.REPORT_PRO_RESPONSE,
-      companyId = companyId,
+      companyId = Some(companyId),
       onlyProShareable = onlyProShareable
     )
   }
