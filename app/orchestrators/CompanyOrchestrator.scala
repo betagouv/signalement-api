@@ -35,9 +35,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.PDFService
-import tasks.company.CompanySearchResult
 import tasks.company.CompanySearchResultApi
-import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.FrontRoute
@@ -145,18 +143,6 @@ class CompanyOrchestrator(
       total     <- totalReportsCount
       responses <- responseReportsCount
     } yield (responses.toFloat / total * 100).round
-  }
-
-  // TODO remove when front end will be updated
-  def searchCompanyByWebsite(url: String): Future[Seq[CompanySearchResult]] = {
-    logger.debug(s"searchCompaniesByHost $url")
-    for {
-      companiesByUrl <- websiteRepository.deprecatedSearchCompaniesByHost(url)
-      _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
-      results = companiesByUrl.map { case (website, company) =>
-        fromCompany(company, website)
-      }
-    } yield results
   }
 
   def searchSimilarCompanyByWebsite(url: String): Future[WebsiteCompanySearchResult] = {

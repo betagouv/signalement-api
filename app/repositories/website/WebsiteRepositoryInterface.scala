@@ -27,10 +27,6 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       nb: Int
   ): Future[Seq[((Website, Int), Company)]]
 
-  def deprecatedSearchCompaniesByHost(
-      url: String
-  ): Future[Seq[(Website, Company)]]
-
   def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
       identificationStatus: Option[Seq[IdentificationStatus]],

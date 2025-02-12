@@ -20,10 +20,6 @@ class ConstantController(authenticator: Authenticator[User], controllerComponent
     Ok(Json.toJson(Country.countries))
   }
 
-  def getCategories = Act.public.standardLimit {
-    Ok(Json.toJson(ReportCategory.values.filter(_.status != ReportCategoryStatus.Legacy)))
-  }
-
   def getCategoriesByStatus() = Act.public.standardLimit {
     val legacy   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Legacy)
     val closed   = ReportCategory.values.filter(_.status == ReportCategoryStatus.Closed)

@@ -50,6 +50,9 @@ POST          /api/reports/:uuid/bookmark                             controller
 # pour visualiser les exports excels qui sont générés en asynchrone
 # également utilisé pour les pages Excel "Sites non identifiés" et les "Téléphones signalés"
 GET           /api/async-files                                        controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
+# pour construire les filtres
+# également utilisé pour les subscriptions
+GET           /api/constants/categoriesByStatus                       controllers.ConstantController.getCategoriesByStatus()
 
 ##############################
 ########## REPORT PAGE #######
@@ -183,9 +186,6 @@ POST          /api/account/activation                                 controller
 ######################################
 ######## USER ACCESSES TO COMPANY ####
 ######################################
-
-# seems unused, will remove in later commit
-GET           /api/accesses/connected-user                            controllers.CompanyAccessController.getMyCompanies()
 
 # onglet "Accès utilisateurs" sur la page d'une entreprise
 GET           /api/accesses/$siret<[0-9]{14}>                         controllers.CompanyAccessController.listAccesses(siret: String)
@@ -321,8 +321,6 @@ POST          /api/engagements/:id/uncheck                            controller
 #####################
 
 GET           /api/mobileapp/requirements                             controllers.MobileAppController.getRequirements()
-GET           /api/constants/categories                               controllers.ConstantController.getCategories()
-GET           /api/constants/categoriesByStatus                       controllers.ConstantController.getCategoriesByStatus()
 
 ########################################
 ########## FOR EXTERNAL SIs ############
@@ -352,7 +350,3 @@ GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getRepo
 POST          /api/import/marketplaces                                controllers.ImportController.importMarketplaces()
 # pour debug potentiel
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
-# semble inutilisé (table vide en prod)
-GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
-# semble inutilisé (aucune trace dans le code front, ni d'appel dans New Relic)
-GET           /api/companies/search-url                               controllers.CompanyController.searchCompanyByWebsite(url: String)

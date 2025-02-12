@@ -4,7 +4,6 @@ import models._
 import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyActivationAttempt
-import models.company.CompanyWithAccess
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
@@ -117,28 +116,6 @@ The listAccesses endpoint should
       }]
     """
   )
-}
-
-class MyCompaniesSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
-  override def is = s2"""
-
-The myCompanies endpoint should
-  list my accesses as an admin                      ${checkAccess(proAdminUser, AccessLevel.ADMIN)}
-  list my accesses as a basic member                ${checkAccess(proMemberUser, AccessLevel.MEMBER)}
-  reject me if I am not connected                   $checkNotConnected
-                                                    """
-  def checkAccess(user: User, level: AccessLevel) = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.getMyCompanies().toString)
-      .withAuthCookie(user.email, components.cookieAuthenticator)
-    val result = route(app, request).get
-    status(result) must beEqualTo(OK)
-    contentAsJson(result) must beEqualTo(Json.toJson(Seq(CompanyWithAccess(company, level))))
-  }
-  def checkNotConnected = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.getMyCompanies().toString)
-    val result  = route(app, request).get
-    status(result) must beEqualTo(UNAUTHORIZED)
-  }
 }
 
 class InvitationWorkflowSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {

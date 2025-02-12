@@ -108,20 +108,6 @@ class WebsiteRepository(
       }.result
     )
 
-  def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
-    URL(host).getHost match {
-      case Some(host) =>
-        db.run(
-          table
-            .filter(_.host === host)
-            .filter(_.identificationStatus === (IdentificationStatus.Identified: IdentificationStatus))
-            .join(CompanyTable.table)
-            .on(_.companyId === _.id)
-            .result
-        )
-      case None => Future.successful(Nil)
-    }
-
   override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
       table
