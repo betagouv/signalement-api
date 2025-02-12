@@ -91,8 +91,6 @@ import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
-import repositories.signalconsoreview.SignalConsoReviewRepository
-import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
 import repositories.siretextraction.SiretExtractionRepository
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
@@ -247,8 +245,6 @@ class SignalConsoComponents(
   def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface             = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
-
-  val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
   val engagementRepository = new EngagementRepository(dbConfig)
 
@@ -899,9 +895,6 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val signalConsoReviewController =
-    new SignalConsoReviewController(signalConsoReviewRepository, cookieAuthenticator, controllerComponents)
-
   val reportToExternalController =
     new ReportToExternalController(
       reportRepository,
@@ -992,8 +985,7 @@ class SignalConsoComponents(
       reportedPhoneController,
       mobileAppController,
       reportToExternalController,
-      dataEconomieController,
-      signalConsoReviewController
+      dataEconomieController
     )
 
   val allTasks: List[ScheduledTask] =

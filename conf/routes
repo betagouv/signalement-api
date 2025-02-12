@@ -350,5 +350,3 @@ GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getRepo
 POST          /api/import/marketplaces                                controllers.ImportController.importMarketplaces()
 # pour debug potentiel
 GET           /api/account/all/deleted-users                          controllers.AccountController.fetchAllSoftDeletedUsers()
-# semble inutilisé (table vide en prod)
-GET           /api/review                                             controllers.SignalConsoReviewController.signalConsoReview()
