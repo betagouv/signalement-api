@@ -68,8 +68,8 @@ class ReportFileController(
       )
   }
 
-  def downloadZip(reportId: UUID, origin: Option[ReportFileOrigin]) = Act.secured.all.allowImpersonation.async {
-    request =>
+  def downloadAllFilesAsZip(reportId: UUID, origin: Option[ReportFileOrigin]) =
+    Act.secured.all.allowImpersonation.async { request =>
       for {
         reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
         report = reportExtra.report
@@ -80,8 +80,7 @@ class ReportFileController(
         .withHeaders(
           "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
         )
-
-  }
+    }
 
   def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.userAware.forbidImpersonation.async { implicit request =>

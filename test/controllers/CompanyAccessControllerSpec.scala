@@ -128,14 +128,14 @@ The myCompanies endpoint should
   reject me if I am not connected                   $checkNotConnected
                                                     """
   def checkAccess(user: User, level: AccessLevel) = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.getMyCompanies().toString)
       .withAuthCookie(user.email, components.cookieAuthenticator)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(Json.toJson(Seq(CompanyWithAccess(company, level))))
   }
   def checkNotConnected = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.getMyCompanies().toString)
     val result  = route(app, request).get
     status(result) must beEqualTo(UNAUTHORIZED)
   }

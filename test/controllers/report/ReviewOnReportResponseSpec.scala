@@ -76,7 +76,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
   def e1 = {
     val result = route(
       app,
-      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id).toString)
+      FakeRequest(GET, routes.ReportConsumerReviewController.getConsumerReview(reportWithExistingReview.id).toString)
         .withAuthCookie(adminUser.email, components.cookieAuthenticator)
     ).get
 
@@ -161,7 +161,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   def postReview(reviewOnReportResponse: ConsumerReviewApi) =
     Await.result(
       components.reportConsumerReviewController
-        .reviewOnReportResponse(reportId)
+        .createConsumerReview(reportId)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review")
             .withBody(Json.toJson(reviewOnReportResponse)(consumerReviewApiWrites(Admin)))

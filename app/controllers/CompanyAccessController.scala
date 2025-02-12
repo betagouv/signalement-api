@@ -65,7 +65,7 @@ class CompanyAccessController(
   }
 
   // Is this used ??
-  def myCompanies = Act.secured.all.allowImpersonation.async { implicit request =>
+  def getMyCompanies = Act.secured.all.allowImpersonation.async { implicit request =>
     companyAccessRepository
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
@@ -244,7 +244,7 @@ class CompanyAccessController(
       )
   }
 
-  def proFirstActivationCount(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
+  def getProFirstActivationCount(ticks: Option[Int]) = Act.secured.all.allowImpersonation.async(parse.empty) { _ =>
     accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
   }
 

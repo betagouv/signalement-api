@@ -263,7 +263,7 @@ class AdminController(
     }
   }
 
-  def resend(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
+  def resendEmails(start: OffsetDateTime, end: OffsetDateTime, emailType: ResendEmailType) =
     Act.secured.superAdmins.async { implicit request =>
       for {
         reports <- reportRepository.getReportsWithFiles(
@@ -283,7 +283,7 @@ class AdminController(
       } yield NoContent
     }
 
-  def blackListedIPs() = Act.secured.superAdmins.async { _ =>
+  def getBlacklistedIps() = Act.secured.superAdmins.async { _ =>
     ipBlackListRepository.list().map(blackListedIps => Ok(Json.toJson(blackListedIps)))
   }
 
@@ -291,7 +291,7 @@ class AdminController(
     ipBlackListRepository.delete(ip).map(_ => NoContent)
   }
 
-  def createBlacklistedIp() =
+  def addBlacklistedIp() =
     Act.secured.superAdmins.async(parse.json) { implicit request =>
       for {
         blacklistedIpRequest <- request.parseBody[BlackListedIp]()
@@ -299,7 +299,7 @@ class AdminController(
       } yield Created(Json.toJson(blackListedIp))
     }
 
-  def classifyAndSummarize(reportId: UUID) =
+  def generateAlbertReportAnalysis(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       for {
         maybeReport          <- reportRepository.get(reportId)
@@ -321,7 +321,7 @@ class AdminController(
       } yield NoContent
     }
 
-  def getAlbertClassification(reportId: UUID) =
+  def getAlbertReportAnalysis(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
       albertClassificationRepository
         .getByReportId(reportId)

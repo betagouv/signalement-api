@@ -39,7 +39,7 @@ class EngagementController(
       engagementOrchestrator.uncheck(request.identity, id).map(_ => NoContent)
     }
 
-  def reviewEngagementOnReportResponse(reportUUID: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
+  def createEngagementReview(reportUUID: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) {
     implicit request =>
       logger.debug(s"Push report engagement review for report id : $reportUUID")
       for {

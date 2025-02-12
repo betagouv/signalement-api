@@ -24,7 +24,7 @@ class RatingController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def rate = Act.public.standardLimit.async(parse.json) { implicit request =>
+  def rateBlockingInfoInSubcategoryUsefulness = Act.public.standardLimit.async(parse.json) { implicit request =>
     request.body
       .validate[Rating]
       .fold(

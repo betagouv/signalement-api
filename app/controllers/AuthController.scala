@@ -20,7 +20,6 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
 import cats.syntax.either._
 import _root_.controllers.error.AppError._
-
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

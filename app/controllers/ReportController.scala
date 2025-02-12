@@ -58,7 +58,6 @@ class ReportController(
 
   def createReport: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
-
     for {
       draftReport <- request.parseBody[ReportDraft]()
       consumerIp = ConsumerIp(request.remoteAddress)
@@ -69,7 +68,6 @@ class ReportController(
         case err => throw err
       }
     } yield Ok(Json.toJson(createdReport))
-
   }
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =
@@ -110,7 +108,7 @@ class ReportController(
       } yield result
     }
 
-  def reportResponse(uuid: UUID): Action[JsValue] =
+  def createReportResponse(uuid: UUID): Action[JsValue] =
     Act.secured.pros.forbidImpersonation.async(parse.json) { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
@@ -177,7 +175,7 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def reportsAsPDF() = Act.secured.all.allowImpersonation.async { implicit request =>
+  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
     val reportFutures = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
@@ -196,8 +194,8 @@ class ReportController(
       )
   }
 
-  def reportAsZip(reportId: UUID) =
-    Act.secured.all.allowImpersonation.async(parse.empty) { implicit request =>
+  def downloadReportAsZipWithFiles(reportId: UUID) =
+    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportFull(reportId, request.identity)
         .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
@@ -211,7 +209,7 @@ class ReportController(
         )
     }
 
-  def cloudWord(companyId: UUID) = Act.public.standardLimit.async(parse.empty) { _ =>
+  def getCompanyCloudWord(companyId: UUID) = Act.public.standardLimit.async(parse.empty) { _ =>
     reportOrchestrator
       .getCloudWord(companyId)
       .map(cloudword => Ok(Json.toJson(cloudword)))
