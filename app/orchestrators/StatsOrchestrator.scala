@@ -13,7 +13,6 @@ import models.report.delete.ReportAdminActionType
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import orchestrators.StatsOrchestrator.toPercentage
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -114,16 +113,6 @@ class StatsOrchestrator(
     eventRepository.fetchEventCountFromActionEvents(companyId, action)
 
   }
-
-  def getReportCountPercentage(
-      user: Option[User],
-      filter: ReportFilter,
-      basePercentageFilter: ReportFilter
-  ): Future[Int] =
-    for {
-      count     <- reportRepository.count(user, filter)
-      baseCount <- reportRepository.count(user, basePercentageFilter)
-    } yield toPercentage(count, baseCount)
 
   def getReportsCountCurve(
       user: Option[User],

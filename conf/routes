@@ -107,7 +107,8 @@ GET           /api/albert/classification/:reportId                    controller
 ########## COMPANY PAGE #######
 ###############################
 
-GET           /api/companies/$companyId<[-0-9a-f]{36}>                   controllers.CompanyController.getCompany(companyId: java.util.UUID)
+GET           /api/companies/$companyId<[-0-9a-f]{36}>                controllers.CompanyController.getCompany(companyId: java.util.UUID)
+GET           /api/stats/reports/curve/:companyId                     controllers.StatisticController.getReportsCountCurveForCompany(companyId: java.util.UUID)
 GET           /api/companies/:siret/events                            controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 GET           /api/accesses/:siret/most-active                        controllers.CompanyAccessController.listAccessesMostActive(siret: String)
 GET           /api/accesses/:siret/count                              controllers.CompanyAccessController.countAccesses(siret: String)
