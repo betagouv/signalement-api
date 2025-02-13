@@ -68,7 +68,7 @@ class CompanyController(
       )
   }
 
-  def getCompany(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
+  def getCompany(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
     companyOrchestrator
       .searchRegisteredById(companyId, request.identity)
@@ -82,11 +82,12 @@ class CompanyController(
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def getResponseRate(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
-    companyOrchestrator
-      .getCompanyResponseRate(companyId, request.identity)
-      .map(results => Ok(Json.toJson(results)))
-  }
+  def getResponseRate(companyId: UUID) =
+    Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
+      companyOrchestrator
+        .getCompanyResponseRate(companyId, request.identity)
+        .map(results => Ok(Json.toJson(results)))
+    }
 
   def companiesToActivate() = Act.secured.adminsAndReadonly.async { _ =>
     companyOrchestrator

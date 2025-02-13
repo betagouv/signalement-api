@@ -1,6 +1,7 @@
 package authentication.actions
 
 import authentication.actions.MaybeUserAction.MaybeUserRequest
+import controllers.CompanyRequest
 import models.User
 import play.api.mvc.Results.Forbidden
 import play.api.mvc.ActionFilter
@@ -26,6 +27,13 @@ object ImpersonationAction {
       override protected def executionContext: ExecutionContext = ec
       override protected def filter[A](request: MaybeUserRequest[A]): Future[Option[Result]] =
         handleImpersonator(request.identity.flatMap(_.impersonator))
+    }
+
+  def forbidImpersonationOnCompanyRequestFilter(implicit ec: ExecutionContext): ActionFilter[CompanyRequest] =
+    new ActionFilter[CompanyRequest] {
+      override protected def executionContext: ExecutionContext = ec
+      override protected def filter[A](request: CompanyRequest[A]): Future[Option[Result]] =
+        handleImpersonator(request.identity.impersonator)
     }
 
   private def handleImpersonator(maybeImpersonator: Option[EmailAddress]) =
