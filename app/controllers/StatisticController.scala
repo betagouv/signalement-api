@@ -16,12 +16,14 @@ import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
+import play.api.mvc.Result
 import play.api.mvc.Results
 import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
 import java.util.Locale
 import java.util.UUID
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -53,29 +55,45 @@ class StatisticController(
       )
   }
 
-  /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
-    */
-  def getReportsCountCurve() = Act.secured.all.allowImpersonation.async { request =>
-    ReportFilter
-      .fromQueryString(request.queryString)
-      .fold(
-        error => {
-          logger.error("Cannot parse querystring", error)
-          Future.successful(BadRequest)
-        },
-        filters => {
-          val mapper = new QueryStringMapper(request.queryString)
-          val ticks  = mapper.int("ticks").getOrElse(12)
-          val tickDuration = mapper
-            .string("tickDuration")
-            .flatMap(CurveTickDuration.namesToValuesMap.get)
-            .getOrElse(CurveTickDuration.Month)
-          statsOrchestrator
-            .getReportsCountCurve(Some(request.identity), filters, ticks, tickDuration)
-            .map(curve => Ok(Json.toJson(curve)))
-        }
-      )
+  def getReportsCountCurve() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
+    getReportsCountCurveFromQueryString(
+      request.queryString,
+      request.identity
+    )
   }
+
+  def getReportsCountCurveForCompany(companyId: UUID) =
+    Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
+      getReportsCountCurveFromQueryString(
+        request.queryString,
+        request.identity,
+        reportFilterModification = _.copy(companyIds = Seq(companyId))
+      )
+    }
+
+  private def getReportsCountCurveFromQueryString(
+      queryString: Map[String, Seq[String]],
+      user: User,
+      reportFilterModification: ReportFilter => ReportFilter = identity
+  ): Future[Result] =
+    ReportFilter.fromQueryString(queryString) match {
+      case Success(reportFilter) =>
+        val modifiedReportFilter = reportFilterModification(reportFilter)
+        val mapper               = new QueryStringMapper(queryString)
+        val ticks                = mapper.int("ticks").getOrElse(12)
+        val tickDuration = mapper
+          .string("tickDuration")
+          .flatMap(CurveTickDuration.namesToValuesMap.get)
+          .getOrElse(CurveTickDuration.Month)
+        for {
+          curve <- statsOrchestrator
+            .getReportsCountCurve(Some(user), modifiedReportFilter, ticks, tickDuration)
+        } yield Ok(Json.toJson(curve))
+      case Failure(error) =>
+        logger.error("Cannot parse querystring", error)
+        Future.successful(BadRequest)
+
+    }
 
   def getDelayReportResponseInHours(companyId: UUID) =
     Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
