@@ -78,28 +78,30 @@ class StatisticController(
   }
 
   def getDelayReportResponseInHours(companyId: UUID) =
-    Act.securedWithCompanyAccessById(companyId).async { request =>
+    Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
       statsOrchestrator
         .getResponseAvgDelay(companyId, request.identity.userRole)
         .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
     }
 
-  def getReportResponseReviews(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async {
+  def getReportResponseReviews(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).allowImpersonation.async {
     statsOrchestrator.getReportResponseReview(Some(companyId)).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportEngagementReviews(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async {
-    statsOrchestrator.getReportEngagementReview(Some(companyId)).map(x => Ok(Json.toJson(x)))
-  }
+  def getReportEngagementReviews(companyId: UUID) =
+    Act.securedWithCompanyAccessById(companyId).allowImpersonation.async {
+      statsOrchestrator.getReportEngagementReview(Some(companyId)).map(x => Ok(Json.toJson(x)))
+    }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
       statsOrchestrator.getReportsTagsDistribution(companyId, request.identity).map(x => Ok(Json.toJson(x)))
     }
 
-  def getReportsStatusDistribution(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).async { request =>
-    statsOrchestrator.getReportsStatusDistribution(Some(companyId), request.identity).map(x => Ok(Json.toJson(x)))
-  }
+  def getReportsStatusDistribution(companyId: UUID) =
+    Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>
+      statsOrchestrator.getReportsStatusDistribution(Some(companyId), request.identity).map(x => Ok(Json.toJson(x)))
+    }
 
   def getAcceptedResponsesDistribution(companyId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>

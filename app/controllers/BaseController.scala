@@ -19,6 +19,7 @@ import UserAction.UserRequest
 import UserAction.WithAuthProvider
 import UserAction.WithRole
 import authentication.actions.ImpersonationAction.forbidImpersonationFilter
+import authentication.actions.ImpersonationAction.forbidImpersonationOnCompanyRequestFilter
 import authentication.actions.ImpersonationAction.forbidImpersonationOnMaybeUserFilter
 import com.digitaltangible.playguard.IpRateLimitFilter
 import com.digitaltangible.ratelimit.RateLimiter
@@ -167,17 +168,17 @@ abstract class BaseController(
 
 }
 
+class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: UserRequest[A])
+    extends WrappedRequest[A](request) {
+  def identity = request.identity
+}
+
 abstract class BaseCompanyController(
     authenticator: Authenticator[User],
     override val controllerComponents: ControllerComponents
 ) extends BaseController(authenticator, controllerComponents) {
   def companyOrchestrator: CompanyOrchestrator
   def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator
-
-  class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: UserRequest[A])
-      extends WrappedRequest[A](request) {
-    def identity = request.identity
-  }
 
   private def companyAccessActionRefiner(idOrSiret: Either[SIRET, UUID], adminLevelOnly: Boolean) =
     new ActionRefiner[UserRequest, CompanyRequest] {
@@ -212,11 +213,22 @@ abstract class BaseCompanyController(
           .getOrElse(Left(Forbidden))
     }
 
+  case class AskImpersonationDslOnCompanyRequest(
+      private val actionBuilder: ActionBuilder[CompanyRequest, AnyContent]
+  ) {
+    val allowImpersonation  = actionBuilder
+    val forbidImpersonation = actionBuilder.andThen(forbidImpersonationOnCompanyRequestFilter)
+  }
+
   trait ActDslWithCompanyAccess extends ActDsl {
     def securedWithCompanyAccessBySiret(siret: String, adminLevelOnly: Boolean = false) =
-      securedAction.andThen(companyAccessActionRefiner(Left(SIRET.fromUnsafe(siret)), adminLevelOnly))
+      AskImpersonationDslOnCompanyRequest(
+        securedAction.andThen(companyAccessActionRefiner(Left(SIRET.fromUnsafe(siret)), adminLevelOnly))
+      )
     def securedWithCompanyAccessById(id: UUID, adminLevelOnly: Boolean = false) =
-      securedAction.andThen(companyAccessActionRefiner(Right(id), adminLevelOnly))
+      AskImpersonationDslOnCompanyRequest(
+        securedAction.andThen(companyAccessActionRefiner(Right(id), adminLevelOnly))
+      )
   }
   override val Act = new ActDslWithCompanyAccess {}
 

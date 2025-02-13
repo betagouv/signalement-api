@@ -25,7 +25,7 @@ class EventsController(
 ) extends BaseCompanyController(authenticator, controllerComponents) {
 
   def getCompanyEvents(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
-    Act.securedWithCompanyAccessBySiret(siret.toString).async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret.toString).allowImpersonation.async { implicit request =>
       logger.info(s"Fetching events for company $siret with eventType $eventType")
       eventsOrchestrator
         .getCompanyEvents(siret = siret, eventType = eventType, userRole = request.identity.userRole)
