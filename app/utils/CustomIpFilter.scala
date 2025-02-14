@@ -9,6 +9,7 @@ import play.api.mvc.Results
 import repositories.ipblacklist.IpBlackListRepositoryInterface
 
 import java.net.InetAddress
+import java.nio.ByteBuffer
 import java.util.{Arrays => JArrays}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.Await
@@ -23,15 +24,37 @@ class CustomIpFilter(ipBlackListRepository: IpBlackListRepositoryInterface)(impl
   private lazy val rawBlackListedIps = Try(Await.result(ipBlackListRepository.list(), 1.second)).getOrElse(Seq.empty)
 
   private lazy val blackListedIps =
-    rawBlackListedIps.map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress -> blackListIp.critical)
+    rawBlackListedIps
+      .filter(rawIp => !rawIp.ip.contains("/"))
+      .map(blackListIp => InetAddress.getByName(blackListIp.ip).getAddress -> blackListIp.critical)
 
-  @inline private def allowIP(req: RequestHeader): Boolean =
-    blackListedIps.forall(t => !JArrays.equals(t._1, req.connection.remoteAddress.getAddress))
-
-  @inline private def isCritical(req: RequestHeader): Boolean =
-    blackListedIps.exists { case (ip, critical) =>
-      critical && JArrays.equals(ip, req.connection.remoteAddress.getAddress)
+  private lazy val blackListedSubnets =
+    rawBlackListedIps.filter(_.ip.contains("/")).map { blackListIp =>
+      val Array(ip, prefix) = blackListIp.ip.split("/")
+      (InetAddress.getByName(ip).getAddress, prefix.toInt)
     }
+
+  @inline private def isCritical(req: RequestHeader): Boolean = {
+    val ipBytes = req.connection.remoteAddress.getAddress
+    blackListedIps.exists { case (ip, critical) =>
+      critical && JArrays.equals(ip, ipBytes)
+    }
+  }
+
+  @inline private def isInSubnet(ipBytes: Array[Byte], subnetBytes: Array[Byte], prefixLength: Int): Boolean = {
+    val mask          = 0xffffffff << (32 - prefixLength)
+    val ipAddress     = ByteBuffer.wrap(ipBytes).getInt
+    val subnetAddress = ByteBuffer.wrap(subnetBytes).getInt
+    (ipAddress & mask) == (subnetAddress & mask)
+  }
+
+  @inline private[utils] def allowIP(req: RequestHeader): Boolean = {
+    val ipBytes = req.connection.remoteAddress.getAddress
+    blackListedIps.forall(t => !JArrays.equals(t._1, ipBytes)) &&
+    blackListedSubnets.forall { case (subnet, prefixLength) =>
+      !isInSubnet(ipBytes, subnet, prefixLength)
+    }
+  }
 
   override def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] =
     if (allowIP(requestHeader)) {

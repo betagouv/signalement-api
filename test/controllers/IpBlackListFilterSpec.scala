@@ -31,6 +31,7 @@ class IpBlackListFilterSpec(implicit ee: ExecutionEnv)
     Await.result(
       for {
         _ <- ipBlackListRepository.create(BlackListedIp("1.2.3.4", "local test", critical = true))
+        _ <- ipBlackListRepository.create(BlackListedIp("1.2.5.0/24", "local test", critical = false))
       } yield (),
       Duration.Inf
     )
@@ -56,6 +57,32 @@ class IpBlackListFilterSpec(implicit ee: ExecutionEnv)
         headers = FakeHeaders(Seq(HeaderNames.HOST -> "localhost")),
         body = AnyContentAsEmpty,
         remoteAddress = "10.20.30.40"
+      )
+      val result = route(app, request).get
+
+      Helpers.status(result) must beEqualTo(200)
+    }
+
+    "filter ip if in subnet blacklist" in {
+      val request = FakeRequest(
+        method = GET,
+        uri = routes.ConstantController.getCountries().toString,
+        headers = FakeHeaders(Seq(HeaderNames.HOST -> "localhost")),
+        body = AnyContentAsEmpty,
+        remoteAddress = "1.2.5.127"
+      )
+      val result = route(app, request).get
+
+      Helpers.status(result) must beEqualTo(403)
+    }
+
+    "not filter ips not in the subnet blacklist" in {
+      val request = FakeRequest(
+        method = GET,
+        uri = routes.ConstantController.getCountries().toString,
+        headers = FakeHeaders(Seq(HeaderNames.HOST -> "localhost")),
+        body = AnyContentAsEmpty,
+        remoteAddress = "1.2.3.5"
       )
       val result = route(app, request).get
 
