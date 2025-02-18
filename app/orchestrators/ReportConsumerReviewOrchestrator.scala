@@ -2,7 +2,6 @@ package orchestrators
 
 import org.apache.pekko.Done
 import controllers.error.AppError.CannotReviewReportResponse
-import controllers.error.AppError.ServerError
 import models.User
 import models.report.ReportStatus.hasResponse
 import models.report.review.ConsumerReviewApi
@@ -32,7 +31,7 @@ class ReportConsumerReviewOrchestrator(
   val logger = Logger(this.getClass)
 
   def remove(reportId: UUID): Future[Done] =
-    getReview(reportId).flatMap {
+    responseConsumerReviewRepository.findByReportId(reportId).flatMap {
       case Some(responseConsumerReview) =>
         responseConsumerReviewRepository.delete(responseConsumerReview.id).map(_ => Done)
       case None => Future.successful(Done)
@@ -41,26 +40,14 @@ class ReportConsumerReviewOrchestrator(
   def getVisibleReview(reportId: UUID, user: User): Future[Option[ResponseConsumerReview]] =
     for {
       _           <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
-      maybeReview <- getReview(reportId)
+      maybeReview <- responseConsumerReviewRepository.findByReportId(reportId)
     } yield maybeReview
 
   def doesReviewExists(reportId: UUID): Future[Boolean] =
     for {
-      maybeReview <- getReview(reportId)
+      maybeReview <- responseConsumerReviewRepository.findByReportId(reportId)
       hasNonEmptyReview = maybeReview.exists(_.details.nonEmpty)
     } yield hasNonEmptyReview
-
-  private def getReview(reportId: UUID): Future[Option[ResponseConsumerReview]] =
-    for {
-      reviews <- responseConsumerReviewRepository.findByReportId(reportId)
-      maybeReview = reviews match {
-        case Nil =>
-          logger.info(s"No review found for report $reportId")
-          None
-        case review :: Nil => Some(review)
-        case _             => throw ServerError(s"More than one consumer review for report id $reportId")
-      }
-    } yield maybeReview
 
   def getReviews(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
     responseConsumerReviewRepository.findByReportIds(reportIds)
@@ -87,7 +74,7 @@ class ReportConsumerReviewOrchestrator(
       }
       _ = logger.debug(s"Report validated")
       reviews <- responseConsumerReviewRepository.findByReportId(reportId)
-      _ <- reviews.headOption match {
+      _ <- reviews match {
         case Some(review) =>
           updateReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
         case None =>
@@ -99,8 +86,8 @@ class ReportConsumerReviewOrchestrator(
   def deleteDetails(reportId: UUID): Future[Unit] = for {
     reviews <- responseConsumerReviewRepository.findByReportId(reportId)
     _ <- reviews match {
-      case review :: _ => responseConsumerReviewRepository.update(review.id, review.copy(details = Some("")))
-      case _           => Future.unit
+      case Some(review) => responseConsumerReviewRepository.update(review.id, review.copy(details = Some("")))
+      case None         => Future.unit
     }
   } yield ()
 

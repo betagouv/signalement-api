@@ -1,7 +1,6 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
-import cats.implicits.catsSyntaxOptionId
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.EngagementNotFound
 import controllers.error.AppError.ReportNotFound
@@ -11,8 +10,8 @@ import models.engagement.EngagementId
 import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.ReportStatus.hasResponse
-import models.report.review.EngagementReview
 import models.report.review.ConsumerReviewApi
+import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReviewId
 import play.api.Logger
 import play.api.libs.json.Json
@@ -108,7 +107,7 @@ class EngagementOrchestrator(
 
   def removeEngagement(reportId: UUID): Future[Unit] =
     for {
-      _ <- getEngagementReview(reportId).flatMap {
+      _ <- reportEngagementReviewRepository.findByReportId(reportId).flatMap {
         case Some(engagementReview) =>
           reportEngagementReviewRepository.delete(engagementReview.id).map(_ => ())
         case None => Future.unit
@@ -119,23 +118,8 @@ class EngagementOrchestrator(
   def getVisibleEngagementReview(reportId: UUID, user: User): Future[Option[EngagementReview]] =
     for {
       _           <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
-      maybeReview <- getEngagementReview(reportId)
+      maybeReview <- reportEngagementReviewRepository.findByReportId(reportId)
     } yield maybeReview
-
-  private def getEngagementReview(reportId: UUID): Future[Option[EngagementReview]] =
-    reportEngagementReviewRepository.findByReportId(reportId) map {
-      case Nil =>
-        logger.info(s"No engagement review found for report $reportId")
-        None
-      case review :: Nil => Some(review)
-      case engagementReviews =>
-        io.sentry.Sentry.captureException(
-          new Exception(
-            s"More than one engagement review for report id $reportId, this is not and expected behavior it should be investigated"
-          )
-        )
-        engagementReviews.maxBy(_.creationDate).some
-    }
 
   def getEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
     reportEngagementReviewRepository.findByReportIds(reportIds)
@@ -160,7 +144,7 @@ class EngagementOrchestrator(
       }
       _ = logger.debug(s"Report validated")
       reviews <- reportEngagementReviewRepository.findByReportId(reportId)
-      _ <- reviews.headOption match {
+      _ <- reviews match {
         case Some(review) =>
           updateEngagementReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
         case None =>
@@ -172,14 +156,14 @@ class EngagementOrchestrator(
   def deleteDetails(reportId: UUID): Future[Unit] = for {
     reviews <- reportEngagementReviewRepository.findByReportId(reportId)
     _ <- reviews match {
-      case review :: _ => reportEngagementReviewRepository.update(review.id, review.copy(details = Some("")))
-      case _           => Future.unit
+      case Some(review) => reportEngagementReviewRepository.update(review.id, review.copy(details = Some("")))
+      case None         => Future.unit
     }
   } yield ()
 
   def doesEngagementReviewExists(reportId: UUID): Future[Boolean] =
     for {
-      maybeReview <- getEngagementReview(reportId)
+      maybeReview <- reportEngagementReviewRepository.findByReportId(reportId)
       hasNonEmptyReview = maybeReview.exists(_.details.nonEmpty)
     } yield hasNonEmptyReview
 
@@ -191,6 +175,7 @@ class EngagementOrchestrator(
         details = review.details
       )
     )
+
   private def createEngagementReview(reportId: UUID, review: ConsumerReviewApi): Future[Event] =
     reportEngagementReviewRepository
       .createOrUpdate(
