@@ -71,7 +71,7 @@ class AuthOrchestrator(
         }
     else {
       logger.debug(s"User is not deleted")
-      Future.successful(())
+      Future.unit
     }
 
   def signalConsoLogin(userCredentials: UserCredentials): Future[UserSession] = {
@@ -169,7 +169,7 @@ class AuthOrchestrator(
         } yield ()
       case _ =>
         logger.warnWithTitle("reset_pwd_user_not_found", "User not found, cannot reset password")
-        Future.successful(())
+        Future.unit
     }
 
   def resetPassword(token: UUID, userPassword: UserPassword): Future[Unit] =

@@ -93,7 +93,7 @@ class CompanyAccessOrchestrator(
       _ = logger.debug(s"Found ${num} activation attempts")
       result <-
         if (num >= 20) Future.failed(TooMuchCompanyActivationAttempts(siret))
-        else Future.successful(())
+        else Future.unit
     } yield result
 
   private def validateToken(

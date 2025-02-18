@@ -35,7 +35,7 @@ class CompanyAlbertLabelTask(
         outdatedCutoffDate,
         limit = COMPANIES_PROCESSED_EACH_RUN
       )
-      _ <- companies.foldLeft(Future.successful(())) { (previous, company) =>
+      _ <- companies.foldLeft(Future.unit) { (previous, company) =>
         for {
           _ <- previous
           _ <- processCompany(company)

@@ -64,7 +64,7 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
               AccessLevel.MEMBER
             )
           } yield ()
-        } else Future.successful(())
+        } else Future.unit
       finalReport <- reportRepository.create(report)
       _ <- Future.sequence(events.map { case (eventAction, creationDate) =>
         val event = Fixtures

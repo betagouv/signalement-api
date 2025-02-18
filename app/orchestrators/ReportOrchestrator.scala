@@ -712,7 +712,7 @@ class ReportOrchestrator(
             )
           )
 
-      _ <- updatedReport.companyId.map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future.successful(()))
+      _ <- updatedReport.companyId.map(id => removeAccessTokenWhenNoMoreReports(id)).getOrElse(Future.unit)
     } yield updatedReport
   }
 
@@ -830,7 +830,7 @@ class ReportOrchestrator(
       hasReportBeenReopened = report.reopenDate.isDefined
       // We don't want the consumer to be notified when a pro is requesting a report reopening.
       // The consumer will only be notified when the pro will reply.
-      _ <- if (!hasReportBeenReopened) notifyConsumer(report) else Future.successful(())
+      _ <- if (!hasReportBeenReopened) notifyConsumer(report) else Future.unit
     } yield newReport
 
   private def notifyConsumer(report: Report) = for {
