@@ -8,6 +8,7 @@ import cats.implicits.toFunctorOps
 import cats.implicits.toTraverseOps
 import cats.instances.future._
 import controllers.error.AppError
+import controllers.error.AppError.AttachmentNotFound
 import controllers.error.AppError._
 import models._
 import models.report._
@@ -34,9 +35,13 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 
 class ReportFileOrchestrator(
     reportFileRepository: ReportFileRepositoryInterface,
+    visibleReportOrchestrator: VisibleReportOrchestrator,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3ServiceInterface,
     reportZipExportService: ReportZipExportService,
@@ -110,14 +115,23 @@ class ReportFileOrchestrator(
       res                 <- reportFilesToDelete.map(file => remove(file.id, file.filename)).sequence
     } yield res
 
-  def removeReportFile(fileId: ReportFileId, filename: String, user: Option[User]): Future[Int] =
+  def removeFileUsedInReport(fileId: ReportFileId, filename: String): Future[_] =
     for {
-      maybeReportFile <- reportFileRepository
-        .get(fileId)
-        .ensure(AttachmentNotFound(reportFileId = fileId, reportFileName = filename))(predicate =
-          _.exists(_.filename == filename)
-        )
-      reportFile <- maybeReportFile.liftTo[Future](AttachmentNotFound(fileId, filename))
+      file <- getFileByIdAndName(fileId, filename)
+      _    <- Future.fromTry(checkIsUsedInReport(file))
+      _    <- remove(fileId, filename)
+    } yield ()
+
+  def removeFileNotYetUsedInReport(fileId: ReportFileId, filename: String): Future[_] =
+    for {
+      file <- getFileByIdAndName(fileId, filename)
+      _    <- Future.fromTry(checkIsNotYetUsedInReport(file))
+      _    <- remove(fileId, filename)
+    } yield ()
+
+  def legacyRemoveReportFile(fileId: ReportFileId, filename: String, user: Option[User]): Future[_] =
+    for {
+      reportFile <- getFileByIdAndName(fileId, filename)
       userHasDeleteFilePermission = user.exists(user => UserRole.Admins.contains(user.userRole))
       _ <- reportFile.reportId match {
         case Some(_) if userHasDeleteFilePermission => reportFileRepository.delete(fileId)
@@ -126,33 +140,44 @@ class ReportFileOrchestrator(
           Future.failed(CantPerformAction)
         case None => reportFileRepository.delete(fileId)
       }
-      res <- remove(fileId, filename)
-    } yield res
+      _ <- remove(fileId, filename)
+    } yield ()
 
-  private def remove(fileId: ReportFileId, filename: String): Future[Int] = for {
-    res <- reportFileRepository.delete(fileId)
-    _   <- s3Service.delete(filename)
-  } yield res
-
-  def downloadReportAttachment(reportFileId: ReportFileId, filename: String): Future[String] = {
+  def legacyDownloadReportAttachment(reportFileId: ReportFileId, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $reportFileId")
-    getReportAttachmentOrRescan(reportFileId, filename).flatMap {
-      case Right(reportFile) => Future.successful(s3Service.getSignedUrl(reportFile.storageFilename))
-      case Left(error)       => Future.failed(error)
-    }
+    for {
+      file <- getReportAttachmentOrRescan(reportFileId, filename)
+    } yield s3Service.getSignedUrl(file.storageFilename)
   }
 
-  private def getReportAttachmentOrRescan(reportFileId: ReportFileId, filename: String) =
-    reportFileRepository
-      .get(reportFileId)
-      .flatMap {
-        case Some(reportFile) =>
-          validateAntivirusScanAndRescheduleScanIfNecessary(reportFile).map {
-            case (Scanned, file)    => Right(file)
-            case (NotScanned, file) => Left(AttachmentNotReady(file.id): AppError)
-          }
-        case _ => Future.successful(Left(AttachmentNotFound(reportFileId, filename)))
+  def downloadFileNotYetUsedInReport(reportFileId: ReportFileId, filename: String): Future[String] = {
+    logger.info(s"Downloading file with id $reportFileId")
+    for {
+      file <- getReportAttachmentOrRescan(reportFileId, filename)
+      _    <- Future.fromTry(checkIsNotYetUsedInReport(file))
+    } yield s3Service.getSignedUrl(file.storageFilename)
+  }
+
+  def downloadFileUsedInReport(reportFileId: ReportFileId, filename: String, user: User): Future[String] = {
+    logger.info(s"Downloading file with id $reportFileId")
+    for {
+      file     <- getReportAttachmentOrRescan(reportFileId, filename)
+      reportId <- Future.fromTry(checkIsUsedInReport(file))
+      _        <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
+    } yield s3Service.getSignedUrl(file.storageFilename)
+  }
+
+  private def getReportAttachmentOrRescan(reportFileId: ReportFileId, filename: String): Future[ReportFile] =
+    for {
+      maybeFile <- reportFileRepository
+        .get(reportFileId)
+      fileFound       <- maybeFile.liftTo[Future](AttachmentNotFound(reportFileId, filename))
+      antivirusResult <- validateAntivirusScanAndRescheduleScanIfNecessary(fileFound)
+      fileScanned = antivirusResult match {
+        case (Scanned, file)    => file
+        case (NotScanned, file) => throw AttachmentNotReady(file.id)
       }
+    } yield fileScanned
 
   private def validateAntivirusScanAndRescheduleScanIfNecessary(
       reportFile: ReportFile
@@ -204,6 +229,33 @@ class ReportFileOrchestrator(
       _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
       res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
     } yield res
+
+  private def getFileByIdAndName(fileId: ReportFileId, filename: String) =
+    for {
+      maybeFile <- reportFileRepository.get(fileId)
+      file      <- maybeFile.filter(_.filename == filename).liftTo[Future](AttachmentNotFound(fileId, filename))
+    } yield file
+
+  private def remove(fileId: ReportFileId, filename: String): Future[Int] = for {
+    res <- reportFileRepository.delete(fileId)
+    _   <- s3Service.delete(filename)
+  } yield res
+
+  private def checkIsNotYetUsedInReport(file: ReportFile): Try[Unit] =
+    file.reportId match {
+      case None => Success(())
+      case Some(_) =>
+        logger.warn(s"Cannot act on file ${file.id} this way, because it IS linked to a report")
+        Failure(CantPerformAction)
+    }
+
+  private def checkIsUsedInReport(file: ReportFile): Try[UUID] =
+    file.reportId match {
+      case Some(reportId) => Success(reportId)
+      case None =>
+        logger.warn(s"Cannot act on file ${file.id} this way, because it is NOT linked to a report")
+        Failure(CantPerformAction)
+    }
 
 }
 
