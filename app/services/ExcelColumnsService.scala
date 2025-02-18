@@ -110,7 +110,7 @@ object ExcelColumnsService {
             .filter(file => file.origin == ReportFileOrigin.Consumer && shouldBeVisibleToUser(userRole, report))
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportFileController
-                  .downloadReportFile(file.id, file.filename)
+                  .downloadFileUsedInReport(file.id, file.filename)
                   .url}"
             )
             .mkString("\n")

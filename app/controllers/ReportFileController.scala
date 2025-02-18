@@ -23,7 +23,6 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
-import repositories.report.ReportRepositoryInterface
 import utils.DateUtils.frenchFileFormatDate
 
 import java.io.File
@@ -37,8 +36,7 @@ class ReportFileController(
     visibleReportOrchestrator: VisibleReportOrchestrator,
     authenticator: Authenticator[User],
     signalConsoConfiguration: SignalConsoConfiguration,
-    controllerComponents: ControllerComponents,
-    reportRepository: ReportRepositoryInterface
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -46,12 +44,26 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
-  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = Act.public.generousLimit.async {
-    _ =>
+  def legacyDownloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.public.generousLimit.async { _ =>
       reportFileOrchestrator
-        .downloadReportAttachment(uuid, filename)
+        .legacyDownloadReportAttachment(uuid, filename)
         .map(signedUrl => Redirect(signedUrl))
-  }
+    }
+
+  def downloadFileNotYetUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.public.generousLimit.async {
+      reportFileOrchestrator
+        .downloadFileNotYetUsedInReport(uuid, filename)
+        .map(signedUrl => Redirect(signedUrl))
+    }
+
+  def downloadFileUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.secured.all.allowImpersonation.async { request =>
+      reportFileOrchestrator
+        .downloadFileUsedInReport(uuid, filename, request.identity)
+        .map(signedUrl => Redirect(signedUrl))
+    }
 
   def retrieveReportFiles(): Action[JsValue] = Act.userAware.allowImpersonation.async(parse.json) { request =>
     // Validate the incoming JSON request body against the expected format
@@ -82,10 +94,24 @@ class ReportFileController(
         )
     }
 
-  def deleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
+  def legacyDeleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.userAware.forbidImpersonation.async { implicit request =>
       reportFileOrchestrator
-        .removeReportFile(uuid, filename, request.identity)
+        .legacyRemoveReportFile(uuid, filename, request.identity)
+        .map(_ => NoContent)
+    }
+
+  def deleteFileUsedInReport(fileId: ReportFileId, filename: String): Action[AnyContent] =
+    Act.secured.admins.async {
+      reportFileOrchestrator
+        .removeFileUsedInReport(fileId, filename)
+        .map(_ => NoContent)
+    }
+
+  def deleteFileNotYetUsedInReport(fileId: ReportFileId, filename: String): Action[AnyContent] =
+    Act.public.standardLimit.async {
+      reportFileOrchestrator
+        .removeFileNotYetUsedInReport(fileId, filename)
         .map(_ => NoContent)
     }
 
