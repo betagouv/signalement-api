@@ -9,4 +9,4 @@ WHERE agg.report_id = r.report_id
   AND agg.max_creation <> r.creation_date;
 
 ALTER TABLE engagement_reviews
-    ADD CONSTRAINT unique_report_id UNIQUE (report_id);
+    ADD CONSTRAINT unique_engagement_report_id UNIQUE (report_id);
