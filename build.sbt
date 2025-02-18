@@ -58,6 +58,11 @@ Test / tpolecatExcludeOptions += ScalacOptions.lintMissingInterpolator
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
+def doLint(cmd: String) = s"scalafmt;$cmd;"
+
+addCommandAlias("lint", doLint("scalafmt;compile;scalafix"))
+addCommandAlias("lintTest", doLint("scalafmtAll;Test / compile;scalafixAll"))
+
 Universal / mappings ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
