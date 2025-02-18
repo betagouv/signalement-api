@@ -10,7 +10,7 @@ import scala.concurrent.Future
 trait ResponseConsumerReviewRepositoryInterface
     extends TypedCRUDRepositoryInterface[ResponseConsumerReview, ResponseConsumerReviewId] {
 
-  def findByReportId(reportId: UUID): Future[List[ResponseConsumerReview]]
+  def findByReportId(reportId: UUID): Future[Option[ResponseConsumerReview]]
 
   def findByReportIds(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]]
 

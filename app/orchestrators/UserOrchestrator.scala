@@ -19,6 +19,7 @@ import java.time.OffsetDateTime
 import cats.syntax.option._
 import models.AuthProvider.ProConnect
 import models.AuthProvider.SignalConso
+import models.UserRole.DGCCRF
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
 import models.proconnect.ProConnectClaim
@@ -88,11 +89,13 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
   override def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User] =
     OptionT(userRepository.findByAuthProviderId(claim.sub))
       .orElseF(userRepository.findByEmail(claim.email))
+      .filter(_.userRole == DGCCRF)
       .semiflatMap { user =>
         val updated = user.copy(
           email = EmailAddress(claim.email),
           firstName = claim.givenName,
           lastName = claim.usualName,
+          userRole = role,
           authProvider = ProConnect,
           authProviderId = claim.sub.some,
           lastEmailValidation = Some(OffsetDateTime.now())

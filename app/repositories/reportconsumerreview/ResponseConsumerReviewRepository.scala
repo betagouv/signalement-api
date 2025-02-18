@@ -25,8 +25,8 @@ class ResponseConsumerReviewRepository(
 
   import dbConfig._
 
-  override def findByReportId(reportId: UUID): Future[List[ResponseConsumerReview]] =
-    db.run(table.filter(_.reportId === reportId).to[List].result)
+  override def findByReportId(reportId: UUID): Future[Option[ResponseConsumerReview]] =
+    db.run(table.filter(_.reportId === reportId).to[List].result.headOption)
 
   override def findByReportIds(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
     db.run(
