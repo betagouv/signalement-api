@@ -422,6 +422,7 @@ class SignalConsoComponents(
   val reportFileOrchestrator =
     new ReportFileOrchestrator(
       reportFileRepository,
+      visibleReportOrchestrator,
       antivirusScanActor,
       s3Service,
       reportZipExportService,
@@ -858,8 +859,7 @@ class SignalConsoComponents(
       visibleReportOrchestrator,
       cookieAuthenticator,
       signalConsoConfiguration,
-      controllerComponents,
-      reportRepository
+      controllerComponents
     )
 
   val healthController = new HealthController(cookieAuthenticator, controllerComponents)

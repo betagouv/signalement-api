@@ -29,10 +29,14 @@ POST          /api/email-validation/check-and-validate                controller
 POST          /api/rating                                             controllers.RatingController.rateBlockingInfoInSubcategoryUsefulness()
 # egalement utilisé dans le dashboard
 GET           /api/constants/countries                                controllers.ConstantController.getCountries()
-# for direct download of a single attachment
-# egalement utilisé dans le dashboard
-GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
-
+# for direct viewing of a single attachment
+# also used in the dashboard for the pro when he's viewing the attachment of his response that is not yet submitted
+GET           /api/reports/files/temporary/:fileId/:filename          controllers.ReportFileController.downloadFileNotYetUsedInReport(fileId: ReportFileId, filename)
+# for deleting an attachment that was uploaded but the report isn't submitted yet
+# also used in the dashboard for the pro when his response isn't submitted yet
+DELETE        /api/reports/files/temporary/:fileId/:filename          controllers.ReportFileController.deleteFileNotYetUsedInReport(fileId: ReportFileId, filename)
+# this next one is LEGACY, to be removed very soon, once the frontend is updated (was used both in website and dashboard)
+GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDownloadReportFile(uuid: ReportFileId, filename)
 
 ###########################################
 ########## REPORTS SEARCH/LIST PAGE #######
@@ -74,10 +78,14 @@ POST          /api/reports/:uuid/assign/:userId                       controller
 ########## FOR VIEWING/EDITING ATTACHMENTS OF AN EXISTING REPORT #######
 ########################################################################
 
+# for viewing a single attachment (and the thumbnails)
+GET           /api/reports/files/used/:fileId/:filename               controllers.ReportFileController.downloadFileUsedInReport(fileId: ReportFileId, filename)
 # button "download all attachments"
 GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for deletion of a single attachment
-DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
+DELETE        /api/reports/files/used/:fileId/:filename               controllers.ReportFileController.deleteFileUsedInReport(fileId: ReportFileId, filename)
+# This next one is LEGACY, to be deleted very shortly once we do the change in the frontend
+DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDeleteReportFile(uuid: ReportFileId, filename)
 # for adding a single attachment (for both pro and admin)
 POST          /api/reports/files                                      controllers.ReportFileController.uploadReportFile(reportFileId: Option[java.util.UUID])
 # something related to the antivirus scan of the files (but I couldn't find how to trigger it)
