@@ -39,7 +39,7 @@ class OldReportsRgpdDeletionTask(
         )
       }
       _ = logger.info(s"Found ${veryOldReports.length} that need to be emptied for RGPD (older than ${createdBefore})")
-      _ <- veryOldReports.foldLeft(Future.successful(())) { case (previous, report) =>
+      _ <- veryOldReports.foldLeft(Future.unit) { case (previous, report) =>
         for {
           _ <- previous
           _ <- rgpdOrchestrator.deleteRGPD(report)

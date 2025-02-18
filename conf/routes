@@ -35,8 +35,6 @@ GET           /api/reports/files/temporary/:fileId/:filename          controller
 # for deleting an attachment that was uploaded but the report isn't submitted yet
 # also used in the dashboard for the pro when his response isn't submitted yet
 DELETE        /api/reports/files/temporary/:fileId/:filename          controllers.ReportFileController.deleteFileNotYetUsedInReport(fileId: ReportFileId, filename)
-# this next one is LEGACY, to be removed very soon, once the frontend is updated (was used both in website and dashboard)
-GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDownloadReportFile(uuid: ReportFileId, filename)
 
 ###########################################
 ########## REPORTS SEARCH/LIST PAGE #######
@@ -84,8 +82,6 @@ GET           /api/reports/files/used/:fileId/:filename               controller
 GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for deletion of a single attachment
 DELETE        /api/reports/files/used/:fileId/:filename               controllers.ReportFileController.deleteFileUsedInReport(fileId: ReportFileId, filename)
-# This next one is LEGACY, to be deleted very shortly once we do the change in the frontend
-DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDeleteReportFile(uuid: ReportFileId, filename)
 # for adding a single attachment (for both pro and admin)
 POST          /api/reports/files                                      controllers.ReportFileController.uploadReportFile(reportFileId: Option[java.util.UUID])
 # something related to the antivirus scan of the files (but I couldn't find how to trigger it)

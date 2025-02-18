@@ -64,7 +64,7 @@ class MailService(
           )
       case None =>
         logger.debug("No company linked to report, not sending emails")
-        Future.successful(())
+        Future.unit
     }
   }
 

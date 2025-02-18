@@ -20,7 +20,7 @@ class BookmarkOrchestrator(
     for {
       existingBookmark <- getExistingBookmark(reportId, user)
       _ <- existingBookmark match {
-        case Some(_) => Future.successful(())
+        case Some(_) => Future.unit
         case None    => bookmarkRepository.create(Bookmark(reportId = reportId, userId = user.id))
       }
     } yield ()
@@ -30,7 +30,7 @@ class BookmarkOrchestrator(
       existingBookmark <- getExistingBookmark(reportId, user)
       _ <- existingBookmark match {
         case Some(_) => bookmarkRepository.deleteByIds(reportId = reportId, userId = user.id)
-        case None    => Future.successful(())
+        case None    => Future.unit
       }
     } yield ()
 

@@ -57,7 +57,7 @@ class EventsOrchestrator(
       user: User
   ): Future[List[EventWithUser]] =
     for {
-      _ <- Future.successful(())
+      _ <- Future.unit
       _ <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
       filter = buildEventFilter(eventType)
       _      = logger.debug("Fetching events")

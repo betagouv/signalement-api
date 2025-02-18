@@ -182,7 +182,7 @@ class ProAccessTokenOrchestrator(
     for {
       _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
-        case Nil => Future.successful(())
+        case Nil => Future.unit
         case c :: _ =>
           mailService.send(ProNewCompaniesAccesses.Email(user.email, companies, SIREN.fromSIRET(c.siret)))
       }
@@ -248,7 +248,7 @@ class ProAccessTokenOrchestrator(
         )
       )
       _ <- list match {
-        case Nil => Future.successful(())
+        case Nil => Future.unit
         case (tokenCode, c) :: _ =>
           mailService.send(
             ProCompaniesAccessesInvitations.Email(

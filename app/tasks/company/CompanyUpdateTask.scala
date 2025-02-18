@@ -74,7 +74,7 @@ class CompanyUpdateTask(
       if (newLastUpdated.isAfter(lastUpdated)) {
         logger.debug(s"New lastupdated company $newLastUpdated")
         companySyncRepository.createOrUpdate(companySync.copy(lastUpdated = newLastUpdated))
-      } else Future.successful(())
+      } else Future.unit
   } yield ()
 
   private def updateSignalConsoCompaniesBySiret(companies: Seq[CompanySearchResult]) = {

@@ -50,7 +50,7 @@ class ReportNotificationTask(
       _ <-
         if (isWeeklySubscriptionsDay)
           runPeriodicNotificationTask(now, Period.ofDays(7))
-        else Future.successful(())
+        else Future.unit
       _ <- runPeriodicNotificationTask(now, Period.ofDays(1))
     } yield ()
   }

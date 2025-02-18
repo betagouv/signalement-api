@@ -209,7 +209,7 @@ class AccessesOrchestrator(
     else {
       val invalidEmails = emails.filter(email => !validateFunction(email.value))
       if (invalidEmails.isEmpty) {
-        Future.successful(())
+        Future.unit
       } else {
         Future.failed(InvalidDGCCRFOrAdminEmail(invalidEmails))
       }
@@ -283,7 +283,7 @@ class AccessesOrchestrator(
     for {
       _ <-
         if (emailValidationFunction(email.value)) {
-          Future.successful(())
+          Future.unit
         } else {
           Future.failed(InvalidDGCCRFOrAdminEmail(List(email)))
         }

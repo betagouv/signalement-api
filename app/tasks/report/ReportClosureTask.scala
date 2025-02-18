@@ -136,7 +136,7 @@ class ReportClosureTask(
       mailService.send(email)
     } else {
       logger.debug("Report has been re-opened, it is not necessary to inform the consumer")
-      Future.successful(())
+      Future.unit
     }
 
   }

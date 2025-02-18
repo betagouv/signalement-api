@@ -111,7 +111,7 @@ class EmailValidationOrchestrator(
     if (emailConfiguration.emailProvidersBlocklist.exists(email.value.contains(_))) {
       Future.failed(AppError.InvalidEmailProvider)
     } else {
-      Future.successful(())
+      Future.unit
     }
 
   private[this] def validateFormat(emailAddress: EmailAddress): Future[EmailValidationResult] = {
