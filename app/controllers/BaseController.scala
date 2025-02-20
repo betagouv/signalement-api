@@ -77,9 +77,16 @@ abstract class ApiKeyBaseController(
     authenticator
   ) andThen new ErrorHandlerActionFunction[ConsumerRequest]()
 
+  private def disabledActionFilter = new ActionFilter[Request] {
+    override protected def executionContext = ec
+    override protected def filter[A](request: Request[A]): Future[Option[Result]] =
+      Future.successful(Some(Gone))
+  }
+
   trait ActDslApiKey {
     val securedbyApiKey = securedByApiKeyAction
-
+    // we disable some endpoints that seem completely unused.
+    val disabled = Action.andThen(disabledActionFilter)
   }
   val Act = new ActDslApiKey {}
 }

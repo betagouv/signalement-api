@@ -82,7 +82,7 @@ class ReportToExternalController(
     )
   }
 
-  def searchReportsToExternalV2() = Act.securedbyApiKey.async { implicit request =>
+  def searchReportsToExternalV2() = Act.disabled.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
@@ -113,21 +113,19 @@ class ReportToExternalController(
     )
   }
 
-  /** @deprecated
-    *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
-    */
-  def searchReportsToExternalBySiret(siret: String) = Act.securedbyApiKey.async { implicit request =>
-    val qs = new QueryStringMapper(request.queryString)
-    val filter = ReportFilter(
-      siretSirenList = List(siret),
-      start = qs.timeWithLocalDateRetrocompatStartOfDay("start"),
-      end = qs.timeWithLocalDateRetrocompatEndOfDay("end")
-    )
-    for {
-      reportsWithMetadata <- reportRepository.getReports(None, filter, Some(0), Some(1000000), None, None)
-      reports         = reportsWithMetadata.entities.map(_.report)
-      reportsExternal = reports.map(ReportToExternal.fromReport)
-    } yield Ok(Json.toJson(reportsExternal))
-  }
+  def searchReportsToExternalBySiret(siret: String) =
+    Act.disabled.async { implicit request =>
+      val qs = new QueryStringMapper(request.queryString)
+      val filter = ReportFilter(
+        siretSirenList = List(siret),
+        start = qs.timeWithLocalDateRetrocompatStartOfDay("start"),
+        end = qs.timeWithLocalDateRetrocompatEndOfDay("end")
+      )
+      for {
+        reportsWithMetadata <- reportRepository.getReports(None, filter, Some(0), Some(1000000), None, None)
+        reports         = reportsWithMetadata.entities.map(_.report)
+        reportsExternal = reports.map(ReportToExternal.fromReport)
+      } yield Ok(Json.toJson(reportsExternal))
+    }
 
 }
