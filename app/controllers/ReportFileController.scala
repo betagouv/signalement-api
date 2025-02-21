@@ -44,6 +44,13 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
+  def legacyDownloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.public.generousLimit.async { _ =>
+      reportFileOrchestrator
+        .legacyDownloadReportAttachment(uuid, filename)
+        .map(signedUrl => Redirect(signedUrl))
+    }
+
   def downloadFileNotYetUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.public.generousLimit.async {
       reportFileOrchestrator
@@ -85,6 +92,13 @@ class ReportFileController(
         .withHeaders(
           "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
         )
+    }
+
+  def legacyDeleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
+    Act.userAware.forbidImpersonation.async { implicit request =>
+      reportFileOrchestrator
+        .legacyRemoveReportFile(uuid, filename, request.identity)
+        .map(_ => NoContent)
     }
 
   def deleteFileUsedInReport(fileId: ReportFileId, filename: String): Action[AnyContent] =

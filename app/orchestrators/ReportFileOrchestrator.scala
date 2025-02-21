@@ -129,6 +129,27 @@ class ReportFileOrchestrator(
       _    <- remove(fileId, filename)
     } yield ()
 
+  def legacyRemoveReportFile(fileId: ReportFileId, filename: String, user: Option[User]): Future[_] =
+    for {
+      reportFile <- getFileByIdAndName(fileId, filename)
+      userHasDeleteFilePermission = user.exists(user => UserRole.Admins.contains(user.userRole))
+      _ <- reportFile.reportId match {
+        case Some(_) if userHasDeleteFilePermission => reportFileRepository.delete(fileId)
+        case Some(_) =>
+          logger.warn(s"Cannot delete file $fileId because user ${user.map(_.id)} is missing delete file permission")
+          Future.failed(CantPerformAction)
+        case None => reportFileRepository.delete(fileId)
+      }
+      _ <- remove(fileId, filename)
+    } yield ()
+
+  def legacyDownloadReportAttachment(reportFileId: ReportFileId, filename: String): Future[String] = {
+    logger.info(s"Downloading file with id $reportFileId")
+    for {
+      file <- getReportAttachmentOrRescan(reportFileId, filename)
+    } yield s3Service.getSignedUrl(file.storageFilename)
+  }
+
   def downloadFileNotYetUsedInReport(reportFileId: ReportFileId, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $reportFileId")
     for {
