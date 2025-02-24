@@ -158,12 +158,19 @@ class ReportFileOrchestrator(
     } yield s3Service.getSignedUrl(file.storageFilename)
   }
 
-  def downloadFileUsedInReport(reportFileId: ReportFileId, filename: String, user: User): Future[String] = {
+  def downloadFileUsedInReport(
+      reportFileId: ReportFileId,
+      filename: String,
+      maybeUser: Option[User]
+  ): Future[String] = {
     logger.info(s"Downloading file with id $reportFileId")
     for {
       file     <- getReportAttachmentOrRescan(reportFileId, filename)
       reportId <- Future.fromTry(checkIsUsedInReport(file))
-      _        <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
+      _ <- maybeUser match {
+        case Some(user) => visibleReportOrchestrator.checkReportIsVisible(reportId, user)
+        case _          => Future.unit
+      }
     } yield s3Service.getSignedUrl(file.storageFilename)
   }
 

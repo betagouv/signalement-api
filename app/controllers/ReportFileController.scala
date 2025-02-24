@@ -61,7 +61,7 @@ class ReportFileController(
   def downloadFileUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.secured.all.allowImpersonation.async { request =>
       reportFileOrchestrator
-        .downloadFileUsedInReport(uuid, filename, request.identity)
+        .downloadFileUsedInReport(uuid, filename, Some(request.identity))
         .map(signedUrl => Redirect(signedUrl))
     }
 

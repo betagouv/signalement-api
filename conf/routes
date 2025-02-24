@@ -352,6 +352,10 @@ GET /api/ext/reports/extract      controllers.DataEconomieController.reportDataE
 # très utilisé
 GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getReportToExternal(uuid)
 
+# ReponseConso aspire les pièces jointes
+# On leur crée cet endpoint pour ne plus qu'il utilise celui legacy qui n'était pas authentifié
+GET /api/ext/reports/files/used/:fileId/:filename     controllers.ReportToExternalController.downloadFileUsedInReport(fileId: ReportFileId, filename)
+
 ##############################################################
 ######## AUTRES ENDPOINTS SANS FRONTEND CORRESPONDANT ########
 ##############################################################
