@@ -94,13 +94,6 @@ class ReportFileController(
         )
     }
 
-  def legacyDeleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
-    Act.userAware.forbidImpersonation.async { implicit request =>
-      reportFileOrchestrator
-        .legacyRemoveReportFile(uuid, filename, request.identity)
-        .map(_ => NoContent)
-    }
-
   def deleteFileUsedInReport(fileId: ReportFileId, filename: String): Action[AnyContent] =
     Act.secured.admins.async {
       reportFileOrchestrator
