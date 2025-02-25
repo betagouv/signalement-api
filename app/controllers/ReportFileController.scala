@@ -61,7 +61,7 @@ class ReportFileController(
   def downloadFileUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.secured.all.allowImpersonation.async { request =>
       reportFileOrchestrator
-        .downloadFileUsedInReport(uuid, filename, request.identity)
+        .downloadFileUsedInReport(uuid, filename, Some(request.identity))
         .map(signedUrl => Redirect(signedUrl))
     }
 
@@ -92,13 +92,6 @@ class ReportFileController(
         .withHeaders(
           "Content-Disposition" -> s"attachment; filename=${frenchFileFormatDate(report.creationDate)}.zip"
         )
-    }
-
-  def legacyDeleteReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
-    Act.userAware.forbidImpersonation.async { implicit request =>
-      reportFileOrchestrator
-        .legacyRemoveReportFile(uuid, filename, request.identity)
-        .map(_ => NoContent)
     }
 
   def deleteFileUsedInReport(fileId: ReportFileId, filename: String): Action[AnyContent] =

@@ -6,7 +6,9 @@ import models.Consumer
 import models.PaginatedResult.paginatedResultWrites
 import models.report._
 import models.report.ReportWithFilesToExternal.format
+import models.report.reportfile.ReportFileId
 import models.report.reportmetadata.ReportWithMetadataAndBookmark
+import orchestrators.ReportFileOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -26,6 +28,7 @@ class ReportToExternalController(
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
+    reportFileOrchestrator: ReportFileOrchestrator,
     authenticator: Authenticator[Consumer],
     signalConsoConfiguration: SignalConsoConfiguration,
     controllerComponents: ControllerComponents
@@ -129,5 +132,12 @@ class ReportToExternalController(
       reportsExternal = reports.map(ReportToExternal.fromReport)
     } yield Ok(Json.toJson(reportsExternal))
   }
+
+  def downloadFileUsedInReport(uuid: ReportFileId, filename: String) =
+    Act.securedbyApiKey.async {
+      reportFileOrchestrator
+        .downloadFileUsedInReport(uuid, filename, maybeUser = None)
+        .map(signedUrl => Redirect(signedUrl))
+    }
 
 }

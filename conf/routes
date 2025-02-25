@@ -84,8 +84,6 @@ GET           /api/reports/files/used/:fileId/:filename               controller
 GET           /api/reports/:uuid/files                                controllers.ReportFileController.downloadAllFilesAsZip(uuid: java.util.UUID, origin: Option[ReportFileOrigin])
 # for deletion of a single attachment
 DELETE        /api/reports/files/used/:fileId/:filename               controllers.ReportFileController.deleteFileUsedInReport(fileId: ReportFileId, filename)
-# This next one is LEGACY, to be deleted very shortly once we do the change in the frontend
-DELETE        /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDeleteReportFile(uuid: ReportFileId, filename)
 # for adding a single attachment (for both pro and admin)
 POST          /api/reports/files                                      controllers.ReportFileController.uploadReportFile(reportFileId: Option[java.util.UUID])
 # something related to the antivirus scan of the files (but I couldn't find how to trigger it)
@@ -351,6 +349,10 @@ GET /api/ext/reports/extract      controllers.DataEconomieController.reportDataE
 
 # très utilisé
 GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getReportToExternal(uuid)
+
+# ReponseConso aspire les pièces jointes
+# On leur crée cet endpoint pour ne plus qu'il utilise celui legacy qui n'était pas authentifié
+GET /api/ext/reports/files/used/:fileId/:filename     controllers.ReportToExternalController.downloadFileUsedInReport(fileId: ReportFileId, filename)
 
 ##############################################################
 ######## AUTRES ENDPOINTS SANS FRONTEND CORRESPONDANT ########
