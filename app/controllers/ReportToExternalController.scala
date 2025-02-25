@@ -85,7 +85,7 @@ class ReportToExternalController(
     )
   }
 
-  def searchReportsToExternalV2() = Act.securedbyApiKey.async { implicit request =>
+  def searchReportsToExternalV2() = Act.disabled.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
@@ -116,10 +116,7 @@ class ReportToExternalController(
     )
   }
 
-  /** @deprecated
-    *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
-    */
-  def searchReportsToExternalBySiret(siret: String) = Act.securedbyApiKey.async { implicit request =>
+  def searchReportsToExternalBySiret(siret: String) = Act.disabled.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = List(siret),

@@ -333,16 +333,10 @@ GET           /api/mobileapp/requirements                             controller
 ########## FOR EXTERNAL SIs ############
 ########################################
 
-# celui-ci est marqué deprecated dans le code, qui dit d'utiliser /api/ext/reports (lui même remplacé par V2 ?)
-# pas utilisé dans les 30 derniers jours d'après New Relic
-GET /api/ext/reports/siret/:siret controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
 
 # très utilisé. Principalement pour filtrer sur le tag ReponseConso, donc ça doit être RéponseConso qui l'utilise ?
 GET /api/ext/reports              controllers.ReportToExternalController.searchReportsToExternal()
 
-# pas utilisé dans les 30 derniers jours d'après New Relic
-# curieux, alors que c'est censé être une V2 par rapport au précédent ?
-GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
 
 # utilisé une fois par jour vers minuit
 GET /api/ext/reports/extract      controllers.DataEconomieController.reportDataEcomonie()
@@ -353,6 +347,12 @@ GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getRepo
 # ReponseConso aspire les pièces jointes
 # On leur crée cet endpoint pour ne plus qu'il utilise celui legacy qui n'était pas authentifié
 GET /api/ext/reports/files/used/:fileId/:filename     controllers.ReportToExternalController.downloadFileUsedInReport(fileId: ReportFileId, filename)
+
+# Ces deux endpoints semblaient inutilisés
+# Nous les avons maintenant (2025-02) désactivés dans le code (ils renvoient un code d'erreur)
+# A terme, si personne ne se plaint on pourra les supprimer entièrement
+GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
+GET /api/ext/reports/siret/:siret controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
 
 ##############################################################
 ######## AUTRES ENDPOINTS SANS FRONTEND CORRESPONDANT ########
