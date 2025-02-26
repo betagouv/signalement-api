@@ -348,11 +348,21 @@ GET /api/ext/reports/:uuid        controllers.ReportToExternalController.getRepo
 # On leur crée cet endpoint pour ne plus qu'il utilise celui legacy qui n'était pas authentifié
 GET /api/ext/reports/files/used/:fileId/:filename     controllers.ReportToExternalController.downloadFileUsedInReport(fileId: ReportFileId, filename)
 
-# Ces deux endpoints semblaient inutilisés
-# Nous les avons maintenant (2025-02) désactivés dans le code (ils renvoient un code d'erreur)
-# A terme, si personne ne se plaint on pourra les supprimer entièrement
-GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
+# Cet endpoint apparait inutilisé dans les logs
+# Pourtant dans une discussion avec Georges Lagresa et Laurent Fontaine
+# ils disent qu'il est utilisé dans "SORA" :
+#     "C’est une fonctionnalité qui est offerte aux agents qui leur
+#     permet d’obtenir une liste de signalements selon le SIRET de l’ETS en cours d’analyse."
+# Comme il n'y a rien dans les logs des 30 derniers jours, c'est probablement une fonctionnalité
+# pratiquement inutilisée. On garde l'endpoint quand même.
+# Note : "SORA" utilise la même api key que ReponseConso
 GET /api/ext/reports/siret/:siret controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
+
+# Cet endpoint apparait inutilisé dans les logs
+# Visiblement il était censé remplacer une version précédente mais ReponseConso n'a jamais fait la migration
+# On l'a maintenant (2025-02) désactivé dans le code (il renvoit un code d'erreur)
+# A terme, si personne ne se plaint on pourra le supprimer entièrement
+GET /api/ext/v2/reports           controllers.ReportToExternalController.searchReportsToExternalV2()
 
 ##############################################################
 ######## AUTRES ENDPOINTS SANS FRONTEND CORRESPONDANT ########
