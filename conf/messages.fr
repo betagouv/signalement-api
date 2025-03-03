@@ -45,6 +45,10 @@ ConsumerReportAckProEmail.signalementNonConcerne=L''entreprise a déclaré que c
 ConsumerReportAckProEmail.signalementNonAccepteHelp=Vous pouvez néanmoins continuer les démarches pour trouver une solution ou obtenir réparation :
 ConsumerReportAckProEmail.signalementAccepte=Avec sa réponse, l''entreprise s''est engagée à prendre en compte votre signalement. Elle a pris l''engagement suivant :
 ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=Vous recevrez un nouvel email dans {0} jours pour vous demander si l''entreprise a bien tenu son engagement. Merci de patienter et de ne pas refaire de signalement ou contacter le support avant la fin de ce délai.
+ConsumerReportAckProEmail.youCanReassign=Vous pouvez ré-assigner votre signalement à la bonne entreprise en suivante ce lien :
+ConsumerReportAckProEmail.reassign=Ré-assigner mon signalement
+ConsumerReportAckProEmail.maxDelayToReassign=Vous disposez de 15 jours pour le ré-assigner.
+ConsumerReportAckProEmail.ifYouAreSure=Néanmoins, si vous êtes certain qu''il s''agit bien de la bonne entreprise, vous pouvez poursuivre les démarches pour trouver une solution ou obtenir réparation :
 
 ConsumerReportProEngagementEmail.subject=Votre avis sur l''engagement de l''entreprise concernant votre signalement
 ConsumerReportProEngagementEmail.title=Votre avis sur l''engagement de l''entreprise concernant votre signalement

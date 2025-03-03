@@ -56,6 +56,24 @@ class ReportController(
 
   val logger: Logger = Logger(this.getClass)
 
+  def isReassignable(reportId: UUID) = Act.public.standardLimit.async { _ =>
+    reportOrchestrator.isReassignable(reportId).map(Ok(_))
+  }
+
+  def reassign(reportId: UUID) = Act.public.standardLimit.async(parse.json) { implicit request =>
+    implicit val userRole: Option[UserRole] = None
+    val consumerIp                          = ConsumerIp(request.remoteAddress)
+    for {
+      reassignCompany <- request.parseBody[ReassignCompany]()
+      createdReport <- reportOrchestrator.reassign(
+        reportId,
+        reassignCompany.company,
+        reassignCompany.metadata,
+        consumerIp
+      )
+    } yield Ok(Json.toJson(createdReport))
+  }
+
   def createReport: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
     for {

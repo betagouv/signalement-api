@@ -656,4 +656,12 @@ object AppError {
     override val titleForLogs: String = "website_not_identified"
 
   }
+
+  final case class ReportNotReassignable(id: UUID) extends BadRequestError {
+    override val scErrorCode: String = "SC-0072"
+    override val title: String       = s"Report is not reassignable"
+    override val details: String =
+      s"Le signalement $id n'est pas ré-assignable"
+    override val titleForLogs: String = "report_not_reassignable"
+  }
 }

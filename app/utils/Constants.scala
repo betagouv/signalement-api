@@ -119,6 +119,8 @@ object Constants {
     object USER_ACCESS_CREATED extends ActionEventValue("UserAccessCreated")
     object USER_ACCESS_REMOVED extends ActionEventValue("UserAccessRemoved")
 
+    object REASSIGN extends ActionEventValue("Ré-assignation du signalement")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,

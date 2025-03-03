@@ -38,6 +38,11 @@ DELETE        /api/reports/files/temporary/:fileId/:filename          controller
 # this next one is LEGACY, to be removed very soon, once the frontend is updated (was used both in website and dashboard)
 GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDownloadReportFile(uuid: ReportFileId, filename)
 
+# For the
+GET           /api/reports/:uuid/reassign                             controllers.ReportController.isReassignable(uuid: java.util.UUID)
+POST          /api/reports/:uuid/reassign                             controllers.ReportController.reassign(uuid: java.util.UUID)
+
+
 ###########################################
 ########## REPORTS SEARCH/LIST PAGE #######
 ###########################################

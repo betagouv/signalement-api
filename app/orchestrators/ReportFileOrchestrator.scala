@@ -234,6 +234,23 @@ class ReportFileOrchestrator(
     _   <- s3Service.delete(filename)
   } yield res
 
+  def duplicate(fileId: ReportFileId, filename: String, maybeReportId: Option[UUID]): Future[ReportFile] = for {
+    file <- getFileByIdAndName(fileId, filename)
+    data <- s3Service.download(file.storageFilename)
+    newName = s"${UUID.randomUUID()}_$filename"
+    newFile = ReportFile(
+      id = ReportFileId.generateId(),
+      reportId = maybeReportId,
+      creationDate = OffsetDateTime.now(),
+      filename = filename,
+      storageFilename = newName,
+      origin = file.origin,
+      avOutput = file.avOutput
+    )
+    newReportFile <- reportFileRepository.create(newFile)
+    _             <- Source.single(data).runWith(s3Service.upload(newReportFile.storageFilename))
+  } yield newReportFile
+
   private def checkIsNotYetUsedInReport(file: ReportFile): Try[Unit] =
     file.reportId match {
       case None => Success(())
