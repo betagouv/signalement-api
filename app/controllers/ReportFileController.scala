@@ -24,6 +24,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
 import utils.DateUtils.frenchFileFormatDate
+import utils.Logs.RichLogger
 
 import java.io.File
 import java.nio.file.Paths
@@ -45,7 +46,14 @@ class ReportFileController(
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
   def legacyDownloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
-    Act.public.generousLimit.async { _ =>
+    Act.public.generousLimit.async { req =>
+      // Temporary to understand where the remaining calls are coming from : api calls by ReponseConso ? some frontend that was not updated?
+      logger.warnWithTitle(
+        "legacyDownloadReportFile",
+        s"call of legacyDownloadReportFile by user agent ${req.headers
+            .get(USER_AGENT)} and api key ${req.headers.get("X-Api-Key").map(_.slice(0, 4))}"
+      )
+
       reportFileOrchestrator
         .legacyDownloadReportAttachment(uuid, filename)
         .map(signedUrl => Redirect(signedUrl))
