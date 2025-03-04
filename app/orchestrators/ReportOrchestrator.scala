@@ -1234,11 +1234,15 @@ class ReportOrchestrator(
       Event(
         UUID.randomUUID(),
         Some(report.id),
-        createdReport.companyId,
+        report.companyId,
         None,
         OffsetDateTime.now(),
         Constants.EventType.CONSO,
-        Constants.ActionEvent.REATTRIBUTE
+        Constants.ActionEvent.REATTRIBUTE,
+        Json.obj(
+          "newReportId"  -> createdReport.id,
+          "newCompanyId" -> createdReport.companyId
+        )
       )
     )
   } yield createdReport
