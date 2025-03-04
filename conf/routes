@@ -35,7 +35,11 @@ GET           /api/reports/files/temporary/:fileId/:filename          controller
 # for deleting an attachment that was uploaded but the report isn't submitted yet
 # also used in the dashboard for the pro when his response isn't submitted yet
 DELETE        /api/reports/files/temporary/:fileId/:filename          controllers.ReportFileController.deleteFileNotYetUsedInReport(fileId: ReportFileId, filename)
-# this next one is LEGACY, to be removed very soon, once the frontend is updated (was used both in website and dashboard)
+
+# Legacy endpoint. Redirects to another endpoint, that is more secure
+# It is not used in the frontends anymore, but we still see some calls in New Relic
+# We think it's DGCCRF agents who still have the URL from an Excel export
+# Could probably be removed in a few weeks/months
 GET           /api/reports/files/:uuid/:filename                      controllers.ReportFileController.legacyDownloadReportFile(uuid: ReportFileId, filename)
 
 # For the conso, to reattribute a report if the pro said he was not concerned

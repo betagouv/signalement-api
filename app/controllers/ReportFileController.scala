@@ -43,20 +43,21 @@ class ReportFileController(
 
   val logger: Logger = Logger(this.getClass)
 
-  val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
+  private val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
   def legacyDownloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] =
     Act.public.generousLimit.async { req =>
-      // Temporary to understand where the remaining calls are coming from : api calls by ReponseConso ? some frontend that was not updated?
-      logger.warnWithTitle(
+      logger.infoWithTitle(
         "legacyDownloadReportFile",
         s"call of legacyDownloadReportFile by user agent ${req.headers
-            .get(USER_AGENT)} and api key ${req.headers.get("X-Api-Key").map(_.slice(0, 4))}"
+            .get(USER_AGENT)}}"
       )
-
-      reportFileOrchestrator
-        .legacyDownloadReportAttachment(uuid, filename)
-        .map(signedUrl => Redirect(signedUrl))
+      Future.successful(
+        // This legacy endpoint was not secured and could serve any attachments.
+        // We think it's still used by some agents, so this new endpoint
+        // should do the trick (requires login and only works on attachments linked to a report)
+        Redirect(routes.ReportFileController.downloadFileUsedInReport(fileId = uuid, filename = filename))
+      )
     }
 
   def downloadFileNotYetUsedInReport(uuid: ReportFileId, filename: String): Action[AnyContent] =
