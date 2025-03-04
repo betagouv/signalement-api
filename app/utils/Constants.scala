@@ -159,7 +159,8 @@ object Constants {
       SOLVED_CONTRACTUAL_DISPUTE,
       REPORT_REOPENED_BY_ADMIN,
       USER_ACCESS_CREATED,
-      USER_ACCESS_REMOVED
+      USER_ACCESS_REMOVED,
+      REATTRIBUTE
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
