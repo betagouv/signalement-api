@@ -29,7 +29,7 @@ import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
-import orchestrators.ReportOrchestrator.isGouvWebsite
+import orchestrators.ReportOrchestrator.validateNotGouvWebsite
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
@@ -191,6 +191,7 @@ class ReportOrchestrator(
   def validateAndCreateReport(draft: ReportDraft, consumerIp: ConsumerIp): Future[Report] =
     for {
       _ <- validateCompany(draft)
+      _ <- validateNotGouvWebsite(draft)
       _ <- validateSpamSimilarReport(draft)
       _ <- validateReportIdentification(draft)
       _ <- validateConsumerEmail(draft)
@@ -313,7 +314,6 @@ class ReportOrchestrator(
           Future.failed(AppError.CannotReportPublicAdministration)
         case _ => Future.unit
       }
-      _ <- isGouvWebsite(reportDraft)
       _ <- reportDraft.companySiret match {
         case Some(siret) =>
           // Try to check if siret exist in signal conso database
@@ -1110,7 +1110,7 @@ class ReportOrchestrator(
 object ReportOrchestrator {
   val ReportCompanyChangeThresholdInDays: Long = 90L
 
-  def isGouvWebsite(reportDraft: ReportDraft): Future[Unit] = {
+  def validateNotGouvWebsite(reportDraft: ReportDraft): Future[Unit] = {
 
     def isAGouvWebsite(input: URL): Boolean = {
       val regex   = "^(?!.*\\.gouv\\.fr(?:[\\/\\?#]|$)).*$"
