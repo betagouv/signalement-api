@@ -17,7 +17,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
       if (report.tags.contains(Telecom)) "/litige/telecom"
       else "/litige"
     )
-    def reassign(report: Report) = url.resolve(s"reassigner/${report.id}")
+    def reattribute(report: Report) = url.resolve(s"reattribuer/${report.id}")
 
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
       s"/avis/$id?evaluation=${evaluation.entryName}"

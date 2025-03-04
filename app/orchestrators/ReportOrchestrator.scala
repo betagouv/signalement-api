@@ -1111,7 +1111,7 @@ class ReportOrchestrator(
       .sortWith(_.count > _.count)
       .slice(0, 10)
 
-  private def ensureReportReassignable(report: Report) =
+  private def ensureReportReattributable(report: Report) =
     report.websiteURL.websiteURL.isEmpty &&
       report.websiteURL.host.isEmpty &&
       report.influencer.isEmpty &&
@@ -1120,38 +1120,40 @@ class ReportOrchestrator(
       report.station.isEmpty &&
       report.companyId.isDefined
 
-  private def isReassignable(report: Report) = for {
+  private def isReattributable(report: Report) = for {
     proEvents <- eventRepository.getEvents(
       report.id,
       EventFilter(eventType = Some(EventType.PRO), action = Some(ActionEvent.REPORT_PRO_RESPONSE))
     )
-    filtered = proEvents
+    filteredProEvents = proEvents
       .filter(event => event.details.as[IncomingReportResponse].responseType == ReportResponseType.NOT_CONCERNED)
       .filter(_.creationDate.isAfter(OffsetDateTime.now().minusDays(15)))
     consoEvents <- eventRepository.getEvents(
       report.id,
-      EventFilter(eventType = Some(EventType.CONSO), action = Some(ActionEvent.REASSIGN))
+      EventFilter(eventType = Some(EventType.CONSO), action = Some(ActionEvent.REATTRIBUTE))
     )
-  } yield if (ensureReportReassignable(report) && consoEvents.isEmpty) filtered.headOption.map(_.creationDate) else None
+  } yield
+    if (ensureReportReattributable(report) && consoEvents.isEmpty) filteredProEvents.headOption.map(_.creationDate)
+    else None
 
-  // Signalement "ré-assignable" si :
-  // - Le signalement existe et il ne concerne pas un site web, un train etc. (voir méthode ensureReportReassignable)
-  // - Le pro a répondu 'MalAttribue' (voir isReassignable)
-  // - Le conso ne l'a pas déjà ré-assigné
+  // Signalement "réattribuable" si :
+  // - Le signalement existe et il ne concerne pas un site web, un train etc. (voir méthode ensureReportReattributable)
+  // - Le pro a répondu 'MalAttribue' (voir isReattributable)
+  // - Le conso ne l'a pas déjà réattribué
   // - La réponse du pro n'est pas trop vieille (moins de 15 jours)
-  def isReassignable(reportId: UUID): Future[JsObject] = for {
-    maybeReport <- reportRepository.get(reportId)
-    report      <- maybeReport.liftTo[Future](ReportNotFound(reportId))
-    res         <- isReassignable(report)
-    res2 <- res match {
+  def isReattributable(reportId: UUID): Future[JsObject] = for {
+    maybeReport          <- reportRepository.get(reportId)
+    report               <- maybeReport.liftTo[Future](ReportNotFound(reportId))
+    maybeProResponseDate <- isReattributable(report)
+    proResponseDate <- maybeProResponseDate match {
       case Some(date) => Future.successful(date)
-      case None       => Future.failed(ReportNotReassignable(reportId))
+      case None       => Future.failed(ReportNotReattributable(reportId))
     }
   } yield Json.obj(
     "creationDate" -> report.creationDate,
     "tags"         -> report.tags,
     "companyName"  -> report.companyName,
-    "daysToAnswer" -> (15 - ChronoUnit.DAYS.between(res2, OffsetDateTime.now()))
+    "daysToAnswer" -> (15 - ChronoUnit.DAYS.between(proResponseDate, OffsetDateTime.now()))
   )
 
   private def toCompany(companySearchResult: CompanySearchResult) =
@@ -1168,21 +1170,21 @@ class ReportOrchestrator(
       establishmentCommercialName = companySearchResult.establishmentCommercialName
     )
 
-  // On vérifie si le signalement est ré-assignable
-  // On vérifie en plus que la réassignation n'est pas à la meme entreprise
-  def reassign(
+  // On vérifie si le signalement est réattribuable
+  // On vérifie en plus que la réattribution n'est pas à la meme entreprise
+  def reattribute(
       reportId: UUID,
       companyCreation: CompanySearchResult,
       metadata: ReportMetadataDraft,
       consumerIp: ConsumerIp
   ): Future[Report] = for {
-    maybeReport <- reportRepository.get(reportId)
-    report      <- maybeReport.liftTo[Future](ReportNotFound(reportId))
-    b           <- isReassignable(report)
-    _           <- if (b.nonEmpty) Future.unit else Future.failed(ReportNotReassignable(reportId))
-    _           <- validateCompany(companyCreation.activityCode, Some(companyCreation.siret))
+    maybeReport          <- reportRepository.get(reportId)
+    report               <- maybeReport.liftTo[Future](ReportNotFound(reportId))
+    maybeProResponseDate <- isReattributable(report)
+    _ <- if (maybeProResponseDate.nonEmpty) Future.unit else Future.failed(ReportNotReattributable(reportId))
+    _ <- validateCompany(companyCreation.activityCode, Some(companyCreation.siret))
     _ <-
-      if (report.companySiret.contains(companyCreation.siret)) Future.failed(ReportNotReassignable(reportId))
+      if (report.companySiret.contains(companyCreation.siret)) Future.failed(ReportNotReattributable(reportId))
       else Future.unit
     company        <- companyRepository.getOrCreate(companyCreation.siret, toCompany(companyCreation))
     reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))
@@ -1236,7 +1238,7 @@ class ReportOrchestrator(
         None,
         OffsetDateTime.now(),
         Constants.EventType.CONSO,
-        Constants.ActionEvent.REASSIGN
+        Constants.ActionEvent.REATTRIBUTE
       )
     )
   } yield createdReport

@@ -45,9 +45,9 @@ ConsumerReportAckProEmail.signalementNonConcerne=The company stated that this re
 ConsumerReportAckProEmail.signalementNonAccepteHelp=You can still continue the process to find a solution or obtain compensation:
 ConsumerReportAckProEmail.signalementAccepte=With its response, the company committed to considering your report. It made the following commitment:
 ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=You will receive a new email in {0} days to ask if the company has fulfilled its commitment. Thank you for your patience and please refrain from submitting another report or contacting support before the end of this period.
-ConsumerReportAckProEmail.youCanReassign=You can reassign your report to the correct company by following this link:
-ConsumerReportAckProEmail.reassign=Reassign my report
-ConsumerReportAckProEmail.maxDelayToReassign=You have 15 days to reassign it.
+ConsumerReportAckProEmail.youCanReattribute=You can reattribute your report to the correct company by following this link:
+ConsumerReportAckProEmail.reattribute=Reattribute my report
+ConsumerReportAckProEmail.maxDelayToReattribute=You have 15 days to reattribute it.
 ConsumerReportAckProEmail.ifYouAreSure=However, if you are certain that it is the correct company, you can proceed with the steps to find a solution or obtain redress:
 
 ConsumerReportProEngagementEmail.subject=Your feedback on the company''s commitment regarding your report

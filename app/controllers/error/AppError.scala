@@ -657,11 +657,11 @@ object AppError {
 
   }
 
-  final case class ReportNotReassignable(id: UUID) extends BadRequestError {
+  final case class ReportNotReattributable(id: UUID) extends BadRequestError {
     override val scErrorCode: String = "SC-0072"
-    override val title: String       = s"Report is not reassignable"
+    override val title: String       = s"Report is not reattributable"
     override val details: String =
-      s"Le signalement $id n'est pas ré-assignable"
-    override val titleForLogs: String = "report_not_reassignable"
+      s"Le signalement $id n'est pas réattribuable"
+    override val titleForLogs: String = "report_not_reattributable"
   }
 }

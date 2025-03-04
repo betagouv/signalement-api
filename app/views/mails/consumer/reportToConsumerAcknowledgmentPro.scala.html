@@ -58,11 +58,11 @@
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
         </p>
-        <p>@Messages("ConsumerReportAckProEmail.youCanReassign")</p>
+        <p>@Messages("ConsumerReportAckProEmail.youCanReattribute")</p>
         <div style="text-align: center">
-            <a href="@frontRoute.website.reassign(report)" class="btn">@Messages("ConsumerReportAckProEmail.reassign")</a>
+            <a href="@frontRoute.website.reattribute(report)" class="btn">@Messages("ConsumerReportAckProEmail.reattribute")</a>
         </div>
-        <p style="margin-bottom: 32px">@Messages("ConsumerReportAckProEmail.maxDelayToReassign")</p>
+        <p style="margin-bottom: 32px">@Messages("ConsumerReportAckProEmail.maxDelayToReattribute")</p>
         <p>@Messages("ConsumerReportAckProEmail.ifYouAreSure")</p>
         <p style="text-align: center; padding: 20px">
             <a href="@frontRoute.website.litige(report)" class="btn">

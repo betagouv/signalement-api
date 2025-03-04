@@ -17,6 +17,7 @@ import play.api.i18n.MessagesProvider
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -56,19 +57,19 @@ class ReportController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def isReassignable(reportId: UUID) = Act.public.standardLimit.async { _ =>
-    reportOrchestrator.isReassignable(reportId).map(Ok(_))
+  def isReattributable(reportId: UUID): Action[AnyContent] = Act.public.standardLimit.async { _ =>
+    reportOrchestrator.isReattributable(reportId).map(Ok(_))
   }
 
-  def reassign(reportId: UUID) = Act.public.standardLimit.async(parse.json) { implicit request =>
+  def reattribute(reportId: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
     val consumerIp                          = ConsumerIp(request.remoteAddress)
     for {
-      reassignCompany <- request.parseBody[ReassignCompany]()
-      createdReport <- reportOrchestrator.reassign(
+      reattributeCompany <- request.parseBody[ReattributeCompany]()
+      createdReport <- reportOrchestrator.reattribute(
         reportId,
-        reassignCompany.company,
-        reassignCompany.metadata,
+        reattributeCompany.company,
+        reattributeCompany.metadata,
         consumerIp
       )
     } yield Ok(Json.toJson(createdReport))

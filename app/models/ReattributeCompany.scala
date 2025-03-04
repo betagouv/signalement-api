@@ -5,11 +5,11 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import tasks.company.CompanySearchResult
 
-case class ReassignCompany(
+case class ReattributeCompany(
     company: CompanySearchResult,
     metadata: ReportMetadataDraft
 )
 
-object ReassignCompany {
-  implicit val reads: Reads[ReassignCompany] = Json.reads[ReassignCompany]
+object ReattributeCompany {
+  implicit val reads: Reads[ReattributeCompany] = Json.reads[ReattributeCompany]
 }
