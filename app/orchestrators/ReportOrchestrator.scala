@@ -1184,7 +1184,7 @@ class ReportOrchestrator(
     _ <- if (maybeProResponseDate.nonEmpty) Future.unit else Future.failed(ReportNotReattributable(reportId))
     _ <- validateCompany(companyCreation.activityCode, Some(companyCreation.siret))
     _ <-
-      if (report.companySiret.contains(companyCreation.siret)) Future.failed(ReportNotReattributable(reportId))
+      if (report.companySiret.contains(companyCreation.siret)) Future.failed(CantReattributeToTheSameCompany)
       else Future.unit
     company        <- companyRepository.getOrCreate(companyCreation.siret, toCompany(companyCreation))
     reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))

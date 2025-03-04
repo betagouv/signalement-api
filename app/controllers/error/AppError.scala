@@ -664,4 +664,12 @@ object AppError {
       s"Le signalement $id n'est pas réattribuable"
     override val titleForLogs: String = "report_not_reattributable"
   }
+
+  final case object CantReattributeToTheSameCompany extends BadRequestError {
+    override val scErrorCode: String = "SC-0073"
+    override val title: String       = s"Report is not reattributable"
+    override val details: String =
+      "Vous ne pouvez pas réattribuer ce signalement à la même entreprise"
+    override val titleForLogs: String = "report_not_reattributable"
+  }
 }
