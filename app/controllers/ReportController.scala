@@ -17,6 +17,7 @@ import play.api.i18n.MessagesProvider
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -55,6 +56,24 @@ class ReportController(
     extends BaseController(authenticator, controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
+
+  def isReattributable(reportId: UUID): Action[AnyContent] = Act.public.standardLimit.async { _ =>
+    reportOrchestrator.isReattributable(reportId).map(Ok(_))
+  }
+
+  def reattribute(reportId: UUID): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
+    implicit val userRole: Option[UserRole] = None
+    val consumerIp                          = ConsumerIp(request.remoteAddress)
+    for {
+      reattributeCompany <- request.parseBody[ReattributeCompany]()
+      createdReport <- reportOrchestrator.reattribute(
+        reportId,
+        reattributeCompany.company,
+        reattributeCompany.metadata,
+        consumerIp
+      )
+    } yield Ok(Json.toJson(createdReport))
+  }
 
   def createReport: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
