@@ -25,6 +25,7 @@ import models.report.ReportStatus.hasResponse
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportExtra
+import models.report.reportmetadata.ReportMetadataDraft
 import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
@@ -32,6 +33,7 @@ import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
 import orchestrators.ReportOrchestrator.validateNotGouvWebsite
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
@@ -52,6 +54,7 @@ import services.emails.EmailDefinitionsConsumer.ConsumerReportReadByProNotificat
 import services.emails.EmailDefinitionsPro.ProNewReportNotification
 import services.emails.EmailDefinitionsPro.ProResponseAcknowledgment
 import services.emails.MailServiceInterface
+import tasks.company.CompanySearchResult
 import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
@@ -64,6 +67,7 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -291,8 +295,10 @@ class ReportOrchestrator(
         throw SpammerEmailBlocked(emailAddress)
       } else ()
 
-  private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] = {
+  private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] =
+    validateCompany(reportDraft.companyActivityCode, reportDraft.companySiret)
 
+  private def validateCompany(maybeActivityCode: Option[String], maybeSiret: Option[SIRET]): Future[Done.type] = {
     def validateSiretExistsOnEntrepriseApi(siret: SIRET) = companySyncService
       .companyBySiret(siret)
       .recoverWith { case error =>
@@ -307,14 +313,14 @@ class ReportOrchestrator(
       }
 
     for {
-      _ <- reportDraft.companyActivityCode match {
+      _ <- maybeActivityCode match {
         // 84 correspond à l'administration publique, sauf quelques cas particuliers :
         // - 84.30B : Complémentaires retraites donc pas publique
         case Some(activityCode) if activityCode.startsWith("84.") && activityCode != "84.30B" =>
           Future.failed(AppError.CannotReportPublicAdministration)
         case _ => Future.unit
       }
-      _ <- reportDraft.companySiret match {
+      _ <- maybeSiret match {
         case Some(siret) =>
           // Try to check if siret exist in signal conso database
           companyRepository.findBySiret(siret).flatMap {
@@ -1105,6 +1111,141 @@ class ReportOrchestrator(
       .sortWith(_.count > _.count)
       .slice(0, 10)
 
+  private def ensureReportReattributable(report: Report) =
+    report.websiteURL.websiteURL.isEmpty &&
+      report.websiteURL.host.isEmpty &&
+      report.influencer.isEmpty &&
+      report.barcodeProductId.isEmpty &&
+      report.train.isEmpty &&
+      report.station.isEmpty &&
+      report.companyId.isDefined
+
+  private def isReattributable(report: Report) = for {
+    proEvents <- eventRepository.getEvents(
+      report.id,
+      EventFilter(eventType = Some(EventType.PRO), action = Some(ActionEvent.REPORT_PRO_RESPONSE))
+    )
+    filteredProEvents = proEvents
+      .filter(event => event.details.as[IncomingReportResponse].responseType == ReportResponseType.NOT_CONCERNED)
+      .filter(_.creationDate.isAfter(OffsetDateTime.now().minusDays(15)))
+    consoEvents <- eventRepository.getEvents(
+      report.id,
+      EventFilter(eventType = Some(EventType.CONSO), action = Some(ActionEvent.REATTRIBUTE))
+    )
+  } yield
+    if (ensureReportReattributable(report) && consoEvents.isEmpty) filteredProEvents.headOption.map(_.creationDate)
+    else None
+
+  // Signalement "réattribuable" si :
+  // - Le signalement existe et il ne concerne pas un site web, un train etc. (voir méthode ensureReportReattributable)
+  // - Le pro a répondu 'MalAttribue' (voir isReattributable)
+  // - Le conso ne l'a pas déjà réattribué
+  // - La réponse du pro n'est pas trop vieille (moins de 15 jours)
+  def isReattributable(reportId: UUID): Future[JsObject] = for {
+    maybeReport          <- reportRepository.get(reportId)
+    report               <- maybeReport.liftTo[Future](ReportNotFound(reportId))
+    maybeProResponseDate <- isReattributable(report)
+    proResponseDate <- maybeProResponseDate match {
+      case Some(date) => Future.successful(date)
+      case None       => Future.failed(ReportNotReattributable(reportId))
+    }
+  } yield Json.obj(
+    "creationDate" -> report.creationDate,
+    "tags"         -> report.tags,
+    "companyName"  -> report.companyName,
+    "daysToAnswer" -> (15 - ChronoUnit.DAYS.between(proResponseDate, OffsetDateTime.now()))
+  )
+
+  private def toCompany(companySearchResult: CompanySearchResult) =
+    Company(
+      siret = companySearchResult.siret,
+      name = companySearchResult.name.getOrElse(""),
+      address = companySearchResult.address,
+      activityCode = companySearchResult.activityCode,
+      isHeadOffice = companySearchResult.isHeadOffice,
+      isOpen = companySearchResult.isOpen,
+      isPublic = companySearchResult.isPublic,
+      brand = companySearchResult.brand,
+      commercialName = companySearchResult.commercialName,
+      establishmentCommercialName = companySearchResult.establishmentCommercialName
+    )
+
+  // On vérifie si le signalement est réattribuable
+  // On vérifie en plus que la réattribution n'est pas à la meme entreprise
+  def reattribute(
+      reportId: UUID,
+      companyCreation: CompanySearchResult,
+      metadata: ReportMetadataDraft,
+      consumerIp: ConsumerIp
+  ): Future[Report] = for {
+    maybeReport          <- reportRepository.get(reportId)
+    report               <- maybeReport.liftTo[Future](ReportNotFound(reportId))
+    maybeProResponseDate <- isReattributable(report)
+    _ <- if (maybeProResponseDate.nonEmpty) Future.unit else Future.failed(ReportNotReattributable(reportId))
+    _ <- validateCompany(companyCreation.activityCode, Some(companyCreation.siret))
+    _ <-
+      if (report.companySiret.contains(companyCreation.siret)) Future.failed(CantReattributeToTheSameCompany)
+      else Future.unit
+    company        <- companyRepository.getOrCreate(companyCreation.siret, toCompany(companyCreation))
+    reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))
+    files = reportFilesMap.getOrElse(reportId, List.empty).filter(_.origin == ReportFileOrigin.Consumer)
+    newFiles <- files.traverse(f => reportFileOrchestrator.duplicate(f.id, f.filename, f.reportId))
+
+    reportDraft = ReportDraft(
+      gender = report.gender,
+      category = report.category,
+      subcategories = report.subcategories,
+      details = report.details,
+      influencer = report.influencer,
+      companyName = Some(company.name),
+      companyCommercialName = company.commercialName,
+      companyEstablishmentCommercialName = company.establishmentCommercialName,
+      companyBrand = company.brand,
+      companyAddress = Some(company.address),
+      companySiret = Some(company.siret),
+      companyActivityCode = company.activityCode,
+      websiteURL = report.websiteURL.websiteURL,
+      phone = report.phone,
+      firstName = report.firstName,
+      lastName = report.lastName,
+      email = report.email,
+      consumerPhone = report.consumerPhone,
+      consumerReferenceNumber = report.consumerReferenceNumber,
+      contactAgreement = report.contactAgreement,
+      employeeConsumer = report.employeeConsumer,
+      forwardToReponseConso = Some(report.forwardToReponseConso),
+      fileIds = newFiles.map(_.id),
+      vendor = report.vendor,
+      tags = report.tags,
+      reponseconsoCode = Some(report.reponseconsoCode),
+      ccrfCode = Some(report.ccrfCode),
+      lang = report.lang,
+      barcodeProductId = report.barcodeProductId,
+      metadata = Some(metadata),
+      train = report.train,
+      station = report.station,
+      rappelConsoId = report.rappelConsoId,
+      companyIsHeadOffice = None,
+      companyIsOpen = None,
+      companyIsPublic = None
+    )
+    createdReport <- createReport(reportDraft, consumerIp)
+    _ <- eventRepository.create(
+      Event(
+        UUID.randomUUID(),
+        Some(report.id),
+        report.companyId,
+        None,
+        OffsetDateTime.now(),
+        Constants.EventType.CONSO,
+        Constants.ActionEvent.REATTRIBUTE,
+        Json.obj(
+          "newReportId"  -> createdReport.id,
+          "newCompanyId" -> createdReport.companyId
+        )
+      )
+    )
+  } yield createdReport
 }
 
 object ReportOrchestrator {
