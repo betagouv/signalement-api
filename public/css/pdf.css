@@ -36,6 +36,18 @@ body {
     font-weight: bold;
 }
 
+.mt-0 {
+    margin-top: 0;
+}
+
+.mb-1 {
+    margin-bottom: 4px;
+}
+
+.mt-1 {
+    margin-top: 4px;
+}
+
 .mt-3 {
     margin-top: 16px;
 }
@@ -134,10 +146,16 @@ li.mb-3 {
 .scan {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: 8px;
 }
 
 .scanitem {
     flex-basis: 50%;
     text-align: center;
+}
+
+.connect-block {
+    border: black solid 1px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
