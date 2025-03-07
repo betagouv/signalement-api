@@ -1,7 +1,6 @@
 package tasks.website
 
 import cats.implicits.catsSyntaxOption
-import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import controllers.error.AppError.CompanyNotFound
 import models.company.Company
@@ -49,70 +48,79 @@ class SiretExtractionTask(
     a.flatMap(_.sirene)
   }
 
-  override def runTask(): Future[Unit] = for {
-    websites <- siretExtractionRepository.listUnextractedWebsiteHosts(taskConfiguration.siretExtraction.websiteCount)
-    _ = logger.debug(s"Found ${websites.length} websites to handle (siret extraction)")
-    results <- websites.traverse(website =>
-      siretExtractorService
-        .extractSiret(website.host)
-        .map { response =>
-          response.body match {
-            case Left(error) =>
-              logger.debug(s"Siret extraction failed for ${website.id} : $error")
-              website -> ExtractionResultApi(
-                website.host,
-                "error while calling Siret extractor service",
-                Some(error.getMessage),
-                None
-              )
-            case Right(body) =>
-              logger.debug(s"Siret extraction succeeded for ${website.id}")
-              website -> body
-          }
+  // Fonction de traitement unitaire d'un site web.
+  // Cela permet un traitement séquentiel des sites web
+  // (pour mieux répartir la charge et ne pas surcharger le siret extractor)
+  private def handleWebsite(website: Website): Future[Unit] = for {
+    extraction <- siretExtractorService
+      .extractSiret(website.host)
+      .map { response =>
+        response.body match {
+          case Left(error) =>
+            logger.debug(s"Siret extraction failed for ${website.id} : $error")
+            ExtractionResultApi(
+              website.host,
+              "error while calling Siret extractor service",
+              Some(error.getMessage),
+              None
+            )
+          case Right(body) =>
+            logger.debug(s"Siret extraction succeeded for ${website.id}")
+            body
         }
-    )
+      }
     // Sauvegarde des résultats en DB
-    _ = logger.debug(s"Saving ${results.length} extraction results un DB")
-    _ <- results.traverse { case (_, extraction) => siretExtractionRepository.insertOrReplace(extraction) }
-
+    _ = logger.debug(s"Saving extraction for ${website.host} results un DB")
+    _ <- siretExtractionRepository.insertOrReplace(extraction)
     // Association automatique si :
     // - Un siret trouvé est valide et présent dans SIRENE
     // - Le conso a fourni la même entreprise
     // - L'entreprise est ouverte
-    companyIdsAndExtractions = results.collect {
-      case (Website(id, _, _, _, _, Some(companyId), _, _, _), ExtractionResultApi(_, _, _, Some(extractions))) =>
-        (id, companyId, extractions)
+    _ = (website, extraction) match {
+      case (
+            Website(websiteId, _, _, _, _, Some(companyId), _, _, _),
+            ExtractionResultApi(_, _, _, Some(extractions))
+          ) =>
+        logger.debug(
+          s"Website ${website.host} can be associated: succeeded extractions found and company already provided by consumer"
+        )
+        for {
+          company <- companyRepository
+            .get(companyId)
+            .flatMap(_.liftTo[Future](CompanyNotFound(companyId)))
+          _ = logger.debug("Fetched company")
+          websiteIdAndFoundCompany = findMatchingAndValidExtraction(company, extractions).map(companySearchResult =>
+            websiteId -> companySearchResult
+          )
+          _ <- websiteIdAndFoundCompany match {
+            case Some((websiteId, companySearchResult)) =>
+              logger.debug(s"Website ${website.host} will be associated to company ${companySearchResult.siret}")
+              val companyCreation = CompanyCreation(
+                siret = companySearchResult.siret,
+                name = companySearchResult.name.getOrElse(""),
+                address = companySearchResult.address,
+                activityCode = companySearchResult.activityCode,
+                isHeadOffice = Some(companySearchResult.isHeadOffice),
+                isOpen = Some(companySearchResult.isOpen),
+                isPublic = Some(companySearchResult.isPublic),
+                brand = companySearchResult.brand,
+                commercialName = companySearchResult.commercialName,
+                establishmentCommercialName = companySearchResult.establishmentCommercialName
+              )
+              websitesOrchestrator.updateCompany(websiteId, companyCreation, None)
+            case None =>
+              logger.debug(s"No matching extraction found for ${website.host}")
+              Future.unit
+          }
+        } yield ()
+      case _ => Future.unit
     }
-    _ = logger.debug(
-      s"${companyIdsAndExtractions.length} websites remaining after filtering succeeded extractions and companyId already provided by consumer"
-    )
+  } yield ()
 
-    companyAndExtractions <- companyIdsAndExtractions.traverse { case (websiteId, companyId, extractions) =>
-      companyRepository
-        .get(companyId)
-        .flatMap(_.liftTo[Future](CompanyNotFound(companyId)))
-        .map(company => (websiteId, company, extractions))
-    }
-    _ = logger.debug(s"${companyAndExtractions.length} websites remaining after fetching companies")
-    websiteIdAndFoundCompany = companyAndExtractions.flatMap { case (websiteId, company, extractions) =>
-      findMatchingAndValidExtraction(company, extractions).map(companySearchResult => websiteId -> companySearchResult)
-    }
-    _ = logger.debug(s"${websiteIdAndFoundCompany.length} website(s) will be associated to companies")
-    _ <- websiteIdAndFoundCompany.traverse { case (websiteId, companySearchResult) =>
-      val companyCreation = CompanyCreation(
-        siret = companySearchResult.siret,
-        name = companySearchResult.name.getOrElse(""),
-        address = companySearchResult.address,
-        activityCode = companySearchResult.activityCode,
-        isHeadOffice = Some(companySearchResult.isHeadOffice),
-        isOpen = Some(companySearchResult.isOpen),
-        isPublic = Some(companySearchResult.isPublic),
-        brand = companySearchResult.brand,
-        commercialName = companySearchResult.commercialName,
-        establishmentCommercialName = companySearchResult.establishmentCommercialName
-      )
-      logger.debug(s"Website $websiteId will be associated to company ${companyCreation.siret}")
-      websitesOrchestrator.updateCompany(websiteId, companyCreation, None)
-    }
+  override def runTask(): Future[Unit] = for {
+    websites <- siretExtractionRepository.listUnextractedWebsiteHosts(taskConfiguration.siretExtraction.websiteCount)
+    _ = logger.debug(s"Found ${websites.length} websites to handle (siret extraction)")
+    // Using flatMap to ensure sequential handling (traverse or map / sequence will be parallel due to Future nature)
+    _ <- websites.foldLeft(Future.unit)((acc, website) => acc.flatMap(_ => handleWebsite(website)))
   } yield ()
 }
