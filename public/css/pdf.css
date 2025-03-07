@@ -78,7 +78,10 @@ body {
 }
 
 .sender {
-    font-size: 8pt;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    font-size: 7pt;
+    letter-spacing: 0.9pt;
     line-height: 10pt;
     position: absolute;
     top: 2.3cm;
@@ -93,9 +96,9 @@ body {
 }
 
 .recipient {
-    font-family: 'OCR-B 10 BT';
-    font-size: 10pt;
-    line-height: 10pt;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    font-size: 9pt;
     position: absolute;
     top: 5.5cm;
     left: 9.6cm;
