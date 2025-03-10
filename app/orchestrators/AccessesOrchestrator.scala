@@ -24,7 +24,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.EmailAddressService
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
-import services.emails.EmailDefinitionsDggcrf.DgccrfAgentInvitation
+import services.emails.EmailDefinitionsDggcrf.DgccrfProConnectInvitation
 import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.MailServiceInterface
@@ -238,7 +238,7 @@ class AccessesOrchestrator(
         for {
           _ <- userOrchestrator.createProConnectUser(invitationRequest.email, UserRole.DGCCRF)
           _ <- mailService.send(
-            DgccrfAgentInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.loginProConnect)
+            DgccrfProConnectInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.loginProConnect)
           )
         } yield ()
       case _ => sendAdminOrAgentInvitation(invitationRequest.email, TokenKind.DGCCRFAccount)
