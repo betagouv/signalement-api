@@ -160,6 +160,9 @@ class AdminController(
     availablePdfs.toMap
       .get(templateRef)
       .map { html =>
+        println("-------------------------------------")
+        println(html)
+        println("-------------------------------------")
         val pdfSource = pdfService.createPdfSource(Seq(html))
         Ok.chunked(
           content = pdfSource,

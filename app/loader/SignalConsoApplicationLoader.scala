@@ -306,10 +306,7 @@ class SignalConsoComponents(
       "websites-extract-actor"
     )
 
-  val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
-    actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
-
-  val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
+  val pdfService                      = new PDFService(signalConsoConfiguration)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService         = new MailRetriesService(mailerClient, executionContext, actorSystem)

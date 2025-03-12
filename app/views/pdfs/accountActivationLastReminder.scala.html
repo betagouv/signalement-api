@@ -10,16 +10,15 @@
     reportExpirationDate: Option[java.time.LocalDate],
     code: String
 )(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
-
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
     <head>
         <meta name="viewport" content="width=device-width" />
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Activation du compte SignalConso</title>
 
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")" />
 
     </head>
     <body>
@@ -102,7 +101,7 @@
                         <div class="scanitem">
                             <p class="mb-0">Soit en scannant le QR Code suivant : </p>
                             @defining(QRCodeGenerator.generate(frontRoute.dashboard.activation(company.siret, code).toString, 82, 82)) { qrCode =>
-                                <img src="data:image/png;base64,@java.util.Base64.getEncoder.encodeToString(qrCode)" alt="QR Code">
+                                <img src="data:image/png;base64,@java.util.Base64.getEncoder.encodeToString(qrCode)" alt="QR Code" />
                             }
                         </div>
                     </div>

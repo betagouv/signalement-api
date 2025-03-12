@@ -1,11 +1,8 @@
 @page {
     margin-top: 1cm;
     margin-bottom: 1cm;
-}
-
-@font-face {
-    font-family: "OCR-B 10 BT";
-    src: url("/assets/fonts/OCR-B 10 BT.ttf") format("ttf");
+    margin-left: 1cm;
+    margin-right: 1cm;
 }
 
 @font-face {
@@ -21,7 +18,6 @@
 body {
     font-family: 'Arial', sans-serif;
     font-size: 13px;
-    height: 960px;
 }
 
 .text-center {
@@ -59,8 +55,7 @@ body {
 .logo-gouv {
     position: absolute;
     left: 0.5cm;
-    top: 0.7cm;
-    width: 100%;
+    top: 0.5cm;
 }
 
 .logo-gouv > img {
@@ -70,7 +65,7 @@ body {
 .logo-sc {
     position: absolute;
     left: 14.85cm;
-    top: 0.7cm;
+    top: 0.5cm;
 }
 
 .logo-sc > img {
@@ -81,16 +76,19 @@ body {
     font-family: 'Arial', sans-serif;
     text-transform: uppercase;
     font-size: 7pt;
-    letter-spacing: 0.7pt;
+    letter-spacing: 0.9pt;
+    line-height: 12px;
     position: absolute;
-    top: 2.3cm;
-    left: 9.6cm;
+    top: 2.5cm;
+    left: 9.1cm;
+    width: 9.2cm;
+    height: 1.4cm;
 }
 
 .code {
     position: absolute;
+    top: 0;
     right: 0.5cm;
-    width: 100%;
     text-align: right;
 }
 
@@ -100,8 +98,9 @@ body {
     font-size: 9pt;
     position: absolute;
     top: 5.5cm;
-    left: 9.6cm;
-    width: 8cm;
+    left: 9.1cm;
+    width: 9.2cm;
+    height: 2.2cm;
 }
 
 .creationDate {
@@ -122,8 +121,12 @@ body {
 
 .page-end {
     position: absolute;
+    height: 1cm;
+    line-height: 1cm;
+    /*top: 26.6cm;*/
     bottom: 0;
-    height: 100%;
+    left: 0;
+    width: 2cm;
 }
 
 .footer {
@@ -146,15 +149,25 @@ li.mb-3 {
 }
 
 .scan {
+    /*display: table;*/
+    /*width: 100%;*/
     display: flex;
     flex-direction: row;
     gap: 8px;
 }
 
 .scanitem {
+    /*display: table-cell;*/
+    /*width: 49%;*/
+    /*box-sizing: border-box;*/
     flex-basis: 50%;
     text-align: center;
 }
+
+/*.scanitem + .scanitem {*/
+/*    padding-left: 2%; !* Utiliser le padding pour créer un espace *!*/
+/*    width: 48%;*/
+/*}*/
 
 .connect-block {
     border: black solid 1px;
