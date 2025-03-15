@@ -16,6 +16,7 @@ import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator.NotScanned
 import orchestrators.ReportFileOrchestrator.ScanStatus
 import orchestrators.ReportFileOrchestrator.Scanned
+import orchestrators.reportexport.ReportZipExportService
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer

@@ -10,6 +10,7 @@ import models.report._
 import models.report.delete.ReportAdminAction
 import models.report.reportmetadata.ReportComment
 import orchestrators._
+import orchestrators.reportexport.ReportZipExportService
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -193,20 +194,17 @@ class ReportController(
     }
 
   def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportFutures = new QueryStringMapper(request.queryString)
+    val reportIds = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
-      .map(reportId => reportWithDataOrchestrator.getReportFull(reportId, request.identity))
-    Future
-      .sequence(reportFutures)
-      .map(_.flatten)
-      .map(_.map(htmlFromTemplateGenerator.reportPdf(_, request.identity)))
-      .map(pdfService.createPdfSource)
+
+    massImportService
+      .reportsSummaryZip(request.identity,reportIds)
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
           inline = false,
-          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip")
         )
       )
   }

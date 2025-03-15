@@ -20,6 +20,7 @@ import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.proconnect.ProConnectClient
 import orchestrators.proconnect.ProConnectOrchestrator
+import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
@@ -413,8 +414,7 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
-  val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
+
 
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
@@ -485,6 +485,12 @@ class SignalConsoComponents(
       reportFileRepository,
       responseConsumerReviewRepository,
       reportEngagementReviewRepository
+    )
+
+  val reportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service, reportWithDataOrchestrator)(
+      materializer,
+      actorSystem
     )
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
