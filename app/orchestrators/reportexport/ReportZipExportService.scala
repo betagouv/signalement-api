@@ -1,30 +1,29 @@
-package orchestrators
+package orchestrators.reportexport
 
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.User
-import models.report.ReportFile
-import models.report.ReportFileApi
+import models.report.{ReportFile, ReportFileApi}
+import orchestrators.{ReportWithData, ReportWithDataOrchestrator}
+import orchestrators.reportexport.ReportZipExportService.getFileExtension
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import play.api.Logger
-import services.ZipBuilder.ReportZipEntryName
-import services.PDFService
-import services.S3ServiceInterface
-import services.ZipBuilder
+import services.{PDFService, S3ServiceInterface}
+import services.ZipBuilder.{ReportZipEntryName, buildZip}
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import java.util.UUID
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReportZipExportService(
     htmlFromTemplateGenerator: HtmlFromTemplateGenerator,
     PDFService: PDFService,
-    s3Service: S3ServiceInterface
+    s3Service: S3ServiceInterface,
+    reportWithDataOrchestrator: ReportWithDataOrchestrator
 )(implicit
     materializer: Materializer,
     system: ActorSystem
@@ -34,11 +33,14 @@ class ReportZipExportService(
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("io-dispatcher")
 
-  private def getFileExtension(fileName: String): String =
-    fileName.lastIndexOf(".") match {
-      case -1 => "" // No extension found
-      case i  => fileName.substring(i + 1)
+  def reportsSummaryZip(user: User, reportIds: Seq[UUID]) = {
+    val reportFutures = reportIds.traverse(reportWithDataOrchestrator.getReportFull(_, user))
+    reportFutures.map { reports =>
+      val reportSources = reports.flatten.map(report => buildReportPdfSummarySource(report, user))
+      buildZip(reportSources)
     }
+  }
+
 
   def reportSummaryWithAttachmentsZip(
       reportWithData: ReportWithData,
@@ -50,7 +52,7 @@ class ReportZipExportService(
     )
     reportPdfSummarySource = buildReportPdfSummarySource(reportWithData, user)
     fileSourcesFutures     = reportAttachmentSources :+ reportPdfSummarySource
-  } yield ZipBuilder.buildZip(fileSourcesFutures)
+  } yield buildZip(fileSourcesFutures)
 
   private def buildReportAttachmentsSources(
       creationDate: OffsetDateTime,
@@ -78,7 +80,7 @@ class ReportZipExportService(
     reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
       buildReportAttachmentSource(creationDate, ReportFileApi.build(file), i + 1)
     }
-  } yield ZipBuilder.buildZip(reportAttachmentSources)
+  } yield buildZip(reportAttachmentSources)
 
   private def buildReportPdfSummarySource(
       reportWithData: ReportWithData,
@@ -88,7 +90,7 @@ class ReportZipExportService(
 
     (
       ReportZipEntryName(
-        s"${reportWithData.report.creationDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))}.pdf"
+        s"${reportWithData.report.creationDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))}_${reportWithData.report.id}.pdf"
       ),
       PDFService.createPdfSource(Seq(htmlForPdf))
     )
@@ -108,4 +110,12 @@ class ReportZipExportService(
     )
   }
 
+}
+
+object ReportZipExportService {
+  private def getFileExtension(fileName: String): String =
+    fileName.lastIndexOf(".") match {
+      case -1 => "" // No extension found
+      case i  => fileName.substring(i + 1)
+    }
 }
