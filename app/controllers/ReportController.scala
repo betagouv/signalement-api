@@ -200,7 +200,7 @@ class ReportController(
       .map(extractUUID)
 
     massImportService
-      .reportsSummaryZip(request.identity,reportIds)
+      .reportsSummaryZip(request.identity, reportIds)
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
