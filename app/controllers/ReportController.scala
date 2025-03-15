@@ -208,7 +208,6 @@ class ReportController(
 
   def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-
       val reportIds = new QueryStringMapper(request.queryString)
         .seq("ids")
         .map(extractUUID)
