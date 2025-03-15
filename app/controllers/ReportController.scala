@@ -51,8 +51,7 @@ class ReportController(
     controllerComponents: ControllerComponents,
     reportWithDataOrchestrator: ReportWithDataOrchestrator,
     visibleReportOrchestrator: VisibleReportOrchestrator,
-    massImportService: ReportZipExportService,
-    htmlFromTemplateGenerator: HtmlFromTemplateGenerator
+    massImportService: ReportZipExportService
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 

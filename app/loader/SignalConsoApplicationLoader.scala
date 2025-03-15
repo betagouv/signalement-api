@@ -419,6 +419,22 @@ class SignalConsoComponents(
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
 
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(
+      visibleReportOrchestrator,
+      companyRepository,
+      eventRepository,
+      reportFileRepository,
+      responseConsumerReviewRepository,
+      reportEngagementReviewRepository
+    )
+
+  val reportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service, reportWithDataOrchestrator)(
+      materializer,
+      actorSystem
+    )
+
   val reportFileOrchestrator =
     new ReportFileOrchestrator(
       reportFileRepository,
@@ -479,21 +495,7 @@ class SignalConsoComponents(
     eventRepository
   )
 
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
-      visibleReportOrchestrator,
-      companyRepository,
-      eventRepository,
-      reportFileRepository,
-      responseConsumerReviewRepository,
-      reportEngagementReviewRepository
-    )
 
-  val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service, reportWithDataOrchestrator)(
-      materializer,
-      actorSystem
-    )
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
@@ -885,8 +887,7 @@ class SignalConsoComponents(
     controllerComponents,
     reportWithDataOrchestrator,
     visibleReportOrchestrator,
-    reportZipExportService,
-    htmlFromTemplateGenerator
+    reportZipExportService
   )
 
   val reportedPhoneController = new ReportedPhoneController(
