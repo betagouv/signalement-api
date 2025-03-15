@@ -1,5 +1,6 @@
 package services
 
+import orchestrators.reportexport.ZipEntryName
 import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
@@ -22,15 +23,15 @@ import scala.util.control.NonFatal
 object ZipBuilder {
 
   val logger: Logger = Logger(this.getClass)
-  case class ReportZipEntryName(value: String)
 
   def buildZip(
-      zipEntries: Seq[(ReportZipEntryName, Source[ByteString, Unit])]
+      zipEntries: Seq[(ZipEntryName, Source[ByteString, Unit])]
   )(implicit executionContext: ExecutionContext, materializer: Materializer): Source[ByteString, Future[IOResult]] = {
 
     val (zipOut, pipedOut, source) = createZipStreams()
 
     val fileSourcesFutures = zipEntries.map { case (fileName, zipEntrySource) =>
+      println(s"------------------ fileName = ${fileName} ------------------")
       writeZipEntries(zipEntrySource, fileName, zipOut)
     }
 
@@ -50,12 +51,12 @@ object ZipBuilder {
 
   private def writeZipEntries(
       input: Source[ByteString, Unit],
-      entryName: ReportZipEntryName,
+      entryName: ZipEntryName,
       zipOut: ZipOutputStream
   )(implicit executionContext: ExecutionContext, materializer: Materializer): Future[Unit] =
     input.runWith(Sink.fold(ByteString.empty)(_ ++ _)).map { byteString =>
       zipOut.synchronized {
-        zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
+        zipOut.putNextEntry(new java.util.zip.ZipEntry(s"${entryName.value}"))
         zipOut.write(byteString.toArray)
         zipOut.closeEntry()
       }
