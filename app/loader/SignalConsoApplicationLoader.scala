@@ -414,8 +414,6 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
-
-
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
 
@@ -492,8 +490,6 @@ class SignalConsoComponents(
     userRepository,
     eventRepository
   )
-
-
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)

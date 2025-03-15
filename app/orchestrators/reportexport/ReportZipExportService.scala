@@ -3,21 +3,27 @@ package orchestrators.reportexport
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.User
-import models.report.{ReportFile, ReportFileApi}
-import orchestrators.{ReportWithData, ReportWithDataOrchestrator}
+import models.report.ReportFile
+import models.report.ReportFileApi
+import orchestrators.ReportWithData
+import orchestrators.ReportWithDataOrchestrator
 import orchestrators.reportexport.ReportZipExportService.getFileExtension
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.stream.IOResult
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.Logger
-import services.{PDFService, S3ServiceInterface}
-import services.ZipBuilder.{ReportZipEntryName, buildZip}
+import services.PDFService
+import services.S3ServiceInterface
+import services.ZipBuilder.ReportZipEntryName
+import services.ZipBuilder.buildZip
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class ReportZipExportService(
     htmlFromTemplateGenerator: HtmlFromTemplateGenerator,
@@ -40,7 +46,6 @@ class ReportZipExportService(
       buildZip(reportSources)
     }
   }
-
 
   def reportSummaryWithAttachmentsZip(
       reportWithData: ReportWithData,
