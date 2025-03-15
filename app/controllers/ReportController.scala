@@ -206,16 +206,15 @@ class ReportController(
       )
   }
 
-  def downloadReportAsZipWithFiles(reportId: UUID) =
+  def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-//      reportWithDataOrchestrator
-//        .getReportFull(reportId, request.identity)
-//        .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-//        .flatMap(reportData =>
+
+      val reportIds = new QueryStringMapper(request.queryString)
+        .seq("ids")
+        .map(extractUUID)
 
       massImportService
-        .reportSummaryWithAttachmentsZip(Seq(reportId), request.identity)
-//      )
+        .reportSummaryWithAttachmentsZip(reportIds, request.identity)
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,

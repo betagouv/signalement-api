@@ -38,7 +38,7 @@ object ZipEntryName {
     ): AttachmentZipEntryName = {
 
       val formattedDate  = creationDate.format(pattern)
-      val attachmentName = safeString(s"${formattedDate}-PJ-$index.${getFileExtension(reportFile.filename)}")
+      val attachmentName = s"${safeString(s"${formattedDate}-PJ-$index")}.${getFileExtension(reportFile.filename)}"
       new AttachmentZipEntryName(
         s"${reportName.map(_.directory).getOrElse("")}$attachmentName"
       )
@@ -83,7 +83,7 @@ object ZipEntryName {
       val company = report.companySiret.map { siret =>
         report.companyName.orElse(report.companyBrand).orElse(report.companyBrand).getOrElse(siret.value)
       }
-      val website = report.websiteURL.host.map(_.replaceAll("/.", "DOT"))
+      val website = report.websiteURL.host
 
       val influencer = report.influencer.map(influencer =>
         s"${influencer.socialNetwork.map(slug => s"${slug.entryName}_").getOrElse("")}${influencer.name}"
