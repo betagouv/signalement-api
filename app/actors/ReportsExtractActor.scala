@@ -31,13 +31,14 @@ import utils.ExcelUtils._
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
-import scala.util.Random
 import scala.util.Success
 
 object ReportsExtractActor {
@@ -118,6 +119,37 @@ object ReportsExtractActor {
 
   }
 
+  def generateZipFileName(reportFilter: ReportFilter): String = {
+
+    def addPrefix(prefix: String, s: Option[String]): String =
+      s.map(value => s"${prefix}_$value").getOrElse("")
+
+    val tags = addPrefix(
+      "tags",
+      Option.when(reportFilter.withTags.nonEmpty)(reportFilter.withTags.map(_.entryName).mkString("_"))
+    )
+    val departments =
+      addPrefix("departments", Option.when(reportFilter.departments.nonEmpty)(reportFilter.departments.mkString("_")))
+    val siren =
+      addPrefix("siren", Option.when(reportFilter.siretSirenList.nonEmpty)(reportFilter.siretSirenList.mkString("_")))
+    val category = addPrefix("category", reportFilter.category)
+
+    val name = List(departments, siren, category, tags).mkString
+
+    println(name.trim + ".zip")
+
+    val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yy")
+    val datePart      = LocalDate.now().format(dateFormatter)
+
+    val finalName = if (name.nonEmpty && name.length < 60) {
+      s"${name.trim}.xlsx"
+    } else {
+      "export.xlsx"
+    }
+
+    s"${datePart}_$finalName"
+  }
+
   private def genTmpFile(
       reportOrchestrator: ReportOrchestrator,
       signalConsoConfiguration: SignalConsoConfiguration,
@@ -152,7 +184,7 @@ object ReportsExtractActor {
         Seq(AccessLevel.ADMIN)
       )
     } yield {
-      val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
+      val targetFilename = generateZipFileName(filters)
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
