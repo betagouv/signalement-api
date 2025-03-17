@@ -17,7 +17,7 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .text-center {
@@ -73,11 +73,9 @@ body {
 }
 
 .sender {
-    font-family: 'Arial', sans-serif;
     text-transform: uppercase;
     font-size: 7pt;
     letter-spacing: 0.9pt;
-    line-height: 12px;
     position: absolute;
     top: 2.5cm;
     left: 9.1cm;
@@ -93,11 +91,10 @@ body {
 }
 
 .recipient {
-    font-family: 'Arial', sans-serif;
     text-transform: uppercase;
     font-size: 9pt;
     position: absolute;
-    top: 5.5cm;
+    top: 5.4cm;
     left: 9.1cm;
     width: 9.2cm;
     height: 2.2cm;
@@ -123,7 +120,6 @@ body {
     position: absolute;
     height: 1cm;
     line-height: 1cm;
-    /*top: 26.6cm;*/
     bottom: 0;
     left: 0;
     width: 2cm;
@@ -149,25 +145,15 @@ li.mb-3 {
 }
 
 .scan {
-    /*display: table;*/
-    /*width: 100%;*/
     display: flex;
     flex-direction: row;
     gap: 8px;
 }
 
 .scanitem {
-    /*display: table-cell;*/
-    /*width: 49%;*/
-    /*box-sizing: border-box;*/
     flex-basis: 50%;
     text-align: center;
 }
-
-/*.scanitem + .scanitem {*/
-/*    padding-left: 2%; !* Utiliser le padding pour créer un espace *!*/
-/*    width: 48%;*/
-/*}*/
 
 .connect-block {
     border: black solid 1px;
