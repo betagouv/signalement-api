@@ -19,6 +19,9 @@ class CredentialsProvider(passwordHasherRegistry: PasswordHasherRegistry, userRe
 
   private def authenticate(maybeUser: Option[User], login: String, password: String): Future[Unit] =
     maybeUser match {
+      case Some(user) if user.password.isEmpty =>
+        logger.warnWithTitle("blank_password", "Invalid password")
+        Future.failed(InvalidPassword(login))
       case Some(user) =>
         val storedPasswordInfo = Credentials.toPasswordInfo(user.password)
         passwordHasherRegistry.find(storedPasswordInfo) match {
