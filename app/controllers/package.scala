@@ -101,5 +101,14 @@ package object controllers {
         MalformedBody
       }
       .liftTo[Future]
+
+    def parseBodyPrivate[B](path: JsPath = JsPath())(implicit reads: Reads[B]) = request.body
+      .validate[B](path.read[B])
+      .asEither
+      .leftMap { _ =>
+        MalformedBody
+      }
+      .liftTo[Future]
+
   }
 }
