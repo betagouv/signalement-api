@@ -21,6 +21,9 @@ object AppErrorTransformer {
   private def formatMessage[R <: Request[_]](request: R, maybeUser: Option[UUID], message: String): String =
     s"$message (User ${maybeUser.getOrElse("not connected")}, uri ${request.uri}  ${request.body.toString})"
 
+  private def formatMessagePrivate[R <: Request[_]](request: R, maybeUser: Option[UUID], message: String): String =
+    s"$message (User ${maybeUser.getOrElse("not connected")}, uri ${request.uri} )"
+
   def handleError[R <: Request[_]](request: R, err: Throwable, maybeUserId: Option[UUID] = None): Result =
     err match {
       case appError: AppError =>
@@ -76,7 +79,7 @@ object AppErrorTransformer {
           )
         )
       case error: FailedAuthenticationError =>
-        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
+        logger.warnWithTitle(error.titleForLogs, formatMessagePrivate(request, maybeUserId, error.messageInLogs), error)
         Results.Unauthorized(Json.toJson(failedAuthenticationErrorPayload))
     }
 }

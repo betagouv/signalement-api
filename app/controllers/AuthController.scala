@@ -40,7 +40,7 @@ class AuthController(
 
   def authenticate: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     for {
-      userLogin   <- request.parseBody[UserCredentials]()
+      userLogin   <- request.parseBodyPrivate[UserCredentials]()
       userSession <- authOrchestrator.signalConsoLogin(userLogin)
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
@@ -116,7 +116,7 @@ class AuthController(
   def resetPassword(token: UUID): Action[JsValue] =
     Act.public.standardLimit.async(parse.json) { implicit request =>
       for {
-        userPassword <- request.parseBody[UserPassword]()
+        userPassword <- request.parseBodyPrivate[UserPassword]()
         _            <- authOrchestrator.resetPassword(token, userPassword)
       } yield NoContent
     }
@@ -124,7 +124,7 @@ class AuthController(
   def changePassword =
     Act.secured.restrictByProvider.signalConso.forbidImpersonation.async(parse.json) { implicit request =>
       for {
-        updatePassword <- request.parseBody[PasswordChange]()
+        updatePassword <- request.parseBodyPrivate[PasswordChange]()
         _              <- authOrchestrator.changePassword(request.identity, updatePassword)
       } yield NoContent
 
