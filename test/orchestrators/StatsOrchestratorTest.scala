@@ -22,40 +22,40 @@ class StatsOrchestratorTest extends Specification {
         ArborescenceNode(
           None,
           Vector(
-            CategoryInfo("cat1", "Cat 1")         -> NodeInfo("1", List("tag1")),
-            CategoryInfo("subcat11", "Subcat 11") -> NodeInfo("1.1", List.empty)
+            CategoryInfo("cat1", "Cat 1")         -> NodeInfo("1", List("tag1"), isBlocking = false),
+            CategoryInfo("subcat11", "Subcat 11") -> NodeInfo("1.1", List.empty, isBlocking = false)
           )
         ),
         ArborescenceNode(
           None,
           Vector(
-            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty),
-            CategoryInfo("subcat21", "Subcat 21") -> NodeInfo("2.1", List("tag2"))
+            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty, isBlocking = false),
+            CategoryInfo("subcat21", "Subcat 21") -> NodeInfo("2.1", List("tag2"), isBlocking = false)
           )
         ),
         ArborescenceNode(
           None,
           Vector(
-            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty),
-            CategoryInfo("subcat22", "Subcat 22") -> NodeInfo("2.2", List.empty)
+            CategoryInfo("cat2", "Cat 2")         -> NodeInfo("2", List.empty, isBlocking = false),
+            CategoryInfo("subcat22", "Subcat 22") -> NodeInfo("2.2", List.empty, isBlocking = true)
           )
         ),
         ArborescenceNode(
           None,
-          Vector(CategoryInfo("cat3", "Cat 3") -> NodeInfo("3", List.empty))
+          Vector(CategoryInfo("cat3", "Cat 3") -> NodeInfo("3", List.empty, isBlocking = false))
         ),
         ArborescenceNode(
           Some(CategoryInfo("overridden", "Overridden")),
           Vector(
-            CategoryInfo("cat5", "Cat 5")         -> NodeInfo("5", List("tag5")),
-            CategoryInfo("subcat51", "Subcat 51") -> NodeInfo("5.1", List.empty)
+            CategoryInfo("cat5", "Cat 5")         -> NodeInfo("5", List("tag5"), isBlocking = false),
+            CategoryInfo("subcat51", "Subcat 51") -> NodeInfo("5.1", List.empty, isBlocking = false)
           )
         )
       )
 
       val expected =
         List(
-          ReportNode("cat4", "cat4", None, 10, 5, List.empty, List.empty, None),
+          ReportNode("cat4", "cat4", None, 10, 5, List.empty, List.empty, isBlocking = false, None),
           ReportNode(
             "cat6",
             "Cat 6",
@@ -63,10 +63,11 @@ class StatsOrchestratorTest extends Specification {
             2,
             0,
             List(
-              ReportNode("subcat62", "subcat62", None, 1, 0, List.empty, List.empty, None),
-              ReportNode("subcat61", "Subcat 6.1", None, 1, 0, List.empty, List.empty, None)
+              ReportNode("subcat62", "subcat62", None, 1, 0, List.empty, List.empty, isBlocking = false, None),
+              ReportNode("subcat61", "Subcat 6.1", None, 1, 0, List.empty, List.empty, isBlocking = false, None)
             ),
             List.empty,
+            isBlocking = false,
             None
           ),
           ReportNode(
@@ -75,11 +76,24 @@ class StatsOrchestratorTest extends Specification {
             Some("Overridden"),
             1,
             0,
-            List(ReportNode("subcat51", "Subcat 51", Some("Overridden"), 1, 0, List.empty, List.empty, Some("5.1"))),
+            List(
+              ReportNode(
+                "subcat51",
+                "Subcat 51",
+                Some("Overridden"),
+                1,
+                0,
+                List.empty,
+                List.empty,
+                isBlocking = false,
+                Some("5.1")
+              )
+            ),
             List("tag5"),
+            isBlocking = false,
             Some("5")
           ),
-          ReportNode("cat3", "Cat 3", None, 0, 0, List.empty, List.empty, Some("3")),
+          ReportNode("cat3", "Cat 3", None, 0, 0, List.empty, List.empty, isBlocking = false, Some("3")),
           ReportNode(
             "cat2",
             "Cat 2",
@@ -87,10 +101,11 @@ class StatsOrchestratorTest extends Specification {
             3,
             2,
             List(
-              ReportNode("subcat22", "Subcat 22", None, 2, 1, List.empty, List.empty, Some("2.2")),
-              ReportNode("subcat21", "Subcat 21", None, 1, 1, List.empty, List("tag2"), Some("2.1"))
+              ReportNode("subcat22", "Subcat 22", None, 2, 1, List.empty, List.empty, isBlocking = true, Some("2.2")),
+              ReportNode("subcat21", "Subcat 21", None, 1, 1, List.empty, List("tag2"), isBlocking = false, Some("2.1"))
             ),
             List.empty,
+            isBlocking = false,
             Some("2")
           ),
           ReportNode(
@@ -99,8 +114,11 @@ class StatsOrchestratorTest extends Specification {
             None,
             1,
             0,
-            List(ReportNode("subcat11", "Subcat 11", None, 1, 0, List.empty, List.empty, Some("1.1"))),
+            List(
+              ReportNode("subcat11", "Subcat 11", None, 1, 0, List.empty, List.empty, isBlocking = false, Some("1.1"))
+            ),
             List("tag1"),
+            isBlocking = false,
             Some("1")
           )
         )

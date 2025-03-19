@@ -230,7 +230,7 @@ object StatsOrchestrator {
       results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
-    val tree   = ReportNode("", "", None, 0, 0, List.empty, List.empty, None)
+    val tree   = ReportNode("", "", None, 0, 0, List.empty, List.empty, isBlocking = false, None)
 
     arbo.foreach { arborescenceNode =>
       val res          = merged.find(_._1 == arborescenceNode.path.map(_._1.key).toList)
@@ -271,6 +271,7 @@ object StatsOrchestrator {
               0,
               List.empty,
               nodeInfo.tags,
+              nodeInfo.isBlocking,
               Some(nodeInfo.id)
             )
             tree.children = reportNode :: tree.children
@@ -314,7 +315,7 @@ object StatsOrchestrator {
               case None => path
             }
 
-            val reportNode = ReportNode(path, label, None, 0, 0, List.empty, List.empty, None)
+            val reportNode = ReportNode(path, label, None, 0, 0, List.empty, List.empty, isBlocking = false, None)
             tree.children = reportNode :: tree.children
             createOrUpdateReportNodeOld(labels, locale, fullPath, rest, count, reclamations, reportNode)
 
