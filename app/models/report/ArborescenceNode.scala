@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 
 case class ArborescenceNode(overriddenCategory: Option[CategoryInfo], path: Vector[(CategoryInfo, NodeInfo)])
 
-case class NodeInfo(id: String, tags: List[String])
+case class NodeInfo(id: String, tags: List[String], isBlocking: Boolean)
 
 case class CategoryInfo(key: String, label: String)
 
@@ -13,12 +13,13 @@ object ArborescenceNode {
 
   private def extractCategories(json: JsArray): Map[String, (CategoryInfo, NodeInfo)] =
     json.value.map { jsValue =>
-      val id       = (jsValue \ "id").as[String]
-      val title    = (jsValue \ "title").as[String]
-      val category = (jsValue \ "category").as[String]
-      val tags     = (jsValue \ "tags").asOpt[List[String]].getOrElse(List.empty)
+      val id         = (jsValue \ "id").as[String]
+      val title      = (jsValue \ "title").as[String]
+      val category   = (jsValue \ "category").as[String]
+      val tags       = (jsValue \ "tags").asOpt[List[String]].getOrElse(List.empty)
+      val isBlocking = (jsValue \ "isBlocking").asOpt[Boolean].getOrElse(false)
 
-      category -> (CategoryInfo(category, title) -> NodeInfo(id, tags))
+      category -> (CategoryInfo(category, title) -> NodeInfo(id, tags, isBlocking))
     }.toMap
 
   def fromJson(json: JsArray): List[ArborescenceNode] = {
@@ -49,10 +50,12 @@ object ArborescenceNode {
     val subcategory      = (json \ "subcategory").asOpt[String]
     val subcategories    = (json \ "subcategories").asOpt[List[JsValue]].getOrElse(List.empty)
     val tags             = (json \ "tags").asOpt[List[String]].getOrElse(List.empty)
+    val isBlocking       = (json \ "isBlocking").asOpt[Boolean].getOrElse(false)
     val categoryOverride = (json \ "categoryOverride").asOpt[String]
 
     val combinedCategoryOverride = currentCategoryOverride.orElse(categoryOverride)
 
+    val nodeInfo = NodeInfo(id, tags, isBlocking)
     subcategories match {
       case Nil =>
         List(
@@ -61,7 +64,7 @@ object ArborescenceNode {
             replaceCategory(
               categoriesMap,
               combinedCategoryOverride,
-              currentPath :+ (CategoryInfo(subcategory.orElse(category).get, title), NodeInfo(id, tags))
+              currentPath :+ (CategoryInfo(subcategory.orElse(category).get, title), nodeInfo)
             )
           )
         )
@@ -74,7 +77,7 @@ object ArborescenceNode {
                 categoriesMap,
                 Some(CategoryInfo(cat, title)),
                 combinedCategoryOverride,
-                currentPath :+ (CategoryInfo(cat, title), NodeInfo(id, tags))
+                currentPath :+ (CategoryInfo(cat, title), nodeInfo)
               )
             )
           case None =>
@@ -84,7 +87,7 @@ object ArborescenceNode {
                 categoriesMap,
                 currentCategory,
                 combinedCategoryOverride,
-                currentPath :+ (CategoryInfo(subcategory.get, title), NodeInfo(id, tags))
+                currentPath :+ (CategoryInfo(subcategory.get, title), nodeInfo)
               )
             )
         }

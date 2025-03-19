@@ -12,6 +12,7 @@ case class ReportNode(
     var reclamations: Int,
     var children: List[ReportNode],
     tags: List[String],
+    isBlocking: Boolean,
     id: Option[String]
 )
 
