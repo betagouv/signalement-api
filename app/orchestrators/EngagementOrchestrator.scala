@@ -40,7 +40,7 @@ class EngagementOrchestrator(
 
   def listForUser(proUser: User): Future[Seq[EngagementApi]] =
     for {
-      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
+      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(proUser)
       engagements <- engagementRepository.listEngagementsWithEventsAndReport(
         Some(proUser),
         companiesWithAccesses.map(_.company.id)
@@ -70,7 +70,7 @@ class EngagementOrchestrator(
       engagement            <- maybeEngagement.liftTo[Future](EngagementNotFound(engagementId))
       maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
-      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
+      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(proUser)
       _ <- report.companyId match {
         case Some(companyId) if companiesWithAccesses.map(_.company.id).contains(companyId) => Future.unit
         case _ => Future.failed(ReportNotFound(engagement.reportId))
@@ -96,7 +96,7 @@ class EngagementOrchestrator(
       engagement            <- maybeEngagement.liftTo[Future](EngagementNotFound(engagementId))
       maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
-      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
+      companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(proUser)
       _ <- report.companyId match {
         case Some(companyId) if companiesWithAccesses.map(_.company.id).contains(companyId) => Future.unit
         case _ => Future.failed(ReportNotFound(engagement.reportId))

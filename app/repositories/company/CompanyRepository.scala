@@ -137,6 +137,19 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   }
 
+  override def getReportsCounts(companyIds: List[UUID]): Future[Map[UUID, Long]] =
+    for {
+      tuples <- db.run(
+        CompanyReportCountsTable.table
+          .filter(_.companyId inSetBind companyIds)
+          .map(row => row.companyId -> row.totalReports)
+          .result
+      )
+      exhaustiveMap = companyIds.map { id =>
+        tuples.find(_._1 == id).getOrElse(id -> 0L)
+      }.toMap
+    } yield exhaustiveMap
+
   override def getOrCreate(siret: SIRET, data: Company): Future[Company] =
     db.run(table.filter(_.siret === siret).result.headOption).flatMap {
       case Some(company) => Future.successful(company)

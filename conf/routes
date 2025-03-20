@@ -285,7 +285,9 @@ POST          /api/companies/follow-up-posted                           controll
 
 # Page "Mes entreprises" pour les Pros
 # également utilisé dans la liste des signalements des pros, pour proposer le filtre par entreprise
-GET           /api/companies/connected-user                             controllers.CompanyController.getCompaniesOfPro()
+# également utilisé sur la fiche d'une entreprise, pour savoir si l'onglet Accès utilisateurs devrait être affiché
+GET           /api/companies/connected-user                           controllers.CompanyController.getCompaniesOfPro()
+GET           /api/companies/connected-user/extended                  controllers.CompanyController.getCompaniesOfProExtended()
 
 # Gestion des notifications
 GET           /api/report-blocked-notification                          controllers.ReportBlockedNotificationController.getAll()

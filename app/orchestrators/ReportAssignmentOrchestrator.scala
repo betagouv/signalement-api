@@ -73,7 +73,7 @@ class ReportAssignmentOrchestrator(
         else Future.unit
       maybeUser <- userRepository.get(newAssignedUserId)
       user      <- maybeUser.liftTo[Future](AppError.AssignReportError(s"User ${newAssignedUserId} doesn't exist"))
-      visibleCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompanies(user)
+      visibleCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(user)
       visibleSirets = visibleCompanies.map(_.company.siret)
       isVisible     = reportExtra.report.companySiret.exists(visibleSirets.contains)
       _ <-
