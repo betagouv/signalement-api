@@ -196,7 +196,7 @@ class ReportController(
       .map(extractUUID)
 
     massImportService
-      .reportSummaryWithAttachmentsZip(reportIds, request.identity)
+      .reportsSummaryZip(reportIds, request.identity)
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
