@@ -6,6 +6,7 @@ import controllers.error.AppError.ReportNotFound
 import models.UserRole.Professionnel
 import models._
 import models.company.Address
+import models.report.Report
 import models.report.reportmetadata.ReportExtra
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
@@ -25,9 +26,9 @@ class VisibleReportOrchestrator(
 
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
-  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[ReportExtra]] =
+  def getVisibleReportForUserWithExtra(reportId: UUID, user: User): Future[Option[ReportExtra]] =
     for {
-      reportWithMetadata <- reportRepository.getFor(Some(user), reportId)
+      reportWithMetadata <- reportRepository.getForWithAdditionalData(Some(user), reportId)
       report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address.merge(company.map(_.address), report.map(_.companyAddress))
@@ -43,16 +44,37 @@ class VisibleReportOrchestrator(
           case Professionnel =>
             companiesVisibilityOrchestrator
               .fetchVisibleCompanies(user)
-              .map(_.map(v => Some(v.company.siret)))
+              .map(_.map(_.company.siret))
               .map { visibleSirets =>
-                reportExtra
-                  .filter(r => visibleSirets.contains(r.report.companySiret))
-                  .map(_.copy(companyAlbertActivityLabel = None))
+                reportExtra.filter(r => r.report.companySiret match {
+                  case Some(siret) => visibleSirets.contains(siret)
+                  case None => false
+                })
               }
         }
     } yield visibleReportExtra
 
-  def getVisibleReportOrThrow(reportId: UUID, user: User): Future[ReportExtra] =
+  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
+    for {
+      report <- reportRepository.getFor(Some(user), reportId)
+      visibleReport <-
+        user.userRole match {
+          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
+            Future.successful(report)
+          case Professionnel =>
+            companiesVisibilityOrchestrator
+              .fetchVisibleCompanies(user)
+              .map(_.map(_.company.siret))
+              .map { visibleSirets =>
+                report.filter(_.companySiret match {
+                  case Some(siret) => visibleSirets.contains(siret)
+                  case None => false
+                })
+              }
+        }
+    } yield visibleReport
+
+  def getVisibleReportOrThrow(reportId: UUID, user: User): Future[Report] =
     for {
       maybeReport <- getVisibleReportForUser(reportId, user)
       report      <- maybeReport.liftTo[Future](ReportNotFound(reportId))

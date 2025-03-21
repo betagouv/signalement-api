@@ -71,15 +71,15 @@ class EngagementOrchestrator(
       maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
-      _ <- report.report.companyId match {
+      _ <- report.companyId match {
         case Some(companyId) if companiesWithAccesses.map(_.company.id).contains(companyId) => Future.unit
         case _ => Future.failed(ReportNotFound(engagement.reportId))
       }
       event <- eventRepository.create(
         Event(
           UUID.randomUUID(),
-          Some(report.report.id),
-          report.report.companyId,
+          Some(report.id),
+          report.companyId,
           Some(proUser.id),
           OffsetDateTime.now(),
           EventType.PRO,
@@ -97,12 +97,12 @@ class EngagementOrchestrator(
       maybeReport           <- reportRepository.getFor(Some(proUser), engagement.reportId)
       report                <- maybeReport.liftTo[Future](ReportNotFound(engagement.reportId))
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
-      _ <- report.report.companyId match {
+      _ <- report.companyId match {
         case Some(companyId) if companiesWithAccesses.map(_.company.id).contains(companyId) => Future.unit
         case _ => Future.failed(ReportNotFound(engagement.reportId))
       }
       _ <- engagementRepository.uncheck(engagementId)
-      _ <- eventRepository.deleteEngagement(report.report.id)
+      _ <- eventRepository.deleteEngagement(report.id)
     } yield ()
 
   def removeEngagement(reportId: UUID): Future[Unit] =
@@ -120,9 +120,6 @@ class EngagementOrchestrator(
       _           <- visibleReportOrchestrator.checkReportIsVisible(reportId, user)
       maybeReview <- reportEngagementReviewRepository.findByReportId(reportId)
     } yield maybeReview
-
-  def getEngagementReviews(reportIds: Seq[UUID]): Future[Map[UUID, Option[EngagementReview]]] =
-    reportEngagementReviewRepository.findByReportIds(reportIds)
 
   def handleEngagementReview(
       reportId: UUID,

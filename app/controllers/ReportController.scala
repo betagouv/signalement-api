@@ -133,8 +133,7 @@ class ReportController(
       logger.debug(s"reportResponse ${uuid}")
       for {
         reportResponse     <- request.parseBody[IncomingReportResponse]()
-        visibleReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
-        visibleReport = visibleReportExtra.map(_.report)
+        visibleReport <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -148,8 +147,7 @@ class ReportController(
     Act.secured.adminsAndAgents.forbidImpersonation.async(parse.json) { implicit request =>
       for {
         reportAction       <- request.parseBody[ReportAction]()
-        reportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
-        report = reportWithMetadata.map(_.report)
+        report <- reportRepository.getFor(Some(request.identity), uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -164,7 +162,7 @@ class ReportController(
     Act.secured.all.allowImpersonation.async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
-        maybeReportWithMetadata <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        maybeReportWithMetadata <- visibleReportOrchestrator.getVisibleReportForUserWithExtra(uuid, request.identity)
         viewedReportWithMetadata <- maybeReportWithMetadata
           .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
           .getOrElse(Future.successful(None))
@@ -286,7 +284,7 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     Act.secured.adminsAndReadonly.async { implicit request =>
       for {
-        maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
+        maybeReportWithMetadata <- reportRepository.getForWithAdditionalData(Some(request.identity), uuid)
         company <- maybeReportWithMetadata.flatMap(_.report.companyId).flatTraverse(r => companyRepository.get(r))
         files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(

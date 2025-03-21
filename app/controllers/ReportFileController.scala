@@ -92,8 +92,7 @@ class ReportFileController(
   def downloadAllFilesAsZip(reportId: UUID, origin: Option[ReportFileOrigin]) =
     Act.secured.all.allowImpersonation.async { request =>
       for {
-        reportExtra <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
-        report = reportExtra.report
+        report <- visibleReportOrchestrator.getVisibleReportOrThrow(reportId, request.identity)
         stream <- reportFileOrchestrator.downloadReportFilesArchive(report, origin)
       } yield Ok
         .chunked(stream)

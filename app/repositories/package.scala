@@ -1,15 +1,15 @@
-import models.PaginatedResult
 
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 package object repositories {
 
-  implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq])(implicit executionContext: ExecutionContext) {
+  implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq]) {
+
+    def optimiseFullTextSearch(setOffset: Boolean): slick.lifted.Query[A, B, Seq] =
+      if (setOffset) query.drop(0) else query
 
     def withPagination(
         db: JdbcBackend#Database
@@ -17,48 +17,14 @@ package object repositories {
         maybeOffset: Option[Long],
         maybeLimit: Option[Int],
         maybePreliminaryAction: Option[DBIO[Int]] = None
-    ): Future[PaginatedResult[B]] = {
-
-      val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
-      val limit  = maybeLimit.map(Math.max(_, 0))
-
-      val queryWithOffset         = query.drop(offset)
-      val queryWithOffsetAndLimit = limit.map(l => queryWithOffset.take(l)).getOrElse(queryWithOffset)
-
-      val resultF: Future[Seq[B]] = db.run(
-        maybePreliminaryAction match {
-          case Some(action) =>
-            (for {
-              _      <- action
-              result <- queryWithOffsetAndLimit.result
-            } yield result).transactionally
-
-          case None => queryWithOffsetAndLimit.result
-        }
+    ): PaginatedQuery[A, B] =
+      PaginatedQuery(
+        db,
+        query,
+        maybeOffset,
+        maybeLimit,
+        maybePreliminaryAction
       )
-
-      val countF: Future[Int] = db.run(
-        maybePreliminaryAction match {
-          case Some(action) =>
-            (for {
-              _      <- action
-              result <- query.length.result
-            } yield result).transactionally
-
-          case None => query.length.result
-
-        }
-      )
-
-      for {
-        result <- resultF
-        count  <- countF
-      } yield PaginatedResult(
-        totalCount = count,
-        entities = result.toList,
-        hasNextPage = limit.exists(l => count - (offset + l) > 0)
-      )
-    }
 
   }
 

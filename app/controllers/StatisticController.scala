@@ -4,10 +4,7 @@ import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter.transmittedReportsFilter
-import models.report.ReportFilter
-import models.report.ReportResponseType
-import models.report.ReportStatus
-import models.report.ReportsCountBySubcategoriesFilter
+import models.report.{ReportFilter, ReportFilterApi, ReportResponseType, ReportStatus, ReportsCountBySubcategoriesFilter}
 import models.report.ReportStatus.statusWithProResponse
 import models.report.delete.ReportAdminActionType
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -23,7 +20,6 @@ import utils.QueryStringMapper
 import java.time.OffsetDateTime
 import java.util.Locale
 import java.util.UUID
-import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -41,8 +37,9 @@ class StatisticController(
   val logger: Logger = Logger(this.getClass)
 
   def getReportsCount() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
-    ReportFilter
+    ReportFilterApi
       .fromQueryString(request.queryString)
+      .map(ReportFilterApi.toReportFilter)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -76,7 +73,9 @@ class StatisticController(
       user: User,
       reportFilterModification: ReportFilter => ReportFilter = identity
   ): Future[Result] =
-    ReportFilter.fromQueryString(queryString) match {
+    ReportFilterApi
+      .fromQueryString(queryString)
+      .map(ReportFilterApi.toReportFilter) match {
       case Success(reportFilter) =>
         val modifiedReportFilter = reportFilterModification(reportFilter)
         val mapper               = new QueryStringMapper(queryString)
