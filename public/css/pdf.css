@@ -18,7 +18,7 @@
     font-weight: bold;
 }
 
-body, div {
+body {
     font-family: 'Arial', sans-serif;
     font-size: 13px;
     height: 960px;
@@ -34,6 +34,18 @@ body, div {
 
 .text-bold {
     font-weight: bold;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mb-1 {
+    margin-bottom: 4px;
+}
+
+.mt-1 {
+    margin-top: 4px;
 }
 
 .mt-3 {
@@ -66,8 +78,10 @@ body, div {
 }
 
 .sender {
-    font-size: 8pt;
-    line-height: 10pt;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    font-size: 7pt;
+    letter-spacing: 0.7pt;
     position: absolute;
     top: 2.3cm;
     left: 9.6cm;
@@ -81,9 +95,9 @@ body, div {
 }
 
 .recipient {
-    font-family: 'OCR-B 10 BT';
-    font-size: 10pt;
-    line-height: 10pt;
+    font-family: 'Arial', sans-serif;
+    text-transform: uppercase;
+    font-size: 9pt;
     position: absolute;
     top: 5.5cm;
     left: 9.6cm;
@@ -129,4 +143,21 @@ p.standout {
 
 li.mb-3 {
     margin-bottom: 16px;
+}
+
+.scan {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.scanitem {
+    flex-basis: 50%;
+    text-align: center;
+}
+
+.connect-block {
+    border: black solid 1px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
