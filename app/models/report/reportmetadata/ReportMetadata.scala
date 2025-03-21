@@ -26,21 +26,11 @@ object ReportMetadata {
 }
 
 case class ReportWithMetadataAndBookmark(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    bookmark: Option[Bookmark],
-    subcategoryLabel: Option[SubcategoryLabel]
-) {}
-object ReportWithMetadataAndBookmark {
-  def from(
-      report: Report,
-      metadata: Option[ReportMetadata],
-      bookmark: Option[Bookmark],
-      subcategoryLabel: Option[SubcategoryLabel]
-  ): ReportWithMetadataAndBookmark =
-    ReportWithMetadataAndBookmark(report, metadata, bookmark, subcategoryLabel)
-
-}
+                                          report: Report,
+                                          metadata: Option[ReportMetadata],
+                                          bookmark: Option[Bookmark],
+                                          subcategoryLabel: Option[SubcategoryLabel],
+)
 
 case class ReportExtra(
     report: Report,

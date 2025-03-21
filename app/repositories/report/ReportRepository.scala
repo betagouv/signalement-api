@@ -7,18 +7,15 @@ import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
-import models.report.reportmetadata.ReportMetadata
 import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.PostgresProfile.api._
 import repositories.barcode.BarcodeProductTable
-import repositories.bookmark.Bookmark
 import repositories.bookmark.BookmarkTable
 import repositories.company.CompanyTable
 import repositories.report.ReportColumnType._
-import repositories.report.ReportRepository.ReportOrdering
-import repositories.report.ReportRepository.queryFilter
+import repositories.report.ReportRepository.{ReportOrdering, queryFilter}
 import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 import repositories.reportconsumerreview.ResponseConsumerReviewTable
 import repositories.reportengagementreview.ReportEngagementReviewTable
@@ -29,11 +26,10 @@ import repositories.CRUDRepository
 import repositories.PaginateOps
 import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subcategorylabel.SubcategoryLabelTable
+import slick.ast.BaseTypedType
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
-import slick.jdbc.JdbcProfile
-import slick.jdbc.ResultSetConcurrency
-import slick.jdbc.ResultSetType
+import slick.jdbc.{JdbcProfile, JdbcType, ResultSetConcurrency, ResultSetType}
 import utils.Constants.Departments.toPostalCode
 import utils._
 
@@ -194,13 +190,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db
       .run(
         queryFilter(ReportTable.table(user), filter, user)
-          .filter { case (report, _, _, _) =>
+          .filter { case (report, _, _, _, _, _) =>
             report.creationDate > OffsetDateTime
               .now()
               .minusMonths(ticks.toLong)
               .withDayOfMonth(1)
           }
-          .groupBy { case (report, _, _, _) =>
+          .groupBy { case (report, _, _, _, _, _) =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
           }
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -212,8 +208,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
-        .groupBy { case (report, _, _, _) =>
+        .filter { case (report, _, _, _, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
+        .groupBy { case (report, _, _, _, _, _) =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
         }
         .map { case ((week, year), group) =>
@@ -243,8 +239,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
-        .groupBy { case (report, _, _, _) =>
+        .filter { case (report, _, _, _, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
+        .groupBy { case (report, _, _, _, _, _) =>
           (
             DatePartSQLFunction("day", report.creationDate),
             DatePartSQLFunction("month", report.creationDate),
@@ -379,11 +375,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
       queryResult <- queryFilter(ReportTable.table(user), filter, user)
-        .map { case (report, _, _, _) => report }
+        .map { case (report, _, _, _, _, _) => report }
         .joinLeft(ReportFileTable.table)
         .on { case (report, reportFile) => report.id === reportFile.reportId }
-        .sortBy { case (report, _) => report.creationDate.desc }
         .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
+        .sortBy { case (report, _) => report.creationDate.desc }
       res = queryResult.entities
         .groupBy(a => a._1)
         .view
@@ -414,20 +410,28 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]] = for {
-    reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
-      .sortBy { case (report, _, _, _) => sortReport(report, sortBy, orderBy) }
-      .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities {
-      case (
-            report: Report,
-            metadata: Option[ReportMetadata],
-            bookmark: Option[Bookmark],
-            subcategoryLabel: Option[SubcategoryLabel]
-          ) =>
-        ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
-    }
-  } yield reportsWithMetadata
+  ): Future[PaginatedResult[ReportFromSearch]] =
+    queryFilter(ReportTable.table(user), filter, user)
+    .withPagination(db)(offset, limit, None)
+      .sortBy { t => sortReport(t._1, sortBy, orderBy) }
+    .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
+      ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+    })
+
+//  def getReportsWithAdditionalData(
+//                  user: Option[User],
+//                  filter: ReportFilter,
+//                  offset: Option[Long],
+//                  limit: Option[Int],
+//                  sortBy: Option[ReportSort],
+//                  orderBy: Option[SortOrder]
+//                ): Future[PaginatedResult[FullReportFromSearch]] =
+//    queryFilterWithAdditionalData(ReportTable.table(user), filter, user)
+//      .sortBy { t => sortReport(t._1, sortBy, orderBy) }
+//      .withPagination(db)(offset, limit)
+//      .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse, proUser, assignedUser) =>
+//        FullReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse.map(res => EventWithUser(res, proUser)), assignedUser)
+//      })
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table
@@ -531,45 +535,44 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       }
       .groupBy(a => (a.phone, a.companySiret, a.companyName))
       .map { case (a, b) => (a, b.length) }
-      .sortBy(_._2.desc)
       .withPagination(db)(
         maybeOffset = offset,
         maybeLimit = limit,
         maybePreliminaryAction = None
       )
+      .sortBy(_._2.desc)
 
-  override def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] =
-    for {
-      maybeTuple <- db.run(
-        ReportTable
-          .table(user)
-          .filter(_.id === id)
-          .joinLeft(ReportMetadataTable.table)
-          .on(_.id === _.reportId)
-          .joinLeft(BookmarkTable.table)
-          .on { case ((report, _), bookmark) =>
-            bookmark.userId === user.map(_.id) && report.id === bookmark.reportId
-          }
-          .joinLeft(SubcategoryLabelTable.table)
-          .on { case (((report, _), _), subcategoryLabel) =>
-            report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
-          }
-          .map { case (((report, metadata), bookmark), subcategoryLabel) =>
-            (report, metadata, bookmark, subcategoryLabel)
-          }
-          .result
-          .headOption
-      )
-      maybeReportWithMetadata = maybeTuple.map {
-        case (
-              report: Report,
-              metadata: Option[ReportMetadata],
-              bookmark: Option[Bookmark],
-              subcategoryLabel: Option[SubcategoryLabel]
-            ) =>
-          ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
-      }
-    } yield maybeReportWithMetadata
+  override def getFor(user: Option[User], id: UUID): Future[Option[Report]] =
+    db.run(
+      ReportTable
+        .table(user)
+        .filter(_.id === id)
+        .result
+        .headOption
+    )
+
+  override def getForWithAdditionalData(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] =
+    db.run(
+      ReportTable
+        .table(user)
+        .filter(_.id === id)
+        .joinLeft(SubcategoryLabelTable.table)
+        .on { case (report, subcategoryLabel) =>
+          report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
+        }
+        .joinLeft(BookmarkTable.table)
+        .on { case ((report, _), bookmark) =>
+          bookmark.userId === user.map(_.id) && report.id === bookmark.reportId
+        }
+        .joinLeft(ReportMetadataTable.table)
+        .on { case (((report, _), _), metadata) =>
+          report.id === metadata.reportId
+        }
+        .result
+        .headOption
+    ).map(_.map { case (((report, subcategoryLabel), bookmark), metadata) =>
+      ReportWithMetadataAndBookmark(report, metadata, bookmark, subcategoryLabel)
+    })
 
   override def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]] =
     db.run(
@@ -615,7 +618,7 @@ object ReportRepository {
       List(
         if (filter.tags.isEmpty) None else Some(table.tags @& filter.tags.bind),
         filter.category.map(category => table.category === category.entryName)
-      ).collect { case Some(f) => f }.reduceLeftOption(_ || _).getOrElse(default)
+      ).flatten.reduceLeftOption(_ || _).getOrElse(default)
     }
   }
 
@@ -628,17 +631,16 @@ object ReportRepository {
     qb.sqlBuilder += " AS TEXT[])": Unit
   }
 
+  implicit private val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+
+  // N'utilise que les jointures nécessaires au filtrage
+  // On pourrait ne pas faire de jointures et faire un EXISTS mais les perfs sont identiques et on remonte directement la donnée avec JOIN
+  // Pas besoin de refaire une requête
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
       filter: ReportFilter,
       maybeUser: Option[User]
-  ): Query[
-    (ReportTable, Rep[Option[ReportMetadataTable]], Rep[Option[BookmarkTable]], Rep[Option[SubcategoryLabelTable]]),
-    (Report, Option[ReportMetadata], Option[Bookmark], Option[SubcategoryLabel]),
-    Seq
-  ] = {
-    implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
-
+  ) = {
     table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -681,9 +683,6 @@ object ReportRepository {
           .filter(_.matches(SIREN.pattern))
           .distinct)
       }
-      .filterOpt(filter.siretSirenDefined) { case (table, siretSirenDefined) =>
-        table.companySiret.isDefined === siretSirenDefined
-      }
       .filterOpt(filter.companyName) { case (table, companyName) =>
         table.companyName like s"${companyName}%"
       }
@@ -725,7 +724,7 @@ object ReportRepository {
       .filterIf(filter.withTags.nonEmpty) { table =>
         table.tags @& filter.withTags.toList.bind
       }
-      .filterNot { table =>
+      .filterNotIf(filter.withoutTags.nonEmpty) { table =>
         table.tags @& filter.withoutTags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
@@ -735,15 +734,9 @@ object ReportRepository {
         // Optimisation to avoid case and use indexes
         ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
       }
-      .filterOpt(filter.description) { case (table, description) =>
-        // unique separator use to match the string between  "Description :" et and separator
-        val uniqueSeparator = UUID.randomUUID().toString
-        ArrayToStringSQLFunction(
-          table.details,
-          uniqueSeparator,
-          ""
-        ) regexLike s".*Description :.*$description.*$uniqueSeparator"
-      }
+      // Grosse optimisation. Force Postgres à utiliser l'index de full text search.
+      // Seul cas où c'est beaucoup plus rapide que d'utiliser l'index sur la creation_date
+      .optimiseFullTextSearch(filter.details.isDefined)
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
@@ -756,32 +749,6 @@ object ReportRepository {
           .map(_.reportId)
           .exists
         if (hasAttachment) exists else !exists
-      }
-      .filterOpt(filter.hasResponseEvaluation) { case (table, hasEvaluation) =>
-        val exists = ResponseConsumerReviewTable.table
-          .filter(x => x.reportId === table.id)
-          .map(_.reportId)
-          .exists
-        if (hasEvaluation) exists else !exists
-      }
-      .filterIf(filter.responseEvaluation.nonEmpty) { table =>
-        ResponseConsumerReviewTable.table
-          .filter(_.reportId === table.id)
-          .filter(_.evaluation.inSet(filter.responseEvaluation))
-          .exists
-      }
-      .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
-        val exists = ReportEngagementReviewTable.table
-          .filter(x => x.reportId === table.id)
-          .map(_.reportId)
-          .exists
-        if (hasEngagementEvaluation) exists else !exists
-      }
-      .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
-        ReportEngagementReviewTable.table
-          .filter(_.reportId === table.id)
-          .filter(_.evaluation.inSet(filter.engagementEvaluation))
-          .exists
       }
       .filterIf(filter.departments.nonEmpty) { table =>
         val departmentsFilter: Rep[Boolean] = filter.departments
@@ -818,22 +785,65 @@ object ReportRepository {
       }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
-      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
-        maybeMetadataTable.flatMap(_.assignedUserId) === assignedUserid
-      }
       .joinLeft(BookmarkTable.table)
       .on { case ((report, _), bookmark) =>
         bookmark.userId === maybeUser.map(_.id) && report.id === bookmark.reportId
       }
+      .joinLeft(ResponseConsumerReviewTable.table)
+      .on { case (((report, _), _), consumerReview) =>
+        report.id === consumerReview.reportId
+      }
+      .joinLeft(ReportEngagementReviewTable.table)
+      .on { case ((((report, _), _), _), engagementReview) =>
+        report.id === engagementReview.reportId
+      }
       .joinLeft(SubcategoryLabelTable.table)
-      .on { case (((report, _), _), subcategoryLabel) =>
+      .on { case (((((report, _), _), _), _), subcategoryLabel) =>
         subcategoryLabel.category === report.category && subcategoryLabel.subcategories === report.subcategories
       }
-      .map { case (((report, metadata), bookmark), subcategoryLabel) => (report, metadata, bookmark, subcategoryLabel) }
-      .filterOpt(filter.isBookmarked) { case ((_, _, bookmark, _), isBookmarked) =>
-        val bookmarkExists = bookmark.isDefined
-        if (isBookmarked) bookmarkExists else !bookmarkExists
+      .map { case (((((report, metadata), bookmark), consumerReview), engagementReview), subcategoryLabel) =>
+        (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+      }
+      .filterOpt(filter.assignedUserId) { case (table, assignedUserid) =>
+        table._2.flatMap(_.assignedUserId) === assignedUserid
+      }
+      .filterOpt(filter.isBookmarked) { case (table, isBookmarked) =>
+        table._3.isDefined === isBookmarked
+      }
+      .filterOpt(filter.hasResponseEvaluation) { case (table, hasEvaluation) =>
+        table._4.isDefined === hasEvaluation
+      }
+      .filterIf(filter.responseEvaluation.nonEmpty) { table =>
+        table._4.map(_.evaluation).inSetBind(filter.responseEvaluation)
+      }
+      .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
+        table._5.isDefined === hasEngagementEvaluation
+      }
+      .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
+        table._5.map(_.evaluation).inSetBind(filter.engagementEvaluation)
       }
   }
+//
+//  // Ajoute des jointures pour de la données
+//  // Uniquement des données dont on sait que la relation est 1 <-> 1 sinon ça ne marche pas, il faut soit groupBy soit faire
+//  // une autre requête
+//  def queryFilterWithAdditionalData(table: Query[ReportTable, Report, Seq], filter: ReportFilter, maybeUser: Option[User]) = {
+//    queryFilter(table, filter, maybeUser)
+//      .joinLeft(EventTable.table)
+//      .on { case (((report, _, _, _, _), _), event) =>
+//        report.id === event.reportId && event.eventType === EventType.PRO.entryName && event.action === ActionEvent.REPORT_PRO_RESPONSE.value
+//      }
+//      .joinLeft(UserTable.table)
+//      .on { case ((((_, _, _, _, _), _), proResponse), user) =>
+//        proResponse.flatMap(_.userId) === user.id
+//      }
+//      .joinLeft(UserTable.table)
+//      .on { case (((((_, metadata, _, _, _), _), _), _), assignedUser) =>
+//        metadata.flatMap(_.assignedUserId) === assignedUser.id
+//      }
+//      .map { case (((((report, metadata, bookmark, consumerReview, engagementReview), subcategoryLabel), proResponse), proResponseUser), assignedUser) =>
+//        (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse, proResponseUser, assignedUser)
+//      }
+//  }
 
 }

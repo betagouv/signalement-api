@@ -120,6 +120,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         maybeLimit = paginate.limit,
         maybePreliminaryAction = maybePreliminaryAction
       )
+      .unsorted
 
   }
 

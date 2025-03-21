@@ -69,8 +69,8 @@ class EmailValidationRepository(
 
   def search(filter: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
     queryFilter(filter)
-      .sortBy(_.creationDate.desc)
       .withPagination(db)(paginate.offset, paginate.limit)
+      .sortBy(_.creationDate.desc)
   override def count(filter: EmailValidationFilter) =
     db.run(queryFilter(filter).length.result)
   private def queryFilter(filter: EmailValidationFilter) =

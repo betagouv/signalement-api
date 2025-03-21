@@ -26,7 +26,6 @@ import models.report.ReportWordOccurrence.StopWords
 import models.report._
 import models.report.reportmetadata.ReportExtra
 import models.report.reportmetadata.ReportMetadataDraft
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
@@ -46,7 +45,6 @@ import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
@@ -62,6 +60,7 @@ import utils.Constants.EventType
 import utils.Logs.RichLogger
 import utils._
 import cats.syntax.either._
+import repositories.user.UserRepositoryInterface
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -79,7 +78,6 @@ import scala.util.Random
 
 class ReportOrchestrator(
     mailService: MailServiceInterface,
-    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportMetadataRepository: ReportMetadataRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
@@ -98,7 +96,6 @@ class ReportOrchestrator(
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
     engagementRepository: EngagementRepositoryInterface,
-    engagementOrchestrator: EngagementOrchestrator,
     subcategoryLabelRepository: SubcategoryLabelRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
@@ -988,11 +985,13 @@ class ReportOrchestrator(
             sortBy,
             orderBy,
             maxResults,
-            (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
+            (r: ReportFromSearch, m: Map[UUID, List[ReportFile]]) =>
               ReportWithFiles(
                 SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
-                r.bookmark.isDefined,
+                r.bookmark,
+                r.consumerReview,
+                r.engagementReview,
                 m.getOrElse(r.report.id, Nil)
               )
           )
@@ -1033,8 +1032,6 @@ class ReportOrchestrator(
 
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
       assignedUsers      <- userRepository.findByIds(assignedUsersIds)
-      consumerReviewsMap <- reportConsumerReviewOrchestrator.getReviews(reportsId)
-      engagementReviews  <- engagementOrchestrator.getEngagementReviews(reportsId)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
@@ -1042,11 +1039,11 @@ class ReportOrchestrator(
         ReportWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
-          reportWithFiles.isBookmarked,
-          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
+          reportWithFiles.bookmark,
+          reportWithFiles.consumerReview,
+          reportWithFiles.engagementReview,
           reportWithFiles.files,
-          consumerReviewsMap.getOrElse(reportId, None),
-          engagementReviews.getOrElse(reportId, None),
+          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportEventsMap.get(reportId)
         )
       }
@@ -1061,7 +1058,7 @@ class ReportOrchestrator(
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder],
       maxResults: Int,
-      toApi: (ReportWithMetadataAndBookmark, Map[UUID, List[ReportFile]]) => T
+      toApi: (ReportFromSearch, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] =
     for {
       _ <- limit match {
