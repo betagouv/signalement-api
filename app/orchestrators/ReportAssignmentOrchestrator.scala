@@ -41,7 +41,7 @@ class ReportAssignmentOrchestrator(
   ): Future[User] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
-      maybeReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
+      maybeReportExtra <- visibleReportOrchestrator.getVisibleReportForUserWithExtra(reportId, assigningUser)
       reportExtra      <- maybeReportExtra.liftTo[Future](AppError.ReportNotFound(reportId))
       newAssignedUser  <- checkAssignableToUser(reportExtra, newAssignedUserId)
       _                <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)

@@ -444,7 +444,6 @@ class SignalConsoComponents(
     )
   private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
-    reportConsumerReviewOrchestrator,
     reportRepository,
     reportMetadataRepository,
     reportFileOrchestrator,
@@ -463,7 +462,6 @@ class SignalConsoComponents(
     signalConsoConfiguration,
     companySyncService,
     engagementRepository,
-    engagementOrchestrator,
     subcategoryLabelRepository,
     messagesApi
   )
@@ -495,9 +493,6 @@ class SignalConsoComponents(
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
       ReportsExtractActor.create(
-        reportConsumerReviewOrchestrator,
-        engagementOrchestrator,
-        reportFileRepository,
         companyAccessRepository,
         reportOrchestrator,
         eventRepository,

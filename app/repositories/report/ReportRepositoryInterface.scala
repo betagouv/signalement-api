@@ -74,7 +74,16 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]]
+  ): Future[PaginatedResult[ReportFromSearch]]
+
+//  def getReportsWithAdditionalData(
+//                  user: Option[User],
+//                  filter: ReportFilter,
+//                  offset: Option[Long],
+//                  limit: Option[Int],
+//                  sortBy: Option[ReportSort],
+//                  orderBy: Option[SortOrder]
+//                ): Future[PaginatedResult[FullReportFromSearch]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
@@ -101,7 +110,9 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
 
-  def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]]
+  def getFor(user: Option[User], id: UUID): Future[Option[Report]]
+
+  def getForWithAdditionalData(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]]
 
   def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]]
 }

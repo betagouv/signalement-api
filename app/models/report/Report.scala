@@ -13,8 +13,6 @@ import models.event.Event
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import models.report.reportmetadata.ReportMetadata
-import models.report.review.EngagementReview
-import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Country
@@ -166,18 +164,12 @@ object WebsiteURL {
   val Empty                                          = WebsiteURL(None, None)
 }
 
-case class ReportWithFiles(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    files: List[ReportFile]
-)
-
-object ReportWithFiles {
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFiles] =
-    Json.writes[ReportWithFiles]
-}
 case class EventWithUser(event: Event, user: Option[User])
+
+object EventWithUser {
+  implicit val writerEventWithUser: OWrites[EventWithUser] =
+    Json.writes[EventWithUser]
+}
 
 case class ReportWithFilesAndAssignedUser(
     report: Report,
@@ -198,25 +190,6 @@ object ReportWithFilesAndAssignedUser {
           case _ => r
         }
       )
-}
-
-case class ReportWithFilesAndResponses(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    assignedUser: Option[MinimalUser],
-    files: List[ReportFile],
-    consumerReview: Option[ResponseConsumerReview],
-    engagementReview: Option[EngagementReview],
-    professionalResponse: Option[EventWithUser]
-)
-
-object ReportWithFilesAndResponses {
-  implicit def writerEventWithUser(implicit userRole: Option[UserRole]): OWrites[EventWithUser] =
-    Json.writes[EventWithUser]
-
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndResponses] =
-    Json.writes[ReportWithFilesAndResponses]
 }
 
 case class DetailInputValue(

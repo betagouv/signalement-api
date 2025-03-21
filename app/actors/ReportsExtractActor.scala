@@ -1,43 +1,31 @@
 package actors
 
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.FileIO
 import config.SignalConsoConfiguration
 import models._
 import models.company.AccessLevel
 import models.report._
-import models.report.review.EngagementReview
-import models.report.review.ResponseConsumerReview
-import orchestrators.EngagementOrchestrator
-import orchestrators.ReportConsumerReviewOrchestrator
+import models.report.review.{EngagementReview, ResponseConsumerReview}
 import orchestrators.ReportOrchestrator
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.FileIO
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
-import repositories.reportfile.ReportFileRepositoryInterface
-import services.ExcelColumnsService
-import services.S3ServiceInterface
-import utils.ExcelUtils._
+import repositories.event.{EventFilter, EventRepositoryInterface}
+import services.{ExcelColumnsService, S3ServiceInterface}
 import spoiwo.model._
 import spoiwo.model.enums.CellStyleInheritance
 import spoiwo.natures.xlsx.Model2XlsxConversions._
-import utils.DateUtils.frenchFormatDate
-import utils.DateUtils.frenchFormatDateAndTime
+import utils.DateUtils.{frenchFormatDate, frenchFormatDateAndTime}
+import utils.ExcelUtils._
 
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.nio.file.{Path, Paths}
+import java.time.{OffsetDateTime, ZoneId}
 import java.util.UUID
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Random
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Random, Success}
 
 object ReportsExtractActor {
   sealed trait ReportsExtractCommand
@@ -49,9 +37,6 @@ object ReportsExtractActor {
   val logger: Logger = Logger(this.getClass)
 
   def create(
-      reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
-      engagementOrchestrator: EngagementOrchestrator,
-      reportFileRepository: ReportFileRepositoryInterface,
       companyAccessRepository: CompanyAccessRepositoryInterface,
       reportOrchestrator: ReportOrchestrator,
       eventRepository: EventRepositoryInterface,
@@ -70,10 +55,7 @@ object ReportsExtractActor {
             tmpPath <- genTmpFile(
               reportOrchestrator,
               signalConsoConfiguration,
-              reportFileRepository,
               eventRepository,
-              reportConsumerReviewOrchestrator,
-              engagementOrchestrator,
               companyAccessRepository,
               requestedBy,
               filters,
@@ -126,10 +108,7 @@ object ReportsExtractActor {
   private def genTmpFile(
       reportOrchestrator: ReportOrchestrator,
       signalConsoConfiguration: SignalConsoConfiguration,
-      reportFileRepository: ReportFileRepositoryInterface,
       eventRepository: EventRepositoryInterface,
-      reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
-      engagementOrchestrator: EngagementOrchestrator,
       companyAccessRepository: CompanyAccessRepositoryInterface,
       requestedBy: User,
       filters: ReportFilter,
@@ -147,14 +126,10 @@ object ReportsExtractActor {
           orderBy = None,
           signalConsoConfiguration.reportsExportLimitMax
         )
-        .map(_.entities.map(_.report))
-      reportIds = paginatedReports.map(_.id)
-      reportFilesMap       <- reportFileRepository.prefetchReportsFiles(reportIds)
+      reportIds = paginatedReports.entities.map(_.report.id)
       reportEventsMap      <- eventRepository.getEventsWithUsersMap(reportIds, EventFilter.Empty)
-      consumerReviewsMap   <- reportConsumerReviewOrchestrator.getReviews(reportIds)
-      engagementReviewsMap <- engagementOrchestrator.getEngagementReviews(reportIds)
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
-        paginatedReports.flatMap(_.companyId),
+        paginatedReports.entities.flatMap(_.report.companyId),
         Seq(AccessLevel.ADMIN)
       )
     } yield {
@@ -162,22 +137,22 @@ object ReportsExtractActor {
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
-            paginatedReports.map(report =>
+            paginatedReports.entities.map { case ReportWithFiles(report, _, _, consumerReview, engagementReview, files) =>
               Row().withCells(
                 reportColumns
                   .map(
                     _.extractStringValue(
                       report,
-                      reportFilesMap.getOrElse(report.id, Nil),
+                      files,
                       reportEventsMap.getOrElse(report.id, Nil),
-                      consumerReviewsMap.getOrElse(report.id, None),
-                      engagementReviewsMap.getOrElse(report.id, None),
+                      consumerReview,
+                      engagementReview,
                       report.companyId.flatMap(companyAdminsMap.get).getOrElse(Nil)
                     )
                   )
                   .map(StringCell(_, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet))
               )
-            )
+            }
         )
         .withColumns(reportColumns.map(_.column))
 

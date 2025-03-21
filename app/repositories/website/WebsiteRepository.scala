@@ -176,16 +176,16 @@ class WebsiteRepository(
           reportTable.map(_.creationDate <= end).getOrElse(websiteTable.creationDate <= end)
         }
 
-    val query = baseQuery
+    baseQuery
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped._1._1, grouped._1._2, grouped._2, all.map(_._2).size) }
+      .to[Seq]
+      .withPagination(db)(maybeOffset, maybeLimit)
       .sortBy { tupleTable =>
         val (websiteTable, _, _, reportCount) = tupleTable
         (reportCount.desc, websiteTable.host.desc, websiteTable.id.desc)
       }
-      .to[Seq]
 
-    query.withPagination(db)(maybeOffset, maybeLimit)
   }
 
   def getUnkonwnReportCountByHost(
@@ -236,12 +236,12 @@ class WebsiteRepository(
       }
       .groupBy(_._1.host)
       .map { case (host, report) => (host, report.map(_._2).size) }
-      .sortBy(_._2.desc)
       .withPagination(db)(
         maybeOffset = offset,
         maybeLimit = limit,
         maybePreliminaryAction = None
       )
+      .sortBy(_._2.desc)
 
   def listNotAssociatedToCompany(host: String): Future[Seq[Website]] =
     db.run(
