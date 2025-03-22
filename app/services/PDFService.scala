@@ -30,8 +30,10 @@ class PDFService(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
-    val dfp                 = new DefaultFontProvider(false, true, true)
+    val dfp                 = new DefaultFontProvider(false, false, true)
     converterProperties.setFontProvider(dfp)
+    converterProperties.setImmediateFlush(true)
+    converterProperties.setCreateAcroForm(false)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
     val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())

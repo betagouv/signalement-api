@@ -13,7 +13,7 @@ trait ZipEntryName {
 
 object ZipEntryName {
 
-  val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy HHmmss")
+  val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy HH'h'mm'm'ss's'")
 
   private def safeString(stringToSanities: String) = {
 

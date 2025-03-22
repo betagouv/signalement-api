@@ -10,8 +10,8 @@ import orchestrators.ReportWithData
 import orchestrators.ReportWithDataOrchestrator
 import orchestrators.reportexport.ZipEntryName.AttachmentZipEntryName
 import orchestrators.reportexport.ZipEntryName.ReportZipEntryName
+import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -37,7 +37,7 @@ class ReportZipExportService(
   val logger: Logger = Logger(this.getClass)
 
   implicit val ec: ExecutionContext =
-    system.dispatchers.lookup("io-dispatcher")
+    system.dispatchers.lookup("zip-blocking-dispatcher")
 
   def reportsSummaryZip(reportIds: Seq[UUID], user: User) = {
     val reportFutures = reportIds.traverse(reportWithDataOrchestrator.getReportFull(_, user))
@@ -45,14 +45,14 @@ class ReportZipExportService(
       val flattenReports = reports.flatten
       val reportSources =
         flattenReports.map(buildReportPdfSummarySource(_, user, isSingleExport = flattenReports.size > 1))
-      buildZip(reportSources)
+      buildZip(reportSources)(materializer, ec)
     }
   }
 
   def reportSummaryWithAttachmentsZip(
       reportIds: Seq[UUID],
       user: User
-  ): Future[Source[ByteString, Future[IOResult]]] = for {
+  ): Future[Source[ByteString, Future[Done]]] = for {
     reportsOptional <- reportIds.traverse(reportWithDataOrchestrator.getReportFull(_, user))
     reports = reportsOptional.flatten
     fileSourcesFutures <- reports.flatTraverse { reportWithData =>
@@ -64,12 +64,12 @@ class ReportZipExportService(
       ).map(attachments => attachments :+ reportWithName)
     }
 
-  } yield buildZip(fileSourcesFutures)
+  } yield buildZip(fileSourcesFutures)(materializer, ec)
 
   def reportAttachmentsZip(
       creationDate: OffsetDateTime,
       reportFiles: Seq[ReportFile]
-  ): Future[Source[ByteString, Future[IOResult]]] = for {
+  ): Future[Source[ByteString, Future[Done]]] = for {
     existingFiles <- reportFiles.traverse(f =>
       s3Service.exists(f.storageFilename).map(exists => (f, exists))
     ) map (_.collect { case (file, true) =>
@@ -78,7 +78,7 @@ class ReportZipExportService(
     reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
       buildReportAttachmentSource(creationDate, ReportFileApi.build(file), i + 1)
     }
-  } yield buildZip(reportAttachmentSources)
+  } yield buildZip(reportAttachmentSources)(materializer, ec)
 
   private def buildReportPdfSummarySource(
       reportWithData: ReportWithData,
@@ -125,4 +125,9 @@ class ReportZipExportService(
     )
   }
 
+}
+
+object ReportZipExportService {
+  // Backend safe guard limitation as pdf generation is using a lot of ram
+  val MaxReportDownloadElements = 100
 }
