@@ -55,7 +55,7 @@ GET           /api/reports                                              controll
 POST          /api/reports/extract                                      controllers.ReportListController.createReportsSearchExcelExtract()
 # button "download" which appears after selecting some reports
 # also for the report page, button "download", if there are no attached files (or if there are but you pick the option to not get them)
-GET           /api/reports/download                                     controllers.ReportController.downloadReportsAsMergedPdf()
+GET           /api/reports/download                                     controllers.ReportController.downloadReportsAsPdfZip()
 GET           /api/reports/bookmarks/count                              controllers.BookmarkController.countBookmarks()
 # also used in the report page
 DELETE        /api/reports/:uuid/bookmark                               controllers.BookmarkController.removeBookmark(uuid: java.util.UUID)

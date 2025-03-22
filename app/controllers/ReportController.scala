@@ -1,7 +1,9 @@
 package controllers
 
 import authentication.Authenticator
+import authentication.actions.UserAction.UserRequest
 import cats.implicits.toTraverseOps
+import controllers.error.AppError
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import models.report._
@@ -9,6 +11,7 @@ import models.report.delete.ReportAdminAction
 import models.report.reportmetadata.ReportComment
 import orchestrators._
 import orchestrators.reportexport.ReportZipExportService
+import orchestrators.reportexport.ReportZipExportService.MaxReportDownloadElements
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -192,11 +195,23 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
+  private def readReportsId(request: UserRequest[_]) = {
     val reportIds = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
 
+    if (reportIds.size > MaxReportDownloadElements) {
+      logger.error(
+        s"Cannot download more than $MaxReportDownloadElements"
+      )
+      throw AppError.DownloadReportsLimitExceeded
+    } else {
+      reportIds
+    }
+  }
+
+  def downloadReportsAsPdfZip() = Act.secured.all.allowImpersonation.async { implicit request =>
+    val reportIds = readReportsId(request)
     massImportService
       .reportsSummaryZip(reportIds, request.identity)
       .map(pdfSource =>
@@ -210,9 +225,7 @@ class ReportController(
 
   def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-      val reportIds = new QueryStringMapper(request.queryString)
-        .seq("ids")
-        .map(extractUUID)
+      val reportIds = readReportsId(request)
 
       massImportService
         .reportSummaryWithAttachmentsZip(reportIds, request.identity)
