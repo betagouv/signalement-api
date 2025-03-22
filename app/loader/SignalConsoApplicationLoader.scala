@@ -20,6 +20,7 @@ import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.proconnect.ProConnectClient
 import orchestrators.proconnect.ProConnectOrchestrator
+import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.flywaydb.core.Flyway
@@ -413,11 +414,24 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
-  val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
-
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
+
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(
+      visibleReportOrchestrator,
+      companyRepository,
+      eventRepository,
+      reportFileRepository,
+      responseConsumerReviewRepository,
+      reportEngagementReviewRepository
+    )
+
+  val reportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service, reportWithDataOrchestrator)(
+      materializer,
+      actorSystem
+    )
 
   val reportFileOrchestrator =
     new ReportFileOrchestrator(
@@ -478,16 +492,6 @@ class SignalConsoComponents(
     userRepository,
     eventRepository
   )
-
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
-      visibleReportOrchestrator,
-      companyRepository,
-      eventRepository,
-      reportFileRepository,
-      responseConsumerReviewRepository,
-      reportEngagementReviewRepository
-    )
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
@@ -879,8 +883,7 @@ class SignalConsoComponents(
     controllerComponents,
     reportWithDataOrchestrator,
     visibleReportOrchestrator,
-    reportZipExportService,
-    htmlFromTemplateGenerator
+    reportZipExportService
   )
 
   val reportedPhoneController = new ReportedPhoneController(

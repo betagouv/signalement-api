@@ -1,7 +1,7 @@
 package controllers
 
 import authentication.Authenticator
-import cats.implicits.catsSyntaxOption
+import authentication.actions.UserAction.UserRequest
 import cats.implicits.toTraverseOps
 import controllers.error.AppError
 import controllers.error.AppError.SpammerEmailBlocked
@@ -10,6 +10,7 @@ import models.report._
 import models.report.delete.ReportAdminAction
 import models.report.reportmetadata.ReportComment
 import orchestrators._
+import orchestrators.reportexport.ReportZipExportService
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -50,8 +51,7 @@ class ReportController(
     controllerComponents: ControllerComponents,
     reportWithDataOrchestrator: ReportWithDataOrchestrator,
     visibleReportOrchestrator: VisibleReportOrchestrator,
-    massImportService: ReportZipExportService,
-    htmlFromTemplateGenerator: HtmlFromTemplateGenerator
+    massImportService: ReportZipExportService
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -194,31 +194,41 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportFutures = new QueryStringMapper(request.queryString)
+  private def readReportsId(request: UserRequest[_]) = {
+    val maxReport = 25
+    val reportIds = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
-      .map(reportId => reportWithDataOrchestrator.getReportFull(reportId, request.identity))
-    Future
-      .sequence(reportFutures)
-      .map(_.flatten)
-      .map(_.map(htmlFromTemplateGenerator.reportPdf(_, request.identity)))
-      .map(pdfService.createPdfSource)
+
+    if (reportIds.size > maxReport) {
+      logger.error(
+        s"Cannot download more than $maxReport"
+      )
+      throw AppError.DownloadReportsLimitExceeded
+    } else {
+      reportIds
+    }
+  }
+
+  def downloadReportsAsPdfZip() = Act.secured.all.allowImpersonation.async { implicit request =>
+    val reportIds = readReportsId(request)
+    massImportService
+      .reportsSummaryZip(reportIds, request.identity)
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
           inline = false,
-          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip")
         )
       )
   }
 
-  def downloadReportAsZipWithFiles(reportId: UUID) =
+  def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-      reportWithDataOrchestrator
-        .getReportFull(reportId, request.identity)
-        .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-        .flatMap(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData, request.identity))
+      val reportIds = readReportsId(request)
+
+      massImportService
+        .reportSummaryWithAttachmentsZip(reportIds, request.identity)
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,
