@@ -126,8 +126,3 @@ class ReportZipExportService(
   }
 
 }
-
-object ReportZipExportService {
-  // Backend safe guard limitation as pdf generation is using a lot of ram
-  val MaxReportDownloadElements = 100
-}
