@@ -1,5 +1,6 @@
 package services
 
+import controllers.error.AppError.ServerError
 import orchestrators.reportexport.ZipEntryName
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
@@ -35,13 +36,24 @@ object ZipBuilder {
       val bs = ByteString.fromArray(b, off, len)
       lastOffer = lastOffer.flatMap { _ =>
         val offerFuture = queue.offer(bs)
-        offerFuture.failed.foreach(queue.fail)
-        offerFuture
+
+        offerFuture.failed.foreach { ex =>
+          logger.error("Error while offering to the queue", ex)
+          queue.fail(ex)
+        }
+
+        offerFuture.flatMap {
+          case QueueOfferResult.Enqueued => Future.successful(QueueOfferResult.Enqueued)
+          case other =>
+            val ex = ServerError(s"Queue offer failed: $other")
+            logger.error("Offer rejected by the queue: " + other)
+            queue.fail(ex)
+            Future.failed(ex)
+        }
       }
     }
 
-    // On NE FAIT RIEN ici pour éviter de fermer la queue trop tôt
-    override def close(): Unit = ()
+    override def close(): Unit = () // La queue est close ailleurs, ne pas supprimer
   }
 
   def buildZip(
@@ -69,24 +81,23 @@ object ZipBuilder {
         }
       }
 
-      entriesWritten
-        .flatMap { _ =>
-          Future(zipOut.finish())
-        }
-        .transformWith {
-          case Success(_) =>
-            Future(zipOut.close()).map(_ => ())
-          case Failure(ex) =>
-            Future(zipOut.close()).flatMap(_ => Future.failed(ex))
-        }
+      entriesWritten.flatMap(_ => Future(zipOut.finish())).transformWith {
+        case Success(_) =>
+          Future(zipOut.close()).map(_ => ())
+        case Failure(ex) =>
+          logger.error("Error while closing the ZipOutputStream", ex)
+          Future(zipOut.close()).flatMap(_ => Future.failed(ex))
+      }
     }.recoverWith { case ex =>
+      logger.error("Error during ZIP file creation", ex)
       queue.fail(ex)
       Future.failed(ex)
-    }.map(_ => queue.complete())
+    }.map { _ =>
+      queue.complete()
+    }
 
     source.watchTermination() { (_, done) =>
       writing.flatMap(_ => done)
     }
   }
-
 }

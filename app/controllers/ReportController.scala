@@ -11,7 +11,6 @@ import models.report.delete.ReportAdminAction
 import models.report.reportmetadata.ReportComment
 import orchestrators._
 import orchestrators.reportexport.ReportZipExportService
-import orchestrators.reportexport.ReportZipExportService.MaxReportDownloadElements
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -193,14 +192,14 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  private def readReportsId(request: UserRequest[_]) = {
+  private def readReportsId(request: UserRequest[_], max: Int) = {
     val reportIds = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
 
-    if (reportIds.size > MaxReportDownloadElements) {
+    if (reportIds.size > max) {
       logger.error(
-        s"Cannot download more than $MaxReportDownloadElements"
+        s"Cannot download more than $max"
       )
       throw AppError.DownloadReportsLimitExceeded
     } else {
@@ -209,7 +208,7 @@ class ReportController(
   }
 
   def downloadReportsAsPdfZip() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportIds = readReportsId(request)
+    val reportIds = readReportsId(request, 100)
     massImportService
       .reportsSummaryZip(reportIds, request.identity)
       .map(pdfSource =>
@@ -223,7 +222,7 @@ class ReportController(
 
   def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-      val reportIds = readReportsId(request)
+      val reportIds = readReportsId(request, 25)
 
       massImportService
         .reportSummaryWithAttachmentsZip(reportIds, request.identity)
