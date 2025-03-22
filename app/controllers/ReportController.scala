@@ -192,14 +192,15 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  private def readReportsId(request: UserRequest[_], max: Int) = {
+  private def readReportsId(request: UserRequest[_]) = {
+    val maxReport = 25
     val reportIds = new QueryStringMapper(request.queryString)
       .seq("ids")
       .map(extractUUID)
 
-    if (reportIds.size > max) {
+    if (reportIds.size > maxReport) {
       logger.error(
-        s"Cannot download more than $max"
+        s"Cannot download more than $maxReport"
       )
       throw AppError.DownloadReportsLimitExceeded
     } else {
@@ -208,7 +209,7 @@ class ReportController(
   }
 
   def downloadReportsAsPdfZip() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportIds = readReportsId(request, 100)
+    val reportIds = readReportsId(request)
     massImportService
       .reportsSummaryZip(reportIds, request.identity)
       .map(pdfSource =>
@@ -222,7 +223,7 @@ class ReportController(
 
   def downloadReportAsZipWithFiles() =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-      val reportIds = readReportsId(request, 25)
+      val reportIds = readReportsId(request)
 
       massImportService
         .reportSummaryWithAttachmentsZip(reportIds, request.identity)

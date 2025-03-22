@@ -32,7 +32,7 @@ object ZipBuilder {
     override def write(b: Int): Unit =
       write(Array(b.toByte), 0, 1)
 
-    override def write(b: Array[Byte], off: Int, len: Int): Unit = {
+    override def write(b: Array[Byte], off: Int, len: Int): Unit =  {
       val bs = ByteString.fromArray(b, off, len)
       lastOffer = lastOffer.flatMap { _ =>
         val offerFuture = queue.offer(bs)
@@ -61,43 +61,56 @@ object ZipBuilder {
   )(implicit mat: Materializer, ec: ExecutionContext): Source[ByteString, Future[Done]] = {
 
     val (queue, source) =
-      Source
-        .queue[ByteString](bufferSize = 16, OverflowStrategy.backpressure)
-        .preMaterialize()
+      Source.queue[ByteString](bufferSize = 16, OverflowStrategy.backpressure).preMaterialize()
 
-    val writing: Future[Unit] = Future {
-      new ZipOutputStream(new BufferedOutputStream(new QueueOutputStream(queue)))
-    }.flatMap { zipOut =>
-      val entriesWritten = zipEntries.foldLeft(Future.successful(())) { case (prevFut, (entryName, dataSource)) =>
-        prevFut.flatMap { _ =>
-          zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
-          dataSource
-            .runForeach { chunk =>
-              blocking {
-                zipOut.write(chunk.toArray)
-              }
-            }
-            .map(_ => zipOut.closeEntry())
+    val zipOut = new ZipOutputStream(new BufferedOutputStream(new QueueOutputStream(queue)))
+
+    val writing: Future[Unit] =
+      writeEntries(zipOut, zipEntries)
+        .transformWith {
+          case Success(_)  => closeZipOutputStream(zipOut)
+          case Failure(ex) => handleError(zipOut, ex)
         }
-      }
-
-      entriesWritten.flatMap(_ => Future(zipOut.finish())).transformWith {
-        case Success(_) =>
-          Future(zipOut.close()).map(_ => ())
-        case Failure(ex) =>
-          logger.error("Error while closing the ZipOutputStream", ex)
-          Future(zipOut.close()).flatMap(_ => Future.failed(ex))
-      }
-    }.recoverWith { case ex =>
-      logger.error("Error during ZIP file creation", ex)
-      queue.fail(ex)
-      Future.failed(ex)
-    }.map { _ =>
-      queue.complete()
-    }
+        .recoverWith { case ex =>
+          handleQueueFailure(queue, ex)
+        }
+        .map { _ =>
+          queue.complete()
+        }
 
     source.watchTermination() { (_, done) =>
       writing.flatMap(_ => done)
     }
+  }
+
+  private def writeEntries(zipOut: ZipOutputStream, entries: Seq[(ZipEntryName, Source[ByteString, _])])(implicit
+      mat: Materializer,
+      ec: ExecutionContext
+  ): Future[Unit] =
+    entries.foldLeft(Future.successful(())) { case (prevFut, (entryName, dataSource)) =>
+      prevFut.flatMap { _ =>
+        zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
+        dataSource
+          .runForeach { chunk =>
+            blocking {
+              zipOut.write(chunk.toArray)
+            }
+          }
+          .map(_ => zipOut.closeEntry())
+      }
+    }
+
+  private def closeZipOutputStream(zipOut: ZipOutputStream)(implicit ec: ExecutionContext): Future[Unit] =
+    Future(zipOut.close()).map(_ => ())
+
+  private def handleError(zipOut: ZipOutputStream, ex: Throwable)(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.error("Error while closing the ZipOutputStream", ex)
+    Future(zipOut.close()).flatMap(_ => Future.failed(ex))
+  }
+
+  private def handleQueueFailure(queue: SourceQueueWithComplete[ByteString], ex: Throwable): Future[Unit] = {
+    logger.error("Error during ZIP file creation", ex)
+    queue.fail(ex)
+    Future.failed(ex)
   }
 }
