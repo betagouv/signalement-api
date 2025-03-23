@@ -1,5 +1,7 @@
 package models.company
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import models.UserRole
 import play.api.libs.json._
 import utils.QueryStringMapper
@@ -77,14 +79,33 @@ object Company {
 
 case class CompanyWithAccess(
     company: Company,
-    level: AccessLevel
+    level: AccessLevel,
+    kind: CompanyAccessKind
 )
 
 object CompanyWithAccess {
+
+  def none(company: Company) =
+    CompanyWithAccess(company, level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic)
+
   implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
     val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
     companyJson + ("level" -> Json.toJson(companyWithAccess.level))
   }
+}
+
+sealed trait CompanyAccessKind extends EnumEntry
+
+object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
+
+  val values = findValues
+
+  // The pro has directly access to this company, as stored in DB
+  case object Direct extends CompanyAccessKind
+
+  // When the pro has access to this company because he has a direct access to its head office
+  case object Synthetic extends CompanyAccessKind
+
 }
 
 case class CompanyCreation(

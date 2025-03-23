@@ -3,8 +3,8 @@ package orchestrators
 import models.User
 import models.UserRole
 import models.company.AccessLevel
-import models.company.AccessLevel.NONE
 import models.company.Company
+import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
@@ -102,7 +102,7 @@ class CompaniesVisibilityOrchestrator(
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess(c, level = NONE))
+        .getOrElse(CompanyWithAccess.none(c))
 
     mapToFill
       .map { case (key, value) =>
@@ -118,7 +118,7 @@ class CompaniesVisibilityOrchestrator(
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess(c, level = NONE))
+        .getOrElse(CompanyWithAccess.none(c))
 
     listToFill.map(withAccess)
   }
@@ -148,7 +148,15 @@ class CompaniesVisibilityOrchestrator(
         if (levelPriority(a) > levelPriority(b)) a else b
       )
       .withDefaultValue(AccessLevel.NONE)
-    accessibleSubsidiaries.map(c => CompanyWithAccess(c, getLevelBySiren(SIREN.fromSIRET(c.siret))))
+    accessibleSubsidiaries.map(c =>
+      CompanyWithAccess(
+        c,
+        getLevelBySiren(SIREN.fromSIRET(c.siret)),
+
+        // @@@ this is false, but we should erase this function in the end
+        kind = CompanyAccessKind.Direct
+      )
+    )
   }
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
