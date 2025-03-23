@@ -3,15 +3,17 @@ package orchestrators
 import models.User
 import models.UserRole
 import models.company.AccessLevel
+import models.company.Company
+import models.company.CompanyAccessKind
+import models.company.CompanyWithAccess
+import models.company.ProCompanies
+import models.company.ProCompaniesWithAccesses
 import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
 import models.company.AccessLevel.NONE
-import models.company.Company
-import models.company.CompanyAccessKind
 import models.company.CompanyAccessKind.Direct
 import models.company.CompanyAccessKind.Synthetic
 import models.company.CompanyAccessKind.SyntheticAdminAndDirectMember
-import models.company.CompanyWithAccess
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.SIREN
@@ -73,46 +75,49 @@ class CompaniesVisibilityOrchestrator(
   def fetchVisibleCompaniesAsMap(pro: User) =
     for {
       companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      (headOffices, subsidiaries) = companiesWithAccesses.map(_.company).partition(_.isHeadOffice)
+      (headOffices, subsidiaries) =
+        companiesWithAccesses.map(_.company).partition(_.isHeadOffice)
       headOfficesWithTheirSubsidiaries <- fetchSubsidiaries(headOffices)
       loneSubsidiaries = {
         val subsidiariesFromHeadOffices = headOfficesWithTheirSubsidiaries.values.flatten
         subsidiaries.filter(c => !subsidiariesFromHeadOffices.exists(_.id == c.id))
       }
-      headOfficesWithSubsidiariesAndAccesses = fillWithCorrespondingAccesses(
-        headOfficesWithTheirSubsidiaries,
+      proCompanies = ProCompanies(headOfficesWithTheirSubsidiaries, loneSubsidiaries)
+      proCompaniesWithAccesses = fillWithCorrespondingAccesses(
+        proCompanies,
         companiesWithAccesses
       )
-      loneSubsidiariesWithAccesses = fillWithCorrespondingAccesses(loneSubsidiaries, companiesWithAccesses)
-      headOfficesWithSubsidiariesAndAllAccesses = addSyntheticAccessesToSubsidiaries(
-        headOfficesWithSubsidiariesAndAccesses
+      proCompaniesWithAllAccesses = addSyntheticAccessesToSubsidiaries(
+        proCompaniesWithAccesses
       )
-      // TODO créer une case classe pour cette map et ces lone subsidiaries ?
       // TODO il faudra des TUs
-    } yield ???
+    } yield proCompaniesWithAllAccesses
 
-  private def addSyntheticAccessesToSubsidiaries(
-      headOfficesWithSubsidiaries: Map[CompanyWithAccess, List[CompanyWithAccess]]
-  ): Map[CompanyWithAccess, List[CompanyWithAccess]] =
-    headOfficesWithSubsidiaries.map { case (headOfficeWithAccess, subsidiariesWithAccesses) =>
-      headOfficeWithAccess -> subsidiariesWithAccesses.map {
-        case CompanyWithAccess(subsidiary, NONE, _) =>
-          CompanyWithAccess(
-            subsidiary,
-            level = headOfficeWithAccess.level,
-            kind = Synthetic
-          )
-        case CompanyWithAccess(subsidiary, MEMBER, Direct) if headOfficeWithAccess.level == ADMIN =>
-          CompanyWithAccess(
-            subsidiary,
-            level = ADMIN,
-            kind = SyntheticAdminAndDirectMember
-          )
-        case subsidiaryWithAccess => subsidiaryWithAccess
-      }
-    }
+  private[this] def addSyntheticAccessesToSubsidiaries(
+      proCompaniesWithAccesses: ProCompaniesWithAccesses
+  ): ProCompaniesWithAccesses =
+    proCompaniesWithAccesses.copy(
+      headOfficesAndSubsidiaries =
+        proCompaniesWithAccesses.headOfficesAndSubsidiaries.map { case (headOffice, subsidiaries) =>
+          headOffice -> subsidiaries.map {
+            case CompanyWithAccess(subsidiary, NONE, _) =>
+              CompanyWithAccess(
+                subsidiary,
+                level = headOffice.level,
+                kind = Synthetic
+              )
+            case CompanyWithAccess(subsidiary, MEMBER, Direct) if headOffice.level == ADMIN =>
+              CompanyWithAccess(
+                subsidiary,
+                level = ADMIN,
+                kind = SyntheticAdminAndDirectMember
+              )
+            case other => other
+          }
+        }
+    )
 
-  private def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
+  private[this] def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
     for {
       allCompanies <- companyRepo.findBySiren(headOffices.map(_.siren))
       mapWithSubsidiaries = headOffices.map { headOffice =>
@@ -124,36 +129,28 @@ class CompaniesVisibilityOrchestrator(
       }.toMap
     } yield mapWithSubsidiaries
 
-  private def fillWithCorrespondingAccesses(
-      mapToFill: Map[Company, List[Company]],
+  private[this] def fillWithCorrespondingAccesses(
+      toFill: ProCompanies,
       companiesWithAccesses: List[CompanyWithAccess]
-  ): Map[CompanyWithAccess, List[CompanyWithAccess]] = {
+  ): ProCompaniesWithAccesses = {
 
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
         .getOrElse(CompanyWithAccess.none(c))
 
-    mapToFill
-      .map { case (key, value) =>
+    ProCompaniesWithAccesses(
+      headOfficesAndSubsidiaries = toFill.headOfficesAndSubsidiaries.map { case (key, value) =>
         withAccess(key) -> value.map(withAccess)
-      }
-  }
+      },
+      loneSubsidiaries = toFill.loneSubsidiaries.map(withAccess)
+    )
 
-  private def fillWithCorrespondingAccesses(
-      listToFill: List[Company],
-      companiesWithAccesses: List[CompanyWithAccess]
-  ): List[CompanyWithAccess] = {
-
-    def withAccess(c: Company) =
-      companiesWithAccesses
-        .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess.none(c))
-
-    listToFill.map(withAccess)
   }
 
   // @@@@@ The legacy function
+  // TODO brancher sur ma nouvelle méthode.
+  // TODO TUs d'abord ?
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
