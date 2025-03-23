@@ -4,6 +4,7 @@ import org.apache.pekko.util.Timeout
 import loader.SignalConsoComponents
 import models._
 import models.company.AccessLevel
+import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.event.Event
 import models.report._
@@ -376,7 +377,8 @@ trait GetReportContext extends AppSpec {
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future.successful(
-      if (pro.asInstanceOf[User].id == concernedProUser.id) List(CompanyWithAccess(company, AccessLevel.ADMIN))
+      if (pro.asInstanceOf[User].id == concernedProUser.id)
+        List(CompanyWithAccess(company, AccessLevel.ADMIN, kind = CompanyAccessKind.Direct))
       else List()
     )
   }

@@ -3,6 +3,7 @@ package repositories.companyaccess
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.UserAccess
 import repositories.PostgresProfile.api._
@@ -14,6 +15,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
+
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -56,7 +58,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
+    ).map(_.map(x => CompanyWithAccess(x._1, x._2, kind = CompanyAccessKind.Direct)))
 
   override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
