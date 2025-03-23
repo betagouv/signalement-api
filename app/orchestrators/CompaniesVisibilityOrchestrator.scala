@@ -3,8 +3,14 @@ package orchestrators
 import models.User
 import models.UserRole
 import models.company.AccessLevel
+import models.company.AccessLevel.ADMIN
+import models.company.AccessLevel.MEMBER
+import models.company.AccessLevel.NONE
 import models.company.Company
 import models.company.CompanyAccessKind
+import models.company.CompanyAccessKind.Direct
+import models.company.CompanyAccessKind.Synthetic
+import models.company.CompanyAccessKind.SyntheticAdminAndDirectMember
 import models.company.CompanyWithAccess
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
@@ -78,9 +84,33 @@ class CompaniesVisibilityOrchestrator(
         companiesWithAccesses
       )
       loneSubsidiariesWithAccesses = fillWithCorrespondingAccesses(loneSubsidiaries, companiesWithAccesses)
-      // TODO ensuite, dans une autre methode, il faudra permettre de "descendre" les meilleurs accesses du headoffice sur les subsidiaries, comme c'était fait avant
+      headOfficesWithSubsidiariesAndAllAccesses = addSyntheticAccessesToSubsidiaries(
+        headOfficesWithSubsidiariesAndAccesses
+      )
+      // TODO créer une case classe pour cette map et ces lone subsidiaries ?
       // TODO il faudra des TUs
     } yield ???
+
+  private def addSyntheticAccessesToSubsidiaries(
+      headOfficesWithSubsidiaries: Map[CompanyWithAccess, List[CompanyWithAccess]]
+  ): Map[CompanyWithAccess, List[CompanyWithAccess]] =
+    headOfficesWithSubsidiaries.map { case (headOfficeWithAccess, subsidiariesWithAccesses) =>
+      headOfficeWithAccess -> subsidiariesWithAccesses.map {
+        case CompanyWithAccess(subsidiary, NONE, _) =>
+          CompanyWithAccess(
+            subsidiary,
+            level = headOfficeWithAccess.level,
+            kind = Synthetic
+          )
+        case CompanyWithAccess(subsidiary, MEMBER, Direct) if headOfficeWithAccess.level == ADMIN =>
+          CompanyWithAccess(
+            subsidiary,
+            level = ADMIN,
+            kind = SyntheticAdminAndDirectMember
+          )
+        case subsidiaryWithAccess => subsidiaryWithAccess
+      }
+    }
 
   private def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
     for {
