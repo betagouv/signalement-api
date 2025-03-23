@@ -3,6 +3,7 @@ package orchestrators
 import models.User
 import models.UserRole
 import models.company.AccessLevel
+import models.company.AccessLevel.NONE
 import models.company.Company
 import models.company.CompanyWithAccess
 import repositories.company.CompanyRepositoryInterface
@@ -63,6 +64,66 @@ class CompaniesVisibilityOrchestrator(
       (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
 
+  def fetchVisibleCompaniesAsMap(pro: User) =
+    for {
+      companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
+      (headOffices, subsidiaries) = companiesWithAccesses.map(_.company).partition(_.isHeadOffice)
+      headOfficesWithTheirSubsidiaries <- fetchSubsidiaries(headOffices)
+      loneSubsidiaries = {
+        val subsidiariesFromHeadOffices = headOfficesWithTheirSubsidiaries.values.flatten
+        subsidiaries.filter(c => !subsidiariesFromHeadOffices.exists(_.id == c.id))
+      }
+      headOfficesWithSubsidiariesAndAccesses = fillWithCorrespondingAccesses(
+        headOfficesWithTheirSubsidiaries,
+        companiesWithAccesses
+      )
+      loneSubsidiariesWithAccesses = fillWithCorrespondingAccesses(loneSubsidiaries, companiesWithAccesses)
+      // TODO ensuite, dans une autre methode, il faudra permettre de "descendre" les meilleurs accesses du headoffice sur les subsidiaries, comme c'était fait avant
+      // TODO il faudra des TUs
+    } yield ???
+
+  private def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
+    for {
+      allCompanies <- companyRepo.findBySiren(headOffices.map(_.siren))
+      mapWithSubsidiaries = headOffices.map { headOffice =>
+        val subsidiaries = allCompanies
+          .filter(_.siren == headOffice.siren)
+          .filter(_.siret != headOffice.siret)
+          .filter(!_.isHeadOffice)
+        headOffice -> subsidiaries
+      }.toMap
+    } yield mapWithSubsidiaries
+
+  private def fillWithCorrespondingAccesses(
+      mapToFill: Map[Company, List[Company]],
+      companiesWithAccesses: List[CompanyWithAccess]
+  ): Map[CompanyWithAccess, List[CompanyWithAccess]] = {
+
+    def withAccess(c: Company) =
+      companiesWithAccesses
+        .find(_.company.id == c.id)
+        .getOrElse(CompanyWithAccess(c, level = NONE))
+
+    mapToFill
+      .map { case (key, value) =>
+        withAccess(key) -> value.map(withAccess)
+      }
+  }
+
+  private def fillWithCorrespondingAccesses(
+      listToFill: List[Company],
+      companiesWithAccesses: List[CompanyWithAccess]
+  ): List[CompanyWithAccess] = {
+
+    def withAccess(c: Company) =
+      companiesWithAccesses
+        .find(_.company.id == c.id)
+        .getOrElse(CompanyWithAccess(c, level = NONE))
+
+    listToFill.map(withAccess)
+  }
+
+  // @@@@@ The legacy function
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
@@ -135,4 +196,5 @@ class CompaniesVisibilityOrchestrator(
       sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.fromUnsafe),
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
     )
+
 }

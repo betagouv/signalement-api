@@ -3,6 +3,7 @@ package models.company
 import models.UserRole
 import play.api.libs.json._
 import utils.QueryStringMapper
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -46,7 +47,8 @@ case class Company(
     albertActivityLabel: Option[String] = None,
     albertUpdateDate: Option[OffsetDateTime] = None
 ) {
-  def shortId = this.id.toString.substring(0, 13).toUpperCase
+
+  def siren: SIREN = SIREN.fromSIRET(this.siret)
 }
 
 case class CompanyRegisteredSearch(
