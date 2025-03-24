@@ -208,7 +208,7 @@ abstract class BaseCompanyController(
                 company
                   .map(c =>
                     companiesVisibilityOrchestrator
-                      .fetchVisibleCompanies(request.identity)
+                      .fetchVisibleCompaniesList(request.identity)
                       .map(_.find(_.company.id == c.id).map(_.level))
                   )
                   .getOrElse(Future.successful(None))

@@ -93,10 +93,10 @@ class CompaniesVisibilityOrchestrator(
       // TODO il faudra des TUs
     } yield proCompaniesWithAllAccesses
 
-  // @@@@@ The legacy function
+  // @@@@@ The legacy function, we keep only for the TUs
   // TODO brancher sur ma nouvelle méthode.
   // TODO TUs d'abord ?
-  def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
+  def fetchVisibleCompaniesLegacy(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
       headOfficeSirets = authorizedCompanies.filter(_.company.isHeadOffice).map(_.company.siret)
@@ -106,6 +106,12 @@ class CompaniesVisibilityOrchestrator(
         .distinctBy(_.company.siret)
         .sortBy(_.company.siret.value)
     } yield accessiblesCompanies
+
+  def fetchVisibleCompaniesList(pro: User): Future[List[CompanyWithAccess]] =
+    for {
+      proCompaniesWithAccesses <- fetchVisibleCompaniesNewVersion(pro)
+    } yield proCompaniesWithAccesses.toSimpleList
+
   private[this] def addSyntheticAccessesToSubsidiaries(
       proCompaniesWithAccesses: ProCompaniesWithAccesses
   ): ProCompaniesWithAccesses =

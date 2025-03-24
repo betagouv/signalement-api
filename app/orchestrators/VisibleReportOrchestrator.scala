@@ -42,7 +42,7 @@ class VisibleReportOrchestrator(
             Future.successful(reportExtra)
           case Professionnel =>
             companiesVisibilityOrchestrator
-              .fetchVisibleCompanies(user)
+              .fetchVisibleCompaniesList(user)
               .map(_.map(v => Some(v.company.siret)))
               .map { visibleSirets =>
                 reportExtra
