@@ -15,7 +15,7 @@ import models._
 import models.company.AccessLevel
 import models.company.Address
 import models.company.Company
-import models.event.Event
+import models.event.{Event, EventUser, EventWithUser}
 import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
@@ -24,7 +24,6 @@ import models.report.ReportStatus.SuppressionRGPD
 import models.report.ReportStatus.hasResponse
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
-import models.report.reportmetadata.ReportExtra
 import models.report.reportmetadata.ReportMetadataDraft
 import models.token.TokenKind.CompanyInit
 import models.website.Website
@@ -60,6 +59,7 @@ import utils.Constants.EventType
 import utils.Logs.RichLogger
 import utils._
 import cats.syntax.either._
+import io.scalaland.chimney.dsl.TransformationOps
 import repositories.user.UserRepositoryInterface
 
 import java.time.LocalDate
@@ -766,9 +766,9 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def handleReportView(
-      reportExtra: ReportExtra,
-      user: User
-  ): Future[ReportExtra] =
+                        reportExtra: ReportWithMetadataAndAlbertLabel,
+                        user: User
+  ): Future[ReportWithMetadataAndAlbertLabel] =
     if (
       user.userRole == UserRole.Professionnel && user.impersonator.isEmpty && reportExtra.report.status != SuppressionRGPD
     ) {
@@ -962,7 +962,7 @@ class ReportOrchestrator(
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder],
       maxResults: Int
-  ): Future[PaginatedResult[ReportWithFiles]] =
+  ): Future[PaginatedResult[ReportFromSearchWithFiles]] =
     for {
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
         filter.siretSirenList,
@@ -974,10 +974,10 @@ class ReportOrchestrator(
       paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
           Future.successful(
-            PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles])
+            PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportFromSearchWithFiles])
           )
         } else {
-          getReportsWithFile[ReportWithFiles](
+          getReportsWithFile[ReportFromSearchWithFiles](
             Some(connectedUser),
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
@@ -986,7 +986,7 @@ class ReportOrchestrator(
             orderBy,
             maxResults,
             (r: ReportFromSearch, m: Map[UUID, List[ReportFile]]) =>
-              ReportWithFiles(
+              ReportFromSearchWithFiles(
                 SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
                 r.bookmark,
@@ -1005,7 +1005,7 @@ class ReportOrchestrator(
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithFilesAndResponses]] = {
+  ): Future[PaginatedResult[ReportFromSearchWithFilesAndResponses]] = {
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
     for {
@@ -1026,7 +1026,7 @@ class ReportOrchestrator(
         .getEventsWithUsers(reportsId, filterByReportProResponse)
         .map(events =>
           events.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
-            (reportId, EventWithUser(event, user))
+            (reportId, EventWithUser(event, user.map(_.into[EventUser].withFieldRenamed(_.userRole, _.role).transform)))
           }.toMap
         )
 
@@ -1036,7 +1036,7 @@ class ReportOrchestrator(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
         val reportId            = reportWithFiles.report.id
-        ReportWithFilesAndResponses(
+        ReportFromSearchWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
           reportWithFiles.bookmark,

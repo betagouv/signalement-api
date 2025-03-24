@@ -1,8 +1,10 @@
 package actors
 
 import config.SignalConsoConfiguration
+import io.scalaland.chimney.dsl.TransformationOps
 import models._
 import models.company.AccessLevel
+import models.event.{Event, EventUser, EventWithUser}
 import models.report._
 import models.report.review.{EngagementReview, ResponseConsumerReview}
 import orchestrators.ReportOrchestrator
@@ -127,7 +129,12 @@ object ReportsExtractActor {
           signalConsoConfiguration.reportsExportLimitMax
         )
       reportIds = paginatedReports.entities.map(_.report.id)
-      reportEventsMap      <- eventRepository.getEventsWithUsersMap(reportIds, EventFilter.Empty)
+      reportEventsMap      <- eventRepository.getEventsWithUsers(reportIds, EventFilter.Empty)
+        .map {
+          _.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
+            (reportId, EventWithUser(event, user.map(_.into[EventUser].withFieldRenamed(_.userRole, _.role).transform)))
+          }.groupMap(_._1)(_._2)
+        }
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.entities.flatMap(_.report.companyId),
         Seq(AccessLevel.ADMIN)
@@ -137,7 +144,7 @@ object ReportsExtractActor {
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
-            paginatedReports.entities.map { case ReportWithFiles(report, _, _, consumerReview, engagementReview, files) =>
+            paginatedReports.entities.map { case ReportFromSearchWithFiles(report, _, _, consumerReview, engagementReview, files) =>
               Row().withCells(
                 reportColumns
                   .map(

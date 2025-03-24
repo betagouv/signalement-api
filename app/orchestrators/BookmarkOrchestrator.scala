@@ -39,7 +39,7 @@ class BookmarkOrchestrator(
 
   private def getExistingBookmark(reportId: UUID, user: User): Future[Option[Bookmark]] =
     for {
-      maybeReport <- reportRepository.getForWithAdditionalData(Some(user), reportId)
+      maybeReport <- reportRepository.getForWithMetadata(Some(user), reportId)
       report      <- maybeReport.liftTo[Future](ReportNotFound(reportId))
     } yield report.bookmark
 

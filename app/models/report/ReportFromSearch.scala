@@ -1,5 +1,6 @@
 package models.report
 
+import models.event.EventWithUser
 import models.report.reportmetadata.ReportMetadata
 import models.report.review.{EngagementReview, ResponseConsumerReview}
 import models.{MinimalUser, UserRole}
@@ -16,7 +17,7 @@ case class ReportFromSearch(
                                     subcategoryLabel: Option[SubcategoryLabel]
                                   )
 
-case class ReportWithFiles(
+case class ReportFromSearchWithFiles(
                             report: Report,
                             metadata: Option[ReportMetadata],
                             bookmark: Option[Bookmark],
@@ -25,7 +26,7 @@ case class ReportWithFiles(
                             files: List[ReportFile]
                           )
 
-case class ReportWithFilesAndResponses(
+case class ReportFromSearchWithFilesAndResponses(
                                         report: Report,
                                         metadata: Option[ReportMetadata],
                                         bookmark: Option[Bookmark],
@@ -36,8 +37,8 @@ case class ReportWithFilesAndResponses(
                                         proResponse: Option[EventWithUser],
                                       )
 
-object ReportWithFilesAndResponses {
-  implicit def writes(implicit userRole: Option[UserRole]): Writes[ReportWithFilesAndResponses] = (r: ReportWithFilesAndResponses) => userRole match {
+object ReportFromSearchWithFilesAndResponses {
+  implicit def writes(implicit userRole: Option[UserRole]): Writes[ReportFromSearchWithFilesAndResponses] = (r: ReportFromSearchWithFilesAndResponses) => userRole match {
     case Some(UserRole.Professionnel) =>
       Json.obj(
         "report" -> r.report,

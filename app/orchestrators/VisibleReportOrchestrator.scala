@@ -6,8 +6,7 @@ import controllers.error.AppError.ReportNotFound
 import models.UserRole.Professionnel
 import models._
 import models.company.Address
-import models.report.Report
-import models.report.reportmetadata.ReportExtra
+import models.report.{Report, ReportWithMetadataAndAlbertLabel}
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -26,14 +25,14 @@ class VisibleReportOrchestrator(
 
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
-  def getVisibleReportForUserWithExtra(reportId: UUID, user: User): Future[Option[ReportExtra]] =
+  def getVisibleReportForUserWithExtra(reportId: UUID, user: User): Future[Option[ReportWithMetadataAndAlbertLabel]] =
     for {
-      reportWithMetadata <- reportRepository.getForWithAdditionalData(Some(user), reportId)
+      reportWithMetadata <- reportRepository.getForWithMetadata(Some(user), reportId)
       report = reportWithMetadata.map(_.report)
       company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
       address = Address.merge(company.map(_.address), report.map(_.companyAddress))
       reportExtra = reportWithMetadata.map(r =>
-        ReportExtra
+        ReportWithMetadataAndAlbertLabel
           .from(r, company)
           .setAddress(address)
       )

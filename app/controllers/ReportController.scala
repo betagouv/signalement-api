@@ -178,7 +178,7 @@ class ReportController(
         .map(r =>
           Ok(
             Json.toJson(
-              ReportWithFilesAndAssignedUser(
+              ReportWithMetadataAndAlbertLabelAndFiles(
                 SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
                 r.bookmark.isDefined,
@@ -284,7 +284,7 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     Act.secured.adminsAndReadonly.async { implicit request =>
       for {
-        maybeReportWithMetadata <- reportRepository.getForWithAdditionalData(Some(request.identity), uuid)
+        maybeReportWithMetadata <- reportRepository.getForWithMetadata(Some(request.identity), uuid)
         company <- maybeReportWithMetadata.flatMap(_.report.companyId).flatTraverse(r => companyRepository.get(r))
         files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
@@ -292,7 +292,7 @@ class ReportController(
           eventType = None,
           user = request.identity
         )
-        proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
+        proResponseEvent = events.find(_.event.action == REPORT_PRO_RESPONSE)
         source = maybeReportWithMetadata
           .map { reportWithMetadata =>
             val lang = Lang(reportWithMetadata.report.lang.getOrElse(Locale.FRENCH))
@@ -308,7 +308,7 @@ class ReportController(
                 frontRoute,
                 messagesProvider
               )
-            val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.data))
+            val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.event))
             Seq(notificationHtml, proResponseHtml)
           }
           .map(pdfService.createPdfSource)

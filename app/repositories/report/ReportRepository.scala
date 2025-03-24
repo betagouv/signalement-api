@@ -7,7 +7,6 @@ import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.PostgresProfile.api._
@@ -418,21 +417,6 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
     })
 
-//  def getReportsWithAdditionalData(
-//                  user: Option[User],
-//                  filter: ReportFilter,
-//                  offset: Option[Long],
-//                  limit: Option[Int],
-//                  sortBy: Option[ReportSort],
-//                  orderBy: Option[SortOrder]
-//                ): Future[PaginatedResult[FullReportFromSearch]] =
-//    queryFilterWithAdditionalData(ReportTable.table(user), filter, user)
-//      .sortBy { t => sortReport(t._1, sortBy, orderBy) }
-//      .withPagination(db)(offset, limit)
-//      .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse, proUser, assignedUser) =>
-//        FullReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse.map(res => EventWithUser(res, proUser)), assignedUser)
-//      })
-
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table
       .filter(_.id inSet ids)
@@ -551,7 +535,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .headOption
     )
 
-  override def getForWithAdditionalData(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] =
+  override def getForWithMetadata(user: Option[User], id: UUID): Future[Option[ReportWithMetadata]] =
     db.run(
       ReportTable
         .table(user)
@@ -571,7 +555,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
         .headOption
     ).map(_.map { case (((report, subcategoryLabel), bookmark), metadata) =>
-      ReportWithMetadataAndBookmark(report, metadata, bookmark, subcategoryLabel)
+      ReportWithMetadata(report, metadata, bookmark, subcategoryLabel)
     })
 
   override def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]] =
@@ -635,154 +619,12 @@ object ReportRepository {
 
   // N'utilise que les jointures nécessaires au filtrage
   // On pourrait ne pas faire de jointures et faire un EXISTS mais les perfs sont identiques et on remonte directement la donnée avec JOIN
-  // Pas besoin de refaire une requête
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
       filter: ReportFilter,
       maybeUser: Option[User]
   ) = {
     table
-      .filterOpt(filter.email) { case (table, email) =>
-        table.email === EmailAddress(email)
-      }
-      .filterOpt(filter.consumerPhone) { case (table, consumerPhone) =>
-        table.consumerPhone === consumerPhone
-      }
-      .filterOpt(filter.hasConsumerPhone) { case (table, hasConsumerPhone) =>
-        table.consumerPhone.isDefined === hasConsumerPhone
-      }
-      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
-        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
-      }
-      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
-        table.websiteURL.isDefined === websiteRequired
-      }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
-      }
-      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
-        table.phone.isDefined === phoneRequired
-      }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
-      }
-      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
-        table.companyCountry.isDefined === hasForeignCountry
-      }
-      .filterIf(filter.companyIds.nonEmpty)(_.companyId inSetBind filter.companyIds)
-      .filterIf(filter.siretSirenList.nonEmpty) { table =>
-        (table.companySiret inSetBind filter.siretSirenList
-          .filter(_.matches(SIRET.pattern))
-          .map(SIRET.fromUnsafe)
-          .distinct) ||
-        (SubstrOptSQLFunction(
-          table.companySiret.asColumnOf[Option[String]],
-          0,
-          10
-        ) inSetBind filter.siretSirenList
-          .filter(_.matches(SIREN.pattern))
-          .distinct)
-      }
-      .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
-      }
-      .filterIf(filter.companyCountries.nonEmpty) { table =>
-        table.companyCountry
-          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
-      }
-      .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= start
-      }
-      .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < end
-      }
-      .filterOpt(filter.category) { case (table, category) =>
-        // Condition pour récupérer les achats en sur internet soit dans la nouvelle catégorie,
-        // soit dans l'ancienne catégorie à condition que le signalement ait un tag "Internet"
-        if (ReportCategory.withName(category) == ReportCategory.AchatInternet) {
-          table.category === category ||
-          (
-            table.category === ReportCategory.AchatMagasinInternet.entryName
-              && table.tags @> List[ReportTag](ReportTag.Internet).bind
-          )
-          // Condition pour récupérer les achats en magasin soit dans la nouvelle catégorie,
-          // soit dans l'ancienne catégorie à condition que le signalement n'ait pas de tag "Internet"
-        } else if (ReportCategory.withName(category) == ReportCategory.AchatMagasin) {
-          table.category === category ||
-          (
-            table.category === ReportCategory.AchatMagasinInternet.entryName
-              && !(table.tags @> List[ReportTag](ReportTag.Internet).bind)
-          )
-        } else {
-          table.category === category
-        }
-      }
-      .filterIf(filter.subcategories.nonEmpty) { table =>
-        castVarCharArrayToTextArray(table.subcategories) @> filter.subcategories.toList.bind
-      }
-      .filterIf(filter.status.nonEmpty)(table => table.status.inSetBind(filter.status.map(_.entryName)))
-      .filterIf(filter.withTags.nonEmpty) { table =>
-        table.tags @& filter.withTags.toList.bind
-      }
-      .filterNotIf(filter.withoutTags.nonEmpty) { table =>
-        table.tags @& filter.withoutTags.toList.bind
-      }
-      .filterOpt(filter.details) { case (table, details) =>
-        val englishQuery = table.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
-        val frenchQuery  = table.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
-
-        // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
-      }
-      // Grosse optimisation. Force Postgres à utiliser l'index de full text search.
-      // Seul cas où c'est beaucoup plus rapide que d'utiliser l'index sur la creation_date
-      .optimiseFullTextSearch(filter.details.isDefined)
-      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
-        table.employeeConsumer === employeeConsumer
-      }
-      .filterOpt(filter.contactAgreement) { case (table, contactAgreement) =>
-        table.contactAgreement === contactAgreement
-      }
-      .filterOpt(filter.hasAttachment) { case (table, hasAttachment) =>
-        val exists = ReportFileTable.table
-          .filter(x => x.reportId === table.id)
-          .map(_.reportId)
-          .exists
-        if (hasAttachment) exists else !exists
-      }
-      .filterIf(filter.departments.nonEmpty) { table =>
-        val departmentsFilter: Rep[Boolean] = filter.departments
-          .flatMap(toPostalCode)
-          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
-          .reduceLeft(_ || _)
-        // Avoid searching departments in foreign countries
-        departmentsFilter && table.companyCountry.isEmpty
-
-      }
-      .filterIf(filter.activityCodes.nonEmpty) { table =>
-        table.companyActivityCode.inSetBind(filter.activityCodes)
-      }
-      .filterOpt(filter.visibleToPro) { case (table, visibleToPro) =>
-        table.visibleToPro === visibleToPro
-      }
-      .filterOpt(filter.isForeign) { case (table, isForeign) =>
-        if (isForeign) table.lang =!= Locale.FRENCH else table.lang === Locale.FRENCH || table.lang.isEmpty
-      }
-      .filterOpt(filter.hasBarcode) { case (table, barcodeRequired) =>
-        table.barcodeProductId.isDefined === barcodeRequired
-      }
-      .filterOpt(filter.fullText) { case (table, fullText) =>
-        val englishQuery =
-          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
-            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
-
-        val frenchQuery =
-          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
-            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
-
-        // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
-      }
       .joinLeft(ReportMetadataTable.table)
       .on(_.id === _.reportId)
       .joinLeft(BookmarkTable.table)
@@ -804,6 +646,150 @@ object ReportRepository {
       .map { case (((((report, metadata), bookmark), consumerReview), engagementReview), subcategoryLabel) =>
         (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
       }
+      .filterOpt(filter.email) { case ((report, _, _, _, _, _), email) =>
+        report.email === EmailAddress(email)
+      }
+      .filterOpt(filter.consumerPhone) { case ((report, _, _, _, _, _), consumerPhone) =>
+        report.consumerPhone === consumerPhone
+      }
+      .filterOpt(filter.hasConsumerPhone) { case ((report, _, _, _, _, _), hasConsumerPhone) =>
+        report.consumerPhone.isDefined === hasConsumerPhone
+      }
+      .filterOpt(filter.websiteURL) { case ((report, _, _, _, _, _), websiteURL) =>
+        report.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      }
+      .filterOpt(filter.hasWebsite) { case ((report, _, _, _, _, _), websiteRequired) =>
+        report.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.phone) { case ((report, _, _, _, _, _), reportedPhone) =>
+        report.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      }
+      .filterOpt(filter.hasPhone) { case ((report, _, _, _, _, _), phoneRequired) =>
+        report.phone.isDefined === phoneRequired
+      }
+      .filterOpt(filter.hasCompany) { case ((report, _, _, _, _, _), hasCompany) =>
+        report.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.hasForeignCountry) { case ((report, _, _, _, _, _), hasForeignCountry) =>
+        report.companyCountry.isDefined === hasForeignCountry
+      }
+      .filterIf(filter.companyIds.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyId inSetBind filter.companyIds
+      }
+      .filterIf(filter.siretSirenList.nonEmpty) { case (report, _, _, _, _, _) =>
+        (report.companySiret inSetBind filter.siretSirenList
+          .filter(_.matches(SIRET.pattern))
+          .map(SIRET.fromUnsafe)
+          .distinct) ||
+          (SubstrOptSQLFunction(
+            report.companySiret.asColumnOf[Option[String]],
+            0,
+            10
+          ) inSetBind filter.siretSirenList
+            .filter(_.matches(SIREN.pattern))
+            .distinct)
+      }
+      .filterOpt(filter.companyName) { case ((report, _, _, _, _, _), companyName) =>
+        report.companyName like s"${companyName}%"
+      }
+      .filterIf(filter.companyCountries.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyCountry.inSet(filter.companyCountries.map(Country.fromCode))
+      }
+      .filterOpt(filter.start) { case ((report, _, _, _, _, _), start) =>
+        report.creationDate >= start
+      }
+      .filterOpt(filter.end) { case ((report, _, _, _, _, _), end) =>
+        report.creationDate < end
+      }
+      .filterOpt(filter.category) { case ((report, _, _, _, _, _), category) =>
+        // Condition pour récupérer les achats en sur internet soit dans la nouvelle catégorie,
+        // soit dans l'ancienne catégorie à condition que le signalement ait un tag "Internet"
+        if (ReportCategory.withName(category) == ReportCategory.AchatInternet) {
+          report.category === category ||
+            (
+              report.category === ReportCategory.AchatMagasinInternet.entryName
+                && report.tags @> List[ReportTag](ReportTag.Internet).bind
+              )
+          // Condition pour récupérer les achats en magasin soit dans la nouvelle catégorie,
+          // soit dans l'ancienne catégorie à condition que le signalement n'ait pas de tag "Internet"
+        } else if (ReportCategory.withName(category) == ReportCategory.AchatMagasin) {
+          report.category === category ||
+            (
+              report.category === ReportCategory.AchatMagasinInternet.entryName
+                && !(report.tags @> List[ReportTag](ReportTag.Internet).bind)
+              )
+        } else {
+          report.category === category
+        }
+      }
+      .filterIf(filter.subcategories.nonEmpty) { case (report, _, _, _, _, _) =>
+        castVarCharArrayToTextArray(report.subcategories) @> filter.subcategories.toList.bind
+      }
+      .filterIf(filter.status.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.status.inSetBind(filter.status.map(_.entryName))
+      }
+      .filterIf(filter.withTags.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.tags @& filter.withTags.toList.bind
+      }
+      .filterNotIf(filter.withoutTags.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.tags @& filter.withoutTags.toList.bind
+      }
+      .filterOpt(filter.details) { case ((report, _, _, _, _, _), details) =>
+        val englishQuery = report.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
+        val frenchQuery = report.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
+
+        // Optimisation to avoid case and use indexes
+        ((report.lang === Locale.ENGLISH) && englishQuery) || ((report.lang.isEmpty || report.lang =!= Locale.ENGLISH) && frenchQuery)
+      }
+      // Grosse optimisation. Force Postgres à utiliser l'index de full text search.
+      // Seul cas où c'est beaucoup plus rapide que d'utiliser l'index sur la creation_date
+      .optimiseFullTextSearch(filter.details.isDefined)
+      .filterOpt(filter.employeeConsumer) { case ((report, _, _, _, _, _), employeeConsumer) =>
+        report.employeeConsumer === employeeConsumer
+      }
+      .filterOpt(filter.contactAgreement) { case ((report, _, _, _, _, _), contactAgreement) =>
+        report.contactAgreement === contactAgreement
+      }
+      .filterOpt(filter.hasAttachment) { case ((report, _, _, _, _, _), hasAttachment) =>
+        val exists = ReportFileTable.table
+          .filter(x => x.reportId === report.id)
+          .map(_.reportId)
+          .exists
+        if (hasAttachment) exists else !exists
+      }
+      .filterIf(filter.departments.nonEmpty) { case (report, _, _, _, _, _) =>
+        val departmentsFilter: Rep[Boolean] = filter.departments
+          .flatMap(toPostalCode)
+          .map(dep => report.companyPostalCode.asColumnOf[String] like s"${dep}%")
+          .reduceLeft(_ || _)
+        // Avoid searching departments in foreign countries
+        departmentsFilter && report.companyCountry.isEmpty
+
+      }
+      .filterIf(filter.activityCodes.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyActivityCode.inSetBind(filter.activityCodes)
+      }
+      .filterOpt(filter.visibleToPro) { case ((report, _, _, _, _, _), visibleToPro) =>
+        report.visibleToPro === visibleToPro
+      }
+      .filterOpt(filter.isForeign) { case ((report, _, _, _, _, _), isForeign) =>
+        if (isForeign) report.lang =!= Locale.FRENCH else report.lang === Locale.FRENCH || report.lang.isEmpty
+      }
+      .filterOpt(filter.hasBarcode) { case ((report, _, _, _, _, _), barcodeRequired) =>
+        report.barcodeProductId.isDefined === barcodeRequired
+      }
+      .filterOpt(filter.fullText) { case ((report, _, _, _, _, _), fullText) =>
+        val englishQuery =
+          (report.contactAgreement && report.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
+            report.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+
+        val frenchQuery =
+          (report.contactAgreement && report.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
+            report.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+
+        // Optimisation to avoid case and use indexes
+        ((report.lang === Locale.ENGLISH) && englishQuery) || ((report.lang.isEmpty || report.lang =!= Locale.ENGLISH) && frenchQuery)
+      }
       .filterOpt(filter.assignedUserId) { case (table, assignedUserid) =>
         table._2.flatMap(_.assignedUserId) === assignedUserid
       }
@@ -823,27 +809,4 @@ object ReportRepository {
         table._5.map(_.evaluation).inSetBind(filter.engagementEvaluation)
       }
   }
-//
-//  // Ajoute des jointures pour de la données
-//  // Uniquement des données dont on sait que la relation est 1 <-> 1 sinon ça ne marche pas, il faut soit groupBy soit faire
-//  // une autre requête
-//  def queryFilterWithAdditionalData(table: Query[ReportTable, Report, Seq], filter: ReportFilter, maybeUser: Option[User]) = {
-//    queryFilter(table, filter, maybeUser)
-//      .joinLeft(EventTable.table)
-//      .on { case (((report, _, _, _, _), _), event) =>
-//        report.id === event.reportId && event.eventType === EventType.PRO.entryName && event.action === ActionEvent.REPORT_PRO_RESPONSE.value
-//      }
-//      .joinLeft(UserTable.table)
-//      .on { case ((((_, _, _, _, _), _), proResponse), user) =>
-//        proResponse.flatMap(_.userId) === user.id
-//      }
-//      .joinLeft(UserTable.table)
-//      .on { case (((((_, metadata, _, _, _), _), _), _), assignedUser) =>
-//        metadata.flatMap(_.assignedUserId) === assignedUser.id
-//      }
-//      .map { case (((((report, metadata, bookmark, consumerReview, engagementReview), subcategoryLabel), proResponse), proResponseUser), assignedUser) =>
-//        (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel, proResponse, proResponseUser, assignedUser)
-//      }
-//  }
-
 }

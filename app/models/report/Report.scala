@@ -3,26 +3,16 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
-import models.MinimalUser
-import models.PaginatedResult
-import models.User
-import models.UserRole
-import models.company.Address
-import models.company.Company
-import models.event.Event
+import models.{PaginatedResult, UserRole}
+import models.company.{Address, Company}
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
-import models.report.reportmetadata.ReportMetadata
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Country
-import utils.EmailAddress
-import utils.SIRET
-import utils.URL
+import utils.{Country, EmailAddress, SIRET}
 
 import java.time.OffsetDateTime
-import java.util.Locale
-import java.util.UUID
+import java.util.{Locale, UUID}
 import scala.annotation.nowarn
 
 case class Report(
@@ -155,41 +145,6 @@ object Report {
           "visibleToPro"     -> report.visibleToPro
         )
     })
-}
-
-case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
-
-object WebsiteURL {
-  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
-  val Empty                                          = WebsiteURL(None, None)
-}
-
-case class EventWithUser(event: Event, user: Option[User])
-
-object EventWithUser {
-  implicit val writerEventWithUser: OWrites[EventWithUser] =
-    Json.writes[EventWithUser]
-}
-
-case class ReportWithFilesAndAssignedUser(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    assignedUser: Option[MinimalUser],
-    files: List[ReportFileApi],
-    companyAlbertActivityLabel: Option[String]
-)
-object ReportWithFilesAndAssignedUser {
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
-    Json
-      .writes[ReportWithFilesAndAssignedUser]
-      .contramap(r =>
-        userRole match {
-          case Some(UserRole.Professionnel) =>
-            r.copy(companyAlbertActivityLabel = None)
-          case _ => r
-        }
-      )
 }
 
 case class DetailInputValue(

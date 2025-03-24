@@ -3,7 +3,6 @@ package repositories.event
 import cats.data.NonEmptyList
 import models._
 import models.event.Event
-import models.report.EventWithUser
 import models.report.Report
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
@@ -13,8 +12,6 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
-// import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
-// import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.PRO
 
@@ -104,17 +101,6 @@ class EventRepository(
         .to[List]
         .result
     }
-
-  override def getEventsWithUsersMap(
-      reportsIds: List[UUID],
-      filter: EventFilter
-  ): Future[Map[UUID, List[EventWithUser]]] =
-    getEventsWithUsers(reportsIds, filter)
-      .map {
-        _.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
-          (reportId, EventWithUser(event, user))
-        }.groupMap(_._1)(_._2)
-      }
 
   override def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] =
     db.run {

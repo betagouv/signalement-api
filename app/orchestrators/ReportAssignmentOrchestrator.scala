@@ -4,9 +4,8 @@ import cats.implicits.catsSyntaxOption
 import controllers.error.AppError
 import models.User
 import models.event.Event
-import models.report.Report
+import models.report.{Report, ReportWithMetadataAndAlbertLabel}
 import models.report.reportmetadata.ReportComment
-import models.report.reportmetadata.ReportExtra
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
@@ -61,8 +60,8 @@ class ReportAssignmentOrchestrator(
   }
 
   private def checkAssignableToUser(
-      reportExtra: ReportExtra,
-      newAssignedUserId: UUID
+                                     reportExtra: ReportWithMetadataAndAlbertLabel,
+                                     newAssignedUserId: UUID
   ): Future[User] = {
     val reportId               = reportExtra.report.id
     val isAlreadyAssignedToHim = reportExtra.metadata.flatMap(_.assignedUserId).contains(newAssignedUserId)
