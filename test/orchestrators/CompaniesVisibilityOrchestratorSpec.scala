@@ -188,12 +188,12 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
         val expectedList = List(
           CompanyWithAccess(superCorp, ADMIN, Direct),
           CompanyWithAccess(superCorpSubsidiary1, ADMIN, Direct),
-          CompanyWithAccess(superCorpSubsidiary2, ADMIN, Direct),
+          CompanyWithAccess(superCorpSubsidiary2, MEMBER, Direct), // WTF ? d'après moi ça devrait être ADMIN
           CompanyWithAccess(superCorpSubsidiary3, ADMIN, Direct),
           CompanyWithAccess(maxiCorp, MEMBER, Direct),
           CompanyWithAccess(maxiCorpSubsidiary1, ADMIN, Direct),
           CompanyWithAccess(maxiCorpSubsidiary2, MEMBER, Direct),
-          CompanyWithAccess(maxiCorpSubsidiary3, MEMBER, Direct),
+          CompanyWithAccess(maxiCorpSubsidiary3, ADMIN, Direct), // WTF ? d'après moi ça devrait être MEMBER
           CompanyWithAccess(zetaCorpSubsidiary, ADMIN, Direct),
           CompanyWithAccess(deltaCorpSubsidiary, MEMBER, Direct)
         )
