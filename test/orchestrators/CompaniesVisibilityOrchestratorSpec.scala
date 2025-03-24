@@ -105,12 +105,7 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
 
         for {
           res <- companiesVisibilityOrchestrator.fetchVisibleCompaniesNewVersion(proUser)
-          _   <- Future(true)
-        } yield {
-          1 + 1 shouldEqual 2
-          1 + 1 shouldEqual 3
-          res shouldEqual expectedResult
-        }
+        } yield res shouldEqual expectedResult
 
       }
     }
