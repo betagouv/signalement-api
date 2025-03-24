@@ -72,7 +72,7 @@ class CompaniesVisibilityOrchestrator(
       (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
 
-  def fetchVisibleCompaniesAsMap(pro: User) =
+  def fetchVisibleCompaniesNewVersion(pro: User) =
     for {
       companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
       (headOffices, subsidiaries) =
@@ -93,6 +93,19 @@ class CompaniesVisibilityOrchestrator(
       // TODO il faudra des TUs
     } yield proCompaniesWithAllAccesses
 
+  // @@@@@ The legacy function
+  // TODO brancher sur ma nouvelle méthode.
+  // TODO TUs d'abord ?
+  def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
+    for {
+      authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
+      headOfficeSirets = authorizedCompanies.filter(_.company.isHeadOffice).map(_.company.siret)
+      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.fromSIRET))
+      companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
+      accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
+        .distinctBy(_.company.siret)
+        .sortBy(_.company.siret.value)
+    } yield accessiblesCompanies
   private[this] def addSyntheticAccessesToSubsidiaries(
       proCompaniesWithAccesses: ProCompaniesWithAccesses
   ): ProCompaniesWithAccesses =
@@ -147,20 +160,6 @@ class CompaniesVisibilityOrchestrator(
     )
 
   }
-
-  // @@@@@ The legacy function
-  // TODO brancher sur ma nouvelle méthode.
-  // TODO TUs d'abord ?
-  def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
-    for {
-      authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      headOfficeSirets = authorizedCompanies.filter(_.company.isHeadOffice).map(_.company.siret)
-      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.fromSIRET))
-      companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
-      accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
-        .distinctBy(_.company.siret)
-        .sortBy(_.company.siret.value)
-    } yield accessiblesCompanies
 
   private[this] def addAccessToSubsidiaries(
       authorizedCompaniesWithAccesses: List[CompanyWithAccess],
