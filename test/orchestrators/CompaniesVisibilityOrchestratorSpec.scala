@@ -1,6 +1,5 @@
 package orchestrators
 
-import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyWithAccess
 import models.company.ProCompaniesWithAccesses
@@ -9,15 +8,18 @@ import models.company.AccessLevel.MEMBER
 import models.company.CompanyAccessKind.Direct
 import models.company.CompanyAccessKind.SyntheticAdminAndDirectMember
 import models.company.CompanyAccessKind.Synthetic
+import org.mockito.Mockito.when
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.control.eff.Member
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
+import utils.SIREN
 import utils.SIRET
+
+import scala.concurrent.Future
 
 class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
     extends Specification
@@ -28,15 +30,8 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
     "fetchVisibleCompanies" should {
       "work as expected" in {
 
-        val companyRepository       = mock[CompanyRepositoryInterface]
-        val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
-
-        val companiesVisibilityOrchestrator = new CompaniesVisibilityOrchestrator(
-          companyRepository,
-          companyAccessRepository
-        )
-
         val proUser = Fixtures.genProUser.sample.get
+
         val (
           superCorp,
           superCorpSubsidiary1,
@@ -50,23 +45,44 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
           maxiCorpSubsidiary2,
           maxiCorpSubsidiary3
         ) = genHeadOfficeAndThreeSubsidiaries(siren = "2" * 9)
-        val zetaCorpSubsidiary  = genLoneSubsidiary("3" * 9)
-        val deltaCorpSubsidiary = genLoneSubsidiary("4" * 9)
+        val zetaCorpSubsidiary        = genLoneSubsidiary("3" * 9)
+        val deltaCorpSubsidiary       = genLoneSubsidiary("4" * 9)
+        val inaccessibleUnrelatedCorp = genLoneSubsidiary("5" * 9)
 
-        val accessesInDb = List(
+        val whatsInDb = List(
           // Supercorp
-          // note: no direct access on subsidiary3
-          superCorp            -> ADMIN,
-          superCorpSubsidiary1 -> ADMIN,
-          superCorpSubsidiary2 -> MEMBER,
+          superCorp            -> Some(ADMIN),
+          superCorpSubsidiary1 -> Some(ADMIN),
+          superCorpSubsidiary2 -> Some(MEMBER),
+          superCorpSubsidiary3 -> None,
           // Maxicorp: same, except he's member on the head office, not admin
-          maxiCorp             -> MEMBER,
-          superCorpSubsidiary1 -> ADMIN,
-          superCorpSubsidiary2 -> MEMBER,
+          maxiCorp            -> Some(MEMBER),
+          maxiCorpSubsidiary1 -> Some(ADMIN),
+          maxiCorpSubsidiary2 -> Some(MEMBER),
+          maxiCorpSubsidiary3 -> None,
           // Lone subsidiaries:
-          zetaCorpSubsidiary  -> ADMIN,
-          deltaCorpSubsidiary -> MEMBER
+          zetaCorpSubsidiary  -> Some(ADMIN),
+          deltaCorpSubsidiary -> Some(MEMBER),
+          // This one is not related siren-wise and he also has no access to it
+          inaccessibleUnrelatedCorp -> None
         )
+        val accessesInDb = whatsInDb.collect { case (company, Some(level)) =>
+          CompanyWithAccess(company, level, Direct)
+        }
+        val allCompaniesInDb = whatsInDb.map(_._1)
+
+        val companyRepository       = mock[CompanyRepositoryInterface]
+        val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
+        val companiesVisibilityOrchestrator = new CompaniesVisibilityOrchestrator(
+          companyRepository,
+          companyAccessRepository
+        )
+
+        when(companyAccessRepository.fetchCompaniesWithLevel(proUser))
+          .thenReturn(Future.successful(accessesInDb))
+
+        when(companyRepository.findBySiren(anyListOf[SIREN]))
+          .thenReturn(Future.successful(allCompaniesInDb.filter(_ != inaccessibleUnrelatedCorp)))
 
         val expectedResult = ProCompaniesWithAccesses(
           headOfficesAndSubsidiaries = Map(
@@ -87,13 +103,14 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
           )
         )
 
-        Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
-
-//        val
-
         for {
-          result <- companiesVisibilityOrchestrator.fetchVisibleCompaniesLegacy(proUser)
-        } yield result shouldEqual 3 + 3
+          res <- companiesVisibilityOrchestrator.fetchVisibleCompaniesNewVersion(proUser)
+          _   <- Future(true)
+        } yield {
+          1 + 1 shouldEqual 2
+          1 + 1 shouldEqual 3
+          res shouldEqual expectedResult
+        }
 
       }
     }
