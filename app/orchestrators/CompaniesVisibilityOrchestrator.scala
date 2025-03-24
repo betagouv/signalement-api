@@ -105,6 +105,13 @@ class CompaniesVisibilityOrchestrator(
       accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
         .distinctBy(_.company.siret)
         .sortBy(_.company.siret.value)
+      _ = {
+        println(s"@@@@@@@@@@@@@@@@@@ ")
+        accessiblesCompanies.foreach { case CompanyWithAccess(c, level, kind) =>
+          println(s" siret ${c.siret} => ${level}")
+        }
+        println(s"@@@@@@@@@@@@@@@@@@ ")
+      }
     } yield accessiblesCompanies
 
   def fetchVisibleCompaniesList(pro: User): Future[List[CompanyWithAccess]] =
@@ -180,6 +187,13 @@ class CompaniesVisibilityOrchestrator(
         if (levelPriority(a) > levelPriority(b)) a else b
       )
       .withDefaultValue(AccessLevel.NONE)
+
+    println(s"========= LEVEL BY SIREN====")
+    getLevelBySiren.foreach { case (siren, level) =>
+      println(s" ${siren.value}----> ${level}")
+    }
+    println(s"===================")
+
     accessibleSubsidiaries.map(c =>
       CompanyWithAccess(
         c,
