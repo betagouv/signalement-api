@@ -25,7 +25,7 @@ case class ProCompanies[A](
 }
 
 object ProCompanies {
-  implicit val writes: OWrites[ProCompanies[CompanyWithAccess]] = obj =>
+  implicit val writes: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = obj =>
     Json.obj(
       "headOfficesAndSubsidiaries" ->
         // JSON-friendly way of outputting the map

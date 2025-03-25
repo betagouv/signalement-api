@@ -8,7 +8,6 @@ import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.CompanyWithAccessAndCounts
 import models.company.ProCompanies
-import models.company.ProCompaniesWithAccesses
 import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
 import models.company.AccessLevel.NONE

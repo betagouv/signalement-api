@@ -103,6 +103,12 @@ case class CompanyWithAccessAndCounts(
     accessAndCounts: Option[Int]
 )
 
+object CompanyWithAccessAndCounts {
+
+  implicit val writes: OWrites[CompanyWithAccessAndCounts] = Json.writes[CompanyWithAccessAndCounts]
+
+}
+
 sealed trait CompanyAccessKind extends EnumEntry
 
 object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
