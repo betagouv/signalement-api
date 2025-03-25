@@ -141,7 +141,7 @@ class CompaniesVisibilityOrchestrator(
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess.none(c))
+        .getOrElse(CompanyWithAccess(c, level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic))
 
     ProCompaniesWithAccesses(
       headOfficesAndSubsidiaries = toFill.headOfficesAndSubsidiaries.map { case (key, value) =>
