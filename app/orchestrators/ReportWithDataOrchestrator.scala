@@ -46,7 +46,7 @@ class ReportWithDataOrchestrator(
 
   def getReportFull(uuid: UUID, userToCheckAuthorization: User): Future[Option[ReportWithData]] =
     visibleReportOrchestrator
-      .getVisibleReportForUser(uuid, userToCheckAuthorization)
+      .getVisibleReportForUserWithExtra(uuid, userToCheckAuthorization)
       .flatMap { maybeReport =>
         maybeReport.map { reportExtra =>
           val report = reportExtra.report

@@ -7,7 +7,6 @@ import models.UserRole
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report._
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.report.ReportRepositoryInterface
@@ -112,7 +111,10 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[Report]] = ???
 
-  override def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] = {
+  override def getFor(user: Option[User], id: UUID): Future[Option[Report]] =
+    Future.successful(database.get(id))
+
+  override def getForWithMetadata(user: Option[User], id: UUID): Future[Option[ReportWithMetadata]] = {
     val maybeReport = user.map(_.userRole) match {
       case Some(UserRole.SuperAdmin)    => database.get(id)
       case Some(UserRole.Admin)         => database.get(id)
@@ -122,7 +124,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)
       case None                         => database.get(id)
     }
-    Future.successful(maybeReport.map(ReportWithMetadataAndBookmark(_, None, None, None)))
+    Future.successful(maybeReport.map(ReportWithMetadata(_, None, None, None)))
   }
 
   override def streamAll

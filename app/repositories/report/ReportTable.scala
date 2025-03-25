@@ -1,25 +1,24 @@
 package repositories.report
 
+import com.github.tminglei.slickpg.TsVector
 import models._
+import models.company.Address
 import models.report.DetailInputValue.toDetailInputValue
 import models.report._
-import repositories.PostgresProfile.api._
-import utils._
-
-import java.time._
-import java.util.Locale
-import java.util.UUID
-import ReportColumnType._
-import com.github.tminglei.slickpg.TsVector
-import models.company.Address
 import repositories.DatabaseTable
+import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
-import repositories.report.ReportRepository.queryFilter
+import repositories.report.ReportColumnType._
 import repositories.report.ReportRepository.orFilter
 import slick.ast.BaseTypedType
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
 import slick.jdbc.JdbcType
+import utils._
+
+import java.time._
+import java.util.Locale
+import java.util.UUID
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   implicit val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
@@ -351,7 +350,8 @@ object ReportTable {
     case Some(UserRole.DGCCRF)        => table
     case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
     case Some(UserRole.Professionnel) =>
-      queryFilter(table, ReportFilter(visibleToPro = Some(true), status = ReportStatus.statusVisibleByPro), user)
-        .map { case (report, _, _, _) => report }
+      table
+        .filter(_.visibleToPro === true)
+        .filter(_.status.inSetBind(ReportStatus.statusVisibleByPro.map(_.entryName)))
   }
 }

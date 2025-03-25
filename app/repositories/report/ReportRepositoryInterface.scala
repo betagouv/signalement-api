@@ -6,7 +6,6 @@ import models.User
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report._
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.CRUDRepositoryInterface
@@ -74,7 +73,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]]
+  ): Future[PaginatedResult[ReportFromSearch]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
@@ -101,7 +100,9 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]]
 
-  def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]]
+  def getFor(user: Option[User], id: UUID): Future[Option[Report]]
+
+  def getForWithMetadata(user: Option[User], id: UUID): Future[Option[ReportWithMetadata]]
 
   def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]]
 }

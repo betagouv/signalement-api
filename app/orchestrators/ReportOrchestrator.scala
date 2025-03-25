@@ -16,6 +16,8 @@ import models.company.AccessLevel
 import models.company.Address
 import models.company.Company
 import models.event.Event
+import models.event.EventUser
+import models.event.EventWithUser
 import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
@@ -24,9 +26,7 @@ import models.report.ReportStatus.SuppressionRGPD
 import models.report.ReportStatus.hasResponse
 import models.report.ReportWordOccurrence.StopWords
 import models.report._
-import models.report.reportmetadata.ReportExtra
 import models.report.reportmetadata.ReportMetadataDraft
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import orchestrators.ReportOrchestrator.ReportCompanyChangeThresholdInDays
@@ -46,7 +46,6 @@ import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subcategorylabel.SubcategoryLabelRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerProResponseNotification
 import services.emails.EmailDefinitionsConsumer.ConsumerReportAcknowledgment
@@ -62,6 +61,8 @@ import utils.Constants.EventType
 import utils.Logs.RichLogger
 import utils._
 import cats.syntax.either._
+import io.scalaland.chimney.dsl.TransformationOps
+import repositories.user.UserRepositoryInterface
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -79,7 +80,6 @@ import scala.util.Random
 
 class ReportOrchestrator(
     mailService: MailServiceInterface,
-    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportMetadataRepository: ReportMetadataRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
@@ -98,7 +98,6 @@ class ReportOrchestrator(
     signalConsoConfiguration: SignalConsoConfiguration,
     companySyncService: CompanySyncServiceInterface,
     engagementRepository: EngagementRepositoryInterface,
-    engagementOrchestrator: EngagementOrchestrator,
     subcategoryLabelRepository: SubcategoryLabelRepositoryInterface,
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
@@ -769,9 +768,9 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def handleReportView(
-      reportExtra: ReportExtra,
+      reportExtra: ReportWithMetadataAndAlbertLabel,
       user: User
-  ): Future[ReportExtra] =
+  ): Future[ReportWithMetadataAndAlbertLabel] =
     if (
       user.userRole == UserRole.Professionnel && user.impersonator.isEmpty && reportExtra.report.status != SuppressionRGPD
     ) {
@@ -965,7 +964,7 @@ class ReportOrchestrator(
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder],
       maxResults: Int
-  ): Future[PaginatedResult[ReportWithFiles]] =
+  ): Future[PaginatedResult[ReportFromSearchWithFiles]] =
     for {
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
         filter.siretSirenList,
@@ -977,10 +976,10 @@ class ReportOrchestrator(
       paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
           Future.successful(
-            PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles])
+            PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportFromSearchWithFiles])
           )
         } else {
-          getReportsWithFile[ReportWithFiles](
+          getReportsWithFile[ReportFromSearchWithFiles](
             Some(connectedUser),
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
@@ -988,11 +987,13 @@ class ReportOrchestrator(
             sortBy,
             orderBy,
             maxResults,
-            (r: ReportWithMetadataAndBookmark, m: Map[UUID, List[ReportFile]]) =>
-              ReportWithFiles(
+            (r: ReportFromSearch, m: Map[UUID, List[ReportFile]]) =>
+              ReportFromSearchWithFiles(
                 SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
-                r.bookmark.isDefined,
+                r.bookmark,
+                r.consumerReview,
+                r.engagementReview,
                 m.getOrElse(r.report.id, Nil)
               )
           )
@@ -1006,7 +1007,7 @@ class ReportOrchestrator(
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithFilesAndResponses]] = {
+  ): Future[PaginatedResult[ReportFromSearchWithFilesAndResponses]] = {
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
     for {
@@ -1027,26 +1028,24 @@ class ReportOrchestrator(
         .getEventsWithUsers(reportsId, filterByReportProResponse)
         .map(events =>
           events.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
-            (reportId, EventWithUser(event, user))
+            (reportId, EventWithUser(event, user.map(_.into[EventUser].withFieldRenamed(_.userRole, _.role).transform)))
           }.toMap
         )
 
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
-      assignedUsers      <- userRepository.findByIds(assignedUsersIds)
-      consumerReviewsMap <- reportConsumerReviewOrchestrator.getReviews(reportsId)
-      engagementReviews  <- engagementOrchestrator.getEngagementReviews(reportsId)
+      assignedUsers <- userRepository.findByIds(assignedUsersIds)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)
         val reportId            = reportWithFiles.report.id
-        ReportWithFilesAndResponses(
+        ReportFromSearchWithFilesAndResponses(
           reportWithFiles.report,
           reportWithFiles.metadata,
-          reportWithFiles.isBookmarked,
-          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
+          reportWithFiles.bookmark,
+          reportWithFiles.consumerReview,
+          reportWithFiles.engagementReview,
           reportWithFiles.files,
-          consumerReviewsMap.getOrElse(reportId, None),
-          engagementReviews.getOrElse(reportId, None),
+          assignedUser = assignedUsers.find(u => maybeAssignedUserId.contains(u.id)).map(MinimalUser.fromUser),
           reportEventsMap.get(reportId)
         )
       }
@@ -1061,7 +1060,7 @@ class ReportOrchestrator(
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder],
       maxResults: Int,
-      toApi: (ReportWithMetadataAndBookmark, Map[UUID, List[ReportFile]]) => T
+      toApi: (ReportFromSearch, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] =
     for {
       _ <- limit match {

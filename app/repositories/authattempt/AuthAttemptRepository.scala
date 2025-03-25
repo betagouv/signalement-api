@@ -57,11 +57,11 @@ class AuthAttemptRepository(
       .filterOpt(login) { case (table, login) =>
         table.login like s"%${login}%"
       }
-      .sortBy(_.timestamp.desc)
       .withPagination(db)(
         maybeOffset = offset,
         maybeLimit = limit,
         maybePreliminaryAction = None
       )
+      .sortBy(_.timestamp.desc)
 
 }

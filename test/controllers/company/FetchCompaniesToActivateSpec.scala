@@ -83,7 +83,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseWithoutPendingReport =
     for {
-      (c, _) <- createCompanyAndToken
+      _ <- createCompanyAndToken
     } yield ()
 
   def setupCaseNewCompany =
@@ -162,7 +162,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
-      (c, a) <- createCompanyAndToken
+      (c, _) <- createCompanyAndToken
       _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
@@ -194,7 +194,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseCompanyNoticeRequired =
     for {
-      (c, a) <- createCompanyAndToken
+      (c, _) <- createCompanyAndToken
       _      <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures

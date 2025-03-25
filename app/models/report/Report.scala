@@ -3,24 +3,15 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
-import models.MinimalUser
-import models.PaginatedResult
-import models.User
 import models.UserRole
 import models.company.Address
-import models.company.Company
-import models.event.Event
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
-import models.report.reportmetadata.ReportMetadata
-import models.report.review.EngagementReview
-import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
-import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -159,66 +150,6 @@ object Report {
     })
 }
 
-case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
-
-object WebsiteURL {
-  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
-  val Empty                                          = WebsiteURL(None, None)
-}
-
-case class ReportWithFiles(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    files: List[ReportFile]
-)
-
-object ReportWithFiles {
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFiles] =
-    Json.writes[ReportWithFiles]
-}
-case class EventWithUser(event: Event, user: Option[User])
-
-case class ReportWithFilesAndAssignedUser(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    assignedUser: Option[MinimalUser],
-    files: List[ReportFileApi],
-    companyAlbertActivityLabel: Option[String]
-)
-object ReportWithFilesAndAssignedUser {
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndAssignedUser] =
-    Json
-      .writes[ReportWithFilesAndAssignedUser]
-      .contramap(r =>
-        userRole match {
-          case Some(UserRole.Professionnel) =>
-            r.copy(companyAlbertActivityLabel = None)
-          case _ => r
-        }
-      )
-}
-
-case class ReportWithFilesAndResponses(
-    report: Report,
-    metadata: Option[ReportMetadata],
-    isBookmarked: Boolean,
-    assignedUser: Option[MinimalUser],
-    files: List[ReportFile],
-    consumerReview: Option[ResponseConsumerReview],
-    engagementReview: Option[EngagementReview],
-    professionalResponse: Option[EventWithUser]
-)
-
-object ReportWithFilesAndResponses {
-  implicit def writerEventWithUser(implicit userRole: Option[UserRole]): OWrites[EventWithUser] =
-    Json.writes[EventWithUser]
-
-  implicit def writer(implicit userRole: Option[UserRole]): OWrites[ReportWithFilesAndResponses] =
-    Json.writes[ReportWithFilesAndResponses]
-}
-
 case class DetailInputValue(
     label: String,
     value: String
@@ -241,25 +172,6 @@ object DetailInputValue {
     case _          => s"${detailInputValue.label} ${detailInputValue.value}"
   }
 
-}
-
-/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
-case class DeprecatedCompanyWithNbReports(company: Company, count: Int)
-
-/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
-object DeprecatedCompanyWithNbReports {
-
-  implicit val companyWithNbReportsWrites: Writes[DeprecatedCompanyWithNbReports] =
-    (data: DeprecatedCompanyWithNbReports) =>
-      Json.obj(
-        "companySiret"   -> data.company.siret,
-        "companyName"    -> data.company.name,
-        "companyAddress" -> Json.toJson(data.company.address),
-        "count"          -> data.count
-      )
-
-  implicit val paginatedCompanyWithNbReportsWriter: OWrites[PaginatedResult[DeprecatedCompanyWithNbReports]] =
-    Json.writes[PaginatedResult[DeprecatedCompanyWithNbReports]]
 }
 
 case class ReportConsumerUpdate(
