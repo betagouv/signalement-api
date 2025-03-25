@@ -6,7 +6,6 @@ import utils.SIREN
 import utils.SIRET
 
 import java.util.UUID
-import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 object CompanyGenerator {
@@ -31,36 +30,39 @@ object CompanyGenerator {
       establishmentCommercialName = Some(s"Nom établissement commercial ${name}")
     )
 
-  def buildLoneCompany(name: String) = {
-    val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
+  def buildLoneCompany(name: String, isHeadOffice: Boolean = true) = {
+    val randomSiren = SIREN(getRandomSiren)
     randomCompany(
       siren = randomSiren,
       name = name,
       address = randomFrenchAddress(),
-      isHeadOffice = true
+      isHeadOffice = isHeadOffice
     )
   }
 
-  def buildMegacorpCompanyAndSubsidiaries(subsidiaryCount: Int) = {
-    val randomSiren = SIREN((100000000 + Random.nextInt(900000000)).toString)
+  def buildHeadOfficeAndThreeSubsidiaries(baseName: String, siren: String): (Company, Company, Company, Company) = {
     val headOffice = randomCompany(
-      siren = randomSiren,
-      name = s"MEGACORP UNLIMITED",
+      siren = SIREN(siren),
+      name = s"$baseName UNLIMITED",
       address = randomFrenchAddress(),
       isHeadOffice = true
     )
-    val companies = ListBuffer(headOffice)
-    for (i <- 1 to subsidiaryCount) {
-      val c = randomCompany(
-        siren = randomSiren,
-        name = s"MEGACORP FILIALE #$i",
+    def buildSubsidiary(n: Int) =
+      randomCompany(
+        siren = SIREN(siren),
+        name = s"$baseName FILIALE #$n",
         address = randomFrenchAddress(),
         isHeadOffice = false
       )
-      companies += c
-    }
-    companies.toList
+    (headOffice, buildSubsidiary(1), buildSubsidiary(2), buildSubsidiary(3))
   }
+
+  def buildMegacorpCompanyAndSubsidiaries() = {
+    val (a, b, c, d) = buildHeadOfficeAndThreeSubsidiaries("MEGACORP", getRandomSiren)
+    List(a, b, c, d)
+  }
+
+  def getRandomSiren = (100000000 + Random.nextInt(900000000)).toString
 
   private def randomFrenchAddress(): Address =
     Address(
