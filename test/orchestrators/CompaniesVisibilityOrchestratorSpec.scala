@@ -26,7 +26,7 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  "CompaniesVisibilityOrchestratorSpec" should {
+  "CompaniesVisibilityOrchestrator" should {
     "fetchVisibleCompanies" should {
       "work as expected" in {
 
@@ -104,12 +104,13 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
         )
 
         for {
-          res <- companiesVisibilityOrchestrator.fetchVisibleCompaniesNewVersion(proUser)
+          res <- companiesVisibilityOrchestrator.fetchVisibleCompanies(proUser)
         } yield res shouldEqual expectedResult
 
       }
     }
 
+    // TODO supprimer ce TU plus tard
     "the old version" should {
       "work like that" in {
 
@@ -167,24 +168,6 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
         when(companyRepository.findBySiren(anyListOf[SIREN]))
           .thenReturn(Future.successful(allCompaniesInDb.filter(_ != inaccessibleUnrelatedCorp)))
 
-//        ProCompaniesWithAccesses(
-//          headOfficesAndSubsidiaries = Map(
-//            CompanyWithAccess(superCorp, ADMIN, Direct) -> List(
-//              CompanyWithAccess(superCorpSubsidiary1, ADMIN, Direct),
-//              CompanyWithAccess(superCorpSubsidiary2, ADMIN, SyntheticAdminAndDirectMember),
-//              CompanyWithAccess(superCorpSubsidiary3, ADMIN, Synthetic)
-//            ),
-//            CompanyWithAccess(maxiCorp, MEMBER, Direct) -> List(
-//              CompanyWithAccess(maxiCorpSubsidiary1, ADMIN, Direct),
-//              CompanyWithAccess(maxiCorpSubsidiary2, MEMBER, Direct),
-//              CompanyWithAccess(maxiCorpSubsidiary3, MEMBER, Synthetic)
-//            )
-//          ),
-//          loneSubsidiaries = List(
-//            CompanyWithAccess(zetaCorpSubsidiary, ADMIN, Direct),
-//            CompanyWithAccess(deltaCorpSubsidiary, MEMBER, Direct)
-//          )
-//        )
         val expectedList = List(
           CompanyWithAccess(superCorp, ADMIN, Direct),
           CompanyWithAccess(superCorpSubsidiary1, ADMIN, Direct),
