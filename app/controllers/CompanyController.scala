@@ -6,7 +6,9 @@ import models._
 import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
+import models.company.CompanyWithAccess
 import models.company.CompanyWithNbReports
+import models.company.CompanyWithAccess.writesAsCompanyWithAdditionalField
 import orchestrators.AlbertOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
@@ -104,13 +106,18 @@ class CompanyController(
   def getCompaniesOfPro() = Act.secured.pros.allowImpersonation.async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompaniesList(request.identity)
-      .map(x => Ok(Json.toJson(x)))
+      .map { x =>
+        implicit val writes: Writes[CompanyWithAccess] = writesAsCompanyWithAdditionalField
+        Ok(Json.toJson(x))
+      }
   }
 
   def getCompaniesOfProExtended() = Act.secured.pros.allowImpersonation.async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
-      .map(x => Ok(Json.toJson(x)))
+      .map { x =>
+        Ok(Json.toJson(x))
+      }
   }
 
   def getActivationDocument() =

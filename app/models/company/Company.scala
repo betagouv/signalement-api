@@ -85,10 +85,14 @@ case class CompanyWithAccess(
 
 object CompanyWithAccess {
 
-  implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
+  implicit val writes: OWrites[CompanyWithAccess] = Json.writes[CompanyWithAccess]
+
+  // legacy writes
+  val writesAsCompanyWithAdditionalField: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
     val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
     companyJson + ("level" -> Json.toJson(companyWithAccess.level))
   }
+
 }
 
 sealed trait CompanyAccessKind extends EnumEntry
