@@ -9,7 +9,6 @@ import models.company.UserAccess
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
-import repositories.companyreportcounts.CompanyReportCountsTable
 import repositories.computeTickValues
 import repositories.user.UserTable
 import slick.basic.DatabaseConfig
