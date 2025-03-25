@@ -12,6 +12,7 @@ import models.event.Event
 import models.report._
 import models.report.sampledata.SampleDataService
 import orchestrators.EmailNotificationOrchestrator
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.Messages
@@ -53,6 +54,7 @@ import scala.concurrent.duration._
 
 class AdminController(
     reportRepository: ReportRepositoryInterface,
+    reportOrchestrator: ReportOrchestrator,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
@@ -183,14 +185,19 @@ class AdminController(
 
       _ <- filteredEvents.map { case (report, responseEvent) =>
         val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
-        mailService.send(
-          ConsumerProResponseNotification.Email(
-            report,
-            responseEvent.details.as[ExistingReportResponse],
-            maybeCompany,
-            controllerComponents.messagesApi
+        for {
+          reattributable <- reportOrchestrator.isReattributable(report)
+          _ <- mailService.send(
+            ConsumerProResponseNotification.Email(
+              report,
+              responseEvent.details.as[ExistingReportResponse],
+              reattributable.isDefined,
+              maybeCompany,
+              controllerComponents.messagesApi
+            )
           )
-        )
+        } yield ()
+
       }.sequence
     } yield ()
 

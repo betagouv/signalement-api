@@ -862,9 +862,16 @@ class ReportOrchestrator(
   ) = {
     val existingReportResponse = reportResponse.toExisting
     for {
-      _ <- mailService.send(ProResponseAcknowledgment.Email(report, existingReportResponse, user))
+      _              <- mailService.send(ProResponseAcknowledgment.Email(report, existingReportResponse, user))
+      reattributable <- isReattributable(report)
       _ <- mailService.send(
-        ConsumerProResponseNotification.Email(report, existingReportResponse, maybeCompany, messagesApi)
+        ConsumerProResponseNotification.Email(
+          report,
+          existingReportResponse,
+          reattributable.isDefined,
+          maybeCompany,
+          messagesApi
+        )
       )
     } yield ()
   }
@@ -1119,7 +1126,7 @@ class ReportOrchestrator(
       report.station.isEmpty &&
       report.companyId.isDefined
 
-  private def isReattributable(report: Report) = for {
+  def isReattributable(report: Report): Future[Option[OffsetDateTime]] = for {
     proEvents <- eventRepository.getEvents(
       report.id,
       EventFilter(eventType = Some(EventType.PRO), action = Some(ActionEvent.REPORT_PRO_RESPONSE))

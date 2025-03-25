@@ -295,13 +295,20 @@ object EmailDefinitionsConsumer {
     override def examples =
       Seq(
         "report_ack_pro_consumer" -> ((recipient, messagesApi) =>
-          Email(genReport.copy(email = recipient), genReportResponse, Some(genCompany), messagesApi)
+          Email(
+            genReport.copy(email = recipient),
+            genReportResponse,
+            isReassignable = false,
+            Some(genCompany),
+            messagesApi
+          )
         )
       )
 
     final case class Email(
         report: Report,
         reportResponse: ExistingReportResponse,
+        isReassignable: Boolean,
         maybeCompany: Option[Company],
         messagesApi: MessagesApi
     ) extends BaseEmail {
@@ -317,6 +324,7 @@ object EmailDefinitionsConsumer {
             report,
             maybeCompany,
             reportResponse,
+            isReassignable,
             frontRoute.website.reportReview(report.id.toString)
           )(messagesProvider, frontRoute)
           .toString

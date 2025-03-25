@@ -86,6 +86,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
             report,
             Some(company),
             reportResponseAccepted.toExisting,
+            isReassignable = false,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -135,6 +136,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
             report,
             Some(company),
             reportResponseAccepted.toExisting,
+            isReassignable = false,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -182,6 +184,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
             report,
             Some(company),
             reportResponseRejected.toExisting,
+            isReassignable = false,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
@@ -229,6 +232,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
             report,
             Some(company),
             reportResponseNotConcerned.toExisting,
+            isReassignable = true,
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
