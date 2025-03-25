@@ -95,6 +95,14 @@ object CompanyWithAccess {
 
 }
 
+case class CompanyWithAccessAndCounts(
+    company: Company,
+    accessLevel: AccessLevel,
+    accessKind: CompanyAccessKind,
+    reportsCount: Long,
+    accessAndCounts: Option[Int]
+)
+
 sealed trait CompanyAccessKind extends EnumEntry
 
 object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
