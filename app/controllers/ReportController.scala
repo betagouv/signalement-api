@@ -132,8 +132,8 @@ class ReportController(
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
       for {
-        reportResponse     <- request.parseBody[IncomingReportResponse]()
-        visibleReport <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        reportResponse <- request.parseBody[IncomingReportResponse]()
+        visibleReport  <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -146,8 +146,8 @@ class ReportController(
   def createReportAction(uuid: UUID): Action[JsValue] =
     Act.secured.adminsAndAgents.forbidImpersonation.async(parse.json) { implicit request =>
       for {
-        reportAction       <- request.parseBody[ReportAction]()
-        report <- reportRepository.getFor(Some(request.identity), uuid)
+        reportAction <- request.parseBody[ReportAction]()
+        report       <- reportRepository.getFor(Some(request.identity), uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))

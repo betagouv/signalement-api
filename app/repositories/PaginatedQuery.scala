@@ -5,17 +5,20 @@ import slick.jdbc.JdbcBackend
 import slick.lifted.Ordered
 import repositories.PostgresProfile.api._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 case class PaginatedQuery[A, B](
-                                 db: JdbcBackend#Database,
-                                 query: slick.lifted.Query[A, B, Seq],
-                                 maybeOffset: Option[Long],
-                                 maybeLimit: Option[Int],
-                                 maybePreliminaryAction: Option[DBIO[Int]]
-                               ) {
+    db: JdbcBackend#Database,
+    query: slick.lifted.Query[A, B, Seq],
+    maybeOffset: Option[Long],
+    maybeLimit: Option[Int],
+    maybePreliminaryAction: Option[DBIO[Int]]
+) {
 
-  private def paginate(maybeSortedQuery: slick.lifted.Query[A, B, Seq])(implicit ec: ExecutionContext): Future[PaginatedResult[B]] = {
+  private def paginate(
+      maybeSortedQuery: slick.lifted.Query[A, B, Seq]
+  )(implicit ec: ExecutionContext): Future[PaginatedResult[B]] = {
     val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
     val limit  = maybeLimit.map(Math.max(_, 0))
 

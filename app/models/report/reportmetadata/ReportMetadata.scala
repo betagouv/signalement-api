@@ -1,7 +1,8 @@
 package models.report.reportmetadata
 
 import models.report.ConsumerIp
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 import java.util.UUID
 

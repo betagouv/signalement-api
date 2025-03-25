@@ -17,7 +17,8 @@ import slick.jdbc.JdbcType
 import utils._
 
 import java.time._
-import java.util.{Locale, UUID}
+import java.util.Locale
+import java.util.UUID
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   implicit val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
@@ -349,8 +350,8 @@ object ReportTable {
     case Some(UserRole.DGCCRF)        => table
     case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
     case Some(UserRole.Professionnel) =>
-            table
-              .filter(_.visibleToPro === true)
-              .filter(_.status.inSetBind(ReportStatus.statusVisibleByPro.map(_.entryName)))
+      table
+        .filter(_.visibleToPro === true)
+        .filter(_.status.inSetBind(ReportStatus.statusVisibleByPro.map(_.entryName)))
   }
 }

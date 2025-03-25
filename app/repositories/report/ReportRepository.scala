@@ -14,7 +14,8 @@ import repositories.barcode.BarcodeProductTable
 import repositories.bookmark.BookmarkTable
 import repositories.company.CompanyTable
 import repositories.report.ReportColumnType._
-import repositories.report.ReportRepository.{ReportOrdering, queryFilter}
+import repositories.report.ReportRepository.ReportOrdering
+import repositories.report.ReportRepository.queryFilter
 import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 import repositories.reportconsumerreview.ResponseConsumerReviewTable
 import repositories.reportengagementreview.ReportEngagementReviewTable
@@ -28,7 +29,10 @@ import repositories.subcategorylabel.SubcategoryLabelTable
 import slick.ast.BaseTypedType
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
-import slick.jdbc.{JdbcProfile, JdbcType, ResultSetConcurrency, ResultSetType}
+import slick.jdbc.JdbcProfile
+import slick.jdbc.JdbcType
+import slick.jdbc.ResultSetConcurrency
+import slick.jdbc.ResultSetType
 import utils.Constants.Departments.toPostalCode
 import utils._
 
@@ -411,11 +415,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       orderBy: Option[SortOrder]
   ): Future[PaginatedResult[ReportFromSearch]] =
     queryFilter(ReportTable.table(user), filter, user)
-    .withPagination(db)(offset, limit, None)
-      .sortBy { t => sortReport(t._1, sortBy, orderBy) }
-    .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
-      ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
-    })
+      .withPagination(db)(offset, limit, None)
+      .sortBy(t => sortReport(t._1, sortBy, orderBy))
+      .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
+        ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+      })
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table
@@ -615,7 +619,8 @@ object ReportRepository {
     qb.sqlBuilder += " AS TEXT[])": Unit
   }
 
-  implicit private val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+  implicit private val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
+    MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
   // N'utilise que les jointures nécessaires au filtrage
   // On pourrait ne pas faire de jointures et faire un EXISTS mais les perfs sont identiques et on remonte directement la donnée avec JOIN
@@ -681,13 +686,13 @@ object ReportRepository {
           .filter(_.matches(SIRET.pattern))
           .map(SIRET.fromUnsafe)
           .distinct) ||
-          (SubstrOptSQLFunction(
-            report.companySiret.asColumnOf[Option[String]],
-            0,
-            10
-          ) inSetBind filter.siretSirenList
-            .filter(_.matches(SIREN.pattern))
-            .distinct)
+        (SubstrOptSQLFunction(
+          report.companySiret.asColumnOf[Option[String]],
+          0,
+          10
+        ) inSetBind filter.siretSirenList
+          .filter(_.matches(SIREN.pattern))
+          .distinct)
       }
       .filterOpt(filter.companyName) { case ((report, _, _, _, _, _), companyName) =>
         report.companyName like s"${companyName}%"
@@ -706,18 +711,18 @@ object ReportRepository {
         // soit dans l'ancienne catégorie à condition que le signalement ait un tag "Internet"
         if (ReportCategory.withName(category) == ReportCategory.AchatInternet) {
           report.category === category ||
-            (
-              report.category === ReportCategory.AchatMagasinInternet.entryName
-                && report.tags @> List[ReportTag](ReportTag.Internet).bind
-              )
+          (
+            report.category === ReportCategory.AchatMagasinInternet.entryName
+              && report.tags @> List[ReportTag](ReportTag.Internet).bind
+          )
           // Condition pour récupérer les achats en magasin soit dans la nouvelle catégorie,
           // soit dans l'ancienne catégorie à condition que le signalement n'ait pas de tag "Internet"
         } else if (ReportCategory.withName(category) == ReportCategory.AchatMagasin) {
           report.category === category ||
-            (
-              report.category === ReportCategory.AchatMagasinInternet.entryName
-                && !(report.tags @> List[ReportTag](ReportTag.Internet).bind)
-              )
+          (
+            report.category === ReportCategory.AchatMagasinInternet.entryName
+              && !(report.tags @> List[ReportTag](ReportTag.Internet).bind)
+          )
         } else {
           report.category === category
         }
@@ -736,7 +741,7 @@ object ReportRepository {
       }
       .filterOpt(filter.details) { case ((report, _, _, _, _, _), details) =>
         val englishQuery = report.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
-        val frenchQuery = report.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
+        val frenchQuery  = report.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
 
         // Optimisation to avoid case and use indexes
         ((report.lang === Locale.ENGLISH) && englishQuery) || ((report.lang.isEmpty || report.lang =!= Locale.ENGLISH) && frenchQuery)

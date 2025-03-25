@@ -4,7 +4,11 @@ import authentication.Authenticator
 import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter.transmittedReportsFilter
-import models.report.{ReportFilter, ReportFilterApi, ReportResponseType, ReportStatus, ReportsCountBySubcategoriesFilter}
+import models.report.ReportFilter
+import models.report.ReportFilterApi
+import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportsCountBySubcategoriesFilter
 import models.report.ReportStatus.statusWithProResponse
 import models.report.delete.ReportAdminActionType
 import orchestrators.CompaniesVisibilityOrchestrator

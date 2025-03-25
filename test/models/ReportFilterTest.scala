@@ -1,6 +1,9 @@
 package models
 
-import models.report.{ReportFilter, ReportFilterApi, ReportStatus, ReportTag}
+import models.report.ReportFilter
+import models.report.ReportFilterApi
+import models.report.ReportStatus
+import models.report.ReportTag
 import org.specs2.mutable.Specification
 import utils.DateUtils
 
@@ -32,7 +35,7 @@ class ReportFilterTest extends Specification {
       ReportFilterApi
         .fromQueryString(Map("websiteURL" -> Seq("domain.com")))
         .map(ReportFilterApi.toReportFilter)
-        .map(_.websiteURL)shouldEqual Success(
+        .map(_.websiteURL) shouldEqual Success(
         expectedResult.websiteURL
       )
     }
@@ -100,7 +103,9 @@ class ReportFilterTest extends Specification {
         "withoutTags"       -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
         "activityCodes"     -> expectedReportFilter.activityCodes.toSeq
       )
-      ReportFilterApi.fromQueryString(input).map(ReportFilterApi.toReportFilter) shouldEqual Success(expectedReportFilter)
+      ReportFilterApi.fromQueryString(input).map(ReportFilterApi.toReportFilter) shouldEqual Success(
+        expectedReportFilter
+      )
     }
 
   }

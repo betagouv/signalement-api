@@ -5,7 +5,10 @@ import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.MalformedQueryParams
 import models._
-import models.report.{ReportFilterApi, ReportFilterProApi, ReportSort, SortOrder}
+import models.report.ReportFilterApi
+import models.report.ReportFilterProApi
+import models.report.ReportSort
+import models.report.SortOrder
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.typed
 import play.api.Logger
@@ -15,7 +18,8 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import utils.QueryStringMapper
 
 import java.time.ZoneId
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ReportListController(
@@ -34,7 +38,8 @@ class ReportListController(
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
 
     val reportFilters = request.identity.userRole match {
-      case UserRole.Professionnel => ReportFilterProApi.fromQueryString(request.queryString).map(ReportFilterProApi.toReportFilter)
+      case UserRole.Professionnel =>
+        ReportFilterProApi.fromQueryString(request.queryString).map(ReportFilterProApi.toReportFilter)
       case _ => ReportFilterApi.fromQueryString(request.queryString).map(ReportFilterApi.toReportFilter)
     }
 
@@ -61,13 +66,13 @@ class ReportListController(
 
   def createReportsSearchExcelExtract = Act.secured.all.allowImpersonation.async { implicit request =>
     val reportFilters = request.identity.userRole match {
-      case UserRole.Professionnel => ReportFilterProApi.fromQueryString(request.queryString).map(ReportFilterProApi.toReportFilter)
+      case UserRole.Professionnel =>
+        ReportFilterProApi.fromQueryString(request.queryString).map(ReportFilterProApi.toReportFilter)
       case _ => ReportFilterApi.fromQueryString(request.queryString).map(ReportFilterApi.toReportFilter)
     }
 
     for {
-      reportFilter <- reportFilters
-        .toOption
+      reportFilter <- reportFilters.toOption
         .liftTo[Future] {
           logger.warn(s"Failed to parse ReportFilter query params")
           throw MalformedQueryParams

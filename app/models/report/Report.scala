@@ -3,16 +3,19 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
-import models.{PaginatedResult, UserRole}
-import models.company.{Address, Company}
+import models.UserRole
+import models.company.Address
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.{Country, EmailAddress, SIRET}
+import utils.Country
+import utils.EmailAddress
+import utils.SIRET
 
 import java.time.OffsetDateTime
-import java.util.{Locale, UUID}
+import java.util.Locale
+import java.util.UUID
 import scala.annotation.nowarn
 
 case class Report(
@@ -169,25 +172,6 @@ object DetailInputValue {
     case _          => s"${detailInputValue.label} ${detailInputValue.value}"
   }
 
-}
-
-/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
-case class DeprecatedCompanyWithNbReports(company: Company, count: Int)
-
-/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
-object DeprecatedCompanyWithNbReports {
-
-  implicit val companyWithNbReportsWrites: Writes[DeprecatedCompanyWithNbReports] =
-    (data: DeprecatedCompanyWithNbReports) =>
-      Json.obj(
-        "companySiret"   -> data.company.siret,
-        "companyName"    -> data.company.name,
-        "companyAddress" -> Json.toJson(data.company.address),
-        "count"          -> data.count
-      )
-
-  implicit val paginatedCompanyWithNbReportsWriter: OWrites[PaginatedResult[DeprecatedCompanyWithNbReports]] =
-    Json.writes[PaginatedResult[DeprecatedCompanyWithNbReports]]
 }
 
 case class ReportConsumerUpdate(

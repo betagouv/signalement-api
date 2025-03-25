@@ -15,7 +15,9 @@ import models._
 import models.company.AccessLevel
 import models.company.Address
 import models.company.Company
-import models.event.{Event, EventUser, EventWithUser}
+import models.event.Event
+import models.event.EventUser
+import models.event.EventWithUser
 import models.event.Event._
 import models.engagement.Engagement
 import models.engagement.Engagement.EngagementReminderPeriod
@@ -766,8 +768,8 @@ class ReportOrchestrator(
     } yield updatedReport
 
   def handleReportView(
-                        reportExtra: ReportWithMetadataAndAlbertLabel,
-                        user: User
+      reportExtra: ReportWithMetadataAndAlbertLabel,
+      user: User
   ): Future[ReportWithMetadataAndAlbertLabel] =
     if (
       user.userRole == UserRole.Professionnel && user.impersonator.isEmpty && reportExtra.report.status != SuppressionRGPD
@@ -1031,7 +1033,7 @@ class ReportOrchestrator(
         )
 
       assignedUsersIds = reportsWithFiles.entities.flatMap(_.metadata.flatMap(_.assignedUserId))
-      assignedUsers      <- userRepository.findByIds(assignedUsersIds)
+      assignedUsers <- userRepository.findByIds(assignedUsersIds)
     } yield reportsWithFiles.copy(
       entities = reportsWithFiles.entities.map { reportWithFiles =>
         val maybeAssignedUserId = reportWithFiles.metadata.flatMap(_.assignedUserId)

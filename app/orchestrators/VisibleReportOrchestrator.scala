@@ -6,7 +6,8 @@ import controllers.error.AppError.ReportNotFound
 import models.UserRole.Professionnel
 import models._
 import models.company.Address
-import models.report.{Report, ReportWithMetadataAndAlbertLabel}
+import models.report.Report
+import models.report.ReportWithMetadataAndAlbertLabel
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -45,10 +46,12 @@ class VisibleReportOrchestrator(
               .fetchVisibleCompanies(user)
               .map(_.map(_.company.siret))
               .map { visibleSirets =>
-                reportExtra.filter(r => r.report.companySiret match {
-                  case Some(siret) => visibleSirets.contains(siret)
-                  case None => false
-                })
+                reportExtra.filter(r =>
+                  r.report.companySiret match {
+                    case Some(siret) => visibleSirets.contains(siret)
+                    case None        => false
+                  }
+                )
               }
         }
     } yield visibleReportExtra
@@ -67,7 +70,7 @@ class VisibleReportOrchestrator(
               .map { visibleSirets =>
                 report.filter(_.companySiret match {
                   case Some(siret) => visibleSirets.contains(siret)
-                  case None => false
+                  case None        => false
                 })
               }
         }

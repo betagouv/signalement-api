@@ -4,9 +4,12 @@ import config.SignalConsoConfiguration
 import io.scalaland.chimney.dsl.TransformationOps
 import models._
 import models.company.AccessLevel
-import models.event.{Event, EventUser, EventWithUser}
+import models.event.Event
+import models.event.EventUser
+import models.event.EventWithUser
 import models.report._
-import models.report.review.{EngagementReview, ResponseConsumerReview}
+import models.report.review.EngagementReview
+import models.report.review.ResponseConsumerReview
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
@@ -15,19 +18,27 @@ import org.apache.pekko.stream.scaladsl.FileIO
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.event.{EventFilter, EventRepositoryInterface}
-import services.{ExcelColumnsService, S3ServiceInterface}
+import repositories.event.EventFilter
+import repositories.event.EventRepositoryInterface
+import services.ExcelColumnsService
+import services.S3ServiceInterface
 import spoiwo.model._
 import spoiwo.model.enums.CellStyleInheritance
 import spoiwo.natures.xlsx.Model2XlsxConversions._
-import utils.DateUtils.{frenchFormatDate, frenchFormatDateAndTime}
+import utils.DateUtils.frenchFormatDate
+import utils.DateUtils.frenchFormatDateAndTime
 import utils.ExcelUtils._
 
-import java.nio.file.{Path, Paths}
-import java.time.{OffsetDateTime, ZoneId}
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Random
+import scala.util.Success
 
 object ReportsExtractActor {
   sealed trait ReportsExtractCommand
@@ -129,7 +140,8 @@ object ReportsExtractActor {
           signalConsoConfiguration.reportsExportLimitMax
         )
       reportIds = paginatedReports.entities.map(_.report.id)
-      reportEventsMap      <- eventRepository.getEventsWithUsers(reportIds, EventFilter.Empty)
+      reportEventsMap <- eventRepository
+        .getEventsWithUsers(reportIds, EventFilter.Empty)
         .map {
           _.collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
             (reportId, EventWithUser(event, user.map(_.into[EventUser].withFieldRenamed(_.userRole, _.role).transform)))
@@ -144,21 +156,22 @@ object ReportsExtractActor {
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
-            paginatedReports.entities.map { case ReportFromSearchWithFiles(report, _, _, consumerReview, engagementReview, files) =>
-              Row().withCells(
-                reportColumns
-                  .map(
-                    _.extractStringValue(
-                      report,
-                      files,
-                      reportEventsMap.getOrElse(report.id, Nil),
-                      consumerReview,
-                      engagementReview,
-                      report.companyId.flatMap(companyAdminsMap.get).getOrElse(Nil)
+            paginatedReports.entities.map {
+              case ReportFromSearchWithFiles(report, _, _, consumerReview, engagementReview, files) =>
+                Row().withCells(
+                  reportColumns
+                    .map(
+                      _.extractStringValue(
+                        report,
+                        files,
+                        reportEventsMap.getOrElse(report.id, Nil),
+                        consumerReview,
+                        engagementReview,
+                        report.companyId.flatMap(companyAdminsMap.get).getOrElse(Nil)
+                      )
                     )
-                  )
-                  .map(StringCell(_, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet))
-              )
+                    .map(StringCell(_, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet))
+                )
             }
         )
         .withColumns(reportColumns.map(_.column))
