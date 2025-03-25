@@ -92,18 +92,6 @@ class CompaniesVisibilityOrchestrator(
       )
     } yield proCompaniesWithAllAccesses
 
-  // TODO remove this  legacy function
-  def fetchVisibleCompaniesLegacy(pro: User): Future[List[CompanyWithAccess]] =
-    for {
-      authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      headOfficeSirets = authorizedCompanies.filter(_.company.isHeadOffice).map(_.company.siret)
-      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.fromSIRET))
-      companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
-      accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
-        .distinctBy(_.company.siret)
-        .sortBy(_.company.siret.value)
-    } yield accessiblesCompanies
-
   def fetchVisibleCompaniesList(pro: User): Future[List[CompanyWithAccess]] =
     for {
       proCompaniesWithAccesses <- fetchVisibleCompanies(pro)
@@ -162,30 +150,6 @@ class CompaniesVisibilityOrchestrator(
       loneSubsidiaries = toFill.loneSubsidiaries.map(withAccess)
     )
 
-  }
-
-  private[this] def addAccessToSubsidiaries(
-      authorizedCompaniesWithAccesses: List[CompanyWithAccess],
-      accessibleSubsidiaries: List[Company]
-  ) = {
-    val levelPriority = Map(
-      AccessLevel.ADMIN  -> 1,
-      AccessLevel.MEMBER -> 0
-    ).withDefaultValue(-1)
-    val getLevelBySiren = authorizedCompaniesWithAccesses
-      .groupMapReduce(c => SIREN.fromSIRET(c.company.siret))(_.level)((a, b) =>
-        if (levelPriority(a) > levelPriority(b)) a else b
-      )
-      .withDefaultValue(AccessLevel.NONE)
-    accessibleSubsidiaries.map(c =>
-      CompanyWithAccess(
-        c,
-        getLevelBySiren(SIREN.fromSIRET(c.siret)),
-
-        // @@@ this is false, but we should erase this function in the end
-        kind = CompanyAccessKind.Direct
-      )
-    )
   }
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
