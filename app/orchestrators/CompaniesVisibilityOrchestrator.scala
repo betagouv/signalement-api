@@ -72,6 +72,17 @@ class CompaniesVisibilityOrchestrator(
       (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
 
+  def fetchVisibleCompaniesExtended(pro: User) =
+    for {
+      proCompanies <- fetchVisibleCompanies(pro: User)
+      allCompaniesIds             = proCompanies.toSimpleList.map(_.company.id)
+      companiesWithAdminAccessIds = proCompanies.toSimpleList.filter(_.level == ADMIN).map(_.company.id)
+      reportsCounts <- companyRepo.getReportsCounts(allCompaniesIds)
+      directAccessesCounts <- companyAccessRepository.countAccesses(
+        companiesWithAdminAccessIds
+      )
+    } yield ???
+
   def fetchVisibleCompanies(pro: User) =
     for {
       companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
