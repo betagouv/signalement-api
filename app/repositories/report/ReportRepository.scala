@@ -7,13 +7,10 @@ import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
-import models.report.reportmetadata.ReportMetadata
-import models.report.reportmetadata.ReportWithMetadataAndBookmark
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.PostgresProfile.api._
 import repositories.barcode.BarcodeProductTable
-import repositories.bookmark.Bookmark
 import repositories.bookmark.BookmarkTable
 import repositories.company.CompanyTable
 import repositories.report.ReportColumnType._
@@ -29,9 +26,11 @@ import repositories.CRUDRepository
 import repositories.PaginateOps
 import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subcategorylabel.SubcategoryLabelTable
+import slick.ast.BaseTypedType
 import slick.basic.DatabaseConfig
 import slick.basic.DatabasePublisher
 import slick.jdbc.JdbcProfile
+import slick.jdbc.JdbcType
 import slick.jdbc.ResultSetConcurrency
 import slick.jdbc.ResultSetType
 import utils.Constants.Departments.toPostalCode
@@ -194,13 +193,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db
       .run(
         queryFilter(ReportTable.table(user), filter, user)
-          .filter { case (report, _, _, _) =>
+          .filter { case (report, _, _, _, _, _) =>
             report.creationDate > OffsetDateTime
               .now()
               .minusMonths(ticks.toLong)
               .withDayOfMonth(1)
           }
-          .groupBy { case (report, _, _, _) =>
+          .groupBy { case (report, _, _, _, _, _) =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
           }
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -212,8 +211,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   def getWeeklyCount(user: Option[User], filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
     db.run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
-        .groupBy { case (report, _, _, _) =>
+        .filter { case (report, _, _, _, _, _) => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong) }
+        .groupBy { case (report, _, _, _, _, _) =>
           (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
         }
         .map { case ((week, year), group) =>
@@ -243,8 +242,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(ReportTable.table(user), filter, user)
-        .filter { case (report, _, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
-        .groupBy { case (report, _, _, _) =>
+        .filter { case (report, _, _, _, _, _) => report.creationDate > OffsetDateTime.now().minusDays(11) }
+        .groupBy { case (report, _, _, _, _, _) =>
           (
             DatePartSQLFunction("day", report.creationDate),
             DatePartSQLFunction("month", report.creationDate),
@@ -379,11 +378,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
       queryResult <- queryFilter(ReportTable.table(user), filter, user)
-        .map { case (report, _, _, _) => report }
+        .map { case (report, _, _, _, _, _) => report }
         .joinLeft(ReportFileTable.table)
         .on { case (report, reportFile) => report.id === reportFile.reportId }
-        .sortBy { case (report, _) => report.creationDate.desc }
         .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
+        .sortBy { case (report, _) => report.creationDate.desc }
       res = queryResult.entities
         .groupBy(a => a._1)
         .view
@@ -414,20 +413,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       limit: Option[Int],
       sortBy: Option[ReportSort],
       orderBy: Option[SortOrder]
-  ): Future[PaginatedResult[ReportWithMetadataAndBookmark]] = for {
-    reportsAndMetadatas <- queryFilter(ReportTable.table(user), filter, user)
-      .sortBy { case (report, _, _, _) => sortReport(report, sortBy, orderBy) }
-      .withPagination(db)(offset, limit)
-    reportsWithMetadata = reportsAndMetadatas.mapEntities {
-      case (
-            report: Report,
-            metadata: Option[ReportMetadata],
-            bookmark: Option[Bookmark],
-            subcategoryLabel: Option[SubcategoryLabel]
-          ) =>
-        ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
-    }
-  } yield reportsWithMetadata
+  ): Future[PaginatedResult[ReportFromSearch]] =
+    queryFilter(ReportTable.table(user), filter, user)
+      .withPagination(db)(offset, limit, None)
+      .sortBy(t => sortReport(t._1, sortBy, orderBy))
+      .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
+        ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+      })
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table
@@ -531,45 +523,44 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       }
       .groupBy(a => (a.phone, a.companySiret, a.companyName))
       .map { case (a, b) => (a, b.length) }
-      .sortBy(_._2.desc)
       .withPagination(db)(
         maybeOffset = offset,
         maybeLimit = limit,
         maybePreliminaryAction = None
       )
+      .sortBy(_._2.desc)
 
-  override def getFor(user: Option[User], id: UUID): Future[Option[ReportWithMetadataAndBookmark]] =
-    for {
-      maybeTuple <- db.run(
-        ReportTable
-          .table(user)
-          .filter(_.id === id)
-          .joinLeft(ReportMetadataTable.table)
-          .on(_.id === _.reportId)
-          .joinLeft(BookmarkTable.table)
-          .on { case ((report, _), bookmark) =>
-            bookmark.userId === user.map(_.id) && report.id === bookmark.reportId
-          }
-          .joinLeft(SubcategoryLabelTable.table)
-          .on { case (((report, _), _), subcategoryLabel) =>
-            report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
-          }
-          .map { case (((report, metadata), bookmark), subcategoryLabel) =>
-            (report, metadata, bookmark, subcategoryLabel)
-          }
-          .result
-          .headOption
-      )
-      maybeReportWithMetadata = maybeTuple.map {
-        case (
-              report: Report,
-              metadata: Option[ReportMetadata],
-              bookmark: Option[Bookmark],
-              subcategoryLabel: Option[SubcategoryLabel]
-            ) =>
-          ReportWithMetadataAndBookmark.from(report, metadata, bookmark, subcategoryLabel)
-      }
-    } yield maybeReportWithMetadata
+  override def getFor(user: Option[User], id: UUID): Future[Option[Report]] =
+    db.run(
+      ReportTable
+        .table(user)
+        .filter(_.id === id)
+        .result
+        .headOption
+    )
+
+  override def getForWithMetadata(user: Option[User], id: UUID): Future[Option[ReportWithMetadata]] =
+    db.run(
+      ReportTable
+        .table(user)
+        .filter(_.id === id)
+        .joinLeft(SubcategoryLabelTable.table)
+        .on { case (report, subcategoryLabel) =>
+          report.category === subcategoryLabel.category && report.subcategories === subcategoryLabel.subcategories
+        }
+        .joinLeft(BookmarkTable.table)
+        .on { case ((report, _), bookmark) =>
+          bookmark.userId === user.map(_.id) && report.id === bookmark.reportId
+        }
+        .joinLeft(ReportMetadataTable.table)
+        .on { case (((report, _), _), metadata) =>
+          report.id === metadata.reportId
+        }
+        .result
+        .headOption
+    ).map(_.map { case (((report, subcategoryLabel), bookmark), metadata) =>
+      ReportWithMetadata(report, metadata, bookmark, subcategoryLabel)
+    })
 
   override def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]] =
     db.run(
@@ -615,7 +606,7 @@ object ReportRepository {
       List(
         if (filter.tags.isEmpty) None else Some(table.tags @& filter.tags.bind),
         filter.category.map(category => table.category === category.entryName)
-      ).collect { case Some(f) => f }.reduceLeftOption(_ || _).getOrElse(default)
+      ).flatten.reduceLeftOption(_ || _).getOrElse(default)
     }
   }
 
@@ -628,212 +619,199 @@ object ReportRepository {
     qb.sqlBuilder += " AS TEXT[])": Unit
   }
 
+  implicit private val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
+    MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+
+  // N'utilise que les jointures nécessaires au filtrage
+  // On pourrait ne pas faire de jointures et faire un EXISTS mais les perfs sont identiques et on remonte directement la donnée avec JOIN
   def queryFilter(
       table: Query[ReportTable, Report, Seq],
       filter: ReportFilter,
       maybeUser: Option[User]
-  ): Query[
-    (ReportTable, Rep[Option[ReportMetadataTable]], Rep[Option[BookmarkTable]], Rep[Option[SubcategoryLabelTable]]),
-    (Report, Option[ReportMetadata], Option[Bookmark], Option[SubcategoryLabel]),
-    Seq
-  ] = {
-    implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
-
+  ) = {
     table
-      .filterOpt(filter.email) { case (table, email) =>
-        table.email === EmailAddress(email)
+      .joinLeft(ReportMetadataTable.table)
+      .on(_.id === _.reportId)
+      .joinLeft(BookmarkTable.table)
+      .on { case ((report, _), bookmark) =>
+        bookmark.userId === maybeUser.map(_.id) && report.id === bookmark.reportId
       }
-      .filterOpt(filter.consumerPhone) { case (table, consumerPhone) =>
-        table.consumerPhone === consumerPhone
+      .joinLeft(ResponseConsumerReviewTable.table)
+      .on { case (((report, _), _), consumerReview) =>
+        report.id === consumerReview.reportId
       }
-      .filterOpt(filter.hasConsumerPhone) { case (table, hasConsumerPhone) =>
-        table.consumerPhone.isDefined === hasConsumerPhone
+      .joinLeft(ReportEngagementReviewTable.table)
+      .on { case ((((report, _), _), _), engagementReview) =>
+        report.id === engagementReview.reportId
       }
-      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
-        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      .joinLeft(SubcategoryLabelTable.table)
+      .on { case (((((report, _), _), _), _), subcategoryLabel) =>
+        subcategoryLabel.category === report.category && subcategoryLabel.subcategories === report.subcategories
       }
-      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
-        table.websiteURL.isDefined === websiteRequired
+      .map { case (((((report, metadata), bookmark), consumerReview), engagementReview), subcategoryLabel) =>
+        (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
       }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      .filterOpt(filter.email) { case ((report, _, _, _, _, _), email) =>
+        report.email === EmailAddress(email)
       }
-      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
-        table.phone.isDefined === phoneRequired
+      .filterOpt(filter.consumerPhone) { case ((report, _, _, _, _, _), consumerPhone) =>
+        report.consumerPhone === consumerPhone
       }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
+      .filterOpt(filter.hasConsumerPhone) { case ((report, _, _, _, _, _), hasConsumerPhone) =>
+        report.consumerPhone.isDefined === hasConsumerPhone
       }
-      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
-        table.companyCountry.isDefined === hasForeignCountry
+      .filterOpt(filter.websiteURL) { case ((report, _, _, _, _, _), websiteURL) =>
+        report.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
       }
-      .filterIf(filter.companyIds.nonEmpty)(_.companyId inSetBind filter.companyIds)
-      .filterIf(filter.siretSirenList.nonEmpty) { table =>
-        (table.companySiret inSetBind filter.siretSirenList
+      .filterOpt(filter.hasWebsite) { case ((report, _, _, _, _, _), websiteRequired) =>
+        report.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.phone) { case ((report, _, _, _, _, _), reportedPhone) =>
+        report.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      }
+      .filterOpt(filter.hasPhone) { case ((report, _, _, _, _, _), phoneRequired) =>
+        report.phone.isDefined === phoneRequired
+      }
+      .filterOpt(filter.hasCompany) { case ((report, _, _, _, _, _), hasCompany) =>
+        report.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.hasForeignCountry) { case ((report, _, _, _, _, _), hasForeignCountry) =>
+        report.companyCountry.isDefined === hasForeignCountry
+      }
+      .filterIf(filter.companyIds.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyId inSetBind filter.companyIds
+      }
+      .filterIf(filter.siretSirenList.nonEmpty) { case (report, _, _, _, _, _) =>
+        (report.companySiret inSetBind filter.siretSirenList
           .filter(_.matches(SIRET.pattern))
           .map(SIRET.fromUnsafe)
           .distinct) ||
         (SubstrOptSQLFunction(
-          table.companySiret.asColumnOf[Option[String]],
+          report.companySiret.asColumnOf[Option[String]],
           0,
           10
         ) inSetBind filter.siretSirenList
           .filter(_.matches(SIREN.pattern))
           .distinct)
       }
-      .filterOpt(filter.siretSirenDefined) { case (table, siretSirenDefined) =>
-        table.companySiret.isDefined === siretSirenDefined
+      .filterOpt(filter.companyName) { case ((report, _, _, _, _, _), companyName) =>
+        report.companyName like s"${companyName}%"
       }
-      .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
+      .filterIf(filter.companyCountries.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyCountry.inSet(filter.companyCountries.map(Country.fromCode))
       }
-      .filterIf(filter.companyCountries.nonEmpty) { table =>
-        table.companyCountry
-          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
+      .filterOpt(filter.start) { case ((report, _, _, _, _, _), start) =>
+        report.creationDate >= start
       }
-      .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= start
+      .filterOpt(filter.end) { case ((report, _, _, _, _, _), end) =>
+        report.creationDate < end
       }
-      .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < end
-      }
-      .filterOpt(filter.category) { case (table, category) =>
+      .filterOpt(filter.category) { case ((report, _, _, _, _, _), category) =>
         // Condition pour récupérer les achats en sur internet soit dans la nouvelle catégorie,
         // soit dans l'ancienne catégorie à condition que le signalement ait un tag "Internet"
         if (ReportCategory.withName(category) == ReportCategory.AchatInternet) {
-          table.category === category ||
+          report.category === category ||
           (
-            table.category === ReportCategory.AchatMagasinInternet.entryName
-              && table.tags @> List[ReportTag](ReportTag.Internet).bind
+            report.category === ReportCategory.AchatMagasinInternet.entryName
+              && report.tags @> List[ReportTag](ReportTag.Internet).bind
           )
           // Condition pour récupérer les achats en magasin soit dans la nouvelle catégorie,
           // soit dans l'ancienne catégorie à condition que le signalement n'ait pas de tag "Internet"
         } else if (ReportCategory.withName(category) == ReportCategory.AchatMagasin) {
-          table.category === category ||
+          report.category === category ||
           (
-            table.category === ReportCategory.AchatMagasinInternet.entryName
-              && !(table.tags @> List[ReportTag](ReportTag.Internet).bind)
+            report.category === ReportCategory.AchatMagasinInternet.entryName
+              && !(report.tags @> List[ReportTag](ReportTag.Internet).bind)
           )
         } else {
-          table.category === category
+          report.category === category
         }
       }
-      .filterIf(filter.subcategories.nonEmpty) { table =>
-        castVarCharArrayToTextArray(table.subcategories) @> filter.subcategories.toList.bind
+      .filterIf(filter.subcategories.nonEmpty) { case (report, _, _, _, _, _) =>
+        castVarCharArrayToTextArray(report.subcategories) @> filter.subcategories.toList.bind
       }
-      .filterIf(filter.status.nonEmpty)(table => table.status.inSetBind(filter.status.map(_.entryName)))
-      .filterIf(filter.withTags.nonEmpty) { table =>
-        table.tags @& filter.withTags.toList.bind
+      .filterIf(filter.status.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.status.inSetBind(filter.status.map(_.entryName))
       }
-      .filterNot { table =>
-        table.tags @& filter.withoutTags.toList.bind
+      .filterIf(filter.withTags.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.tags @& filter.withTags.toList.bind
       }
-      .filterOpt(filter.details) { case (table, details) =>
-        val englishQuery = table.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
-        val frenchQuery  = table.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
+      .filterNotIf(filter.withoutTags.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.tags @& filter.withoutTags.toList.bind
+      }
+      .filterOpt(filter.details) { case ((report, _, _, _, _, _), details) =>
+        val englishQuery = report.adminSearchColumn @@ plainToTsQuery(details, Some("english"))
+        val frenchQuery  = report.adminSearchColumn @@ plainToTsQuery(details, Some("french"))
 
         // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
+        ((report.lang === Locale.ENGLISH) && englishQuery) || ((report.lang.isEmpty || report.lang =!= Locale.ENGLISH) && frenchQuery)
       }
-      .filterOpt(filter.description) { case (table, description) =>
-        // unique separator use to match the string between  "Description :" et and separator
-        val uniqueSeparator = UUID.randomUUID().toString
-        ArrayToStringSQLFunction(
-          table.details,
-          uniqueSeparator,
-          ""
-        ) regexLike s".*Description :.*$description.*$uniqueSeparator"
+      // Grosse optimisation. Force Postgres à utiliser l'index de full text search.
+      // Seul cas où c'est beaucoup plus rapide que d'utiliser l'index sur la creation_date
+      .optimiseFullTextSearch(filter.details.isDefined)
+      .filterOpt(filter.employeeConsumer) { case ((report, _, _, _, _, _), employeeConsumer) =>
+        report.employeeConsumer === employeeConsumer
       }
-      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
-        table.employeeConsumer === employeeConsumer
+      .filterOpt(filter.contactAgreement) { case ((report, _, _, _, _, _), contactAgreement) =>
+        report.contactAgreement === contactAgreement
       }
-      .filterOpt(filter.contactAgreement) { case (table, contactAgreement) =>
-        table.contactAgreement === contactAgreement
-      }
-      .filterOpt(filter.hasAttachment) { case (table, hasAttachment) =>
+      .filterOpt(filter.hasAttachment) { case ((report, _, _, _, _, _), hasAttachment) =>
         val exists = ReportFileTable.table
-          .filter(x => x.reportId === table.id)
+          .filter(x => x.reportId === report.id)
           .map(_.reportId)
           .exists
         if (hasAttachment) exists else !exists
       }
-      .filterOpt(filter.hasResponseEvaluation) { case (table, hasEvaluation) =>
-        val exists = ResponseConsumerReviewTable.table
-          .filter(x => x.reportId === table.id)
-          .map(_.reportId)
-          .exists
-        if (hasEvaluation) exists else !exists
-      }
-      .filterIf(filter.responseEvaluation.nonEmpty) { table =>
-        ResponseConsumerReviewTable.table
-          .filter(_.reportId === table.id)
-          .filter(_.evaluation.inSet(filter.responseEvaluation))
-          .exists
-      }
-      .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
-        val exists = ReportEngagementReviewTable.table
-          .filter(x => x.reportId === table.id)
-          .map(_.reportId)
-          .exists
-        if (hasEngagementEvaluation) exists else !exists
-      }
-      .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
-        ReportEngagementReviewTable.table
-          .filter(_.reportId === table.id)
-          .filter(_.evaluation.inSet(filter.engagementEvaluation))
-          .exists
-      }
-      .filterIf(filter.departments.nonEmpty) { table =>
+      .filterIf(filter.departments.nonEmpty) { case (report, _, _, _, _, _) =>
         val departmentsFilter: Rep[Boolean] = filter.departments
           .flatMap(toPostalCode)
-          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
+          .map(dep => report.companyPostalCode.asColumnOf[String] like s"${dep}%")
           .reduceLeft(_ || _)
         // Avoid searching departments in foreign countries
-        departmentsFilter && table.companyCountry.isEmpty
+        departmentsFilter && report.companyCountry.isEmpty
 
       }
-      .filterIf(filter.activityCodes.nonEmpty) { table =>
-        table.companyActivityCode.inSetBind(filter.activityCodes)
+      .filterIf(filter.activityCodes.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.companyActivityCode.inSetBind(filter.activityCodes)
       }
-      .filterOpt(filter.visibleToPro) { case (table, visibleToPro) =>
-        table.visibleToPro === visibleToPro
+      .filterOpt(filter.visibleToPro) { case ((report, _, _, _, _, _), visibleToPro) =>
+        report.visibleToPro === visibleToPro
       }
-      .filterOpt(filter.isForeign) { case (table, isForeign) =>
-        if (isForeign) table.lang =!= Locale.FRENCH else table.lang === Locale.FRENCH || table.lang.isEmpty
+      .filterOpt(filter.isForeign) { case ((report, _, _, _, _, _), isForeign) =>
+        if (isForeign) report.lang =!= Locale.FRENCH else report.lang === Locale.FRENCH || report.lang.isEmpty
       }
-      .filterOpt(filter.hasBarcode) { case (table, barcodeRequired) =>
-        table.barcodeProductId.isDefined === barcodeRequired
+      .filterOpt(filter.hasBarcode) { case ((report, _, _, _, _, _), barcodeRequired) =>
+        report.barcodeProductId.isDefined === barcodeRequired
       }
-      .filterOpt(filter.fullText) { case (table, fullText) =>
+      .filterOpt(filter.fullText) { case ((report, _, _, _, _, _), fullText) =>
         val englishQuery =
-          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
-            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+          (report.contactAgreement && report.proSearchColumn @@ plainToTsQuery(fullText, Some("english"))) ||
+            report.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
 
         val frenchQuery =
-          (table.contactAgreement && table.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
-            table.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
+          (report.contactAgreement && report.proSearchColumn @@ plainToTsQuery(fullText, Some("french"))) ||
+            report.proSearchColumnWithoutConsumer @@ plainToTsQuery(fullText)
 
         // Optimisation to avoid case and use indexes
-        ((table.lang === Locale.ENGLISH) && englishQuery) || ((table.lang.isEmpty || table.lang =!= Locale.ENGLISH) && frenchQuery)
+        ((report.lang === Locale.ENGLISH) && englishQuery) || ((report.lang.isEmpty || report.lang =!= Locale.ENGLISH) && frenchQuery)
       }
-      .joinLeft(ReportMetadataTable.table)
-      .on(_.id === _.reportId)
-      .filterOpt(filter.assignedUserId) { case ((_, maybeMetadataTable), assignedUserid) =>
-        maybeMetadataTable.flatMap(_.assignedUserId) === assignedUserid
+      .filterOpt(filter.assignedUserId) { case (table, assignedUserid) =>
+        table._2.flatMap(_.assignedUserId) === assignedUserid
       }
-      .joinLeft(BookmarkTable.table)
-      .on { case ((report, _), bookmark) =>
-        bookmark.userId === maybeUser.map(_.id) && report.id === bookmark.reportId
+      .filterOpt(filter.isBookmarked) { case (table, isBookmarked) =>
+        table._3.isDefined === isBookmarked
       }
-      .joinLeft(SubcategoryLabelTable.table)
-      .on { case (((report, _), _), subcategoryLabel) =>
-        subcategoryLabel.category === report.category && subcategoryLabel.subcategories === report.subcategories
+      .filterOpt(filter.hasResponseEvaluation) { case (table, hasEvaluation) =>
+        table._4.isDefined === hasEvaluation
       }
-      .map { case (((report, metadata), bookmark), subcategoryLabel) => (report, metadata, bookmark, subcategoryLabel) }
-      .filterOpt(filter.isBookmarked) { case ((_, _, bookmark, _), isBookmarked) =>
-        val bookmarkExists = bookmark.isDefined
-        if (isBookmarked) bookmarkExists else !bookmarkExists
+      .filterIf(filter.responseEvaluation.nonEmpty) { table =>
+        table._4.map(_.evaluation).inSetBind(filter.responseEvaluation)
+      }
+      .filterOpt(filter.hasEngagementEvaluation) { case (table, hasEngagementEvaluation) =>
+        table._5.isDefined === hasEngagementEvaluation
+      }
+      .filterIf(filter.engagementEvaluation.nonEmpty) { table =>
+        table._5.map(_.evaluation).inSetBind(filter.engagementEvaluation)
       }
   }
-
 }

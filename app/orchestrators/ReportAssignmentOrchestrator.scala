@@ -5,8 +5,8 @@ import controllers.error.AppError
 import models.User
 import models.event.Event
 import models.report.Report
+import models.report.ReportWithMetadataAndAlbertLabel
 import models.report.reportmetadata.ReportComment
-import models.report.reportmetadata.ReportExtra
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventRepositoryInterface
@@ -41,7 +41,7 @@ class ReportAssignmentOrchestrator(
   ): Future[User] = {
     val assigningToSelf = assigningUser.id == newAssignedUserId
     for {
-      maybeReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(reportId, assigningUser)
+      maybeReportExtra <- visibleReportOrchestrator.getVisibleReportForUserWithExtra(reportId, assigningUser)
       reportExtra      <- maybeReportExtra.liftTo[Future](AppError.ReportNotFound(reportId))
       newAssignedUser  <- checkAssignableToUser(reportExtra, newAssignedUserId)
       _                <- reportMetadataRepository.setAssignedUser(reportId, newAssignedUserId)
@@ -61,7 +61,7 @@ class ReportAssignmentOrchestrator(
   }
 
   private def checkAssignableToUser(
-      reportExtra: ReportExtra,
+      reportExtra: ReportWithMetadataAndAlbertLabel,
       newAssignedUserId: UUID
   ): Future[User] = {
     val reportId               = reportExtra.report.id

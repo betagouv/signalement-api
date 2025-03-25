@@ -1,6 +1,7 @@
 package models
 
 import models.report.ReportFilter
+import models.report.ReportFilterApi
 import models.report.ReportStatus
 import models.report.ReportTag
 import org.specs2.mutable.Specification
@@ -18,26 +19,33 @@ class ReportFilterTest extends Specification {
 
     "fromQueryString should parse empty map" in {
       val emptyFilter = ReportFilter()
-      ReportFilter.fromQueryString(Map.empty) shouldEqual Success(emptyFilter)
+      ReportFilterApi.fromQueryString(Map.empty).map(ReportFilterApi.toReportFilter) shouldEqual Success(emptyFilter)
     }
 
     "fromQueryString should parse website http://www.domain.com as domain.com" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
-      ReportFilter
+      ReportFilterApi
         .fromQueryString(Map("websiteURL" -> Seq("http://www.domain.com")))
+        .map(ReportFilterApi.toReportFilter)
         .map(_.websiteURL) shouldEqual Success(expectedResult.websiteURL)
     }
 
     "fromQueryString should parse website domain.com as domain.com" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
-      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain.com"))).map(_.websiteURL) shouldEqual Success(
+      ReportFilterApi
+        .fromQueryString(Map("websiteURL" -> Seq("domain.com")))
+        .map(ReportFilterApi.toReportFilter)
+        .map(_.websiteURL) shouldEqual Success(
         expectedResult.websiteURL
       )
     }
 
     "fromQueryString should parse website domain as domain" in {
       val expectedResult = ReportFilter(websiteURL = Some("domain"))
-      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain"))).map(_.websiteURL) shouldEqual Success(
+      ReportFilterApi
+        .fromQueryString(Map("websiteURL" -> Seq("domain")))
+        .map(ReportFilterApi.toReportFilter)
+        .map(_.websiteURL) shouldEqual Success(
         expectedResult.websiteURL
       )
     }
@@ -95,7 +103,9 @@ class ReportFilterTest extends Specification {
         "withoutTags"       -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
         "activityCodes"     -> expectedReportFilter.activityCodes.toSeq
       )
-      ReportFilter.fromQueryString(input) shouldEqual Success(expectedReportFilter)
+      ReportFilterApi.fromQueryString(input).map(ReportFilterApi.toReportFilter) shouldEqual Success(
+        expectedReportFilter
+      )
     }
 
   }

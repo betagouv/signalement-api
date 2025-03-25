@@ -132,9 +132,8 @@ class ReportController(
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       logger.debug(s"reportResponse ${uuid}")
       for {
-        reportResponse     <- request.parseBody[IncomingReportResponse]()
-        visibleReportExtra <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
-        visibleReport = visibleReportExtra.map(_.report)
+        reportResponse <- request.parseBody[IncomingReportResponse]()
+        visibleReport  <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -147,9 +146,8 @@ class ReportController(
   def createReportAction(uuid: UUID): Action[JsValue] =
     Act.secured.adminsAndAgents.forbidImpersonation.async(parse.json) { implicit request =>
       for {
-        reportAction       <- request.parseBody[ReportAction]()
-        reportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
-        report = reportWithMetadata.map(_.report)
+        reportAction <- request.parseBody[ReportAction]()
+        report       <- reportRepository.getFor(Some(request.identity), uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -164,7 +162,7 @@ class ReportController(
     Act.secured.all.allowImpersonation.async { implicit request =>
       implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
       for {
-        maybeReportWithMetadata <- visibleReportOrchestrator.getVisibleReportForUser(uuid, request.identity)
+        maybeReportWithMetadata <- visibleReportOrchestrator.getVisibleReportForUserWithExtra(uuid, request.identity)
         viewedReportWithMetadata <- maybeReportWithMetadata
           .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
           .getOrElse(Future.successful(None))
@@ -180,7 +178,7 @@ class ReportController(
         .map(r =>
           Ok(
             Json.toJson(
-              ReportWithFilesAndAssignedUser(
+              ReportWithMetadataAndAlbertLabelAndFiles(
                 SubcategoryLabel.translateSubcategories(r.report, r.subcategoryLabel),
                 r.metadata,
                 r.bookmark.isDefined,
@@ -286,7 +284,7 @@ class ReportController(
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
     Act.secured.adminsAndReadonly.async { implicit request =>
       for {
-        maybeReportWithMetadata <- reportRepository.getFor(Some(request.identity), uuid)
+        maybeReportWithMetadata <- reportRepository.getForWithMetadata(Some(request.identity), uuid)
         company <- maybeReportWithMetadata.flatMap(_.report.companyId).flatTraverse(r => companyRepository.get(r))
         files   <- reportFileRepository.retrieveReportFiles(uuid)
         events <- eventsOrchestrator.getReportsEvents(
@@ -294,7 +292,7 @@ class ReportController(
           eventType = None,
           user = request.identity
         )
-        proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
+        proResponseEvent = events.find(_.event.action == REPORT_PRO_RESPONSE)
         source = maybeReportWithMetadata
           .map { reportWithMetadata =>
             val lang = Lang(reportWithMetadata.report.lang.getOrElse(Locale.FRENCH))
@@ -310,7 +308,7 @@ class ReportController(
                 frontRoute,
                 messagesProvider
               )
-            val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.data))
+            val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.event))
             Seq(notificationHtml, proResponseHtml)
           }
           .map(pdfService.createPdfSource)
