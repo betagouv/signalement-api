@@ -6,6 +6,7 @@ import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
+import models.company.CompanyWithAccessAndCounts
 import models.company.ProCompanies
 import models.company.ProCompaniesWithAccesses
 import models.company.AccessLevel.ADMIN
@@ -81,7 +82,20 @@ class CompaniesVisibilityOrchestrator(
       directAccessesCounts <- companyAccessRepository.countAccesses(
         companiesWithAdminAccessIds
       )
-    } yield ???
+      proCompaniesExtended = proCompanies.map { companyWithAccess =>
+        val company             = companyWithAccess.company
+        val companyId           = company.id
+        val reportsCount        = reportsCounts.getOrElse(companyId, 0L)
+        val directAccessesCount = directAccessesCounts.get(companyId)
+        CompanyWithAccessAndCounts(
+          company,
+          companyWithAccess.level,
+          companyWithAccess.kind,
+          reportsCount,
+          directAccessesCount
+        )
+      }
+    } yield proCompaniesExtended
 
   def fetchVisibleCompanies(pro: User) =
     for {
@@ -109,8 +123,8 @@ class CompaniesVisibilityOrchestrator(
     } yield proCompaniesWithAccesses.toSimpleList
 
   private[this] def addSyntheticAccessesToSubsidiaries(
-      proCompaniesWithAccesses: ProCompaniesWithAccesses
-  ): ProCompaniesWithAccesses =
+      proCompaniesWithAccesses: ProCompanies[CompanyWithAccess]
+  ): ProCompanies[CompanyWithAccess] =
     proCompaniesWithAccesses.copy(
       headOfficesAndSubsidiaries =
         proCompaniesWithAccesses.headOfficesAndSubsidiaries.map { case (headOffice, subsidiaries) =>
@@ -145,16 +159,16 @@ class CompaniesVisibilityOrchestrator(
     } yield mapWithSubsidiaries
 
   private[this] def fillWithCorrespondingAccesses(
-      toFill: ProCompanies,
+      toFill: ProCompanies[Company],
       companiesWithAccesses: List[CompanyWithAccess]
-  ): ProCompaniesWithAccesses = {
+  ): ProCompanies[CompanyWithAccess] = {
 
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
         .getOrElse(CompanyWithAccess(c, level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic))
 
-    ProCompaniesWithAccesses(
+    ProCompanies(
       headOfficesAndSubsidiaries = toFill.headOfficesAndSubsidiaries.map { case (key, value) =>
         withAccess(key) -> value.map(withAccess)
       },
