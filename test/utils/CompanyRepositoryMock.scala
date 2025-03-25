@@ -24,6 +24,8 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
       user: User
   ): Future[PaginatedResult[(Company, Long, Long)]] = ???
 
+  override def getReportsCounts(companyIds: List[UUID]): Future[Map[UUID, Long]] = ???
+
   override def getOrCreate(siret: SIRET, data: Company): Future[Company] = ???
 
   override def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] = ???
