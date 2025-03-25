@@ -6,17 +6,21 @@
 }
 
 @font-face {
-    font-family: "Arial";
-    src: url("/assets/fonts/arial.ttf") format("ttf");
+    font-family: 'Arial';
+    src:url(/fonts/arial.ttf);
+    -fs-pdf-font-embed: embed;
+    -fs-pdf-font-encoding: Identity-H;
 }
 @font-face {
-    font-family: "Arial";
-    src: url("/assets/fonts/arial-Bold.ttf") format("ttf");
+    font-family: 'Arial';
+    src:url(/fonts/arial-Bold.ttf);
     font-weight: bold;
+    -fs-pdf-font-embed: embed;
+    -fs-pdf-font-encoding: Identity-H;
 }
 
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 12px;
 }
 
@@ -84,6 +88,7 @@ body {
 }
 
 .code {
+    font-size: 8pt;
     position: absolute;
     top: 0;
     right: 0.5cm;
@@ -120,7 +125,7 @@ body {
     position: absolute;
     height: 1cm;
     line-height: 1cm;
-    bottom: 0;
+    top: 26.69cm;
     left: 0;
     width: 2cm;
 }
@@ -145,14 +150,20 @@ li.mb-3 {
 }
 
 .scan {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
+    display: table;
+    width: 100%;
 }
 
 .scanitem {
-    flex-basis: 50%;
+    display: table-cell;
+    width: 49%;
+    box-sizing: border-box;
     text-align: center;
+}
+
+.scanitem + .scanitem {
+    padding-left: 2%; /* Utiliser le padding pour créer un espace */
+    width: 48%;
 }
 
 .connect-block {

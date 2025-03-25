@@ -5,14 +5,11 @@ import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.StreamConverters
 import org.apache.pekko.util.ByteString
-import com.itextpdf.html2pdf.ConverterProperties
-import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider
 import config.SignalConsoConfiguration
+import org.xhtmlrenderer.pdf.ITextRenderer
 import play.api.Logger
 import play.twirl.api.HtmlFormat
 
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
@@ -29,20 +26,14 @@ class PDFService(
   def createPdfSource(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
-    val converterProperties = new ConverterProperties
-    val dfp                 = new BasicFontProvider(false, true, true)
-    converterProperties.setFontProvider(dfp)
-    converterProperties.setImmediateFlush(true)
-    converterProperties.setCreateAcroForm(false)
-    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
-    val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
+    val htmlBody = htmlDocuments.map(_.body).mkString
 
     val pipedOutputStream = new PipedOutputStream()
     val pipeSize          = 8192 // To match the pekko stream chunk size
     val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
 
-    actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
+    actor ! HtmlConverterActor.Convert(htmlBody, pipedOutputStream, signalConsoConfiguration.apiURL.toString)
 
     val pdfSource = StreamConverters
       .fromInputStream(() => pipedInputStream)
@@ -52,18 +43,14 @@ class PDFService(
   }
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
-    val converterProperties = new ConverterProperties
-    val dfp                 = new BasicFontProvider(true, true, true)
-    converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
-
     val pdfOutputStream = new ByteArrayOutputStream
 
-    HtmlConverter.convertToPdf(
-      new ByteArrayInputStream(htmlDocument.body.mkString.getBytes()),
-      pdfOutputStream,
-      converterProperties
-    )
+    val renderer = new ITextRenderer()
+    renderer.setDocumentFromString(htmlDocument.body, signalConsoConfiguration.apiURL.toString)
+    renderer.layout()
+    renderer.createPDF(pdfOutputStream)
+    renderer.finishPDF()
+
     pdfOutputStream.toByteArray
   }
 }
