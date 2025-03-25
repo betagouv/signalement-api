@@ -34,6 +34,8 @@ trait CompanyAccessRepositoryInterface {
 
   def fetchAdmins(companyId: UUID): Future[List[User]]
 
+  def countAccesses(companyIds: List[UUID]): Future[Map[UUID, Int]]
+
   def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int]
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit]
