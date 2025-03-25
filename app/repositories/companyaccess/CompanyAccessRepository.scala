@@ -9,6 +9,7 @@ import models.company.UserAccess
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
+import repositories.companyreportcounts.CompanyReportCountsTable
 import repositories.computeTickValues
 import repositories.user.UserTable
 import slick.basic.DatabaseConfig
@@ -112,14 +113,19 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     )
 
   override def countAccesses(companyIds: List[UUID]): Future[Map[UUID, Int]] =
-    db.run(
-      table
-        .filter(_.companyId inSetBind companyIds)
-        .filter(_.level =!= AccessLevel.NONE)
-        .groupBy(_.companyId)
-        .map { case (uuid, group) => uuid -> group.size }
-        .result
-    ).map(_.toMap)
+    for {
+      tuples <- db.run(
+        table
+          .filter(_.companyId inSetBind companyIds)
+          .filter(_.level =!= AccessLevel.NONE)
+          .groupBy(_.companyId)
+          .map { case (uuid, group) => uuid -> group.size }
+          .result
+      )
+      exhaustiveMap = companyIds.map { id =>
+        tuples.find(_._1 == id).getOrElse(id -> 0)
+      }.toMap
+    } yield exhaustiveMap
 
   override def createCompanyUserAccessWithoutRun(
       companyId: UUID,
