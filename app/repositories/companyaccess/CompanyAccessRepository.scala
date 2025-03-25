@@ -111,6 +111,16 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .result
     )
 
+  override def countAccesses(companyIds: List[UUID]): Future[Map[UUID, Int]] =
+    db.run(
+      table
+        .filter(_.companyId inSetBind companyIds)
+        .filter(_.level =!= AccessLevel.NONE)
+        .groupBy(_.companyId)
+        .map { case (uuid, group) => uuid -> group.size }
+        .result
+    ).map(_.toMap)
+
   override def createCompanyUserAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
