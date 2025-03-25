@@ -85,9 +85,6 @@ case class CompanyWithAccess(
 
 object CompanyWithAccess {
 
-  def none(company: Company) =
-    CompanyWithAccess(company, level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic)
-
   implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
     val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
     companyJson + ("level" -> Json.toJson(companyWithAccess.level))
