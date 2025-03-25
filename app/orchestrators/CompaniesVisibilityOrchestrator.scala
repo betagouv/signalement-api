@@ -72,7 +72,7 @@ class CompaniesVisibilityOrchestrator(
       (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
 
-  def fetchVisibleCompaniesNewVersion(pro: User) =
+  def fetchVisibleCompanies(pro: User) =
     for {
       companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
       (headOffices, subsidiaries) =
@@ -90,12 +90,9 @@ class CompaniesVisibilityOrchestrator(
       proCompaniesWithAllAccesses = addSyntheticAccessesToSubsidiaries(
         proCompaniesWithAccesses
       )
-      // TODO il faudra des TUs
     } yield proCompaniesWithAllAccesses
 
-  // @@@@@ The legacy function, we keep only for the TUs
-  // TODO brancher sur ma nouvelle méthode.
-  // TODO TUs d'abord ?
+  // TODO remove this  legacy function
   def fetchVisibleCompaniesLegacy(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
@@ -105,18 +102,11 @@ class CompaniesVisibilityOrchestrator(
       accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
         .distinctBy(_.company.siret)
         .sortBy(_.company.siret.value)
-      _ = {
-        println(s"@@@@@@@@@@@@@@@@@@ ")
-        accessiblesCompanies.foreach { case CompanyWithAccess(c, level, kind) =>
-          println(s" siret ${c.siret} => ${level}")
-        }
-        println(s"@@@@@@@@@@@@@@@@@@ ")
-      }
     } yield accessiblesCompanies
 
   def fetchVisibleCompaniesList(pro: User): Future[List[CompanyWithAccess]] =
     for {
-      proCompaniesWithAccesses <- fetchVisibleCompaniesNewVersion(pro)
+      proCompaniesWithAccesses <- fetchVisibleCompanies(pro)
     } yield proCompaniesWithAccesses.toSimpleList
 
   private[this] def addSyntheticAccessesToSubsidiaries(
@@ -187,13 +177,6 @@ class CompaniesVisibilityOrchestrator(
         if (levelPriority(a) > levelPriority(b)) a else b
       )
       .withDefaultValue(AccessLevel.NONE)
-
-    println(s"========= LEVEL BY SIREN====")
-    getLevelBySiren.foreach { case (siren, level) =>
-      println(s" ${siren.value}----> ${level}")
-    }
-    println(s"===================")
-
     accessibleSubsidiaries.map(c =>
       CompanyWithAccess(
         c,
