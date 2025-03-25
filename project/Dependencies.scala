@@ -34,7 +34,6 @@ object Dependencies {
     lazy val janino                    = "3.1.12"
     lazy val logstashLogbackEncoder    = "8.0"
     lazy val zxing                     = "3.5.3"
-    lazy val flyingSaucer = "9.11.4"
 
   }
 
@@ -82,8 +81,6 @@ object Dependencies {
     val playGuard  = "com.digitaltangible" %% "play-guard"  % "3.0.0"
     val zxingCore  = "com.google.zxing"     % "core"        % Versions.zxing
     val zxingJava  = "com.google.zxing"     % "javase"      % Versions.zxing
-    val flyingSaucerCore  = "org.xhtmlrenderer"     % "flying-saucer-core"      % Versions.flyingSaucer
-    val flyingSaucerPDF  = "org.xhtmlrenderer"     % "flying-saucer-pdf"      % Versions.flyingSaucer
   }
 
   val AppDependencies = Seq(
@@ -113,8 +110,6 @@ object Dependencies {
     Compile.postgresql,
     Compile.refinded,
     Compile.spoiwo,
-    Compile.flyingSaucerCore,
-    Compile.flyingSaucerPDF,
     Compile.itext7Core,
     Compile.html2pdf,
     Compile.chimney,

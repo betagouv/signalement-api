@@ -1,18 +1,25 @@
 package services
 
-import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
+import actors.HtmlConverterActor
+import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.StreamConverters
 import org.apache.pekko.util.ByteString
+import com.itextpdf.html2pdf.ConverterProperties
+import com.itextpdf.html2pdf.HtmlConverter
 import config.SignalConsoConfiguration
-import org.xhtmlrenderer.pdf.ITextRenderer
 import play.api.Logger
 import play.twirl.api.HtmlFormat
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import scala.concurrent.ExecutionContext
 
 class PDFService(
-    signalConsoConfiguration: SignalConsoConfiguration
+    signalConsoConfiguration: SignalConsoConfiguration,
+    actor: ActorRef[HtmlConverterActor.ConvertCommand]
 ) {
 
   val logger: Logger       = Logger(this.getClass)
@@ -21,53 +28,35 @@ class PDFService(
   def createPdfSource(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
-
-//    val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
-//
-//    val pipedOutputStream = new PipedOutputStream()
-//    val pipeSize          = 8192 // To match the pekko stream chunk size
-//    val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
-
-//    actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
-
-
-    val pdfOutputStream = new ByteArrayOutputStream
-    println("--------------------------")
-    println(htmlDocuments.map(_.body).mkString)
-    println("--------------------------")
-
-//    val renderer = new ITextRenderer()
-//    renderer.setDocumentFromString(htmlDocuments.map(_.body).mkString, signalConsoConfiguration.apiURL.toString)
-//    renderer.layout()
-//    renderer.createPDF(pdfOutputStream)
-
-    val converterProperties = new ConverterProperties()
-//    val dfp                 = new DefaultFontProvider(false, true, true)
-//    converterProperties.setFontProvider(dfp)
+    val converterProperties = new ConverterProperties
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
+
     val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
-    HtmlConverter.convertToPdf(htmlStream, pdfOutputStream, converterProperties)
 
+    val pipedOutputStream = new PipedOutputStream()
+    val pipeSize          = 8192 // To match the pekko stream chunk size
+    val pipedInputStream  = new PipedInputStream(pipedOutputStream, pipeSize)
 
-//    val pdfSource = StreamConverters
-//      .fromInputStream(() => pipedInputStream)
-//      .mapMaterializedValue(_.onComplete(_ => pipedInputStream.close()))
+    actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
 
-    val res = pdfOutputStream.toByteArray
-    pdfOutputStream.close()
+    val pdfSource = StreamConverters
+      .fromInputStream(() => pipedInputStream)
+      .mapMaterializedValue(_.onComplete(_ => pipedInputStream.close()))
 
-    Source.single(ByteString.fromArray(res)).mapMaterializedValue(_ => ())
-//    pdfSource
+    pdfSource
   }
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
+    val converterProperties = new ConverterProperties
+    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
+
     val pdfOutputStream = new ByteArrayOutputStream
 
-    val renderer = new ITextRenderer()
-    renderer.setDocumentFromString(htmlDocument.body, signalConsoConfiguration.apiURL.toString)
-    renderer.layout()
-    renderer.createPDF(pdfOutputStream)
-
+    HtmlConverter.convertToPdf(
+      new ByteArrayInputStream(htmlDocument.body.mkString.getBytes()),
+      pdfOutputStream,
+      converterProperties
+    )
     pdfOutputStream.toByteArray
   }
 }
