@@ -761,6 +761,7 @@ class SignalConsoComponents(
 
   val adminController = new AdminController(
     reportRepository,
+    reportOrchestrator,
     companyAccessRepository,
     eventRepository,
     mailService,

@@ -7,7 +7,7 @@
 @import models.report.ReportResponseType
 
 @import utils.FrontRoute
-@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider,frontRoute: FrontRoute)
+@(report: Report,maybeCompany: Option[Company], reportResponse: ExistingReportResponse, isReassignable: Boolean, reviewUrl: (ResponseEvaluation) => URI)(implicit messageProvider: MessagesProvider,frontRoute: FrontRoute)
 
 @views.html.mails.layout(Messages("ConsumerReportAckProEmail.title")) {
     <p>
@@ -58,11 +58,13 @@
             <br />
             <strong>@ExistingReportResponse.translateResponseDetails(reportResponse).getOrElse("")</strong>
         </p>
-        <p>@Messages("ConsumerReportAckProEmail.youCanReattribute")</p>
-        <div style="text-align: center">
-            <a href="@frontRoute.website.reattribute(report)" class="btn">@Messages("ConsumerReportAckProEmail.reattribute")</a>
-        </div>
-        <p style="margin-bottom: 32px">@Messages("ConsumerReportAckProEmail.maxDelayToReattribute")</p>
+        @if(isReassignable) {
+            <p>@Messages("ConsumerReportAckProEmail.youCanReattribute")</p>
+            <div style="text-align: center">
+                <a href="@frontRoute.website.reattribute(report)" class="btn">@Messages("ConsumerReportAckProEmail.reattribute")</a>
+            </div>
+            <p style="margin-bottom: 32px">@Messages("ConsumerReportAckProEmail.maxDelayToReattribute")</p>
+        }
         <p>@Messages("ConsumerReportAckProEmail.ifYouAreSure")</p>
         <p style="text-align: center; padding: 20px">
             <a href="@frontRoute.website.litige(report)" class="btn">
