@@ -18,6 +18,8 @@ case class ReportFilterProApi(
     assignedUserId: Option[UUID] = None,
 
     // Not directly through filters but through screens
+    // It is safe
+    companyIds: Seq[UUID] = Seq.empty,
     status: Seq[ReportStatus] = Seq.empty
 )
 
@@ -33,6 +35,7 @@ object ReportFilterProApi {
       // temporary retrocompat, so we can mep the API safely
       start = mapper.timeWithLocalDateRetrocompatStartOfDay("start"),
       end = mapper.timeWithLocalDateRetrocompatEndOfDay("end"),
+      companyIds = mapper.seq("companyIds").map(UUID.fromString),
       status = mapper.seq("status").map(ReportStatus.withName)
     )
   }
