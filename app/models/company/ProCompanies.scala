@@ -25,16 +25,24 @@ case class ProCompanies[A](
 }
 
 object ProCompanies {
-  implicit val writes: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = obj =>
+  // custom JSON to
+  // - output the Map in a JSON-friendly way
+  // - sort everything
+  implicit val writes: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = obj => {
+    def sortCriterion(c: CompanyWithAccessAndCounts) = (c.reportsCount, c.company.name, c.company.siret.value)
     Json.obj(
       "headOfficesAndSubsidiaries" ->
-        // JSON-friendly way of outputting the map
-        Json.toJson(obj.headOfficesAndSubsidiaries.map { case (headOffice, subsidiaries) =>
-          Json.obj(
-            "headOffice"   -> Json.toJson(headOffice),
-            "subsidiaries" -> Json.toJson(subsidiaries)
-          )
-        }),
-      "loneSubsidiaries" -> Json.toJson(obj.loneSubsidiaries)
+        Json.toJson(
+          obj.headOfficesAndSubsidiaries.toList
+            .sortBy(x => sortCriterion(x._1))
+            .map { case (headOffice, subsidiaries) =>
+              Json.obj(
+                "headOffice"   -> Json.toJson(headOffice),
+                "subsidiaries" -> Json.toJson(subsidiaries.sortBy(sortCriterion))
+              )
+            }
+        ),
+      "loneSubsidiaries" -> Json.toJson(obj.loneSubsidiaries.sortBy(sortCriterion))
     )
+  }
 }

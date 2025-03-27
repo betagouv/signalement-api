@@ -113,11 +113,9 @@ class CompanyController(
   }
 
   def getCompaniesOfProExtended() = Act.secured.pros.allowImpersonation.async { implicit request =>
-    companiesVisibilityOrchestrator
-      .fetchVisibleCompaniesExtended(request.identity)
-      .map { x =>
-        Ok(Json.toJson(x))
-      }
+    for {
+      companies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesExtended(request.identity)
+    } yield Ok(Json.toJson(companies))
   }
 
   def getActivationDocument() =
