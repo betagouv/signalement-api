@@ -9,7 +9,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 trait AuthAttemptRepositoryInterface extends CRUDRepositoryInterface[AuthAttempt] {
 
-  def countAuthAttempts(login: String, delay: Duration): Future[Int]
+  def countFailedAuthAttempts(login: String, delay: Duration): Future[Int]
 
   def countAuthAttempts(filter: AuthAttemptFilter): Future[Int]
 

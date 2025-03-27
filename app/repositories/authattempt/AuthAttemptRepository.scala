@@ -24,10 +24,11 @@ class AuthAttemptRepository(
   import dbConfig._
   val logger: Logger = Logger(this.getClass)
 
-  override def countAuthAttempts(login: String, delay: Duration): Future[Int] = db
+  override def countFailedAuthAttempts(login: String, delay: Duration): Future[Int] = db
     .run(
       table
         .filter(_.login === login)
+        .filter(_.isSuccess === false)
         .filter(_.timestamp >= OffsetDateTime.now().minusMinutes(delay.toMinutes))
         .length
         .result

@@ -225,7 +225,7 @@ class AuthOrchestrator(
 
   private def validateAuthenticationAttempts(login: String): Future[Unit] = for {
     _ <- authAttemptRepository
-      .countAuthAttempts(login, AuthAttemptPeriod)
+      .countFailedAuthAttempts(login, AuthAttemptPeriod)
       .ensure(TooMuchAuthAttempts(login))(attempts => attempts < MaxAllowedAuthAttempts)
     _ = logger.debug(s"Auth attempts count check successful")
   } yield ()
