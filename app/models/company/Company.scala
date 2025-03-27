@@ -79,9 +79,10 @@ object Company {
 
 case class CompanyWithAccess(
     company: Company,
-    level: AccessLevel,
-    kind: CompanyAccessKind
-)
+    access: CompanyAccess
+) {
+  def isAdmin = access.level == AccessLevel.ADMIN
+}
 
 object CompanyWithAccess {
 
@@ -90,15 +91,22 @@ object CompanyWithAccess {
   // legacy writes
   val writesAsCompanyWithAdditionalField: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
     val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
-    companyJson + ("level" -> Json.toJson(companyWithAccess.level))
+    companyJson + ("level" -> Json.toJson(companyWithAccess.access.level))
   }
 
 }
 
+case class CompanyAccess(
+    level: AccessLevel,
+    kind: CompanyAccessKind
+)
+object CompanyAccess {
+  implicit val writes: OWrites[CompanyAccess] = Json.writes[CompanyAccess]
+}
+
 case class CompanyWithAccessAndCounts(
     company: Company,
-    accessLevel: AccessLevel,
-    accessKind: CompanyAccessKind,
+    access: CompanyAccess,
     reportsCount: Long,
     accessAndCounts: Option[Int]
 )
