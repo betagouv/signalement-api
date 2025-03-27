@@ -260,7 +260,9 @@ class SampleDataService(
             _ <- websites.map(_.id).traverse(websiteRepository.delete)
             _ <- companies.traverse(c => companyRepository.delete(c.company.id))
             _ <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
-            _ = logger.info(s"Deletion done for company user ${predefinedUser.id}")
+            _ = logger.info(
+              s"Deletion done for company user ${predefinedUser.firstName} ${predefinedUser.lastName} ${predefinedUser.id}"
+            )
           } yield ()
         }
       _ = logger.info("DELETING previous data done")
