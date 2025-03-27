@@ -111,7 +111,8 @@ class CompaniesVisibilityOrchestrator(
         companiesWithAccesses
       )
       proCompaniesWithAllAccesses = addInheritedAccessesToSubsidiaries(
-        proCompaniesWithAccesses
+        proCompaniesWithAccesses,
+        keepLegacyInheritanceAlgorithm = true
       )
     } yield proCompaniesWithAllAccesses
 
@@ -121,25 +122,44 @@ class CompaniesVisibilityOrchestrator(
     } yield proCompaniesWithAccesses.toSimpleList
 
   private[this] def addInheritedAccessesToSubsidiaries(
-      proCompaniesWithAccesses: ProCompanies[CompanyWithAccess]
+      proCompaniesWithAccesses: ProCompanies[CompanyWithAccess],
+      // There was weird edge cases in how the inheritance was coded previously
+      // We have recoded everything but for now we maintain the odd behaviors
+      keepLegacyInheritanceAlgorithm: Boolean
   ): ProCompanies[CompanyWithAccess] =
     proCompaniesWithAccesses.copy(
-      headOfficesAndSubsidiaries =
-        proCompaniesWithAccesses.headOfficesAndSubsidiaries.map { case (headOffice, subsidiaries) =>
+      headOfficesAndSubsidiaries = proCompaniesWithAccesses.headOfficesAndSubsidiaries.map {
+        case (headOffice, subsidiaries) =>
           headOffice -> subsidiaries.map {
+
             case CompanyWithAccess(subsidiary, CompanyAccess(NONE, _)) =>
+              val isAdminInAnyOfTheGroup = (headOffice +: subsidiaries).exists(_.isAdmin)
+
+              val level =
+                // This is a weird part of the old implementation, most likely unintended
+                // If no direct access, and we are member of the head office, BUT we are admin of a least one sibling
+                // Then we end up admin here...
+                if (keepLegacyInheritanceAlgorithm && isAdminInAnyOfTheGroup) ADMIN
+                else headOffice.access.level
               CompanyWithAccess(
                 subsidiary,
-                CompanyAccess(level = headOffice.access.level, kind = Inherited)
+                CompanyAccess(level = level, kind = Inherited)
               )
-            case CompanyWithAccess(subsidiary, CompanyAccess(MEMBER, Direct)) if headOffice.access.level == ADMIN =>
-              CompanyWithAccess(
-                subsidiary,
-                CompanyAccess(level = ADMIN, kind = InheritedAdminAndDirectMember)
-              )
+            case companyWithAccess @ CompanyWithAccess(subsidiary, CompanyAccess(MEMBER, Direct))
+                if headOffice.access.level == ADMIN =>
+              keepLegacyInheritanceAlgorithm match {
+                case true =>
+                  // In the old implementation, the direct member access takes precedence over what's in the head office
+                  companyWithAccess
+                case false =>
+                  CompanyWithAccess(
+                    subsidiary,
+                    CompanyAccess(level = ADMIN, kind = InheritedAdminAndDirectMember)
+                  )
+              }
             case other => other
           }
-        }
+      }
     )
 
   private[this] def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
@@ -219,4 +239,21 @@ class CompaniesVisibilityOrchestrator(
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
     )
 
+}
+
+object CompaniesVisibilityOrchestrator {
+
+  sealed trait AccessLevelInheritanceAlgorithm
+
+  object AccessLevelInheritanceAlgorithm {
+
+    // The intuitive way, what we should have :
+    // you inherit the from the head office, if it's better than the one you have
+    case object Intuitive extends AccessLevelInheritanceAlgorithm
+
+    // A weird implementation, it was like that before, we keep it this way for now
+    // it behaves differently in two different edge cases
+    case object KeepLegacyEdgeCases extends AccessLevelInheritanceAlgorithm
+
+  }
 }
