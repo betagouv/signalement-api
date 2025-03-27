@@ -108,7 +108,7 @@ case class CompanyWithAccessAndCounts(
     company: Company,
     access: CompanyAccess,
     reportsCount: Long,
-    accessesCount: Option[Int]
+    directAccessesCount: Option[Int]
 )
 
 object CompanyWithAccessAndCounts {
