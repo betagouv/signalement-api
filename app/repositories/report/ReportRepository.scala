@@ -5,6 +5,8 @@ import models._
 import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
+import models.report.ReportSort.SortCriteria
+import models.report.ReportSort.SortOrder
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import org.apache.pekko.NotUsed
@@ -24,6 +26,7 @@ import repositories.reportmetadata.ReportMetadataTable
 import repositories.reportresponse.ReportResponseTable
 import repositories.CRUDRepository
 import repositories.PaginateOps
+import repositories.companyaccess.CompanyAccessTable
 import repositories.subcategorylabel.SubcategoryLabel
 import repositories.subcategorylabel.SubcategoryLabelTable
 import slick.ast.BaseTypedType
@@ -33,6 +36,7 @@ import slick.jdbc.JdbcProfile
 import slick.jdbc.JdbcType
 import slick.jdbc.ResultSetConcurrency
 import slick.jdbc.ResultSetType
+import slick.lifted.ColumnOrdered
 import utils.Constants.Departments.toPostalCode
 import utils._
 
@@ -393,17 +397,13 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
     } yield filesGroupedByReports
 
-  private def sortReport(
-      report: ReportTable,
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder]
+  private def sortReportOrder[T](
+      column: ColumnOrdered[T],
+      order: SortOrder
   ) =
-    (sortBy, orderBy) match {
-      case (Some(ReportSort.Siret), Some(SortOrder.Asc))         => report.companySiret.asc
-      case (Some(ReportSort.Siret), Some(SortOrder.Desc))        => report.companySiret.desc
-      case (Some(ReportSort.CreationDate), Some(SortOrder.Asc))  => report.creationDate.asc
-      case (Some(ReportSort.CreationDate), Some(SortOrder.Desc)) => report.creationDate.desc
-      case _                                                     => report.creationDate.desc
+    order match {
+      case SortOrder.Asc  => column.asc
+      case SortOrder.Desc => column.desc
     }
 
   def getReports(
@@ -411,15 +411,59 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder]
+      sort: Option[ReportSort]
   ): Future[PaginatedResult[ReportFromSearch]] =
-    queryFilter(ReportTable.table(user), filter, user)
-      .withPagination(db)(offset, limit, None)
-      .sortBy(t => sortReport(t._1, sortBy, orderBy))
-      .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
-        ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
-      })
+    (user.map(_.userRole), sort) match {
+      case (Some(UserRole.Professionnel), Some(reportSortOrder)) =>
+        reportSortOrder match {
+          case ReportSort(SortCriteria.SiretByPendingReport, order) =>
+            queryFilter(ReportTable.table(user), filter, user)
+              .join(
+                queryFilter(ReportTable.table(user), filter, user)
+                  .groupBy(_._1.companySiret)
+                  .map(t => t._1 -> t._2.length)
+              )
+              .on(_._1.companySiret === _._1)
+              .withPagination(db)(offset, limit, None)
+              .sortBy(t => sortReportOrder(t._2._2, order))
+              .map(_.mapEntities {
+                case ((report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel), _) =>
+                  ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+              })
+
+          case ReportSort(SortCriteria.SiretByAccount, order) =>
+            queryFilter(ReportTable.table(user), filter, user)
+              .join(
+                CompanyAccessTable.table
+                  .groupBy(_.companyId)
+                  .map(t => t._1 -> t._2.length)
+              )
+              .on(_._1.companyId === _._1)
+              .withPagination(db)(offset, limit, None)
+              .sortBy(t => sortReportOrder(t._2._2, order))
+              .map(_.mapEntities {
+                case ((report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel), _) =>
+                  ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+              })
+
+          case ReportSort(SortCriteria.CreationDate, order) =>
+            queryFilter(ReportTable.table(user), filter, user)
+              .withPagination(db)(offset, limit, None)
+              .sortBy(t => sortReportOrder(t._1.creationDate, order))
+              .map(_.mapEntities {
+                case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
+                  ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+              })
+        }
+
+      case _ =>
+        queryFilter(ReportTable.table(user), filter, user)
+          .withPagination(db)(offset, limit, None)
+          .sortBy(_._1.creationDate.desc) // Default sort
+          .map(_.mapEntities { case (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel) =>
+            ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
+          })
+    }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     table

@@ -169,13 +169,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
             ReportFilter(fullText = Some("anonymousFirstName")),
             None,
             None,
-            None,
             None
           )
           b <- components.reportRepository.getReports(
             None,
             ReportFilter(fullText = Some("anonymousReference")),
-            None,
             None,
             None,
             None
@@ -190,13 +188,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
             ReportFilter(fullText = Some("firstName")),
             None,
             None,
-            None,
             None
           )
           b <- components.reportRepository.getReports(
             None,
             ReportFilter(fullText = Some("reference")),
-            None,
             None,
             None,
             None
@@ -211,13 +207,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
             ReportFilter(fullText = Some("LASTNAME")),
             None,
             None,
-            None,
             None
           )
           b <- components.reportRepository.getReports(
             None,
             ReportFilter(fullText = Some("REFERENCE")),
-            None,
             None,
             None,
             None
@@ -232,13 +226,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
             ReportFilter(details = Some("anonymousFirstName")),
             None,
             None,
-            None,
             None
           )
           b <- components.reportRepository.getReports(
             None,
             ReportFilter(details = Some("anonymousReference")),
-            None,
             None,
             None,
             None
@@ -248,25 +240,25 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
 
       "return all reports for an admin user" in {
         components.reportRepository
-          .getReports(Some(userAdmin), ReportFilter(), None, None, None, None)
+          .getReports(Some(userAdmin), ReportFilter(), None, None, None)
           .map(result => result.entities must haveLength(9))
       }
 
       "return all reports for a DGCCRF user" in {
         components.reportRepository
-          .getReports(Some(userDgccrf), ReportFilter(), None, None, None, None)
+          .getReports(Some(userDgccrf), ReportFilter(), None, None, None)
           .map(result => result.entities must haveLength(9))
       }
 
       "return only visible to DGAL for a DGAL user" in {
         components.reportRepository
-          .getReports(Some(userDgal), ReportFilter(), None, None, None, None)
+          .getReports(Some(userDgal), ReportFilter(), None, None, None)
           .map(result => result.entities must haveLength(2))
       }
 
       "return all reports for a pro user" in {
         components.reportRepository
-          .getReports(Some(userPro), ReportFilter(), None, None, None, None)
+          .getReports(Some(userPro), ReportFilter(), None, None, None)
           .map(result => result.entities must haveLength(4))
       }
     }

@@ -797,7 +797,7 @@ class ReportOrchestrator(
       reports <- company
         .map(c =>
           reportRepository
-            .getReports(None, ReportFilter(companyIds = Seq(c.id)), None, None, None, None)
+            .getReports(None, ReportFilter(companyIds = Seq(c.id)), None, None, None)
             .map(_.entities)
         )
         .getOrElse(Future.successful(Nil))
@@ -968,8 +968,7 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder],
+      sort: Option[ReportSort],
       maxResults: Int
   ): Future[PaginatedResult[ReportFromSearchWithFiles]] =
     for {
@@ -991,8 +990,7 @@ class ReportOrchestrator(
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
             limit,
-            sortBy,
-            orderBy,
+            sort,
             maxResults,
             (r: ReportFromSearch, m: Map[UUID, List[ReportFile]]) =>
               ReportFromSearchWithFiles(
@@ -1012,8 +1010,7 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None,
-      sortBy: Option[ReportSort] = None,
-      orderBy: Option[SortOrder] = None
+      sort: Option[ReportSort] = None
   ): Future[PaginatedResult[ReportFromSearchWithFilesAndResponses]] = {
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))
@@ -1023,8 +1020,7 @@ class ReportOrchestrator(
         filter,
         offset,
         limit,
-        sortBy,
-        orderBy,
+        sort,
         signalConsoConfiguration.reportsListLimitMax
       )
 
@@ -1064,8 +1060,7 @@ class ReportOrchestrator(
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder],
+      sort: Option[ReportSort],
       maxResults: Int,
       toApi: (ReportFromSearch, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] =
@@ -1086,8 +1081,7 @@ class ReportOrchestrator(
           filter,
           validOffset,
           validLimit,
-          sortBy,
-          orderBy
+          sort
         )
       endGetReports = System.nanoTime()
       _ = logger.trace(

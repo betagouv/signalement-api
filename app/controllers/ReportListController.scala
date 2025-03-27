@@ -9,7 +9,6 @@ import models._
 import models.report.ReportFilterApi
 import models.report.ReportFilterProApi
 import models.report.ReportSort
-import models.report.SortOrder
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.typed
 import play.api.Logger
@@ -45,6 +44,11 @@ class ReportListController(
       case _ => ReportFilterApi.fromQueryString(request.queryString).map(ReportFilterApi.toReportFilter)
     }
 
+    val reportSort = request.identity.userRole match {
+      case UserRole.Professionnel => ReportSort.fromQueryString(request.queryString)
+      case _                      => None
+    }
+
     reportFilters
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
@@ -59,8 +63,7 @@ class ReportListController(
               filter = filters._1,
               offset = filters._2.offset,
               limit = filters._2.limit,
-              sortBy = ReportSort.fromQueryString(request.queryString),
-              orderBy = SortOrder.fromQueryString(request.queryString)
+              sort = reportSort
             )
           } yield Ok(Json.toJson(paginatedReports))
       )
