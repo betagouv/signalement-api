@@ -1,8 +1,11 @@
 package orchestrators
 
+import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyAccess
+import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
-import models.company.ProCompaniesWithAccesses
+import models.company.ProCompanies
 import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
 import models.company.CompanyAccessKind.Direct
@@ -67,7 +70,7 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
           inaccessibleUnrelatedCorp -> None
         )
         val accessesInDb = whatsInDb.collect { case (company, Some(level)) =>
-          CompanyWithAccess(company, level, Direct)
+          CompanyWithAccess(company, CompanyAccess(level, Direct))
         }
         val allCompaniesInDb = whatsInDb.map(_._1)
 
@@ -84,22 +87,22 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
         when(companyRepository.findBySiren(anyListOf[SIREN]))
           .thenReturn(Future.successful(allCompaniesInDb.filter(_ != inaccessibleUnrelatedCorp)))
 
-        val expectedResult = ProCompaniesWithAccesses(
+        val expectedResult = ProCompanies[CompanyWithAccess](
           headOfficesAndSubsidiaries = Map(
-            CompanyWithAccess(superCorp, ADMIN, Direct) -> List(
-              CompanyWithAccess(superCorpSubsidiary1, ADMIN, Direct),
-              CompanyWithAccess(superCorpSubsidiary2, ADMIN, SyntheticAdminAndDirectMember),
-              CompanyWithAccess(superCorpSubsidiary3, ADMIN, Synthetic)
+            cWA(superCorp, ADMIN, Direct) -> List(
+              cWA(superCorpSubsidiary1, ADMIN, Direct),
+              cWA(superCorpSubsidiary2, ADMIN, SyntheticAdminAndDirectMember),
+              cWA(superCorpSubsidiary3, ADMIN, Synthetic)
             ),
-            CompanyWithAccess(maxiCorp, MEMBER, Direct) -> List(
-              CompanyWithAccess(maxiCorpSubsidiary1, ADMIN, Direct),
-              CompanyWithAccess(maxiCorpSubsidiary2, MEMBER, Direct),
-              CompanyWithAccess(maxiCorpSubsidiary3, MEMBER, Synthetic)
+            cWA(maxiCorp, MEMBER, Direct) -> List(
+              cWA(maxiCorpSubsidiary1, ADMIN, Direct),
+              cWA(maxiCorpSubsidiary2, MEMBER, Direct),
+              cWA(maxiCorpSubsidiary3, MEMBER, Synthetic)
             )
           ),
           loneSubsidiaries = List(
-            CompanyWithAccess(zetaCorpSubsidiary, ADMIN, Direct),
-            CompanyWithAccess(deltaCorpSubsidiary, MEMBER, Direct)
+            cWA(zetaCorpSubsidiary, ADMIN, Direct),
+            cWA(deltaCorpSubsidiary, MEMBER, Direct)
           )
         )
 
@@ -112,14 +115,16 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
 
   }
 
-  def genHeadOfficeAndThreeSubsidiaries(siren: String): (Company, Company, Company, Company) = {
+  private def genHeadOfficeAndThreeSubsidiaries(siren: String): (Company, Company, Company, Company) = {
     val headOffice = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, siret = SIRET(s"${siren}00000"))
     def subsidiary(n: Int) =
       Fixtures.genCompany.sample.get.copy(isHeadOffice = false, siret = SIRET(s"${siren}0000${n}"))
     (headOffice, subsidiary(1), subsidiary(2), subsidiary(3))
   }
 
-  def genLoneSubsidiary(siren: String): Company =
+  private def genLoneSubsidiary(siren: String): Company =
     Fixtures.genCompany.sample.get.copy(isHeadOffice = false, siret = SIRET(s"${siren}00001"))
 
+  private def cWA(company: Company, level: AccessLevel, kind: CompanyAccessKind) =
+    CompanyWithAccess(company, CompanyAccess(level, kind))
 }

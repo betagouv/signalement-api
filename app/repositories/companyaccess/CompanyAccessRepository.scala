@@ -3,6 +3,7 @@ package repositories.companyaccess
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyAccess
 import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.UserAccess
@@ -58,7 +59,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    ).map(_.map(x => CompanyWithAccess(x._1, x._2, kind = CompanyAccessKind.Direct)))
+    ).map(_.map(x => CompanyWithAccess(x._1, CompanyAccess(x._2, kind = CompanyAccessKind.Direct))))
 
   override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(

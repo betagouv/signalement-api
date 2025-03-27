@@ -4,6 +4,7 @@ import models.User
 import models.UserRole
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyAccess
 import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.CompanyWithAccessAndCounts
@@ -76,20 +77,18 @@ class CompaniesVisibilityOrchestrator(
     for {
       proCompanies <- fetchVisibleCompanies(pro: User)
       allCompaniesIds             = proCompanies.toSimpleList.map(_.company.id)
-      companiesWithAdminAccessIds = proCompanies.toSimpleList.filter(_.level == ADMIN).map(_.company.id)
+      companiesWithAdminAccessIds = proCompanies.toSimpleList.filter(_.isAdmin).map(_.company.id)
       reportsCounts <- companyRepo.getReportsCounts(allCompaniesIds)
       directAccessesCounts <- companyAccessRepository.countAccesses(
         companiesWithAdminAccessIds
       )
-      proCompaniesExtended = proCompanies.map { companyWithAccess =>
-        val company             = companyWithAccess.company
+      proCompaniesExtended = proCompanies.map { case CompanyWithAccess(company, access) =>
         val companyId           = company.id
         val reportsCount        = reportsCounts.getOrElse(companyId, 0L)
         val directAccessesCount = directAccessesCounts.get(companyId)
         CompanyWithAccessAndCounts(
           company,
-          companyWithAccess.level,
-          companyWithAccess.kind,
+          access,
           reportsCount,
           directAccessesCount
         )
@@ -128,17 +127,15 @@ class CompaniesVisibilityOrchestrator(
       headOfficesAndSubsidiaries =
         proCompaniesWithAccesses.headOfficesAndSubsidiaries.map { case (headOffice, subsidiaries) =>
           headOffice -> subsidiaries.map {
-            case CompanyWithAccess(subsidiary, NONE, _) =>
+            case CompanyWithAccess(subsidiary, CompanyAccess(NONE, _)) =>
               CompanyWithAccess(
                 subsidiary,
-                level = headOffice.level,
-                kind = Synthetic
+                CompanyAccess(level = headOffice.access.level, kind = Synthetic)
               )
-            case CompanyWithAccess(subsidiary, MEMBER, Direct) if headOffice.level == ADMIN =>
+            case CompanyWithAccess(subsidiary, CompanyAccess(MEMBER, Direct)) if headOffice.access.level == ADMIN =>
               CompanyWithAccess(
                 subsidiary,
-                level = ADMIN,
-                kind = SyntheticAdminAndDirectMember
+                CompanyAccess(level = ADMIN, kind = SyntheticAdminAndDirectMember)
               )
             case other => other
           }
@@ -165,7 +162,7 @@ class CompaniesVisibilityOrchestrator(
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess(c, level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic))
+        .getOrElse(CompanyWithAccess(c, CompanyAccess(level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic)))
 
     ProCompanies(
       headOfficesAndSubsidiaries = toFill.headOfficesAndSubsidiaries.map { case (key, value) =>
