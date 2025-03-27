@@ -9,8 +9,8 @@ import models.company.ProCompanies
 import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
 import models.company.CompanyAccessKind.Direct
-import models.company.CompanyAccessKind.SyntheticAdminAndDirectMember
-import models.company.CompanyAccessKind.Synthetic
+import models.company.CompanyAccessKind.InheritedAdminAndDirectMember
+import models.company.CompanyAccessKind.Inherited
 import org.mockito.Mockito.when
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -91,13 +91,13 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
           headOfficesAndSubsidiaries = Map(
             cWA(superCorp, ADMIN, Direct) -> List(
               cWA(superCorpSubsidiary1, ADMIN, Direct),
-              cWA(superCorpSubsidiary2, ADMIN, SyntheticAdminAndDirectMember),
-              cWA(superCorpSubsidiary3, ADMIN, Synthetic)
+              cWA(superCorpSubsidiary2, ADMIN, InheritedAdminAndDirectMember),
+              cWA(superCorpSubsidiary3, ADMIN, Inherited)
             ),
             cWA(maxiCorp, MEMBER, Direct) -> List(
               cWA(maxiCorpSubsidiary1, ADMIN, Direct),
               cWA(maxiCorpSubsidiary2, MEMBER, Direct),
-              cWA(maxiCorpSubsidiary3, MEMBER, Synthetic)
+              cWA(maxiCorpSubsidiary3, MEMBER, Inherited)
             )
           ),
           loneSubsidiaries = List(

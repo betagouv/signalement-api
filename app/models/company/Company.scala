@@ -127,12 +127,12 @@ object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
   case object Direct extends CompanyAccessKind
 
   // When the pro has access to this company because he has a direct access to its head office
-  case object Synthetic extends CompanyAccessKind
+  case object Inherited extends CompanyAccessKind
 
   // Edge case
   // When the pro has a direct access to this company as a MEMBER
   // But also has a direct access to its head office as an ADMIN
-  case object SyntheticAdminAndDirectMember extends CompanyAccessKind
+  case object InheritedAdminAndDirectMember extends CompanyAccessKind
 
 }
 

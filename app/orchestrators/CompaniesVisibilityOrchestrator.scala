@@ -13,8 +13,8 @@ import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
 import models.company.AccessLevel.NONE
 import models.company.CompanyAccessKind.Direct
-import models.company.CompanyAccessKind.Synthetic
-import models.company.CompanyAccessKind.SyntheticAdminAndDirectMember
+import models.company.CompanyAccessKind.Inherited
+import models.company.CompanyAccessKind.InheritedAdminAndDirectMember
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.SIREN
@@ -110,7 +110,7 @@ class CompaniesVisibilityOrchestrator(
         proCompanies,
         companiesWithAccesses
       )
-      proCompaniesWithAllAccesses = addSyntheticAccessesToSubsidiaries(
+      proCompaniesWithAllAccesses = addInheritedAccessesToSubsidiaries(
         proCompaniesWithAccesses
       )
     } yield proCompaniesWithAllAccesses
@@ -120,7 +120,7 @@ class CompaniesVisibilityOrchestrator(
       proCompaniesWithAccesses <- fetchVisibleCompanies(pro)
     } yield proCompaniesWithAccesses.toSimpleList
 
-  private[this] def addSyntheticAccessesToSubsidiaries(
+  private[this] def addInheritedAccessesToSubsidiaries(
       proCompaniesWithAccesses: ProCompanies[CompanyWithAccess]
   ): ProCompanies[CompanyWithAccess] =
     proCompaniesWithAccesses.copy(
@@ -130,12 +130,12 @@ class CompaniesVisibilityOrchestrator(
             case CompanyWithAccess(subsidiary, CompanyAccess(NONE, _)) =>
               CompanyWithAccess(
                 subsidiary,
-                CompanyAccess(level = headOffice.access.level, kind = Synthetic)
+                CompanyAccess(level = headOffice.access.level, kind = Inherited)
               )
             case CompanyWithAccess(subsidiary, CompanyAccess(MEMBER, Direct)) if headOffice.access.level == ADMIN =>
               CompanyWithAccess(
                 subsidiary,
-                CompanyAccess(level = ADMIN, kind = SyntheticAdminAndDirectMember)
+                CompanyAccess(level = ADMIN, kind = InheritedAdminAndDirectMember)
               )
             case other => other
           }
@@ -162,7 +162,7 @@ class CompaniesVisibilityOrchestrator(
     def withAccess(c: Company) =
       companiesWithAccesses
         .find(_.company.id == c.id)
-        .getOrElse(CompanyWithAccess(c, CompanyAccess(level = AccessLevel.NONE, kind = CompanyAccessKind.Synthetic)))
+        .getOrElse(CompanyWithAccess(c, CompanyAccess(level = AccessLevel.NONE, kind = CompanyAccessKind.Inherited)))
 
     ProCompanies(
       headOfficesAndSubsidiaries = toFill.headOfficesAndSubsidiaries.map { case (key, value) =>
