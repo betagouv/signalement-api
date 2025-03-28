@@ -71,8 +71,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder]
+      sort: Option[ReportSort]
   ): Future[PaginatedResult[ReportFromSearch]]
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
