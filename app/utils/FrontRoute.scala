@@ -40,11 +40,11 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
       s"/suivi-des-signalements/report/${reportId.toString}"
     )
 
-    def validateEmail(token: String)        = url(s"/connexion/validation-email?token=${token}")
-    def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
-//    def activation                          = url("/activation")
-    def welcome                    = url("/")
-    def updateEmail(token: String) = url(s"/parametres/update-email/$token")
+    def validateEmail(token: String)           = url(s"/connexion/validation-email?token=${token}")
+    def resetPassword(authToken: AuthToken)    = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
+    def activation(siret: SIRET, code: String) = url(s"/activation?siret=$siret&code=$code")
+    def welcome                                = url("/")
+    def updateEmail(token: String)             = url(s"/parametres/update-email/$token")
 
     object Admin {
       def register(token: String) = url(s"/admin/rejoindre/?token=$token")
