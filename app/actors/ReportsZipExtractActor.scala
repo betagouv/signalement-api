@@ -9,6 +9,7 @@ import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.ActorContext
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.scaladsl.StashBuffer
+import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import services.S3ServiceInterface
 
@@ -19,6 +20,8 @@ import scala.util.Failure
 import scala.util.Success
 
 object ReportsZipExtractActor {
+
+  final val logger = Logger(getClass)
 
   sealed trait ReportsExtractCommand
 
@@ -116,7 +119,8 @@ object ReportsZipExtractActor {
           )
         )
       case msg =>
-        buffer.stash(msg)
+        val bufferRef = buffer.stash(msg)
+        logger.trace(s"Buffer with size ${bufferRef.size}")
         Behaviors.same
     }
 
