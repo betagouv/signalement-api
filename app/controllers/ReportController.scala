@@ -1,9 +1,7 @@
 package controllers
 
 import authentication.Authenticator
-import authentication.actions.UserAction.UserRequest
 import cats.implicits.toTraverseOps
-import controllers.error.AppError
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import models.report._
@@ -28,7 +26,6 @@ import repositories.user.UserRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.FrontRoute
-import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -192,26 +189,13 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  private def readReportsId(request: UserRequest[_]) = {
-    val maxReport = 25
-    val reportIds = new QueryStringMapper(request.queryString)
-      .seq("ids")
-      .map(extractUUID)
-
-    if (reportIds.size > maxReport) {
-      logger.error(
-        s"Cannot download more than $maxReport"
-      )
-      throw AppError.DownloadReportsLimitExceeded
-    } else {
-      reportIds
-    }
-  }
-
-  def downloadReportsAsPdfZip() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportIds = readReportsId(request)
-    massImportService
-      .reportsSummaryZip(reportIds, request.identity)
+  def downloadReportsAsPdfZip(reportId: UUID) = Act.secured.all.allowImpersonation.async { implicit request =>
+    reportWithDataOrchestrator
+      .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
+      .map { reportIds =>
+        massImportService
+          .reportsSummaryZip(reportIds, request.identity)
+      }
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
@@ -221,12 +205,14 @@ class ReportController(
       )
   }
 
-  def downloadReportAsZipWithFiles() =
+  def downloadReportAsZipWithFiles(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
-      val reportIds = readReportsId(request)
-
-      massImportService
-        .reportSummaryWithAttachmentsZip(reportIds, request.identity)
+      reportWithDataOrchestrator
+        .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
+        .flatMap { reportIds =>
+          massImportService
+            .reportSummaryWithAttachmentsZip(reportIds, request.identity)
+        }
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,

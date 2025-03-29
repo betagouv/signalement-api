@@ -1010,10 +1010,10 @@ class ReportOrchestrator(
   def getReportsWithResponsesForUser(
       connectedUser: User,
       filter: ReportFilter,
-      offset: Option[Long],
-      limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder]
+      offset: Option[Long] = None,
+      limit: Option[Int] = None,
+      sortBy: Option[ReportSort] = None,
+      orderBy: Option[SortOrder] = None
   ): Future[PaginatedResult[ReportFromSearchWithFilesAndResponses]] = {
 
     val filterByReportProResponse = EventFilter(None, Some(ActionEvent.REPORT_PRO_RESPONSE))

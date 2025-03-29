@@ -4,10 +4,10 @@ import cats.implicits.catsSyntaxOptionId
 import cats.implicits.toTraverseOps
 import controllers.HtmlFromTemplateGenerator
 import models.User
+import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFileApi
 import orchestrators.ReportWithData
-import orchestrators.ReportWithDataOrchestrator
 import orchestrators.reportexport.ZipEntryName.AttachmentZipEntryName
 import orchestrators.reportexport.ZipEntryName.ReportZipEntryName
 import org.apache.pekko.Done
@@ -21,15 +21,13 @@ import services.S3ServiceInterface
 import services.ZipBuilder.buildZip
 
 import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportZipExportService(
     htmlFromTemplateGenerator: HtmlFromTemplateGenerator,
     PDFService: PDFService,
-    s3Service: S3ServiceInterface,
-    reportWithDataOrchestrator: ReportWithDataOrchestrator
+    s3Service: S3ServiceInterface
 )(implicit
     materializer: Materializer,
     system: ActorSystem
@@ -39,23 +37,19 @@ class ReportZipExportService(
   implicit val ec: ExecutionContext =
     system.dispatchers.lookup("zip-blocking-dispatcher")
 
-  def reportsSummaryZip(reportIds: Seq[UUID], user: User) = {
-    val reportFutures = reportIds.traverse(reportWithDataOrchestrator.getReportFull(_, user))
-    reportFutures.map { reports =>
-      val flattenReports = reports.flatten
-      val reportSources =
-        flattenReports.map(buildReportPdfSummarySource(_, user, isSingleExport = flattenReports.size > 1))
-      buildZip(reportSources)(materializer, ec)
-    }
+  def reportsSummaryZip(flattenReports: Seq[ReportWithData], user: User) = {
+
+    val reportSources =
+      flattenReports.map(buildReportPdfSummarySource(_, user, isSingleExport = flattenReports.size > 1))
+    buildZip(reportSources)
+
   }
 
   def reportSummaryWithAttachmentsZip(
-      reportIds: Seq[UUID],
+      reports: Seq[ReportWithData],
       user: User
   ): Future[Source[ByteString, Future[Done]]] = for {
-    reportsOptional <- reportIds.traverse(reportWithDataOrchestrator.getReportFull(_, user))
-    reports = reportsOptional.flatten
-    fileSourcesFutures <- reports.flatTraverse { reportWithData =>
+    fileSourcesFutures <- reports.traverse { reportWithData =>
       val reportWithName = buildReportPdfSummarySource(reportWithData, user, isSingleExport = reports.size > 1)
       buildReportAttachmentsSources(
         reportWithData.report.creationDate,
@@ -64,21 +58,18 @@ class ReportZipExportService(
       ).map(attachments => attachments :+ reportWithName)
     }
 
-  } yield buildZip(fileSourcesFutures)(materializer, ec)
+  } yield buildZip(fileSourcesFutures.flatten)(materializer, ec)
 
   def reportAttachmentsZip(
-      creationDate: OffsetDateTime,
+      report: Report,
       reportFiles: Seq[ReportFile]
   ): Future[Source[ByteString, Future[Done]]] = for {
-    existingFiles <- reportFiles.traverse(f =>
-      s3Service.exists(f.storageFilename).map(exists => (f, exists))
-    ) map (_.collect { case (file, true) =>
-      file
-    })
-    reportAttachmentSources = existingFiles.zipWithIndex.map { case (file, i) =>
-      buildReportAttachmentSource(creationDate, ReportFileApi.build(file), i + 1)
-    }
-  } yield buildZip(reportAttachmentSources)(materializer, ec)
+    fileSourcesFutures <- buildReportAttachmentsSources(
+      report.creationDate,
+      reportFiles.map(ReportFileApi.build),
+      reportName = ReportZipEntryName(report, true)
+    )
+  } yield buildZip(fileSourcesFutures)(materializer, ec)
 
   private def buildReportPdfSummarySource(
       reportWithData: ReportWithData,
@@ -87,7 +78,7 @@ class ReportZipExportService(
   ): (ReportZipEntryName, Source[ByteString, Unit]) = {
     val htmlForPdf = htmlFromTemplateGenerator.reportPdf(reportWithData, user)
     (
-      ReportZipEntryName(reportWithData, isSingleExport),
+      ReportZipEntryName(reportWithData.report, isSingleExport),
       PDFService.createPdfSource(Seq(htmlForPdf))
     )
   }

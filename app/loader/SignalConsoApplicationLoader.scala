@@ -23,6 +23,7 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
+import org.apache.pekko.actor.typed.DispatcherSelector
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -308,7 +309,11 @@ class SignalConsoComponents(
     )
 
   val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
-    actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
+    actorSystem.spawn(
+      HtmlConverterActor.create(),
+      "html-converter-actor",
+      DispatcherSelector.fromConfig("my-blocking-dispatcher")
+    )
 
   val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
@@ -417,18 +422,18 @@ class SignalConsoComponents(
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
 
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
+  val engagementOrchestrator =
+    new EngagementOrchestrator(
+      engagementRepository,
       visibleReportOrchestrator,
-      companyRepository,
+      companiesVisibilityOrchestrator,
       eventRepository,
-      reportFileRepository,
-      responseConsumerReviewRepository,
+      reportRepository,
       reportEngagementReviewRepository
     )
 
   val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service, reportWithDataOrchestrator)(
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(
       materializer,
       actorSystem
     )
@@ -447,15 +452,6 @@ class SignalConsoComponents(
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
 
-  val engagementOrchestrator =
-    new EngagementOrchestrator(
-      engagementRepository,
-      visibleReportOrchestrator,
-      companiesVisibilityOrchestrator,
-      eventRepository,
-      reportRepository,
-      reportEngagementReviewRepository
-    )
   private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
     reportRepository,
@@ -482,6 +478,16 @@ class SignalConsoComponents(
 
   val reportOrchestrator = buildReportOrchestrator(mailService)
 
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(
+      companyRepository,
+      eventRepository,
+      reportOrchestrator,
+      reportConsumerReviewOrchestrator,
+      engagementOrchestrator,
+      signalConsoConfiguration
+    )
+
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     visibleReportOrchestrator,
     companiesVisibilityOrchestrator,
@@ -493,6 +499,17 @@ class SignalConsoComponents(
 
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
+
+  val reportsPdfExtractActor: typed.ActorRef[ReportsZipExtractActor.ReportsExtractCommand] =
+    actorSystem.spawn(
+      ReportsZipExtractActor.create(
+        reportWithDataOrchestrator,
+        asyncFileRepository,
+        s3Service,
+        reportZipExportService
+      ),
+      "reports-zip-extract-actor"
+    )
 
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
@@ -896,6 +913,7 @@ class SignalConsoComponents(
       reportOrchestrator,
       asyncFileRepository,
       reportsExtractActor,
+      reportsPdfExtractActor,
       cookieAuthenticator,
       controllerComponents
     )

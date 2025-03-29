@@ -53,9 +53,10 @@ POST          /api/reports/:uuid/reattribute                            controll
 
 GET           /api/reports                                              controllers.ReportListController.searchReports()
 POST          /api/reports/extract                                      controllers.ReportListController.createReportsSearchExcelExtract()
+POST          /api/reports/extract-as-zip                               controllers.ReportListController.createReportsSearchZipExtract()
 # button "download" which appears after selecting some reports
 # also for the report page, button "download", if there are no attached files (or if there are but you pick the option to not get them)
-GET           /api/reports/download                                     controllers.ReportController.downloadReportsAsPdfZip()
+GET           /api/reports/download/:reportId                           controllers.ReportController.downloadReportsAsPdfZip(reportId: java.util.UUID)
 GET           /api/reports/bookmarks/count                              controllers.BookmarkController.countBookmarks()
 # also used in the report page
 DELETE        /api/reports/:uuid/bookmark                               controllers.BookmarkController.removeBookmark(uuid: java.util.UUID)
@@ -71,7 +72,7 @@ GET           /api/constants/categoriesByStatus                         controll
 ########## REPORT PAGE #######
 ##############################
 # button "download", if there's attached files and you pick the corresponding option /also used for many reports
-GET           /api/reports/download-with-attachments                    controllers.ReportController.downloadReportAsZipWithFiles()
+GET           /api/reports/download-with-attachments/:reportId          controllers.ReportController.downloadReportAsZipWithFiles(reportId: java.util.UUID)
 GET           /api/reports/:uuid                                        controllers.ReportController.getReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                                 controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
 GET           /api/reports/:uuid/response/review                        controllers.ReportConsumerReviewController.getConsumerReview(uuid: java.util.UUID)
@@ -207,7 +208,7 @@ POST          /api/account/activation                                   controll
 GET           /api/accesses/$siret<[0-9]{14}>                           controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/pending                              controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                              controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
-DELETE        /api/accesses/$siret<[0-9]{14}>/:userId                              controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
+DELETE        /api/accesses/$siret<[0-9]{14}>/:userId                   controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
 # bouton inviter
 POST          /api/accesses/:siret/invitation                           controllers.CompanyAccessController.sendInvitation(siret: String)
 # c'est probablement le process d'invitation ?

@@ -2,7 +2,6 @@ package orchestrators.reportexport
 
 import models.report.Report
 import models.report.ReportFileApi
-import orchestrators.ReportWithData
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -13,18 +12,22 @@ trait ZipEntryName {
 
 object ZipEntryName {
 
-  val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy HH'h'mm'm'ss's'")
+  val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
   private def safeString(stringToSanities: String) = {
 
     val notAllowedChars = List('\u0000', '\\', '/', ':', '*', '?', '"', '<', '>', '|', '.')
 
-    stringToSanities.map { c =>
-      if (notAllowedChars.contains(c)) {
-        ""
-      } else c
+    val salt = f"${scala.util.Random.nextInt(1000)}%03d"
+    stringToSanities
+      .map { c =>
+        if (notAllowedChars.contains(c)) {
+          ""
+        } else c
 
-    }.mkString
+      }
+      .mkString
+      .concat(salt)
   }
 
   case class AttachmentZipEntryName(value: String) extends ZipEntryName
@@ -65,11 +68,11 @@ object ZipEntryName {
 
   object ReportZipEntryName {
 
-    def apply(target: ReportWithData, isSingleExport: Boolean): ReportZipEntryName =
-      reportFileName(target: ReportWithData, isSingleExport)
+    def apply(target: Report, isSingleExport: Boolean): ReportZipEntryName =
+      reportFileName(target: Report, isSingleExport)
 
-    private def reportFileName(target: ReportWithData, isSingleExport: Boolean): ReportZipEntryName =
-      new ReportZipEntryName(reportName(target.report), isSingleExport)
+    private def reportFileName(report: Report, isSingleExport: Boolean): ReportZipEntryName =
+      new ReportZipEntryName(reportName(report), isSingleExport)
 
     private def reportName(report: Report): String = {
       val date     = report.creationDate.format(pattern)

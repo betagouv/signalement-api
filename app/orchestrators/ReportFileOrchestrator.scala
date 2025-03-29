@@ -221,7 +221,7 @@ class ReportFileOrchestrator(
           value
       }
       _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
-      res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
+      res <- reportZipExportService.reportAttachmentsZip(report, filteredFilesByOrigin)
     } yield res
 
   private def getFileByIdAndName(fileId: ReportFileId, filename: String) =

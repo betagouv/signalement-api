@@ -1,6 +1,5 @@
 package services
 
-import controllers.error.AppError.ServerError
 import orchestrators.reportexport.ZipEntryName
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
@@ -32,7 +31,7 @@ object ZipBuilder {
     override def write(b: Int): Unit =
       write(Array(b.toByte), 0, 1)
 
-    override def write(b: Array[Byte], off: Int, len: Int): Unit =  {
+    override def write(b: Array[Byte], off: Int, len: Int): Unit = {
       val bs = ByteString.fromArray(b, off, len)
       lastOffer = lastOffer.flatMap { _ =>
         val offerFuture = queue.offer(bs)
@@ -42,14 +41,7 @@ object ZipBuilder {
           queue.fail(ex)
         }
 
-        offerFuture.flatMap {
-          case QueueOfferResult.Enqueued => Future.successful(QueueOfferResult.Enqueued)
-          case other =>
-            val ex = ServerError(s"Queue offer failed: $other")
-            logger.error("Offer rejected by the queue: " + other)
-            queue.fail(ex)
-            Future.failed(ex)
-        }
+        offerFuture.flatMap(_ => Future.successful(QueueOfferResult.Enqueued))
       }
     }
 
