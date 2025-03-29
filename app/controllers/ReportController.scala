@@ -193,6 +193,7 @@ class ReportController(
     reportWithDataOrchestrator
       .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
       .map { reportIds =>
+        println(s"------------------ reportIds = ${reportIds} ------------------")
         massImportService
           .reportsSummaryZip(reportIds, request.identity)
       }

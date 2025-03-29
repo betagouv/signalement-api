@@ -484,7 +484,6 @@ class SignalConsoComponents(
       eventRepository,
       reportOrchestrator,
       reportConsumerReviewOrchestrator,
-      engagementOrchestrator,
       signalConsoConfiguration
     )
 

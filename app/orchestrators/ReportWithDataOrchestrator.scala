@@ -34,7 +34,6 @@ class ReportWithDataOrchestrator(
     eventRepository: EventRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
-    engagementOrchestrator: EngagementOrchestrator,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -56,15 +55,22 @@ class ReportWithDataOrchestrator(
       companySiret = reportsWithFiles.flatMap(_.report.companySiret)
       companyIds   = reportsWithFiles.flatMap(_.report.companyId)
       consumerReviewsMap <- reportConsumerReviewOrchestrator.getReviews(reportIds)
-      engagementReviews  <- engagementOrchestrator.getEngagementReviews(reportIds)
       companies          <- companyRepository.findBySirets(companySiret).map(l => l.map(c => (c.siret, c)).toMap)
       eventsByCompanyId  <- eventRepository.getCompaniesEventsWithUsers(companyIds, EventFilter.Empty)
-      eventsByReportId   <- eventRepository.getEventsWithUsersMap(reportIds, EventFilter.Empty)
+      eventsByReportId <- eventRepository
+        .getEventsWithUsers(reportIds, EventFilter.Empty)
+        .map(events =>
+          events
+            .collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
+              (reportId, (event, user))
+            }
+            .groupMap(_._1)(_._2)
+        )
     } yield reportsWithFiles.map { reportWithFiles =>
       val report = reportWithFiles.report
       val events = eventsByReportId.getOrElse(report.id, List.empty)
       val responseOption = events
-        .map(_.event)
+        .map(_._1)
         .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
         .map(_.details)
         .map(_.as[ExistingReportResponse])
@@ -74,13 +80,14 @@ class ReportWithDataOrchestrator(
           eventsByCompanyId.filter(_._1.companyId.contains(c))
         }
         .getOrElse(List.empty)
+
       ReportWithData(
         report = report,
         maybeCompany = report.companySiret.flatMap(companies.get),
-        events = events.map(e => (e.event, e.user)),
+        events = events,
         responseOption = responseOption,
         consumerReviewOption = consumerReviewsMap.get(report.id).flatten,
-        engagementReviewOption = engagementReviews.get(report.id).flatten,
+        engagementReviewOption = reportWithFiles.engagementReview,
         companyEvents = companyEvents,
         files = reportWithFiles.files.map(ReportFileApi.build)
       )

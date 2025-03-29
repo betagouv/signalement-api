@@ -6,7 +6,10 @@ import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.MalformedQueryParams
 import models._
-import models.report.{ReportFilter, ReportFilterApi, ReportFilterProApi, ReportSort, SortOrder}
+import models.report.ReportFilterApi
+import models.report.ReportFilterProApi
+import models.report.ReportSort
+import models.report.SortOrder
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.typed
 import play.api.Logger
@@ -65,7 +68,7 @@ class ReportListController(
 
   def createReportsSearchExcelExtract = Act.secured.all.allowImpersonation.async { implicit request =>
     for {
-      reportFilter <- parseReportFilter(request.queryString,request.identity)
+      reportFilter <- parseReportFilter(request.queryString, request.identity)
       _ = logger.debug(s"Parsing zone query param")
       zone <- (new QueryStringMapper(request.queryString))
         .timeZone("zone")
@@ -85,7 +88,7 @@ class ReportListController(
   def createReportsSearchZipExtract() =
     Act.secured.all.allowImpersonation.async(parse.empty) { implicit request =>
       for {
-        reportFilter <- parseReportFilter(request.queryString,request.identity)
+        reportFilter <- parseReportFilter(request.queryString, request.identity)
         _ = logger.debug(s"Requesting report for user ${request.identity.email}")
         file <- asyncFileRepository
           .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportsZip))
@@ -93,7 +96,7 @@ class ReportListController(
       } yield Ok
     }
 
-  private def parseReportFilter(queryString: Map[String, Seq[String]], identity : User) = {
+  private def parseReportFilter(queryString: Map[String, Seq[String]], identity: User) = {
 
     val reportFilters = identity.userRole match {
       case UserRole.Professionnel =>
