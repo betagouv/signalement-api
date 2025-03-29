@@ -16,8 +16,9 @@ import models.report.reportfile.ReportFileId
 import orchestrators.ReportFileOrchestrator.NotScanned
 import orchestrators.ReportFileOrchestrator.ScanStatus
 import orchestrators.ReportFileOrchestrator.Scanned
+import orchestrators.reportexport.ReportZipExportService
+import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorRef
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.FileIO
 import org.apache.pekko.stream.scaladsl.Source
@@ -200,7 +201,7 @@ class ReportFileOrchestrator(
   def downloadReportFilesArchive(
       report: Report,
       origin: Option[ReportFileOrigin]
-  ): Future[Source[ByteString, Future[IOResult]]] =
+  ): Future[Source[ByteString, Future[Done]]] =
     for {
       reportFiles <- reportFileRepository.retrieveReportFiles(report.id)
 
@@ -220,7 +221,7 @@ class ReportFileOrchestrator(
           value
       }
       _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
-      res <- reportZipExportService.reportAttachmentsZip(report.creationDate, filteredFilesByOrigin)
+      res <- reportZipExportService.reportAttachmentsZip(report, filteredFilesByOrigin)
     } yield res
 
   private def getFileByIdAndName(fileId: ReportFileId, filename: String) =
