@@ -1,5 +1,6 @@
 package services
 
+import orchestrators.reportexport.ZipEntryName
 import org.apache.pekko.Done
 import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer

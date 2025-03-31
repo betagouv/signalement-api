@@ -32,4 +32,6 @@ class S3ServiceMock(atomicQueue: ConcurrentLinkedQueue[String] = new ConcurrentL
   override def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] = ???
 
   override def exists(bucketKey: String): Future[Boolean] = ???
+
+  override def uploadZipSource(zipSource: Source[ByteString, Future[Done]], bucketKey: String): Future[Done] = ???
 }
