@@ -20,10 +20,8 @@ import models.report.sampledata.SampleDataService
 import orchestrators._
 import orchestrators.proconnect.ProConnectClient
 import orchestrators.proconnect.ProConnectOrchestrator
-import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
-import org.apache.pekko.actor.typed.DispatcherSelector
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -309,11 +307,7 @@ class SignalConsoComponents(
     )
 
   val htmlConverterActor: typed.ActorRef[HtmlConverterActor.ConvertCommand] =
-    actorSystem.spawn(
-      HtmlConverterActor.create(),
-      "html-converter-actor",
-      DispatcherSelector.fromConfig("my-blocking-dispatcher")
-    )
+    actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
 
   val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
@@ -419,24 +413,11 @@ class SignalConsoComponents(
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
+  val reportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(materializer, actorSystem)
+
   def antivirusService: AntivirusServiceInterface =
     new AntivirusService(conf = signalConsoConfiguration.antivirusServiceConfiguration, backend)
-
-  val engagementOrchestrator =
-    new EngagementOrchestrator(
-      engagementRepository,
-      visibleReportOrchestrator,
-      companiesVisibilityOrchestrator,
-      eventRepository,
-      reportRepository,
-      reportEngagementReviewRepository
-    )
-
-  val reportZipExportService =
-    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(
-      materializer,
-      actorSystem
-    )
 
   val reportFileOrchestrator =
     new ReportFileOrchestrator(
@@ -452,6 +433,15 @@ class SignalConsoComponents(
 
   val emailNotificationOrchestrator = new EmailNotificationOrchestrator(mailService, subscriptionRepository)
 
+  val engagementOrchestrator =
+    new EngagementOrchestrator(
+      engagementRepository,
+      visibleReportOrchestrator,
+      companiesVisibilityOrchestrator,
+      eventRepository,
+      reportRepository,
+      reportEngagementReviewRepository
+    )
   private def buildReportOrchestrator(emailService: MailServiceInterface) = new ReportOrchestrator(
     emailService,
     reportRepository,
@@ -478,15 +468,6 @@ class SignalConsoComponents(
 
   val reportOrchestrator = buildReportOrchestrator(mailService)
 
-  val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(
-      companyRepository,
-      eventRepository,
-      reportOrchestrator,
-      reportConsumerReviewOrchestrator,
-      signalConsoConfiguration
-    )
-
   val reportAssignmentOrchestrator = new ReportAssignmentOrchestrator(
     visibleReportOrchestrator,
     companiesVisibilityOrchestrator,
@@ -496,19 +477,18 @@ class SignalConsoComponents(
     eventRepository
   )
 
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(
+      visibleReportOrchestrator,
+      companyRepository,
+      eventRepository,
+      reportFileRepository,
+      responseConsumerReviewRepository,
+      reportEngagementReviewRepository
+    )
+
   val socialBladeClient      = new SocialBladeClient(applicationConfiguration.socialBlade)
   val influencerOrchestrator = new InfluencerOrchestrator(influencerRepository, socialBladeClient)
-
-  val reportsPdfExtractActor: typed.ActorRef[ReportsZipExtractActor.ReportsExtractCommand] =
-    actorSystem.spawn(
-      ReportsZipExtractActor.create(
-        reportWithDataOrchestrator,
-        asyncFileRepository,
-        s3Service,
-        reportZipExportService
-      ),
-      "reports-zip-extract-actor"
-    )
 
   val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
     actorSystem.spawn(
@@ -895,7 +875,8 @@ class SignalConsoComponents(
     controllerComponents,
     reportWithDataOrchestrator,
     visibleReportOrchestrator,
-    reportZipExportService
+    reportZipExportService,
+    htmlFromTemplateGenerator
   )
 
   val reportedPhoneController = new ReportedPhoneController(
@@ -912,7 +893,6 @@ class SignalConsoComponents(
       reportOrchestrator,
       asyncFileRepository,
       reportsExtractActor,
-      reportsPdfExtractActor,
       cookieAuthenticator,
       controllerComponents
     )

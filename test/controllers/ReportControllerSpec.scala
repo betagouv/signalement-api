@@ -405,7 +405,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 enableRateLimit = false,
                 antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true, false),
                 reportsExportLimitMax = 30000,
-                reportsExportPdfLimitMax = 1000,
                 reportsListLimitMax = 10000
               )
 

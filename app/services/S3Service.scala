@@ -35,11 +35,6 @@ class S3Service(awsS3Client: AmazonS3)(implicit
   override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
     pekkoS3Client.multipartUpload(bucketName, bucketKey)
 
-  override def uploadZipSource(zipSource: Source[ByteString, Future[Done]], bucketKey: String): Future[Done] =
-    S3
-      .multipartUpload(bucketName, bucketKey)
-      .runWith(zipSource)
-
   override def download(bucketKey: String): Future[ByteString] =
     downloadFromBucket(bucketKey).runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b))
 

@@ -13,7 +13,6 @@ case class SignalConsoConfiguration(
     upload: UploadConfiguration,
     mobileApp: MobileAppConfiguration,
     reportsExportLimitMax: Int,
-    reportsExportPdfLimitMax: Int,
     reportsListLimitMax: Int,
     reportFileMaxSize: Int,
     reportMaxNumberOfAttachments: Int,

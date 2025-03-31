@@ -672,12 +672,4 @@ object AppError {
       "Vous ne pouvez pas réattribuer ce signalement à la même entreprise"
     override val titleForLogs: String = "report_not_reattributable"
   }
-
-  final case object DownloadReportsLimitExceeded extends BadRequestError {
-    override val scErrorCode: String = "SC-0075"
-    override val title: String       = s"Report download limit exceeded"
-    override val details: String =
-      "Nombre max d'éléments depassé"
-    override val titleForLogs: String = "report_download_limit_exceeded"
-  }
 }
