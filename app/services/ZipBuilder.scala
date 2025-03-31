@@ -14,7 +14,9 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.zip.ZipOutputStream
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
@@ -24,24 +26,23 @@ object ZipBuilder {
   val logger: Logger = Logger(this.getClass)
 
   def buildZip(
-                zipEntries: Seq[(ZipEntryName, Source[ByteString, Unit])]
-              )(implicit  mat: Materializer,ec: ExecutionContext): Source[ByteString, Future[Done]] = {
+      zipEntries: Seq[(ZipEntryName, Source[ByteString, Unit])]
+  )(implicit mat: Materializer, ec: ExecutionContext): Source[ByteString, Future[Done]] = {
 
     val pipedOut = new PipedOutputStream()
-    val pipedIn = new PipedInputStream(pipedOut)
-    val zipOut = new ZipOutputStream(new BufferedOutputStream(pipedOut))
+    val pipedIn  = new PipedInputStream(pipedOut)
+    val zipOut   = new ZipOutputStream(new BufferedOutputStream(pipedOut))
 
-    Future {
+    val zipFuture = Future {
       try {
         zipEntries.foreach { case (entryName, entrySource) =>
           zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
-
 
           val writeResult = entrySource.runForeach { bytes =>
             zipOut.write(bytes.toArray)
           }
 
-          Await.result(writeResult, Duration.Inf)
+          val _ = Await.result(writeResult, Duration.Inf)
           zipOut.closeEntry()
         }
         zipOut.finish()
@@ -50,11 +51,20 @@ object ZipBuilder {
           logger.errorWithTitle("zip_builder", "Error while writing zip entries", e)
           throw e
       } finally {
-        try zipOut.close() catch { case _: Throwable => }
-        try pipedOut.close() catch { case _: Throwable => }
+        try zipOut.close()
+        catch { case _: Throwable => }
+        try pipedOut.close()
+        catch { case _: Throwable => }
       }
     }
-    
+
+    zipFuture.onComplete {
+      case Success(_) =>
+        logger.info("[zip_builder] ZIP creation completed successfully")
+      case Failure(ex) =>
+        logger.errorWithTitle("zip_builder", "ZIP creation failed", ex)
+    }
+
     val zipSource: Source[ByteString, Future[IOResult]] =
       StreamConverters.fromInputStream(() => pipedIn)
 
@@ -68,6 +78,5 @@ object ZipBuilder {
       ioResultFuture
     }
   }
-
 
 }
