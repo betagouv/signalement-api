@@ -6,7 +6,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class ReportFilter(
-    ids: Seq[UUID] = Seq.empty,
     departments: Seq[String] = Seq.empty,
     email: Option[String] = None,
     consumerPhone: Option[String] = None,

@@ -21,10 +21,6 @@ trait S3ServiceInterface {
   def delete(bucketKey: String): Future[Done]
 
   def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String
-
   def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]]
-
   def exists(bucketKey: String): Future[Boolean]
-
-  def uploadZipSource(zipSource: Source[ByteString, Future[Done]], bucketKey: String): Future[Done]
 }

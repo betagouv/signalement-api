@@ -31,8 +31,7 @@ object AsyncFileKind extends PlayEnum[AsyncFileKind] {
 
   val values = findValues
 
-  case object Reports    extends AsyncFileKind
-  case object ReportsZip extends AsyncFileKind
+  case object Reports extends AsyncFileKind
 
   case object ReportedPhones extends AsyncFileKind
 

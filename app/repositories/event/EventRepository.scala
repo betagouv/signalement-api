@@ -114,23 +114,6 @@ class EventRepository(
         .result
     }
 
-  override def getCompaniesEventsWithUsers(
-      companyIds: List[UUID],
-      filter: EventFilter
-  ): Future[List[(Event, Option[User])]] =
-    db.run {
-      getRawEvents(filter)
-        .filter(
-          _.companyId inSetBind companyIds
-        )
-        .filter(!_.reportId.isDefined)
-        .joinLeft(UserTable.table)
-        .on(_.userId === _.id)
-        .sortBy(_._1.creationDate.desc)
-        .to[List]
-        .result
-    }
-
   override def countCompanyEventsByUsers(
       companyId: UUID,
       usersIds: List[UUID],
