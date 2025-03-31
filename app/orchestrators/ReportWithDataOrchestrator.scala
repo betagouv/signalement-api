@@ -47,7 +47,6 @@ class ReportWithDataOrchestrator(
           None,
           None,
           None,
-          None,
           signalConsoConfiguration.reportsExportPdfLimitMax
         )
         .map(_.entities)
