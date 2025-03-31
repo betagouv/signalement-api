@@ -1,6 +1,7 @@
 package controllers
 
 import actors.ReportsExtractActor
+import actors.ReportsZipExtractActor
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.MalformedQueryParams
@@ -26,6 +27,7 @@ class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
     reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand],
+    reportsZipExtractActor: typed.ActorRef[ReportsZipExtractActor.ReportsExtractCommand],
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -65,18 +67,8 @@ class ReportListController(
   }
 
   def createReportsSearchExcelExtract = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportFilters = request.identity.userRole match {
-      case UserRole.Professionnel =>
-        ReportFilterProApi.fromQueryString(request.queryString).map(ReportFilterProApi.toReportFilter)
-      case _ => ReportFilterApi.fromQueryString(request.queryString).map(ReportFilterApi.toReportFilter)
-    }
-
     for {
-      reportFilter <- reportFilters.toOption
-        .liftTo[Future] {
-          logger.warn(s"Failed to parse ReportFilter query params")
-          throw MalformedQueryParams
-        }
+      reportFilter <- parseReportFilter(request.queryString, request.identity)
       _ = logger.debug(s"Parsing zone query param")
       zone <- (new QueryStringMapper(request.queryString))
         .timeZone("zone")
@@ -92,4 +84,30 @@ class ReportListController(
       _ = reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, reportFilter, zone)
     } yield Ok
   }
+
+  def createReportsSearchZipExtract() =
+    Act.secured.all.allowImpersonation.async(parse.empty) { implicit request =>
+      for {
+        reportFilter <- parseReportFilter(request.queryString, request.identity)
+        _ = logger.debug(s"Requesting report for user ${request.identity.email}")
+        file <- asyncFileRepository
+          .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportsZip))
+        _ = reportsZipExtractActor ! ReportsZipExtractActor.ExtractRequest(file.id, request.identity, reportFilter)
+      } yield Ok
+    }
+
+  private def parseReportFilter(queryString: Map[String, Seq[String]], identity: User) = {
+
+    val reportFilters = identity.userRole match {
+      case UserRole.Professionnel =>
+        ReportFilterProApi.fromQueryString(queryString).map(ReportFilterProApi.toReportFilter)
+      case _ => ReportFilterApi.fromQueryString(queryString).map(ReportFilterApi.toReportFilter)
+    }
+    reportFilters.toOption
+      .liftTo[Future] {
+        logger.warn(s"Failed to parse ReportFilter query params")
+        throw MalformedQueryParams
+      }
+  }
+
 }

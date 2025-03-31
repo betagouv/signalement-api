@@ -651,6 +651,9 @@ object ReportRepository {
       .map { case (((((report, metadata), bookmark), consumerReview), engagementReview), subcategoryLabel) =>
         (report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
       }
+      .filterIf(filter.ids.nonEmpty) { case (report, _, _, _, _, _) =>
+        report.id inSetBind filter.ids
+      }
       .filterOpt(filter.email) { case ((report, _, _, _, _, _), email) =>
         report.email === EmailAddress(email)
       }

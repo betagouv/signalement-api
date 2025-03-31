@@ -8,6 +8,7 @@ import models.event.Event
 import models.event.EventUser
 import models.event.EventWithUser
 import models.report._
+import models.report.extract.ReportExtractName
 import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReview
 import orchestrators.ReportOrchestrator
@@ -37,7 +38,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
-import scala.util.Random
 import scala.util.Success
 
 object ReportsExtractActor {
@@ -152,7 +152,7 @@ object ReportsExtractActor {
         Seq(AccessLevel.ADMIN)
       )
     } yield {
-      val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
+      val targetFilename = ReportExtractName(filters)
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
@@ -220,7 +220,7 @@ object ReportsExtractActor {
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename.value)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

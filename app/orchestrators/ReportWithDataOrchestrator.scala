@@ -1,27 +1,22 @@
 package orchestrators
 
-import cats.implicits.toTraverseOps
+import config.SignalConsoConfiguration
 import models.User
 import models.company.Company
 import models.event.Event
 import models.report.ExistingReportResponse
 import models.report.Report
 import models.report.ReportFileApi
+import models.report.ReportFilter
 import models.report.review.EngagementReview
 import models.report.review.ResponseConsumerReview
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
-import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-import repositories.reportengagementreview.ReportEngagementReviewRepositoryInterface
-import repositories.reportfile.ReportFileRepositoryInterface
-import repositories.subcategorylabel.SubcategoryLabel
 import utils.Constants
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 case class ReportWithData(
     report: Report,
@@ -35,50 +30,67 @@ case class ReportWithData(
 )
 
 class ReportWithDataOrchestrator(
-    visibleReportOrchestrator: VisibleReportOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
-    reportFileRepository: ReportFileRepositoryInterface,
-    reviewRepository: ResponseConsumerReviewRepositoryInterface,
-    engagementReviewRepository: ReportEngagementReviewRepositoryInterface
+    reportOrchestrator: ReportOrchestrator,
+    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
-  def getReportFull(uuid: UUID, userToCheckAuthorization: User): Future[Option[ReportWithData]] =
-    visibleReportOrchestrator
-      .getVisibleReportForUserWithExtra(uuid, userToCheckAuthorization)
-      .flatMap { maybeReport =>
-        maybeReport.map { reportExtra =>
-          val report = reportExtra.report
-          for {
-            events       <- eventRepository.getEventsWithUsers(List(uuid), EventFilter())
-            maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-            companyEvents <- report.companyId
-              .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-              .getOrElse(Future.successful(List.empty))
-            reportFiles            <- reportFileRepository.retrieveReportFiles(uuid)
-            consumerReviewOption   <- reviewRepository.findByReportId(uuid).map(_.headOption)
-            engagementReviewOption <- engagementReviewRepository.findByReportId(uuid).map(_.headOption)
-          } yield {
-            val responseOption = events
-              .map(_._1)
-              .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-              .map(_.details)
-              .map(_.as[ExistingReportResponse])
-            ReportWithData(
-              SubcategoryLabel.translateSubcategories(report, reportExtra.subcategoryLabel),
-              maybeCompany,
-              events,
-              responseOption,
-              consumerReviewOption,
-              engagementReviewOption,
-              companyEvents,
-              reportFiles.map(ReportFileApi.build)
-            )
-          }
-        } match {
-          case Some(f) => f.map(Some(_))
-          case None    => Future.successful(None)
+  def getReportsFull(reportFilter: ReportFilter, user: User) =
+    for {
+      reportsWithFiles <- reportOrchestrator
+        .getReportsForUser(
+          user,
+          reportFilter,
+          None,
+          None,
+          None,
+          None,
+          signalConsoConfiguration.reportsExportPdfLimitMax
+        )
+        .map(_.entities)
+      reportIds    = reportsWithFiles.map(_.report.id)
+      companySiret = reportsWithFiles.flatMap(_.report.companySiret)
+      companyIds   = reportsWithFiles.flatMap(_.report.companyId)
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.getReviews(reportIds)
+      companies          <- companyRepository.findBySirets(companySiret).map(l => l.map(c => (c.siret, c)).toMap)
+      eventsByCompanyId  <- eventRepository.getCompaniesEventsWithUsers(companyIds, EventFilter.Empty)
+      eventsByReportId <- eventRepository
+        .getEventsWithUsers(reportIds, EventFilter.Empty)
+        .map(events =>
+          events
+            .collect { case (event @ Event(_, Some(reportId), _, _, _, _, _, _), user) =>
+              (reportId, (event, user))
+            }
+            .groupMap(_._1)(_._2)
+        )
+    } yield reportsWithFiles.map { reportWithFiles =>
+      val report = reportWithFiles.report
+      val events = eventsByReportId.getOrElse(report.id, List.empty)
+      val responseOption = events
+        .map(_._1)
+        .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+        .map(_.details)
+        .map(_.as[ExistingReportResponse])
+
+      val companyEvents = report.companyId
+        .map { c =>
+          eventsByCompanyId.filter(_._1.companyId.contains(c))
         }
-      }
+        .getOrElse(List.empty)
+
+      ReportWithData(
+        report = report,
+        maybeCompany = report.companySiret.flatMap(companies.get),
+        events = events,
+        responseOption = responseOption,
+        consumerReviewOption = consumerReviewsMap.get(report.id).flatten,
+        engagementReviewOption = reportWithFiles.engagementReview,
+        companyEvents = companyEvents,
+        files = reportWithFiles.files.map(ReportFileApi.build)
+      )
+    }
+
 }

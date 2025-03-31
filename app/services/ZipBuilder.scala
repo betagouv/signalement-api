@@ -1,89 +1,108 @@
 package services
 
-import org.apache.pekko.stream.IOResult
+import orchestrators.reportexport.ZipEntryName
+import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.OverflowStrategy
+import org.apache.pekko.stream.QueueOfferResult
 import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.stream.scaladsl.StreamConverters
+import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
 import org.apache.pekko.util.ByteString
 import play.api.Logger
-import utils.Logs.RichLogger
 
 import java.io.BufferedOutputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
+import java.io.OutputStream
 import java.util.zip.ZipOutputStream
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.blocking
 import scala.util.Failure
 import scala.util.Success
-import scala.util.control.NonFatal
 
 object ZipBuilder {
 
   val logger: Logger = Logger(this.getClass)
-  case class ReportZipEntryName(value: String)
+
+  private class QueueOutputStream(queue: SourceQueueWithComplete[ByteString])(implicit ec: ExecutionContext)
+      extends OutputStream {
+
+    private var lastOffer: Future[QueueOfferResult] = Future.successful(QueueOfferResult.Enqueued)
+
+    override def write(b: Int): Unit =
+      write(Array(b.toByte), 0, 1)
+
+    override def write(b: Array[Byte], off: Int, len: Int): Unit = {
+      val bs = ByteString.fromArray(b, off, len)
+      lastOffer = lastOffer.flatMap { _ =>
+        val offerFuture = queue.offer(bs)
+
+        offerFuture.failed.foreach { ex =>
+          logger.error("Error while offering to the queue", ex)
+          queue.fail(ex)
+        }
+
+        offerFuture.flatMap(_ => Future.successful(QueueOfferResult.Enqueued))
+      }
+    }
+
+    override def close(): Unit = () // La queue est close ailleurs, ne pas supprimer
+  }
 
   def buildZip(
-      zipEntries: Seq[(ReportZipEntryName, Source[ByteString, Unit])]
-  )(implicit executionContext: ExecutionContext, materializer: Materializer): Source[ByteString, Future[IOResult]] = {
+      zipEntries: Seq[(ZipEntryName, Source[ByteString, _])]
+  )(implicit mat: Materializer, ec: ExecutionContext): Source[ByteString, Future[Done]] = {
 
-    val (zipOut, pipedOut, source) = createZipStreams()
+    val (queue, source) =
+      Source.queue[ByteString](bufferSize = 16, OverflowStrategy.backpressure).preMaterialize()
 
-    val fileSourcesFutures = zipEntries.map { case (fileName, zipEntrySource) =>
-      writeZipEntries(zipEntrySource, fileName, zipOut)
+    val zipOut = new ZipOutputStream(new BufferedOutputStream(new QueueOutputStream(queue)))
+
+    val writing: Future[Unit] =
+      writeEntries(zipOut, zipEntries)
+        .transformWith {
+          case Success(_)  => closeZipOutputStream(zipOut)
+          case Failure(ex) => handleError(zipOut, ex)
+        }
+        .recoverWith { case ex =>
+          handleQueueFailure(queue, ex)
+        }
+        .map { _ =>
+          queue.complete()
+        }
+
+    source.watchTermination() { (_, done) =>
+      writing.flatMap(_ => done)
     }
-
-    // Make sure to wait all operations before closing the zip
-    Future
-      .sequence(fileSourcesFutures)
-      .andThen {
-        case Success(_) =>
-          safelyCloseResources(zipOut, pipedOut)
-        case Failure(e) =>
-          logger.errorWithTitle("zip_builder", "Error in processing files", e)
-          safelyCloseResources(zipOut, pipedOut)
-      }: Unit
-
-    source
   }
 
-  private def writeZipEntries(
-      input: Source[ByteString, Unit],
-      entryName: ReportZipEntryName,
-      zipOut: ZipOutputStream
-  )(implicit executionContext: ExecutionContext, materializer: Materializer): Future[Unit] =
-    input.runWith(Sink.fold(ByteString.empty)(_ ++ _)).map { byteString =>
-      zipOut.synchronized {
+  private def writeEntries(zipOut: ZipOutputStream, entries: Seq[(ZipEntryName, Source[ByteString, _])])(implicit
+      mat: Materializer,
+      ec: ExecutionContext
+  ): Future[Unit] =
+    entries.foldLeft(Future.successful(())) { case (prevFut, (entryName, dataSource)) =>
+      prevFut.flatMap { _ =>
         zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
-        zipOut.write(byteString.toArray)
-        zipOut.closeEntry()
+        dataSource
+          .runForeach { chunk =>
+            blocking {
+              zipOut.write(chunk.toArray)
+            }
+          }
+          .map(_ => zipOut.closeEntry())
       }
     }
 
-  private def createZipStreams(): (ZipOutputStream, PipedOutputStream, Source[ByteString, Future[IOResult]]) = {
-    val pipedOut = new PipedOutputStream()
-    val zipOut   = new ZipOutputStream(new BufferedOutputStream(pipedOut))
-    val source   = StreamConverters.fromInputStream(() => new PipedInputStream(pipedOut))
-    (zipOut, pipedOut, source)
+  private def closeZipOutputStream(zipOut: ZipOutputStream)(implicit ec: ExecutionContext): Future[Unit] =
+    Future(zipOut.close()).map(_ => ())
+
+  private def handleError(zipOut: ZipOutputStream, ex: Throwable)(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.error("Error while closing the ZipOutputStream", ex)
+    Future(zipOut.close()).flatMap(_ => Future.failed(ex))
   }
 
-  private def safelyCloseResources(zipOut: ZipOutputStream, pipedOut: PipedOutputStream): Unit = {
-    zipOut.synchronized {
-      try {
-        zipOut.finish() // Ensure all data is finalized in the ZIP file
-        zipOut.close()  // Then close the ZIP output stream
-      } catch {
-        case NonFatal(ex) =>
-          logger.errorWithTitle("zip_builder", "Error finalizing or closing zipOut", ex)
-      }
-    }
-    try
-      pipedOut.close() // Close the PipedOutputStream
-    catch {
-      case NonFatal(ex) =>
-        logger.errorWithTitle("zip_builder", "Error closing pipedOut", ex)
-    }
+  private def handleQueueFailure(queue: SourceQueueWithComplete[ByteString], ex: Throwable): Future[Unit] = {
+    logger.error("Error during ZIP file creation", ex)
+    queue.fail(ex)
+    Future.failed(ex)
   }
-
 }
