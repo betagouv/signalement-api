@@ -4,11 +4,9 @@ import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class IpBlackListRepository(dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
-    extends IpBlackListRepositoryInterface {
+class IpBlackListRepository(dbConfig: DatabaseConfig[JdbcProfile]) extends IpBlackListRepositoryInterface {
 
   val table = IpBlackListTable.table
 
