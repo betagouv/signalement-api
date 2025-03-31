@@ -32,21 +32,19 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>@Messages("reportPDF.page.title", report.id)</title>
 
-        <style>
-            @Html(utils.B64PdfRessource.ReportCss)
-        </style>
+        <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
     </head>
     <body>
         <div style="page-break-before: always;">
             <div class="logo-marianne">
-                <img src="@utils.B64PdfRessource.LogoMarianne"/>
+                <img src='@routes.Assets.versioned("images/logo-marianne.jpg")'/>
             </div>
             <div class="logo-sc">
-                <img src="@utils.B64PdfRessource.LogoSignalConso" height="1.7cm"/>
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
             </div>
             <div class="references">
                 <small>
-                    @Messages("reportPDF.references.uniqueId", report.id) <br>
+                    @Messages("reportPDF.references.uniqueId", report.id)<br>
                 @Messages("reportPDF.references.documentExtractedOn", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
@@ -96,9 +94,9 @@
 
                         </b>
                         <div>
-                            <b>
-                            @ExistingReportResponse.translateResponseDetails(response).getOrElse("")
-                            </b>
+                         <b>
+                             @ExistingReportResponse.translateResponseDetails(response).getOrElse("")
+                         </b>
                         </div>
                         <div>@response.consumerDetails</div>
                     @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
@@ -124,12 +122,12 @@
                                 }
                             }
                         </p>
-                    @review.details.filter(_.nonEmpty).map { details =>
-                        <p>
-                            <b>@Messages("reportPDF.report.reviewDetail")</b>
-                            @details
-                        </p>
-                    }
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
+                                @details
+                            </p>
+                        }
                     }
 
                     @engagementReviewOption.map { review =>
@@ -148,12 +146,12 @@
                                 }
                             }
                         </p>
-                    @review.details.filter(_.nonEmpty).map { details =>
-                        <p>
-                            <b>@Messages("reportPDF.report.reviewDetail")</b>
-                            @details
-                        </p>
-                    }
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <p>
+                                <b>@Messages("reportPDF.report.reviewDetail")</b>
+                                @details
+                            </p>
+                        }
                     }
 
                     <h2>@Messages("reportPDF.report.companyHeader")</h2>
@@ -236,7 +234,7 @@
                 }
             </div>
             <div class="footer text-center">
-                <img src="@utils.B64PdfRessource.LogoMinister"/>
+                <img src='@routes.Assets.versioned("images/logo-ministere.jpg")'/>
             </div>
         </div>
     </body>
