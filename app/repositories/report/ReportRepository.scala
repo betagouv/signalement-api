@@ -425,7 +425,9 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
               )
               .on(_._1.companySiret === _._1)
               .withPagination(db)(offset, limit, None)
-              .sortBy(t => sortReportOrder(t._2._2, order))
+              .sortBy { case ((report, _, _, _, _, _), (_, companyCount)) =>
+                (sortReportOrder(companyCount, order), report.creationDate.desc)
+              }
               .map(_.mapEntities {
                 case ((report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel), _) =>
                   ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
@@ -433,14 +435,17 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 
           case ReportSort(SortCriteria.SiretByAccount, order) =>
             queryFilter(ReportTable.table(user), filter, user)
-              .join(
+              .joinLeft(
                 CompanyAccessTable.table
                   .groupBy(_.companyId)
                   .map(t => t._1 -> t._2.length)
               )
               .on(_._1.companyId === _._1)
               .withPagination(db)(offset, limit, None)
-              .sortBy(t => sortReportOrder(t._2._2, order))
+              .sortBy { case ((report, _, _, _, _, _), accesses) =>
+                val accessesCount = accesses.map(_._2)
+                (sortReportOrder(accessesCount, order), report.creationDate.desc)
+              }
               .map(_.mapEntities {
                 case ((report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel), _) =>
                   ReportFromSearch(report, metadata, bookmark, consumerReview, engagementReview, subcategoryLabel)
