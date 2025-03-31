@@ -79,8 +79,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       filter: ReportFilter,
       offset: Option[Long],
       limit: Option[Int],
-      sortBy: Option[ReportSort],
-      orderBy: Option[SortOrder]
+      sort: Option[ReportSort]
   ) = ???
 
   override def getReportsByIds(ids: List[UUID]): Future[List[Report]] = ???

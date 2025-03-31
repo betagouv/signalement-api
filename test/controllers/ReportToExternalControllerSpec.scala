@@ -106,7 +106,6 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       any[ReportFilter],
       any[Option[Long]],
       any[Option[Int]],
-      eqTo(None),
       eqTo(None)
     ) returns Future
       .successful(

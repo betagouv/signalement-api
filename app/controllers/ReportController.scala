@@ -1,15 +1,14 @@
 package controllers
 
 import authentication.Authenticator
-import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import controllers.error.AppError
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import models.report._
 import models.report.delete.ReportAdminAction
 import models.report.reportmetadata.ReportComment
 import orchestrators._
+import orchestrators.reportexport.ReportZipExportService
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.i18n.MessagesImpl
@@ -27,7 +26,6 @@ import repositories.user.UserRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.FrontRoute
-import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -50,8 +48,7 @@ class ReportController(
     controllerComponents: ControllerComponents,
     reportWithDataOrchestrator: ReportWithDataOrchestrator,
     visibleReportOrchestrator: VisibleReportOrchestrator,
-    massImportService: ReportZipExportService,
-    htmlFromTemplateGenerator: HtmlFromTemplateGenerator
+    massImportService: ReportZipExportService
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents) {
 
@@ -192,21 +189,18 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportFutures = new QueryStringMapper(request.queryString)
-      .seq("ids")
-      .map(extractUUID)
-      .map(reportId => reportWithDataOrchestrator.getReportFull(reportId, request.identity))
-    Future
-      .sequence(reportFutures)
-      .map(_.flatten)
-      .map(_.map(htmlFromTemplateGenerator.reportPdf(_, request.identity)))
-      .map(pdfService.createPdfSource)
+  def downloadReportsAsPdfZip(reportId: UUID) = Act.secured.all.allowImpersonation.async { implicit request =>
+    reportWithDataOrchestrator
+      .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
+      .map { reportIds =>
+        massImportService
+          .reportsSummaryZip(reportIds, request.identity)
+      }
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
           inline = false,
-          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip")
         )
       )
   }
@@ -214,9 +208,11 @@ class ReportController(
   def downloadReportAsZipWithFiles(reportId: UUID) =
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
-        .getReportFull(reportId, request.identity)
-        .flatMap(_.liftTo[Future](AppError.ReportNotFound(reportId)))
-        .flatMap(reportData => massImportService.reportSummaryWithAttachmentsZip(reportData, request.identity))
+        .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
+        .flatMap { reportIds =>
+          massImportService
+            .reportSummaryWithAttachmentsZip(reportIds, request.identity)
+        }
         .map(pdfSource =>
           Ok.chunked(
             content = pdfSource,

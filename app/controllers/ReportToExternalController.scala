@@ -102,7 +102,6 @@ class ReportToExternalController(
         offset,
         limit,
         None,
-        None,
         signalConsoConfiguration.reportsListLimitMax,
         (r: ReportFromSearch, m: Map[UUID, List[ReportFile]]) =>
           ReportWithFilesToExternal(
@@ -123,7 +122,7 @@ class ReportToExternalController(
       end = qs.timeWithLocalDateRetrocompatEndOfDay("end")
     )
     for {
-      reportsWithMetadata <- reportRepository.getReports(None, filter, Some(0), Some(1000000), None, None)
+      reportsWithMetadata <- reportRepository.getReports(None, filter, Some(0), Some(1000000), None)
       reports         = reportsWithMetadata.entities.map(_.report)
       reportsExternal = reports.map(ReportToExternal.fromReport)
     } yield Ok(Json.toJson(reportsExternal))
