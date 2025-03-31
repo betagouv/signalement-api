@@ -192,16 +192,13 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def downloadReportsAsMergedPdf() = Act.secured.all.allowImpersonation.async { implicit request =>
-    val reportFutures = new QueryStringMapper(request.queryString)
-      .seq("ids")
-      .map(extractUUID)
-      .map(reportId => reportWithDataOrchestrator.getReportFull(reportId, request.identity))
-    Future
-      .sequence(reportFutures)
-      .map(_.flatten)
-      .map(_.map(htmlFromTemplateGenerator.reportPdf(_, request.identity)))
-      .map(pdfService.createPdfSource)
+  def downloadReportsAsPdfZip(reportId: UUID) = Act.secured.all.allowImpersonation.async { implicit request =>
+    reportWithDataOrchestrator
+      .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
+      .map { reportIds =>
+        massImportService
+          .reportsSummaryZip(reportIds, request.identity)
+      }
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
