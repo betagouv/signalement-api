@@ -7,7 +7,7 @@ import org.apache.pekko.stream.scaladsl.StreamConverters
 import org.apache.pekko.util.ByteString
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
+import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider
 import config.SignalConsoConfiguration
 import play.api.Logger
 import play.twirl.api.HtmlFormat
@@ -30,7 +30,7 @@ class PDFService(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
-    val dfp                 = new DefaultFontProvider(false, false, true)
+    val dfp                 = new BasicFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setImmediateFlush(true)
     converterProperties.setCreateAcroForm(false)
@@ -53,7 +53,7 @@ class PDFService(
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
     val converterProperties = new ConverterProperties
-    val dfp                 = new DefaultFontProvider(true, true, true)
+    val dfp                 = new BasicFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 

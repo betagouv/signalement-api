@@ -25,14 +25,15 @@ object Dependencies {
     lazy val postgresqlVersion         = "42.7.5"
     lazy val refinedVersion            = "0.11.3"
     lazy val spoiwoVersion             = "2.2.1"
-    lazy val itext7CoreVersion         = "8.0.5"
-    lazy val html2pdfVersion           = "5.0.5"
+    lazy val itext7CoreVersion         = "9.1.0"
+    lazy val html2pdfVersion           = "6.1.0"
     lazy val chimneyVersion            = "1.7.1"
     lazy val sttp                      = "3.10.2"
     lazy val sttpPlayJson              = "3.10.2"
     lazy val flyWayVersion             = "11.3.0"
     lazy val janino                    = "3.1.12"
-    lazy val logstashLogbackEncoder = "8.0"
+    lazy val logstashLogbackEncoder    = "8.0"
+    lazy val zxing                     = "3.5.3"
 
   }
 
@@ -69,7 +70,8 @@ object Dependencies {
     val jbcrypt            = "org.mindrot"            % "jbcrypt"               % "0.4"
     val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"       % Versions.enumeratumVersion
     val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"       % Versions.awsJavaSdkS3Version
-    val jacksonModuleScala ="com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
+    val jacksonModuleScala =
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql"       % "postgresql"  % Versions.postgresqlVersion
     val refinded   = "eu.timepit"          %% "refined"     % Versions.refinedVersion
     val spoiwo     = "com.norbitltd"       %% "spoiwo"      % Versions.spoiwoVersion
@@ -77,6 +79,8 @@ object Dependencies {
     val html2pdf   = "com.itextpdf"         % "html2pdf"    % Versions.html2pdfVersion
     val chimney    = "io.scalaland"        %% "chimney"     % Versions.chimneyVersion
     val playGuard  = "com.digitaltangible" %% "play-guard"  % "3.0.0"
+    val zxingCore  = "com.google.zxing"     % "core"        % Versions.zxing
+    val zxingJava  = "com.google.zxing"     % "javase"      % Versions.zxing
   }
 
   val AppDependencies = Seq(
@@ -112,6 +116,8 @@ object Dependencies {
     Compile.flywayCore,
     Compile.flywayPostgres,
     Compile.playGuard,
+    Compile.zxingCore,
+    Compile.zxingJava,
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,
