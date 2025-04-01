@@ -45,6 +45,8 @@ object ReportStatus extends PlayEnum[ReportStatus] {
     ConsulteIgnore
   ) ++ statusWithProResponse
 
+  val statusOngoing = List(TraitementEnCours, Transmis)
+
   def hasResponse(report: Report): Boolean = statusWithProResponse.contains(report.status)
 
   implicit class ReportStatusOps(reportStatus: ReportStatus) {

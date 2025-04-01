@@ -104,4 +104,6 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
   def getForWithMetadata(user: Option[User], id: UUID): Future[Option[ReportWithMetadata]]
 
   def getLatestReportsOfCompany(companyId: UUID, limit: Int): Future[List[Report]]
+
+  def countOngoingReportsByCompany(companyIds: List[UUID]): Future[Map[UUID, Int]]
 }

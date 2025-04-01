@@ -66,7 +66,7 @@ class ReportRemindersTask(
     }
 
   def runTask(taskRunDate: OffsetDateTime): Future[(List[List[UUID]], List[List[UUID]])] = {
-    val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
+    val ongoingReportsStatus = ReportStatus.statusOngoing
     for {
       ongoingReportsWithUsers <- getReportsByStatusWithUsers(ongoingReportsStatus)
       ongoingReportsWithAtLeastOneUser = ongoingReportsWithUsers.filter(_._2.nonEmpty)

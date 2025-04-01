@@ -621,6 +621,8 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
+  override def countOngoingReportsByCompany(companyIds: List[UUID]): Future[Map[UUID, Int]] =
+    ???
 }
 
 object ReportRepository {

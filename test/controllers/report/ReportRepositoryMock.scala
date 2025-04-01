@@ -134,4 +134,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def getOldReportsNotRgpdDeleted(createdBefore: OffsetDateTime): Future[List[Report]] = ???
 
   override def getLatestReportsOfCompany(companyId: UUID, limit: Int) = ???
+
+  override def countOngoingReportsByCompany(companyIds: List[UUID]): Future[Map[UUID, Int]] = ???
 }
