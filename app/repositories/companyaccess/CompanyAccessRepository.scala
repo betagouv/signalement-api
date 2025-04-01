@@ -117,9 +117,12 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     for {
       tuples <- db.run(
         table
-          .filter(_.companyId inSetBind companyIds)
-          .filter(_.level =!= AccessLevel.NONE)
-          .groupBy(_.companyId)
+          // The join on users is needed to avoid counting soft deleted users
+          .join(UserTable.table)
+          .on(_.userId === _.id)
+          .filter { case (access, _) => access.companyId inSetBind companyIds }
+          .filter { case (access, _) => access.level =!= AccessLevel.NONE }
+          .groupBy { case (access, _) => access.companyId }
           .map { case (uuid, group) => uuid -> group.size }
           .result
       )
