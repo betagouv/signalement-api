@@ -78,7 +78,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
       val companyRepository       = mock[CompanyRepositoryInterface]
       val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
       val companiesVisibilityOrchestrator =
-        new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
+        new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository, reportRepository)
 
       val reportRemindersTask =
         new ReportRemindersTask(

@@ -16,6 +16,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.report.ReportRepository
 import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
@@ -75,9 +76,11 @@ class CompaniesVisibilityOrchestratorSpec(implicit ee: ExecutionEnv)
 
         val companyRepository       = mock[CompanyRepositoryInterface]
         val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
+        val reportRepository        = mock[ReportRepository]
         val companiesVisibilityOrchestrator = new CompaniesVisibilityOrchestrator(
           companyRepository,
-          companyAccessRepository
+          companyAccessRepository,
+          reportRepository
         )
 
         when(companyAccessRepository.fetchCompaniesWithLevel(proUser))

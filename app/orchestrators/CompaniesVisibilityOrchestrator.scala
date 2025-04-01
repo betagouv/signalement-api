@@ -18,7 +18,6 @@ import models.company.CompanyAccessKind.InheritedAdminAndDirectMember
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import utils.MapUtils
 import utils.SIREN
 import utils.SIRET
 
@@ -33,7 +32,7 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 class CompaniesVisibilityOrchestrator(
     companyRepo: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
-    reportsRepository: ReportRepositoryInterface
+    reportRepository: ReportRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   // Fetch all users of this company, and of its head office
@@ -82,7 +81,7 @@ class CompaniesVisibilityOrchestrator(
       allCompaniesIds             = proCompanies.toSimpleList.map(_.company.id)
       companiesWithAdminAccessIds = proCompanies.toSimpleList.filter(_.isAdmin).map(_.company.id)
       reportsCounts        <- companyRepo.getReportsCounts(allCompaniesIds)
-      ongoingReportsCounts <- reportsRepository.countOngoingReportsByCompany(allCompaniesIds)
+      ongoingReportsCounts <- reportRepository.countOngoingReportsByCompany(allCompaniesIds)
       directAccessesCounts <- companyAccessRepository.countAccesses(companiesWithAdminAccessIds)
       proCompaniesExtended = proCompanies.map { case CompanyWithAccess(company, access) =>
         val companyId           = company.id

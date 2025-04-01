@@ -365,7 +365,7 @@ class SignalConsoComponents(
   )
 
   def companiesVisibilityOrchestrator =
-    new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
+    new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository, reportRepository)
 
   val companyAccessOrchestrator =
     new CompanyAccessOrchestrator(

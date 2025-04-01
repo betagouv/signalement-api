@@ -3,12 +3,12 @@ package repositories.report
 import com.github.tminglei.slickpg.TsVector
 import models._
 import models.barcode.BarcodeProduct
-import models.company.AccessLevel
 import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportSort.SortCriteria
 import models.report.ReportSort.SortOrder
 import models.report.ReportStatus.SuppressionRGPD
+import models.report.ReportStatus.statusOngoing
 import models.report._
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
@@ -627,12 +627,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       tuples <- db.run(
         table
           .filter(_.companyId inSetBind companyIds)
+          .filter(_.status inSet statusOngoing.map(_.entryName))
           .groupBy(_.companyId)
-          .map { case (id, group) => id.get -> group.size }
+          .map { case (id, group) => id -> group.size }
           .to[List]
           .result
       )
-    } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
+      tuplesFiltered = tuples.collect { case (Some(id), count) => id -> count }
+    } yield MapUtils.fillMissingKeys(tuplesFiltered.toMap, companyIds, 0)
 }
 
 object ReportRepository {
