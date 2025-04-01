@@ -5,6 +5,7 @@ import models.PaginatedSearch
 import models.User
 import models.company.Company
 import models.company.CompanyRegisteredSearch
+import models.company.CompanySort
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import repositories.company.CompanyRepositoryInterface
@@ -21,8 +22,9 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
+      sort: Option[CompanySort],
       user: User
-  ): Future[PaginatedResult[(Company, Long, Long)]] = ???
+  ): Future[PaginatedResult[(Company, Long, Float)]] = ???
 
   override def getOrCreate(siret: SIRET, data: Company): Future[Company] = ???
 
