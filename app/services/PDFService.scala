@@ -30,7 +30,7 @@ class PDFService(
       htmlDocuments: Seq[HtmlFormat.Appendable]
   )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
-    val dfp                 = new BasicFontProvider(false, false, true)
+    val dfp                 = new BasicFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setImmediateFlush(true)
     converterProperties.setCreateAcroForm(false)
@@ -53,7 +53,7 @@ class PDFService(
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
     val converterProperties = new ConverterProperties
-    val dfp                 = new BasicFontProvider(false, true, true)
+    val dfp                 = new BasicFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
