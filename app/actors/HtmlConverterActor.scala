@@ -3,11 +3,9 @@ package actors
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.DispatcherSelector
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import com.itextpdf.html2pdf.ConverterProperties
-import com.itextpdf.html2pdf.HtmlConverter
+import org.xhtmlrenderer.pdf.ITextRenderer
 import play.api.Logger
 
-import java.io.InputStream
 import java.io.OutputStream
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -17,9 +15,9 @@ import scala.util.Success
 object HtmlConverterActor {
   sealed trait ConvertCommand
   case class Convert(
-      htmlStream: InputStream,
+      htmlBody: String,
       outputStream: OutputStream,
-      converterProperties: ConverterProperties
+      baseUrl: String
   ) extends ConvertCommand
   case class ConvertSuccess(outputStream: OutputStream) extends ConvertCommand
   case class ConvertFailed(outputStream: OutputStream)  extends ConvertCommand
@@ -32,10 +30,14 @@ object HtmlConverterActor {
         context.system.dispatchers.lookup(DispatcherSelector.fromConfig("my-blocking-dispatcher"))
 
       Behaviors.receiveMessage {
-        case Convert(htmlStream, outputStream, converterProperties) =>
+        case Convert(htmlBody, outputStream, baseUrl) =>
           logger.debug("Begin html conversion")
           val job = Future {
-            HtmlConverter.convertToPdf(htmlStream, outputStream, converterProperties)
+            val renderer = new ITextRenderer()
+            renderer.setDocumentFromString(htmlBody, baseUrl)
+            renderer.layout()
+            renderer.createPDF(outputStream)
+            renderer.finishPDF()
           }
           context.pipeToSelf(job) {
             case Success(_) => ConvertSuccess(outputStream)
