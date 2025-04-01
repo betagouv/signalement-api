@@ -16,6 +16,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
+import utils.MapUtils
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
@@ -122,10 +123,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
           .map { case (uuid, group) => uuid -> group.size }
           .result
       )
-      exhaustiveMap = companyIds.map { id =>
-        tuples.find(_._1 == id).getOrElse(id -> 0)
-      }.toMap
-    } yield exhaustiveMap
+    } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
   override def createCompanyUserAccessWithoutRun(
       companyId: UUID,

@@ -108,6 +108,7 @@ case class CompanyWithAccessAndCounts(
     company: Company,
     access: CompanyAccess,
     reportsCount: Long,
+    ongoingReportsCount: Int,
     directAccessesCount: Option[Int]
 )
 

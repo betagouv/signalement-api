@@ -3,6 +3,7 @@ package repositories.report
 import com.github.tminglei.slickpg.TsVector
 import models._
 import models.barcode.BarcodeProduct
+import models.company.AccessLevel
 import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportSort.SortCriteria
@@ -622,7 +623,16 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
 
   override def countOngoingReportsByCompany(companyIds: List[UUID]): Future[Map[UUID, Int]] =
-    ???
+    for {
+      tuples <- db.run(
+        table
+          .filter(_.companyId inSetBind companyIds)
+          .groupBy(_.companyId)
+          .map { case (id, group) => id.get -> group.size }
+          .to[List]
+          .result
+      )
+    } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 }
 
 object ReportRepository {

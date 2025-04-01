@@ -17,6 +17,8 @@ import models.company.CompanyAccessKind.Inherited
 import models.company.CompanyAccessKind.InheritedAdminAndDirectMember
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import utils.MapUtils
 import utils.SIREN
 import utils.SIRET
 
@@ -30,7 +32,8 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 
 class CompaniesVisibilityOrchestrator(
     companyRepo: CompanyRepositoryInterface,
-    companyAccessRepository: CompanyAccessRepositoryInterface
+    companyAccessRepository: CompanyAccessRepositoryInterface,
+    reportsRepository: ReportRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   // Fetch all users of this company, and of its head office
@@ -78,18 +81,19 @@ class CompaniesVisibilityOrchestrator(
       proCompanies <- fetchVisibleCompanies(pro: User)
       allCompaniesIds             = proCompanies.toSimpleList.map(_.company.id)
       companiesWithAdminAccessIds = proCompanies.toSimpleList.filter(_.isAdmin).map(_.company.id)
-      reportsCounts <- companyRepo.getReportsCounts(allCompaniesIds)
-      directAccessesCounts <- companyAccessRepository.countAccesses(
-        companiesWithAdminAccessIds
-      )
+      reportsCounts        <- companyRepo.getReportsCounts(allCompaniesIds)
+      ongoingReportsCounts <- reportsRepository.countOngoingReportsByCompany(allCompaniesIds)
+      directAccessesCounts <- companyAccessRepository.countAccesses(companiesWithAdminAccessIds)
       proCompaniesExtended = proCompanies.map { case CompanyWithAccess(company, access) =>
         val companyId           = company.id
         val reportsCount        = reportsCounts.getOrElse(companyId, 0L)
+        val ongoingReportsCount = ongoingReportsCounts.getOrElse(companyId, 0)
         val directAccessesCount = directAccessesCounts.get(companyId)
         CompanyWithAccessAndCounts(
           company,
           access,
           reportsCount,
+          ongoingReportsCount,
           directAccessesCount
         )
       }
