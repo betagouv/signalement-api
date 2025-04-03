@@ -97,9 +97,9 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =
-    fetchUsersAndAccessesByCompanies(companyIds, levels).map(users =>
-      users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
-    )
+    fetchUsersAndAccessesByCompanies(companyIds, levels)
+      .map(users => users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
+      .map(map => MapUtils.fillMissingKeys(map, companyIds, Nil))
 
   override def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
