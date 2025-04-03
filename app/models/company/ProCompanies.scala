@@ -29,20 +29,23 @@ object ProCompanies {
   // - output the Map in a JSON-friendly way
   // - sort everything
   implicit val writes: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = obj => {
-    def sortCriterion(c: CompanyWithAccessAndCounts) = (c.reportsCount, c.company.name, c.company.siret.value)
+
+    val ordering: Ordering[CompanyWithAccessAndCounts] =
+      Ordering.by(c => (-c.reportsCount, -c.ongoingReportsCount, c.company.name, c.company.siret.value))
+
     Json.obj(
       "headOfficesAndSubsidiaries" ->
         Json.toJson(
           obj.headOfficesAndSubsidiaries.toList
-            .sortBy(x => sortCriterion(x._1))
+            .sortBy(_._1)(ordering)
             .map { case (headOffice, subsidiaries) =>
               Json.obj(
                 "headOffice"   -> Json.toJson(headOffice),
-                "subsidiaries" -> Json.toJson(subsidiaries.sortBy(sortCriterion))
+                "subsidiaries" -> Json.toJson(subsidiaries.sorted(ordering))
               )
             }
         ),
-      "loneSubsidiaries" -> Json.toJson(obj.loneSubsidiaries.sortBy(sortCriterion))
+      "loneSubsidiaries" -> Json.toJson(obj.loneSubsidiaries.sorted(ordering))
     )
   }
 }
