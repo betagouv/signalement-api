@@ -3,6 +3,8 @@ package repositories.companyaccess
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyAccess
+import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.UserAccess
 import repositories.PostgresProfile.api._
@@ -14,6 +16,8 @@ import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
+import utils.MapUtils
+
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -56,7 +60,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
+    ).map(_.map(x => CompanyWithAccess(x._1, CompanyAccess(x._2, kind = CompanyAccessKind.Direct))))
 
   override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
@@ -93,9 +97,9 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =
-    fetchUsersAndAccessesByCompanies(companyIds, levels).map(users =>
-      users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
-    )
+    fetchUsersAndAccessesByCompanies(companyIds, levels)
+      .map(users => users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
+      .map(map => MapUtils.fillMissingKeys(map, companyIds, Nil))
 
   override def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
@@ -108,6 +112,21 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .to[List]
         .result
     )
+
+  override def countAccesses(companyIds: List[UUID]): Future[Map[UUID, Int]] =
+    for {
+      tuples <- db.run(
+        table
+          // The join on users is needed to avoid counting soft deleted users
+          .join(UserTable.table)
+          .on(_.userId === _.id)
+          .filter { case (access, _) => access.companyId inSetBind companyIds }
+          .filter { case (access, _) => access.level =!= AccessLevel.NONE }
+          .groupBy { case (access, _) => access.companyId }
+          .map { case (uuid, group) => uuid -> group.size }
+          .result
+      )
+    } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
   override def createCompanyUserAccessWithoutRun(
       companyId: UUID,

@@ -4,8 +4,13 @@ import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import models.User
 import models.company.AccessLevel
+import models.company.AccessLevel.ADMIN
+import models.company.AccessLevel.MEMBER
 import models.company.Company
 import models.report._
+import models.report.sampledata.CompanyGenerator.buildHeadOfficeAndThreeSubsidiaries
+import models.report.sampledata.CompanyGenerator.buildLoneCompany
+import models.report.sampledata.CompanyGenerator.getRandomSiren
 import models.report.sampledata.ProUserGenerator._
 import models.report.sampledata.ResponseGenerator.acceptedResponse
 import models.report.sampledata.ResponseGenerator.notConcernedResponse
@@ -59,11 +64,12 @@ class SampleDataService(
   private val consoIp = ConsumerIp("1.1.1.1")
 
   def genSampleData() = {
-    val megacorpCompanies = CompanyGenerator.buildMegacorpCompanyAndSubsidiaries(subsidiaryCount = 3)
+    val megacorpCompanies =
+      CompanyGenerator.buildMegacorpCompanyAndSubsidiaries()
     logger.info("BEGIN Sample service creation")
     for {
-      _ <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
-      _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF))
+      _ <- deleteAllData(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF, proUserJohnny))
+      _ <- createUsers(List(proUserA, proUserB, proUserC, proUserD, proUserE, proUserF, proUserJohnny))
       _ <- createCompaniesWithReportsAndGiveAccess(
         megacorpCompanies,
         NonEmptyList.of(proUserA, proUserB),
@@ -82,14 +88,26 @@ class SampleDataService(
         List(CompanyGenerator.buildLoneCompany("FIFRELET")),
         NonEmptyList.of(proUserF, proUserE)
       )
+      _ <- createEverythingForJohnny(proUserJohnny)
     } yield ()
   }
 
-  private def createCompanyWithNoReports(c: Company, proUser: User) = {
-    logger.info(s"Creation of company ${c.id} (without reports) and accesses for ${proUser.firstName} ")
+  private def createCompanyWithNoReports(c: Company, proUser: User) =
+    for {
+      _ <- createCompanyWithNoReportsAndConfigurableAccess(c, proUser, Some(AccessLevel.ADMIN))
+    } yield ()
+
+  private def createCompanyWithNoReportsAndConfigurableAccess(
+      c: Company,
+      proUser: User,
+      accessLevel: Option[AccessLevel]
+  ) = {
+    logger.info(s"Creation of company ${c.id} (without reports) and accesses ${accessLevel} for ${proUser.firstName} ")
     for {
       _ <- companyRepository.create(c)
-      _ <- accessTokenRepository.giveCompanyAccess(c, proUser, AccessLevel.ADMIN)
+      _ <- accessLevel
+        .map(level => accessTokenRepository.giveCompanyAccess(c, proUser, level))
+        .getOrElse(Future.unit)
     } yield ()
   }
 
@@ -124,6 +142,30 @@ class SampleDataService(
         _ = logger.info(s"--- All done for company ${c.name}")
       } yield ()
     }
+  }
+
+  private def createEverythingForJohnny(johnny: User): Future[Unit] = {
+    // Johnny is a special user used to test all combinations of companies accesses, admin/member with headoffices/subsidiaries etc.
+    val (jupiterHeadOffice, jupiterSubsidiary1, jupiterSubsidiary2, jupiterSubsidiary3) =
+      buildHeadOfficeAndThreeSubsidiaries("Jupiter", getRandomSiren)
+    val (jazzHeadOffice, jazzSubsidiary1, jazzSubsidiary2, jazzSubsidiary3) =
+      buildHeadOfficeAndThreeSubsidiaries("Jazz", getRandomSiren)
+
+    val loneHeadOffice = buildLoneCompany("Journal", isHeadOffice = true)
+    val loneSubsidiary = buildLoneCompany("Jardin", isHeadOffice = false)
+    val create         = createCompanyWithNoReportsAndConfigurableAccess _
+    for {
+      _ <- create(jupiterHeadOffice, johnny, Some(ADMIN))
+      _ <- create(jupiterSubsidiary1, johnny, Some(ADMIN))
+      _ <- create(jupiterSubsidiary2, johnny, Some(MEMBER))
+      _ <- create(jupiterSubsidiary3, johnny, None)
+      _ <- create(jazzHeadOffice, johnny, Some(MEMBER))
+      _ <- create(jazzSubsidiary1, johnny, Some(ADMIN))
+      _ <- create(jazzSubsidiary2, johnny, Some(MEMBER))
+      _ <- create(jazzSubsidiary3, johnny, None)
+      _ <- create(loneHeadOffice, johnny, Some(ADMIN))
+      _ <- create(loneSubsidiary, johnny, Some(MEMBER))
+    } yield ()
   }
 
   private def createReports(
@@ -218,7 +260,9 @@ class SampleDataService(
             _ <- websites.map(_.id).traverse(websiteRepository.delete)
             _ <- companies.traverse(c => companyRepository.delete(c.company.id))
             _ <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
-            _ = logger.info(s"Deletion done for company user ${predefinedUser.id}")
+            _ = logger.info(
+              s"Deletion done for company user ${predefinedUser.firstName} ${predefinedUser.lastName} ${predefinedUser.id}"
+            )
           } yield ()
         }
       _ = logger.info("DELETING previous data done")

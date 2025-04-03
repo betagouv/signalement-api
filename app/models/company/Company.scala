@@ -1,8 +1,11 @@
 package models.company
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import models.UserRole
 import play.api.libs.json._
 import utils.QueryStringMapper
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -46,7 +49,8 @@ case class Company(
     albertActivityLabel: Option[String] = None,
     albertUpdateDate: Option[OffsetDateTime] = None
 ) {
-  def shortId = this.id.toString.substring(0, 13).toUpperCase
+
+  def siren: SIREN = SIREN.fromSIRET(this.siret)
 }
 
 case class CompanyRegisteredSearch(
@@ -75,14 +79,62 @@ object Company {
 
 case class CompanyWithAccess(
     company: Company,
-    level: AccessLevel
-)
+    access: CompanyAccess
+) {
+  def isAdmin = access.level == AccessLevel.ADMIN
+}
 
 object CompanyWithAccess {
-  implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
+
+  implicit val writes: OWrites[CompanyWithAccess] = Json.writes[CompanyWithAccess]
+
+  // legacy writes
+  val writesAsCompanyWithAdditionalField: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
     val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
-    companyJson + ("level" -> Json.toJson(companyWithAccess.level))
+    companyJson + ("level" -> Json.toJson(companyWithAccess.access.level))
   }
+
+}
+
+case class CompanyAccess(
+    level: AccessLevel,
+    kind: CompanyAccessKind
+)
+object CompanyAccess {
+  implicit val writes: OWrites[CompanyAccess] = Json.writes[CompanyAccess]
+}
+
+case class CompanyWithAccessAndCounts(
+    company: Company,
+    access: CompanyAccess,
+    reportsCount: Long,
+    ongoingReportsCount: Int,
+    usersCount: Option[Int]
+)
+
+object CompanyWithAccessAndCounts {
+
+  implicit val writes: OWrites[CompanyWithAccessAndCounts] = Json.writes[CompanyWithAccessAndCounts]
+
+}
+
+sealed trait CompanyAccessKind extends EnumEntry
+
+object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
+
+  val values = findValues
+
+  // The pro has directly access to this company, as stored in DB
+  case object Direct extends CompanyAccessKind
+
+  // When the pro has access to this company because he has a direct access to its head office
+  case object Inherited extends CompanyAccessKind
+
+  // Edge case
+  // When the pro has a direct access to this company as a MEMBER
+  // But also has a direct access to its head office as an ADMIN
+  case object InheritedAdminAndDirectMember extends CompanyAccessKind
+
 }
 
 case class CompanyCreation(

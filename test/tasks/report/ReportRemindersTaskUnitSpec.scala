@@ -78,7 +78,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
       val companyRepository       = mock[CompanyRepositoryInterface]
       val companyAccessRepository = mock[CompanyAccessRepositoryInterface]
       val companiesVisibilityOrchestrator =
-        new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
+        new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository, reportRepository)
 
       val reportRemindersTask =
         new ReportRemindersTask(
@@ -106,7 +106,7 @@ class ReportRemindersTaskUnitSpec extends Specification with FutureMatchers {
       val event7 =
         Fixtures.genEventForReport(report7.id, eventType = EventType.SYSTEM, EMAIL_PRO_REMIND_NO_READING).sample.get
 
-      when(reportRepository.getByStatus(List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)))
+      when(reportRepository.getByStatus(ReportStatus.statusOngoing))
         .thenReturn(Future.successful(List(report1, report2, report3, report4, report5, report6, report7)))
       when(
         companyAccessRepository.fetchUsersByCompanyIds(eqTo(List(company1.id, company2.id)), any[Seq[AccessLevel]]())

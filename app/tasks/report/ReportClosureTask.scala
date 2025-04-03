@@ -51,7 +51,7 @@ class ReportClosureTask(
   override def runTask(): Future[Unit] = runTask(taskRunDate = getTodayAtStartOfDayParis())
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
-    val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
+    val ongoingReportsStatus = ReportStatus.statusOngoing
     for {
       reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = taskRunDate)
       _              <- closeExpiredReportsWithErrorHandling(reportsToClose)
