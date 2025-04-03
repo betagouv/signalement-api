@@ -375,7 +375,7 @@ trait GetReportContext extends AppSpec {
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   val mockUserRepository                  = mock[UserRepositoryInterface]
 
-  mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
+  mockCompaniesVisibilityOrchestrator.fetchVisibleCompaniesList(any[User]) answers { (pro: Any) =>
     Future.successful(
       if (pro.asInstanceOf[User].id == concernedProUser.id)
         List(CompanyWithAccess(company, AccessLevel.ADMIN, kind = CompanyAccessKind.Direct))
