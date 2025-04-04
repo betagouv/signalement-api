@@ -7,6 +7,7 @@ import models.PaginatedSearch
 import models.User
 import models.company.Company
 import models.company.CompanyRegisteredSearch
+import models.company.CompanySort
 import repositories.CRUDRepositoryInterface
 import utils.Country
 import utils.SIREN
@@ -23,8 +24,9 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
   def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
+      sort: Option[CompanySort],
       user: User
-  ): Future[PaginatedResult[(Company, Long, Long)]]
+  ): Future[PaginatedResult[(Company, Long, Float)]]
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company]
 

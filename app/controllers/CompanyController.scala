@@ -6,6 +6,7 @@ import models._
 import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
+import models.company.CompanySort
 import models.company.CompanyWithNbReports
 import orchestrators.AlbertOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -18,6 +19,8 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 class CompanyController(
     val companyOrchestrator: CompanyOrchestrator,
@@ -53,19 +56,21 @@ class CompanyController(
 
   def searchCompanies() = Act.secured.adminsAndReadonlyAndDgccrf.allowImpersonation.async { request =>
     implicit val userRole: Option[UserRole] = Some(request.identity.userRole)
-    CompanyRegisteredSearch
-      .fromQueryString(request.queryString)
-      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
-      .fold(
-        error => {
-          logger.error("Cannot parse querystring" + request.queryString, error)
-          Future.successful(BadRequest)
-        },
-        filters =>
-          companyOrchestrator
-            .searchRegistered(filters._1, filters._2, request.identity)
-            .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
-      )
+
+    (for {
+      filters <- CompanyRegisteredSearch.fromQueryString(request.queryString)
+      search  <- PaginatedSearch.fromQueryString(request.queryString)
+    } yield {
+      val sort = CompanySort.fromQueryString(request.queryString)
+      companyOrchestrator
+        .searchRegistered(filters, search, sort, request.identity)
+        .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
+    }) match {
+      case Success(future) => future
+      case Failure(error) =>
+        logger.error("Cannot parse querystring" + request.queryString, error)
+        Future.successful(BadRequest)
+    }
   }
 
   def getCompany(companyId: UUID) = Act.securedWithCompanyAccessById(companyId).allowImpersonation.async { request =>

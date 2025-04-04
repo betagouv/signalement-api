@@ -16,6 +16,7 @@ import models.company.Company
 import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
+import models.company.CompanySort
 import models.company.CompanyWithNbReports
 import models.company.InactiveCompany
 import models.event.Event
@@ -100,34 +101,33 @@ class CompanyOrchestrator(
       }
       companyIdFilter = CompanyRegisteredSearch(identity = Some(visibleByUserCompanyIdFilter))
       paginatedResults <- companyRepository
-        .searchWithReportsCount(companyIdFilter, PaginatedSearch(None, None), user)
+        .searchWithReportsCount(companyIdFilter, PaginatedSearch(None, None), None, user)
 
-      companiesWithNbReports = paginatedResults.entities.map { case (company, count, responseCount) =>
-        toCompanyWithNbReports(company, count, responseCount)
+      companiesWithNbReports = paginatedResults.entities.map { case (company, count, responseRate) =>
+        toCompanyWithNbReports(company, count, responseRate)
       }
     } yield paginatedResults.copy(entities = companiesWithNbReports)
 
   def searchRegistered(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
+      sort: Option[CompanySort],
       user: User
   ): Future[PaginatedResult[CompanyWithNbReports]] =
     companyRepository
-      .searchWithReportsCount(search, paginate, user)
+      .searchWithReportsCount(search, paginate, sort, user)
       .map(x =>
-        x.copy(entities = x.entities.map { case (company, count, responseCount) =>
-          toCompanyWithNbReports(company, count, responseCount)
+        x.copy(entities = x.entities.map { case (company, count, responseRate) =>
+          toCompanyWithNbReports(company, count, responseRate)
         })
       )
 
-  private def toCompanyWithNbReports(company: Company, count: Long, responseCount: Long) = {
-    val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
+  private def toCompanyWithNbReports(company: Company, count: Long, responseRate: Float) =
     company
       .into[CompanyWithNbReports]
       .withFieldConst(_.count, count)
       .withFieldConst(_.responseRate, responseRate.round)
       .transform
-  }
 
   private def restrictCompanyIdFilterOnProVisibility(user: User, companyIdFilter: UUID) =
     companiesVisibilityOrchestrator
