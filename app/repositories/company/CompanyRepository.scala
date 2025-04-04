@@ -8,9 +8,11 @@ import models.company.SearchCompanyIdentity.SearchCompanyIdentityRCS
 import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiren
 import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
+import models.company.CompanySort.SortCriteria
 import models.company.Address
 import models.company.Company
 import models.company.CompanyRegisteredSearch
+import models.company.CompanySort
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
 import repositories.user.UserTable
@@ -24,6 +26,7 @@ import utils.SIRET
 import repositories.CRUDRepository
 import repositories.companyreportcounts.CompanyReportCountsTable
 import slick.basic.DatabaseConfig
+import slick.lifted.Case.If
 import slick.lifted.Rep
 import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -60,8 +63,9 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
+      sort: Option[CompanySort],
       user: User
-  ): Future[PaginatedResult[(Company, Long, Long)]] = {
+  ): Future[PaginatedResult[(Company, Long, Float)]] = {
     def companyIdByEmailTable(emailWithAccess: EmailAddress) = CompanyAccessTable.table
       .join(UserTable.table)
       .on(_.userId === _.id)
@@ -89,10 +93,10 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .map { case (companyTable, companyReportCountView) =>
         val (totalReports, totalProcessedReports) =
           companyReportCountView.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
-        (companyTable, totalReports, totalProcessedReports)
-      }
-      .sortBy { case (_, totalReport, _) =>
-        totalReport.desc
+        val responseRate = If(totalReports === 0L)
+          .Then(0f)
+          .Else((totalProcessedReports.asColumnOf[Float] / totalReports.asColumnOf[Float]) * 100f)
+        (companyTable, totalReports, responseRate)
       }
 
     val maybePreliminaryAction = search.identity.flatMap {
@@ -120,7 +124,16 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         maybeLimit = paginate.limit,
         maybePreliminaryAction = maybePreliminaryAction
       )
-      .unsorted
+      .sortBy { case (_, total, responseRate) =>
+        sort match {
+          case Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Desc)) =>
+            (responseRate.desc, total.desc)
+          case Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Asc)) =>
+            (responseRate.asc, total.desc)
+          case _ =>
+            (total.desc, total.desc)
+        }
+      }
 
   }
 

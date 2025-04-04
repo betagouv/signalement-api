@@ -6,7 +6,6 @@ import models.barcode.BarcodeProduct
 import models.company.Company
 import models.report.ReportResponseType.ACCEPTED
 import models.report.ReportSort.SortCriteria
-import models.report.ReportSort.SortOrder
 import models.report.ReportStatus.SuppressionRGPD
 import models.report._
 import org.apache.pekko.NotUsed
