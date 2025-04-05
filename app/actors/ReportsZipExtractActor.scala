@@ -15,7 +15,6 @@ import services.S3ServiceInterface
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
@@ -135,13 +134,11 @@ object ReportsZipExtractActor {
     import context.executionContext
     for {
       reportsId <- reportOrchestrator.getReportsFull(reportFilter = req.filters, user = req.requestedBy)
-      source <-
+      source =
         if (req.requestedBy.userRole == Professionnel) {
-          Future.successful(
-            reportZipExportService.reportsSummaryZip(
-              reportsId,
-              req.requestedBy
-            )
+          reportZipExportService.reportsSummaryZip(
+            reportsId,
+            req.requestedBy
           )
         } else {
           reportZipExportService.reportSummaryWithAttachmentsZip(
@@ -149,7 +146,6 @@ object ReportsZipExtractActor {
             req.requestedBy
           )
         }
-
       fileName   = s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip"
       remotePath = s"extracts/$fileName"
       _ <- s3Service.uploadZipSource(source, remotePath)

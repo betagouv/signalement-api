@@ -431,11 +431,17 @@ class SignalConsoComponents(
       reportRepository,
       reportEngagementReviewRepository
     )
+  // Using a different thread pool on this one as it is very heavy on blocking IO and used exclusively for mass import
+  val massReportZipExportService =
+    new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(
+      materializer,
+      actorSystem.dispatchers.lookup("zip-blocking-dispatcher")
+    )
 
   val reportZipExportService =
     new ReportZipExportService(htmlFromTemplateGenerator, pdfService, s3Service)(
       materializer,
-      actorSystem
+      actorSystem.dispatchers.lookup("my-blocking-dispatcher")
     )
 
   val reportFileOrchestrator =
@@ -505,7 +511,7 @@ class SignalConsoComponents(
         reportWithDataOrchestrator,
         asyncFileRepository,
         s3Service,
-        reportZipExportService
+        massReportZipExportService
       ),
       "reports-zip-extract-actor"
     )

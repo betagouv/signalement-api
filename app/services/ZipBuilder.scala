@@ -1,13 +1,18 @@
 package services
 
+import models.report.extract.ZipElement
+import models.report.extract.ZipElement.ZipReport
+import models.report.extract.ZipElement.ZipReportFile
 import orchestrators.reportexport.ZipEntryName
 import org.apache.pekko.Done
 import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.connectors.s3.ObjectMetadata
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.StreamConverters
 import org.apache.pekko.util.ByteString
 import play.api.Logger
+import play.twirl.api.Html
 import utils.Logs.RichLogger
 
 import java.io.BufferedOutputStream
@@ -27,7 +32,10 @@ object ZipBuilder {
   val logger: Logger = Logger(this.getClass)
 
   def buildZip(
-      zipEntries: Seq[(ZipEntryName, Source[ByteString, Unit])]
+      zipEntries: Seq[(ZipEntryName, ZipElement)],
+      getPdf: Seq[Html] => Source[ByteString, Unit],
+      getAttachment: String => Source[ByteString, Future[ObjectMetadata]],
+      existAttachment: String => Future[Boolean]
   )(implicit mat: Materializer, ec: ExecutionContext): Source[ByteString, Future[Done]] = {
 
     val pipedOut = new PipedOutputStream()
@@ -36,11 +44,25 @@ object ZipBuilder {
 
     val zipFuture = Future {
       try {
-        zipEntries.foreach { case (entryName, entrySource) =>
-          zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
+        zipEntries.foreach { case (entryName, zipElement) =>
+          val writeResult: Future[Done] = zipElement match {
+            case ZipReport(html) =>
+              zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
+              getPdf(Seq(html)).runForeach { bytes =>
+                zipOut.write(bytes.toArray)
+              }
+            case ZipReportFile(file) =>
+              existAttachment(file.storageFilename)
+                .flatMap {
+                  case true =>
+                    zipOut.putNextEntry(new java.util.zip.ZipEntry(entryName.value))
+                    getAttachment(file.storageFilename).mapMaterializedValue(_ => ()).runForeach { bytes =>
+                      zipOut.write(bytes.toArray)
+                    }
+                  case false =>
+                    Future.successful(Done)
+                }
 
-          val writeResult = entrySource.runForeach { bytes =>
-            zipOut.write(bytes.toArray)
           }
 
           val _ = Await.result(writeResult, Duration.Inf)
