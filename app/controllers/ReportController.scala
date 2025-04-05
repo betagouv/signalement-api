@@ -1,7 +1,9 @@
 package controllers
 
 import authentication.Authenticator
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import controllers.error.AppError.ReportNotFound
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import models.report._
@@ -189,18 +191,18 @@ class ReportController(
         .getOrElse(NotFound)
     }
 
-  def downloadReportsAsPdfZip(reportId: UUID) = Act.secured.all.allowImpersonation.async { implicit request =>
+  def downloadReportsAsPdf(reportId: UUID) = Act.secured.all.allowImpersonation.async { implicit request =>
     reportWithDataOrchestrator
       .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
-      .map { reportIds =>
-        massImportService
-          .reportsSummaryZip(reportIds, request.identity)
+      .flatMap(_.headOption.liftTo[Future](ReportNotFound(reportId)))
+      .map { reportWithData =>
+        massImportService.getPdfSource(reportWithData, request.identity)
       }
       .map(pdfSource =>
         Ok.chunked(
           content = pdfSource,
           inline = false,
-          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.zip")
+          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
         )
       )
   }
@@ -209,7 +211,7 @@ class ReportController(
     Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
-        .flatMap { reportIds =>
+        .map { reportIds =>
           massImportService
             .reportSummaryWithAttachmentsZip(reportIds, request.identity)
         }
