@@ -204,7 +204,6 @@ class ReportFileOrchestrator(
   ): Future[Source[ByteString, Future[Done]]] =
     for {
       reportFiles <- reportFileRepository.retrieveReportFiles(report.id)
-
       errorOrReportFiles <- reportFiles.traverse(validateAntivirusScanAndRescheduleScanIfNecessary).recover { e =>
         logger.warnWithTitle(
           "antivirus_scan_error",
@@ -220,8 +219,8 @@ class ReportFileOrchestrator(
         case (Scanned, value) if origin.contains(value.origin) || origin.isEmpty =>
           value
       }
-      _   <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
-      res <- reportZipExportService.reportAttachmentsZip(report, filteredFilesByOrigin)
+      _ <- Future.successful(filteredFilesByOrigin).ensure(AppError.NoReportFiles)(_.nonEmpty)
+      res = reportZipExportService.reportAttachmentsZip(report, filteredFilesByOrigin)
     } yield res
 
   private def getFileByIdAndName(fileId: ReportFileId, filename: String) =
