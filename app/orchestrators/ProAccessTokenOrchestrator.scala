@@ -2,6 +2,7 @@ package orchestrators
 
 import cats.implicits.catsSyntaxOption
 import config.TokenConfiguration
+import controllers.error.AppError
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl._
 import models._
@@ -18,6 +19,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.EmailAddressService.isAgentEmail
 import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
@@ -157,6 +159,7 @@ class ProAccessTokenOrchestrator(
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
+      _ <- validateEmailAdress(user.email.value)
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
       _ <- invitedBy match {
         case Some(u) =>
@@ -178,8 +181,13 @@ class ProAccessTokenOrchestrator(
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()
 
+  private def validateEmailAdress(email: String) =
+    if (isAgentEmail(email)) { Future.failed(AppError.UserCannotBeInvited(email)) }
+    else { Future.unit }
+
   def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
     for {
+      _ <- validateEmailAdress(user.email.value)
       _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
         case Nil => Future.unit
@@ -222,6 +230,7 @@ class ProAccessTokenOrchestrator(
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
+      _         <- validateEmailAdress(email.value)
       tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
       _ <- mailService.send(
         ProCompanyAccessInvitation.Email(
@@ -240,6 +249,7 @@ class ProAccessTokenOrchestrator(
       level: AccessLevel
   ): Future[Unit] =
     for {
+      _ <- validateEmailAdress(email.value)
       list <- Future.sequence(
         companies.map(company =>
           genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email).map(token =>

@@ -3,6 +3,7 @@ package controllers
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import controllers.error.AppError
 import controllers.error.AppError.UserNotFoundById
 import models.User
 import models.access.ActivationLinkRequest
@@ -21,6 +22,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.EmailAddressService.isAgentEmail
 import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
@@ -176,9 +178,13 @@ class CompanyAccessController(
           .fold(
             errors => Future.successful(BadRequest(JsError.toJson(errors))),
             invitation =>
-              accessesOrchestrator
-                .addUserOrInvite(request.company, invitation.email, invitation.level, Some(request.identity))
-                .map(_ => Ok)
+              if (isAgentEmail(invitation.email.value)) {
+                Future.failed(AppError.UserCannotBeInvited(invitation.email.value))
+              } else {
+                accessesOrchestrator
+                  .addUserOrInvite(request.company, invitation.email, invitation.level, Some(request.identity))
+                  .map(_ => Ok)
+              }
           )
     }
 

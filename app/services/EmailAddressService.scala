@@ -15,4 +15,7 @@ object EmailAddressService {
   def isEmailAcceptableForDgalAccount(emailAddress: String): Boolean =
     dgalEmailRegexp.matches(emailAddress)
 
+  def isAgentEmail(email: String) =
+    isEmailAcceptableForDgalAccount(email) || isEmailAcceptableForDgccrfAccount(email)
+
 }
