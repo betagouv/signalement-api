@@ -149,13 +149,9 @@ class CompanyAccessController(
           .fold(
             errors => Future.successful(BadRequest(JsError.toJson(errors))),
             invitation =>
-              if (isAgentEmail(invitation.email.value)) {
-                Future.failed(AppError.UserCannotBeInvited(invitation.email.value))
-              } else {
-                accessesOrchestrator
-                  .addUserOrInvite(request.company, invitation.email, invitation.level, Some(request.identity))
-                  .map(_ => Ok)
-              }
+              accessesOrchestrator
+                .addUserOrInvite(request.company, invitation.email, invitation.level, Some(request.identity))
+                .map(_ => Ok)
           )
     }
 
