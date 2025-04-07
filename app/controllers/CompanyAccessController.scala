@@ -3,7 +3,6 @@ package controllers
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import controllers.error.AppError
 import controllers.error.AppError.UserNotFoundById
 import models.User
 import models.access.ActivationLinkRequest
@@ -22,7 +21,6 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.EmailAddressService.isAgentEmail
 import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
