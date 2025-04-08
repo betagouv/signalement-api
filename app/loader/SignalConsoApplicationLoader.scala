@@ -703,7 +703,8 @@ class SignalConsoComponents(
     engagementOrchestrator,
     websiteRepository,
     eventRepository,
-    engagementRepository
+    engagementRepository,
+    reportNotificationBlockedRepository
   )(
     actorSystem
   )
