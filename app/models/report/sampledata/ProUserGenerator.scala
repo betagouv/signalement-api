@@ -57,6 +57,14 @@ object ProUserGenerator {
     Professionnel
   )
 
+  val proUserJohnny = buildProUser(
+    UUID.fromString("9110761e-34b5-48b5-af76-e5beee6291b0"),
+    "Johnny",
+    "Jovial",
+    "dev.signalconso+SAMPLE_PRO7@gmail.com",
+    Professionnel
+  )
+
   private def buildProUser(
       id: UUID,
       firstName: String,
