@@ -131,7 +131,7 @@ class CompanyOrchestrator(
 
   private def restrictCompanyIdFilterOnProVisibility(user: User, companyIdFilter: UUID) =
     companiesVisibilityOrchestrator
-      .fetchVisibleCompanies(user)
+      .fetchVisibleCompaniesList(user)
       .map(_.map(_.company.id))
       .map { proVisibleCompanyIds =>
         if (proVisibleCompanyIds.contains(companyIdFilter)) {
