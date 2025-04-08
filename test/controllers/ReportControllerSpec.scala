@@ -395,7 +395,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 reportsExportPdfLimitMax = 1000,
                 reportsListLimitMax = 10000,
                 enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation = false,
-                accessesMigrationTaskIsDryRun = true
+                accessesMigrationTaskIsDryRun = true,
+                disableAuthAttemptRecording = false
               )
 
             override def emailConfiguration: EmailConfiguration =

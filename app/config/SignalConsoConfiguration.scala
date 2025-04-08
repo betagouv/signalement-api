@@ -20,6 +20,7 @@ case class SignalConsoConfiguration(
     enableRateLimit: Boolean,
     enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation: Boolean,
     accessesMigrationTaskIsDryRun: Boolean,
+    disableAuthAttemptRecording: Boolean,
     antivirusServiceConfiguration: AntivirusServiceConfiguration
 )
 
