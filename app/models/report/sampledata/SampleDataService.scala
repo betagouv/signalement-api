@@ -31,6 +31,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.engagement.EngagementRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import utils.FutureUtils.RichSeq
@@ -54,7 +55,8 @@ class SampleDataService(
     engagementOrchestrator: EngagementOrchestrator,
     websiteRepository: WebsiteRepositoryInterface,
     eventRepository: EventRepositoryInterface,
-    engagementRepository: EngagementRepositoryInterface
+    engagementRepository: EngagementRepositoryInterface,
+    reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface
 )(implicit system: ActorSystem)
     extends Logging {
 
@@ -258,6 +260,7 @@ class SampleDataService(
               s"Looking for websites link to company user ${predefinedUser.id}, found: ${reportList.size}"
             )
             _ <- websites.map(_.id).traverse(websiteRepository.delete)
+            _ <- maybeUser.traverse(user => reportNotificationBlockedRepository.delete(user.id, companyIds))
             _ <- companies.traverse(c => companyRepository.delete(c.company.id))
             _ <- maybeUser.traverse(user => userRepository.hardDelete(user.id))
             _ = logger.info(
