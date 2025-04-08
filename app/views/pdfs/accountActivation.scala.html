@@ -1,24 +1,24 @@
 @import utils.EmailAddress
 @import utils.FrontRoute
 @import utils.FrontRoute
+@import utils.QRCodeGenerator
 
 @import models.company.Company
 @(
     company: Company,
     reportCreationDate: Option[java.time.LocalDate],
     reportExpirationDate: Option[java.time.LocalDate],
-    code: String
+    code: String,
 )(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
-
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
     <head>
         <meta name="viewport" content="width=device-width" />
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Activation du compte SignalConso</title>
 
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")" />
 
     </head>
     <body>
@@ -32,14 +32,14 @@
             </div>
 
             <div class="logo-sc">
-                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
+                <img src='@routes.Assets.versioned("images/logo-signal-conso-fond-blanc.png")'/>
             </div>
 
             <div class="sender">
-                <br/>Service SignalConso
-                <br/>DGCCRF-052
-                <br/>59, boulevard Vincent Auriol
-                <br/>75013 Paris Cedex 13
+                Service SignalConso
+                <br />DGCCRF-052
+                <br />59, boulevard Vincent Auriol
+                <br />75013 Paris Cedex 13
             </div>
 
             <div class="recipient">
@@ -76,23 +76,36 @@
                 }
                 </p>
 
-                <p class="text-center text-bold">
+                <p class="text-center text-bold mb-1">
                     @views.html.fragments.address(company, includeSiret = true)
                 </p>
 
-                <p class="mt-3">
-                @reportExpirationDate.map{date =>
-                    Pour en prendre connaissance et y répondre, <strong>créez votre compte avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a></strong> avec le code d'activation suivant :
-                }.getOrElse {
-                    Pour en prendre connaissance et y répondre, <strong>créez votre compte sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a></strong> avec le code d'activation suivant :
-                }
-                </p>
+                <div class="connect-block">
+                    <p class="mt-1 mb-1">
+                    @reportExpirationDate.map{date =>
+                        Pour en prendre connaissance et y répondre, <strong>créez votre compte avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) sur l'Espace Pro de SignalConso</strong>
+                    }.getOrElse {
+                        Pour en prendre connaissance et y répondre, <strong>créez votre compte sur l'Espace Pro de SignalConso</strong>
+                    }
+                    </p>
 
-                <p class="text-center text-bold">
-                    Code d’activation : @code
-                </p>
+                    <div class="scan">
+                        <div class="scanitem">
+                            <p class="mb-0">Soit en vous rendant à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a> avec le code d'activation suivant :</p>
+                            <p class="text-center text-bold">
+                                Code d’activation : @code
+                            </p>
+                        </div>
+                        <div class="scanitem">
+                            <p class="mb-0">Soit en scannant le QR Code suivant : </p>
+                            @defining(QRCodeGenerator.generate(frontRoute.dashboard.activation(company.siret, code).toString, 82, 82)) { qrCode =>
+                                <img src="data:image/png;base64,@java.util.Base64.getEncoder.encodeToString(qrCode)" alt="QR Code" />
+                            }
+                        </div>
+                    </div>
+                </div>
 
-                <p>
+                <p class="mt-1">
                     Passé cette date, la DGCCRF et le consommateur seront informés de votre absence de réaction. Vous pourrez toujours consulter le signalement mais vous ne pourrez plus y répondre.
                 </p>
 
@@ -109,7 +122,7 @@
                 </p>
             </div>
 
-            <div class="page-end">
+            <div class="page-end text-center">
                 ###
             </div>
         </div>
