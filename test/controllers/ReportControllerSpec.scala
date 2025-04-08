@@ -406,7 +406,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true, false),
                 reportsExportLimitMax = 30000,
                 reportsExportPdfLimitMax = 1000,
-                reportsListLimitMax = 10000
+                reportsListLimitMax = 10000,
+                disableAuthAttemptRecording = false
               )
 
             override def emailConfiguration: EmailConfiguration =

@@ -359,6 +359,7 @@ class SignalConsoComponents(
     accessesOrchestrator,
     authTokenRepository,
     tokenConfiguration,
+    signalConsoConfiguration,
     credentialsProvider,
     mailService,
     cookieAuthenticator

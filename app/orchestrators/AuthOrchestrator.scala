@@ -7,6 +7,7 @@ import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
 import cats.instances.future.catsStdInstancesForFuture
 import cats.syntax.option._
+import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
@@ -47,6 +48,7 @@ class AuthOrchestrator(
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
+    signalConsoConfiguration: SignalConsoConfiguration,
     credentialsProvider: CredentialsProvider,
     mailService: MailService,
     authenticator: CookieAuthenticator
@@ -109,29 +111,32 @@ class AuthOrchestrator(
   }
 
   private def saveAuthAttemptWithRecovery[T](login: String, eventualSession: Future[T]): Future[T] =
-    eventualSession
-      .flatMap { session =>
-        logger.debug(s"Saving auth attempts for user")
-        authAttemptRepository.create(AuthAttempt.build(login, isSuccess = true)).map(_ => session)
-      }
-      .recoverWith {
-        case error: AppError =>
-          logger.debug(s"Saving failed auth attempt for user")
-          authAttemptRepository
-            .create(AuthAttempt.build(login, isSuccess = false, failureCause = Some(error.details)))
-            .flatMap(_ => Future.failed(error))
-        case error =>
-          logger.debug(s"Saving failed auth attempt for user")
-          authAttemptRepository
-            .create(
-              AuthAttempt.build(
-                login,
-                isSuccess = false,
-                failureCause = Some(s"Unexpected error : ${error.getMessage}")
+    if (signalConsoConfiguration.disableAuthAttemptRecording) { eventualSession }
+    else {
+      eventualSession
+        .flatMap { session =>
+          logger.debug(s"Saving auth attempts for user")
+          authAttemptRepository.create(AuthAttempt.build(login, isSuccess = true)).map(_ => session)
+        }
+        .recoverWith {
+          case error: AppError =>
+            logger.debug(s"Saving failed auth attempt for user")
+            authAttemptRepository
+              .create(AuthAttempt.build(login, isSuccess = false, failureCause = Some(error.details)))
+              .flatMap(_ => Future.failed(error))
+          case error =>
+            logger.debug(s"Saving failed auth attempt for user")
+            authAttemptRepository
+              .create(
+                AuthAttempt.build(
+                  login,
+                  isSuccess = false,
+                  failureCause = Some(s"Unexpected error : ${error.getMessage}")
+                )
               )
-            )
-            .flatMap(_ => Future.failed(error))
-      }
+              .flatMap(_ => Future.failed(error))
+        }
+    }
 
   private def getStrictUser(login: String) = for {
     maybeUser <- userRepository.findByEmailIncludingDeleted(login)
