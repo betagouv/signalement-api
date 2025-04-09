@@ -183,7 +183,7 @@ class CompanyAccessController(
     }
 
   def listPendingTokens(siret: String) =
-    Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).allowImpersonation.async { implicit request =>
+    Act.securedWithCompanyAccessBySiret(siret).allowImpersonation.async { implicit request =>
       accessesOrchestrator
         .listProPendingToken(request.company, request.identity)
         .map(tokens => Ok(Json.toJson(tokens)))
