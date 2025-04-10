@@ -74,6 +74,12 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
     val setThreshold: DBIO[Int] = sqlu"""SET pg_trgm.word_similarity_threshold = 0.5"""
 
+    val maybePreliminaryAction = search.identity.flatMap {
+      case SearchCompanyIdentityName(_) => Some(setThreshold)
+      case _                            => None
+    }
+
+    // Jointure et filtrage
     val query = table
       .joinLeft(CompanyReportCountsTable.table)
       .on(_.id === _.companyId)
@@ -90,6 +96,18 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.inSetBind(search.activityCodes)
       }
+      .filterOpt(search.emailsWithAccess) { case (table, email) =>
+        table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
+      }
+      .filterOpt(search.identity) { case (table, identity) =>
+        identity match {
+          case SearchCompanyIdentityRCS(q)   => table._1.id.asColumnOf[String] like s"%${q}%"
+          case SearchCompanyIdentitySiret(q) => table._1.siret === SIRET.fromUnsafe(q)
+          case SearchCompanyIdentitySiren(q) => table._1.siret.asColumnOf[String] like s"${q}_____"
+          case SearchCompanyIdentityName(q)  => table._1.searchColumnTrgm %> q
+          case id: SearchCompanyIdentityId   => table._1.id === id.value
+        }
+      }
       .map { case (companyTable, companyReportCountView) =>
         val (totalReports, totalProcessedReports) =
           companyReportCountView.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
@@ -99,42 +117,25 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         (companyTable, totalReports, responseRate)
       }
 
-    val maybePreliminaryAction = search.identity.flatMap {
-      case SearchCompanyIdentityName(_) => Some(setThreshold)
-      case _                            => None
-    }
-
-    search.identity
-      .map {
-        case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
-        case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET.fromUnsafe(q))
-        case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
-        case SearchCompanyIdentityName(q) =>
-          query
-            .filter(tuple => tuple._1.searchColumnTrgm %> q)
-            .sortBy(tuple => tuple._1.searchColumnTrgm <->> q)
-        case id: SearchCompanyIdentityId => query.filter(_._1.id === id.value)
-      }
-      .getOrElse(query)
-      .filterOpt(search.emailsWithAccess) { case (table, email) =>
-        table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
-      }
+    // Pagination
+    val paginatedQuery = query
       .withPagination(db)(
         maybeOffset = paginate.offset,
         maybeLimit = paginate.limit,
         maybePreliminaryAction = maybePreliminaryAction
       )
-      .sortBy { case (_, total, responseRate) =>
-        sort match {
-          case Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Desc)) =>
-            (responseRate.desc, total.desc)
-          case Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Asc)) =>
-            (responseRate.asc, total.desc)
-          case _ =>
-            (total.desc, total.desc)
-        }
-      }
 
+    // Tri
+    (search.identity, sort) match {
+      case (_, Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Desc))) =>
+        paginatedQuery.sortBy { case (_, total, responseRate) => (responseRate.desc, total.desc) }
+      case (_, Some(CompanySort(SortCriteria.ResponseRate, SortOrder.Asc))) =>
+        paginatedQuery.sortBy { case (_, total, responseRate) => (responseRate.asc, total.desc) }
+      case (Some(SearchCompanyIdentityName(q)), None) =>
+        paginatedQuery.sortBy { case (company, total, _) => (company.searchColumnTrgm <->> q, total.desc) }
+      case _ =>
+        paginatedQuery.sortBy { case (_, total, _) => total.desc }
+    }
   }
 
   override def getReportsCounts(companyIds: List[UUID]): Future[Map[UUID, Long]] =
