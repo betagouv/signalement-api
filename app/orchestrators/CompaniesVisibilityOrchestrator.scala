@@ -81,16 +81,14 @@ class CompaniesVisibilityOrchestrator(
       allCompaniesIds = proCompanies.toSimpleList.map(_.company.id)
       reportsCounts        <- companyRepo.getReportsCounts(allCompaniesIds)
       ongoingReportsCounts <- reportRepository.countOngoingReportsByCompany(allCompaniesIds)
-      usersByCompanyIdIfAdmin <- fetchUsersWithHeadOffices(
-        proCompanies.toSimpleList
-          .filter(_.isAdmin)
-          .map(c => c.company.siret -> c.company.id)
+      usersByCompanyId <- fetchUsersWithHeadOffices(
+        proCompanies.toSimpleList.map(c => c.company.siret -> c.company.id)
       )
       proCompaniesExtended = proCompanies.map { case CompanyWithAccess(company, access) =>
         val companyId           = company.id
         val reportsCount        = reportsCounts.getOrElse(companyId, 0L)
         val ongoingReportsCount = ongoingReportsCounts.getOrElse(companyId, 0)
-        val usersCount          = usersByCompanyIdIfAdmin.get(companyId).map(_.length)
+        val usersCount          = usersByCompanyId.get(companyId).map(_.length).getOrElse(0)
         CompanyWithAccessAndCounts(
           company,
           access,
