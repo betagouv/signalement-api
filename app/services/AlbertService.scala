@@ -10,6 +10,7 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import services.AlbertService.AlbertError
+import services.AlbertService.AlbertLarge
 import services.AlbertService.AlbertModel
 import services.AlbertService.Gemma9B
 import services.AlbertService.Llama70B
@@ -36,11 +37,12 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  private def chatCompletion(chatPrompt: String, model: AlbertModel = Llama70B): Future[String] = {
+  private def chatCompletion(chatPrompt: String, model: AlbertModel = AlbertLarge): Future[String] = {
     val url = uri"https://albert.api.etalab.gouv.fr/v1/chat/completions"
     val modelStr = model match {
-      case Llama70B => "meta-llama/Meta-Llama-3.1-70B-Instruct"
-      case Gemma9B  => "google/gemma-2-9b-it"
+      case AlbertLarge => "albert-large"
+      case Llama70B    => "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
+      case Gemma9B     => "google/gemma-2-9b-it"
     }
     val body = Json.obj(
       "messages" -> Json.arr(
@@ -192,7 +194,8 @@ object AlbertService {
   case class AlbertError(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 
   sealed trait AlbertModel
-  case object Gemma9B  extends AlbertModel
-  case object Llama70B extends AlbertModel
+  case object Gemma9B     extends AlbertModel
+  case object Llama70B    extends AlbertModel
+  case object AlbertLarge extends AlbertModel // Currently implemented using Mistral 24B
 
 }
