@@ -25,6 +25,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
   def withoutTags  = column[List[ReportTag]]("without_tags")
   def countries    = column[List[Country]]("countries")
   def sirets       = column[List[SIRET]]("sirets")
+  def websites     = column[List[String]]("websites")
+  def phones       = column[List[String]]("phones")
   def frequency    = column[Period]("frequency")
 
   type SubscriptionData = (
@@ -38,6 +40,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
       List[ReportTag],
       List[Country],
       List[SIRET],
+      List[String],
+      List[String],
       Period
   )
 
@@ -53,6 +57,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
           withoutTags,
           countries,
           sirets,
+          websites,
+          phones,
           frequency
         ) =>
       Subscription(
@@ -66,6 +72,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
         withoutTags = withoutTags,
         countries = countries,
         sirets = sirets,
+        websites = websites,
+        phones = phones,
         frequency = frequency
       )
   }
@@ -82,6 +90,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
           withoutTags,
           countries,
           sirets,
+          websites,
+          phones,
           frequency
         ) =>
       (
@@ -95,6 +105,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
         withoutTags,
         countries,
         sirets,
+        websites,
+        phones,
         frequency
       )
   }
@@ -111,6 +123,8 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
       withoutTags,
       countries,
       sirets,
+      websites,
+      phones,
       frequency
     ) <> (constructSubscription, extractSubscription.lift)
 }

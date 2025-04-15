@@ -18,6 +18,8 @@ case class SubscriptionCreation(
     withTags: List[ReportTag],
     withoutTags: List[ReportTag],
     countries: List[String],
+    websites: List[String],
+    phones: List[String],
     frequency: Period
 )
 
@@ -33,6 +35,8 @@ case class SubscriptionUpdate(
     withTags: Option[List[ReportTag]],
     withoutTags: Option[List[ReportTag]],
     countries: Option[List[String]],
+    websites: Option[List[String]],
+    phones: Option[List[String]],
     frequency: Option[Period]
 )
 
@@ -51,6 +55,8 @@ case class Subscription(
     withoutTags: List[ReportTag] = List.empty,
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
+    websites: List[String] = List.empty,
+    phones: List[String] = List.empty,
     frequency: Period
 )
 
