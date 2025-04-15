@@ -89,6 +89,30 @@
                     </ul>
                 </li>
             }
+            @if(subscription.websites.nonEmpty) {
+                <li>
+                    Sites web :
+                    <ul>
+                    @subscription.websites.map { website =>
+                        <li>
+                            @website
+                        </li>
+                    }
+                    </ul>
+                </li>
+            }
+            @if(subscription.phones.nonEmpty) {
+                <li>
+                    Téléphones :
+                    <ul>
+                    @subscription.phones.map { phone =>
+                        <li>
+                            @phone
+                        </li>
+                    }
+                    </ul>
+                </li>
+            }
         </ul>
     </p>
 

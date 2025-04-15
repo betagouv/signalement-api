@@ -25,6 +25,8 @@ class SubscriptionOrchestrator(subscriptionRepository: SubscriptionRepositoryInt
           withoutTags = draftSubscription.withoutTags,
           countries = draftSubscription.countries.map(Country.fromCode),
           sirets = draftSubscription.sirets,
+          websites = draftSubscription.websites,
+          phones = draftSubscription.phones,
           frequency = draftSubscription.frequency
         )
       )
@@ -46,6 +48,8 @@ class SubscriptionOrchestrator(subscriptionRepository: SubscriptionRepositoryInt
                   .map(_.map(Country.fromCode))
                   .getOrElse(s.countries),
                 sirets = draftSubscription.sirets.getOrElse(s.sirets),
+                websites = draftSubscription.websites.getOrElse(s.websites),
+                phones = draftSubscription.phones.getOrElse(s.phones),
                 frequency = draftSubscription.frequency.getOrElse(s.frequency)
               )
             )
