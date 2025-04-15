@@ -861,6 +861,13 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  val accessesMassManagementController = new AccessesMassManagementController(
+    companyOrchestrator,
+    companiesVisibilityOrchestrator,
+    cookieAuthenticator,
+    controllerComponents
+  )
+
   val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
   val mobileAppController = new MobileAppController(signalConsoConfiguration, cookieAuthenticator, controllerComponents)
   val dataEconomieController =
@@ -1024,6 +1031,7 @@ class SignalConsoComponents(
       authController,
       accountController,
       blacklistedEmailsController,
+      accessesMassManagementController,
       importController,
       reportBlockedNotificationController,
       subscriptionController,

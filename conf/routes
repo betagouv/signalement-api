@@ -248,6 +248,13 @@ GET           /api/accesses/visible-users                               controll
 POST          /api/accesses/visible-users/:email                        controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
 DELETE        /api/accesses/visible-users/:userId                       controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
 
+#######################################
+####### Page "Gestion des accès"  #####
+#######################################
+
+GET           /api/accesses-mass-management/companies                   controllers.AccessesMassManagementController.getCompaniesOfPro()
+GET           /api/accesses-mass-management/users                       controllers.AccessesMassManagementController.getUsersOfPro()
+
 
 ###################################
 ####### Page "PARAMETRES" #########
