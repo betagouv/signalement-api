@@ -2,6 +2,7 @@ package tasks.report
 
 import models._
 import models.company.Address
+import models.report.WebsiteURL
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -34,6 +35,7 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
           )
           .toString
       )}
+
     A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
         Seq(user.email),
         s"[SignalConso] Un nouveau signalement a été déposé",
@@ -41,6 +43,7 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
           .reportNotification(userSubscriptionCountries, Seq((reportArgentine, List.empty)), runningDate.minusDays(7))
           .toString
       )}
+
         And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
         Seq(officeEmail),
         s"[SignalConso] 3 nouveaux signalements ont été déposés",
@@ -50,6 +53,22 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
             Seq((report11, List.empty), (report12, List.empty), (report2, List.empty)),
             runningDate.minusDays(7)
           )
+          .toString
+      )}
+
+      An a mail with website is sent to the subscribed user  ${mailMustHaveBeenSent(
+        Seq(user.email),
+        s"[SignalConso] Un nouveau signalement a été déposé",
+        views.html.mails.dgccrf
+          .reportNotification(userSubscriptionWebsites, Seq((report3, List.empty)), runningDate.minusDays(7))
+          .toString
+      )}
+
+    An a mail with phone is sent to the subscribed user  ${mailMustHaveBeenSent(
+        Seq(user.email),
+        s"[SignalConso] Un nouveau signalement a été déposé",
+        views.html.mails.dgccrf
+          .reportNotification(userSubscriptionPhones, Seq((report3, List.empty)), runningDate.minusDays(7))
           .toString
       )}
       """
@@ -83,6 +102,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   val department1 = "87"
   val department2 = "19"
   val department3 = "23"
+  val department4 = "86"
   val guadeloupe  = "971"
   val martinique  = "972"
 
@@ -137,6 +157,22 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     frequency = Period.ofDays(7)
   )
 
+  val userSubscriptionWebsites = Subscription(
+    userId = Some(user.id),
+    email = None,
+    websites = List("test.com"),
+    phones = List.empty,
+    frequency = Period.ofDays(7)
+  )
+
+  val userSubscriptionPhones = Subscription(
+    userId = Some(user.id),
+    email = None,
+    websites = List.empty,
+    phones = List("0102030405"),
+    frequency = Period.ofDays(7)
+  )
+
   val company = Fixtures.genCompany.sample.get
   val report11 = Fixtures
     .genReportForCompany(company)
@@ -144,7 +180,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department1 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1)
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1),
+      phone = Some("0101010101"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("not.used"))
     )
   val report12 = Fixtures
     .genReportForCompany(company)
@@ -152,7 +190,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department1 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(2)
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(2),
+      phone = Some("0101010101"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("not.used"))
     )
   val report2 = Fixtures
     .genReportForCompany(company)
@@ -160,7 +200,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department2 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(3)
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(3),
+      phone = Some("0101010101"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("not.used"))
     )
   val reportGuadeloupe = Fixtures
     .genReportForCompany(company)
@@ -169,7 +211,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .copy(
       id = UUID.randomUUID(),
       companyAddress = Address(postalCode = Some(guadeloupe + "00")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4),
+      phone = Some("0101010101"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("not.used"))
     )
   val reportArgentine = Fixtures
     .genReportForCompany(company)
@@ -177,7 +221,20 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(country = Some(Country.Argentine)),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4),
+      phone = Some("0101010101"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("not.used"))
+    )
+
+  val report3 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(
+      companyAddress = Address(postalCode = Some(department4 + "000")),
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1),
+      phone = Some("0102030405"),
+      websiteURL = WebsiteURL(websiteURL = None, host = Some("test.com"))
     )
 
   override def setupData() =
@@ -190,10 +247,13 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(report2)
         _ <- reportRepository.create(reportGuadeloupe)
         _ <- reportRepository.create(reportArgentine)
+        _ <- reportRepository.create(report3)
         _ <- subscriptionRepository.create(userSubscription)
         _ <- subscriptionRepository.create(userSubscriptionCountries)
         _ <- subscriptionRepository.create(officeSubscription)
         _ <- subscriptionRepository.create(userSubscriptionWithoutReport)
+        _ <- subscriptionRepository.create(userSubscriptionWebsites)
+        _ <- subscriptionRepository.create(userSubscriptionPhones)
       } yield (),
       Duration.Inf
     )

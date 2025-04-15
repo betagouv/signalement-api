@@ -167,6 +167,12 @@ object ReportNotificationTask {
         .filter { case (report, _) =>
           subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
         }
+        .filter { case (report, _) =>
+          subscription.websites.isEmpty || subscription.websites.map(Some(_)).contains(report.websiteURL.host)
+        }
+        .filter { case (report, _) =>
+          subscription.phones.isEmpty || subscription.phones.map(Some(_)).contains(report.phone)
+        }
     }
 
 }

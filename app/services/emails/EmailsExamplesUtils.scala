@@ -146,6 +146,8 @@ object EmailsExamplesUtils {
     withoutTags = Nil,
     categories = Nil,
     sirets = Nil,
+    websites = Nil,
+    phones = Nil,
     frequency = java.time.Period.ofDays(1)
   )
 
