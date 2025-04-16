@@ -25,8 +25,13 @@ class AccessesMassManagementController(
     } yield Ok(Json.toJson(companies))
   }
 
-  def getUsersOfPro = Act.secured.pros.allowImpersonation.async { _ =>
-    Future.successful(Ok)
+  def getUsersOfPro = Act.secured.pros.allowImpersonation.async { req =>
+    for {
+      companies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(req.identity)
+      siretsAndIds = companies.map(_.company).map(c => c.siret -> c.id)
+      mapOfUsers <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(siretsAndIds)
+      users = mapOfUsers.values.flatten.toList.distinctBy(_.id)
+    } yield Ok(Json.toJson(users))
   }
 
 }
