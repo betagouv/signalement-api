@@ -276,6 +276,17 @@ object ExcelColumnsService {
         column = centerAlignmentColumn
       ),
       ReportColumn(
+        "Tags",
+        (report, _, _, _, _, _) => report.tags.map(_.translate()).mkString("\n"),
+        available = isAgentOrAdmin
+      ),
+      ReportColumn(
+        "Signalement ou réclamation",
+        (report, _, _, _, _, _) =>
+          if (report.tags.contains(ReportTag.ReponseConso)) "Réclamation (RéponseConso)" else "Signalement",
+        available = isAgentOrAdmin
+      ),
+      ReportColumn(
         "Actions DGCCRF",
         (_, _, events, _, _, _) =>
           events
