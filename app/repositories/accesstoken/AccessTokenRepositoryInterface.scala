@@ -32,6 +32,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def fetchPendingTokens(company: Company): Future[List[AccessToken]]
 
+  def fetchPendingTokens(companiesIds: List[UUID]): Future[List[AccessToken]]
+
   def removePendingTokens(company: Company): Future[Int]
 
   def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]]

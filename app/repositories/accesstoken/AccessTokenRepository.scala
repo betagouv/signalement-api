@@ -48,6 +48,9 @@ class AccessTokenRepository(
   private def fetchCompanyValidTokens(company: Company): Query[AccessTokenTable, AccessToken, Seq] =
     fetchCompanyValidTokens(company.id)
 
+  private def fetchCompaniesValidTokens(companiesIds: List[UUID]): Query[AccessTokenTable, AccessToken, Seq] =
+    fetchValidTokens.filter(_.companyId inSetBind companiesIds)
+
   override def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
@@ -115,6 +118,14 @@ class AccessTokenRepository(
   override def fetchPendingTokens(company: Company): Future[List[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
+        .sortBy(_.expirationDate.desc)
+        .to[List]
+        .result
+    )
+
+  override def fetchPendingTokens(companiesIds: List[UUID]): Future[List[AccessToken]] =
+    db.run(
+      fetchCompaniesValidTokens(companiesIds)
         .sortBy(_.expirationDate.desc)
         .to[List]
         .result
