@@ -171,4 +171,11 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ) as res order by 1 ASC;    
          """.as[(Timestamp, Int)])
 
+  override def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID]): Future[Unit] =
+    db.run(
+      table
+        .filter(_.companyId.inSetBind(companiesIds))
+        .filter(_.userId.inSetBind(usersIds))
+        .delete
+    ).map(_ => ())
 }

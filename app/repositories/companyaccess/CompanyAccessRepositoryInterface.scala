@@ -50,4 +50,6 @@ trait CompanyAccessRepositoryInterface {
       level: AccessLevel
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
 
+  def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID]): Future[Unit]
+
 }

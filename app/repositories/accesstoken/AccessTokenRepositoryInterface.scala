@@ -46,6 +46,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def invalidateToken(token: AccessToken): Future[Int]
 
+  def invalidateCompanyJoinAccessTokens(companyIds: List[UUID], tokenIds: List[UUID]): Future[Int]
+
   def updateToken(token: AccessToken, level: AccessLevel, validity: Option[TemporalAmount]): Future[Int]
 
   def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]]

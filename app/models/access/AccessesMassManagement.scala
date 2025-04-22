@@ -3,10 +3,14 @@ package models.access
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.User
+import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.token.ProAccessToken
 import play.api.libs.json.Json
+import play.api.libs.json.JsonValidationError
 import play.api.libs.json.OWrites
 import play.api.libs.json.Reads
+
+import java.util.UUID
 
 object AccessesMassManagement {
   case class MassManagementUsers(
@@ -26,20 +30,28 @@ object AccessesMassManagement {
 
   case class MassManagementInputs(
       operation: MassManagementOperation,
-      companiesIds: List[String],
+      companiesIds: List[UUID],
       users: MassManagementUsersInput
   )
 
   object MassManagementInputs {
 
-    implicit val reads: Reads[MassManagementInputs] = Json.reads[MassManagementInputs]
+    implicit val reads: Reads[MassManagementInputs] = Json
+      .reads[MassManagementInputs]
+      .filterNot(JsonValidationError("The emailsToInvite field should be empty when paired with the Remove operation"))(
+        inputs => inputs.operation == Remove && inputs.users.emailToInvite.nonEmpty
+      )
+      .filterNot(JsonValidationError("companiesIds should not be empty"))(_.companiesIds.isEmpty)
+      .filterNot(JsonValidationError("should target at least one user"))(_.users.count == 0)
   }
 
   case class MassManagementUsersInput(
-      usersIds: List[String],
-      alreadyInvitedTokenIds: List[String],
-      emailToInvite: List[String]
-  )
+      usersIds: List[UUID],
+      alreadyInvitedTokenIds: List[UUID],
+      emailToInvite: List[UUID]
+  ) {
+    def count = (usersIds ++ alreadyInvitedTokenIds ++ emailToInvite).length
+  }
 
   object MassManagementUsersInput {
     implicit val reads: Reads[MassManagementUsersInput] = Json.reads[MassManagementUsersInput]

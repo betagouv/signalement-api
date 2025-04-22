@@ -7,6 +7,7 @@ import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyFollowUp
 import models.token.TokenKind.CompanyInit
+import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.UpdateEmail
@@ -202,6 +203,16 @@ class AccessTokenRepository(
     db.run(
       table
         .filter(_.id === token.id)
+        .map(_.valid)
+        .update(false)
+    )
+
+  override def invalidateCompanyJoinAccessTokens(companyIds: List[UUID], tokenIds: List[UUID]): Future[Int] =
+    db.run(
+      table
+        .filter(_.kind === (CompanyJoin: TokenKind))
+        .filter(_.companyId.inSetBind(companyIds))
+        .filter(_.id.inSetBind(tokenIds))
         .map(_.valid)
         .update(false)
     )
