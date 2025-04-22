@@ -47,6 +47,7 @@ object ReportCategory extends PlayEnum[ReportCategory] {
   case object DemarchesAdministratives extends ReportCategory("Démarches administratives")
   case object VoitureVehiculeVelo      extends ReportCategory("Voiture / Véhicule / Vélo")
   case object DemarchageAbusif         extends ReportCategory("Démarchage abusif")
+  case object RecouvrementAmiable      extends ReportCategory("Recouvrement amiable de créance")
 
   def fromValue(v: String): ReportCategory = withNameOption(v).fold(throw MalformedValue(v, "ReportCategory"))(identity)
 
