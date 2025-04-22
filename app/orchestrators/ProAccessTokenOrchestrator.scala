@@ -75,10 +75,11 @@ class ProAccessTokenOrchestrator(
       tokens <- accessTokenRepository.fetchPendingTokens(company)
     } yield tokens.map(token => ProAccessToken(token, user))
 
-  def listProPendingTokens(companiesIds: List[UUID], user: User): Future[List[ProAccessToken]] =
+  def listProPendingTokensSentByEmail(companiesIds: List[UUID], user: User): Future[List[ProAccessToken]] =
     for {
       tokens <- accessTokenRepository.fetchPendingTokens(companiesIds)
-    } yield tokens.map(token => ProAccessToken(token, user))
+      tokenSentByEmail = tokens.filter(_.emailedTo.isDefined)
+    } yield tokenSentByEmail.map(token => ProAccessToken(token, user))
 
   def proFirstActivationCount(ticks: Option[Int]): Future[Seq[CountByDate]] =
     companyAccessRepository

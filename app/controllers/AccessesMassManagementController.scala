@@ -2,17 +2,19 @@ package controllers
 
 import authentication.Authenticator
 import models.User
+import models.access.AccessesMassManagement.MassManagementUsers
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
+import orchestrators.ProAccessTokenOrchestrator
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class AccessesMassManagementController(
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit
@@ -31,7 +33,16 @@ class AccessesMassManagementController(
       siretsAndIds = companies.map(_.company).map(c => c.siret -> c.id)
       mapOfUsers <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(siretsAndIds)
       users = mapOfUsers.values.flatten.toList.distinctBy(_.id)
-    } yield Ok(Json.toJson(users))
+      invitedByEmail <- proAccessTokenOrchestrator
+        .listProPendingTokensSentByEmail(siretsAndIds.map(_._2), req.identity)
+    } yield Ok(
+      Json.toJson(
+        MassManagementUsers(
+          users,
+          invitedByEmail
+        )
+      )
+    )
   }
 
 }

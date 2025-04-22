@@ -864,6 +864,7 @@ class SignalConsoComponents(
   val accessesMassManagementController = new AccessesMassManagementController(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
+    proAccessTokenOrchestrator,
     cookieAuthenticator,
     controllerComponents
   )
