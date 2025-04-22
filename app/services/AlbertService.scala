@@ -12,7 +12,7 @@ import play.api.libs.json.Json
 import services.AlbertService.AlbertError
 import services.AlbertService.AlbertLarge
 import services.AlbertService.AlbertModel
-import services.AlbertService.Gemma9B
+import services.AlbertService.AlbertSmall
 import services.AlbertService.Llama70B
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
@@ -42,7 +42,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
     val modelStr = model match {
       case AlbertLarge => "albert-large"
       case Llama70B    => "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
-      case Gemma9B     => "google/gemma-2-9b-it"
+      case AlbertSmall => "albert-small"
     }
     val body = Json.obj(
       "messages" -> Json.arr(
@@ -164,7 +164,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
   ): Future[Option[AlbertProblemsResult]] = {
     val prompt = AlbertPrompts.findProblems(selectedCompanyReportsDescriptions, maxPromptLength = 10000)
     for {
-      answer <- chatCompletion(prompt, Gemma9B)
+      answer <- chatCompletion(prompt, AlbertLarge)
     } yield Try(Json.parse(answer)) match {
       case Failure(ex) =>
         logger.warnWithTitle("albert_problems_invalid_json", "Albert returned something that wasn't a valid JSON", ex)
@@ -194,8 +194,8 @@ object AlbertService {
   case class AlbertError(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 
   sealed trait AlbertModel
-  case object Gemma9B     extends AlbertModel
   case object Llama70B    extends AlbertModel
   case object AlbertLarge extends AlbertModel // Currently implemented using Mistral 24B
+  case object AlbertSmall extends AlbertModel // Currently implemented using Llama 8B
 
 }
