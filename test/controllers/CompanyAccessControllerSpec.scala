@@ -54,8 +54,8 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         member <- userRepository.create(proMemberUser)
         _      <- userRepository.create(proUnrelatedUser)
         c      <- companyRepository.getOrCreate(company.siret, company)
-        _      <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
-        _      <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
+        _      <- companyAccessRepository.createAccess(c.id, admin.id, AccessLevel.ADMIN)
+        _      <- companyAccessRepository.createAccess(c.id, member.id, AccessLevel.MEMBER)
       } yield (),
       Duration.Inf
     )

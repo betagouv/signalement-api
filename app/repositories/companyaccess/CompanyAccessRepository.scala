@@ -4,6 +4,7 @@ import models._
 import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyAccess
+import models.company.CompanyAccessCreationInput
 import models.company.CompanyAccessKind
 import models.company.CompanyWithAccess
 import models.company.UserAccess
@@ -128,23 +129,33 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       )
     } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
-  override def createCompanyUserAccessWithoutRun(
+  override def createCompanyAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel
   ): FixedSqlAction[Int, NoStream, Effect.Write] =
-    CompanyAccessTable.table.insertOrUpdate(
-      UserAccess(
-        companyId = companyId,
-        userId = userId,
-        level = level,
-        updateDate = OffsetDateTime.now(),
-        creationDate = OffsetDateTime.now()
+    createMultipleWithoutRun(List(CompanyAccessCreationInput(companyId = companyId, userId = userId, level)))
+
+  private def createMultipleWithoutRun(accesses: List[CompanyAccessCreationInput]) =
+    table.insertOrUpdateAll(
+      accesses.map(access =>
+        UserAccess(
+          companyId = access.companyId,
+          userId = access.userId,
+          level = access.level,
+          updateDate = OffsetDateTime.now(),
+          creationDate = OffsetDateTime.now()
+        )
       )
     )
 
-  override def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
-    db.run(createCompanyUserAccessWithoutRun(companyId, userId, level))
+  override def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
+    db.run(createCompanyAccessWithoutRun(companyId, userId, level))
+
+  override def createMultipleUserAccesses(accesses: List[CompanyAccessCreationInput]): Future[Unit] =
+    db.run(
+      createMultipleWithoutRun(accesses)
+    ).map(_ => ())
 
   override def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(

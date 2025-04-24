@@ -169,7 +169,7 @@ class AccessTokenRepository(
     db.run(
       DBIO
         .seq(
-          companyAccessRepository.createCompanyUserAccessWithoutRun(
+          companyAccessRepository.createCompanyAccessWithoutRun(
             token.companyId.get,
             user.id,
             token.companyLevel.get
@@ -189,7 +189,7 @@ class AccessTokenRepository(
     db.run(
       DBIO
         .seq(
-          companyAccessRepository.createCompanyUserAccessWithoutRun(company.id, user.id, level),
+          companyAccessRepository.createCompanyAccessWithoutRun(company.id, user.id, level),
           table
             .filter(_.companyId === company.id)
             .filter(_.emailedTo.isEmpty)

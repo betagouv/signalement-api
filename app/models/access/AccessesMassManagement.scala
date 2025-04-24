@@ -39,7 +39,7 @@ object AccessesMassManagement {
     implicit val reads: Reads[MassManagementInputs] = Json
       .reads[MassManagementInputs]
       .filterNot(JsonValidationError("The emailsToInvite field should be empty when paired with the Remove operation"))(
-        inputs => inputs.operation == Remove && inputs.users.emailToInvite.nonEmpty
+        inputs => inputs.operation == Remove && inputs.users.emailsToInvite.nonEmpty
       )
       .filterNot(JsonValidationError("companiesIds should not be empty"))(_.companiesIds.isEmpty)
       .filterNot(JsonValidationError("should target at least one user"))(_.users.count == 0)
@@ -48,9 +48,9 @@ object AccessesMassManagement {
   case class MassManagementUsersInput(
       usersIds: List[UUID],
       alreadyInvitedTokenIds: List[UUID],
-      emailToInvite: List[UUID]
+      emailsToInvite: List[String]
   ) {
-    def count = (usersIds ++ alreadyInvitedTokenIds ++ emailToInvite).length
+    def count = (usersIds ++ alreadyInvitedTokenIds ++ emailsToInvite).length
   }
 
   object MassManagementUsersInput {

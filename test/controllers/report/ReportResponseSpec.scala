@@ -333,8 +333,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
 
-        _ <- companyAccessRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
-        _ <- companyAccessRepository.createUserAccess(
+        _ <- companyAccessRepository.createAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createAccess(
           headOfficeCompany.id,
           concernedHeadOfficeProUser.id,
           AccessLevel.ADMIN

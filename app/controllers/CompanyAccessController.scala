@@ -112,7 +112,7 @@ class CompanyAccessController(
 
   private def removeAccessFor(companyId: UUID, user: User, requestBy: User) =
     for {
-      _ <- companyAccessRepository.createUserAccess(companyId, user.id, AccessLevel.NONE)
+      _ <- companyAccessRepository.createAccess(companyId, user.id, AccessLevel.NONE)
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -135,7 +135,7 @@ class CompanyAccessController(
           for {
             user <- userRepository.get(userId)
             _ <- user
-              .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, level))
+              .map(u => companyAccessRepository.createAccess(request.company.id, u.id, level))
               .getOrElse(Future.unit)
           } yield if (user.isDefined) Ok else NotFound
         )
@@ -147,7 +147,7 @@ class CompanyAccessController(
       for {
         maybeUser <- userRepository.get(userId)
         user      <- maybeUser.liftTo[Future](UserNotFoundById(userId))
-        _         <- companyAccessRepository.createUserAccess(request.company.id, user.id, AccessLevel.NONE)
+        _         <- companyAccessRepository.createAccess(request.company.id, user.id, AccessLevel.NONE)
         _ <- eventRepository.create(
           Event(
             UUID.randomUUID(),
