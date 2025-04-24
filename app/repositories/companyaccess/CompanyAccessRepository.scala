@@ -134,7 +134,15 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       userId: UUID,
       level: AccessLevel
   ): FixedSqlAction[Int, NoStream, Effect.Write] =
-    createMultipleWithoutRun(List(CompanyAccessCreationInput(companyId = companyId, userId = userId, level)))
+    CompanyAccessTable.table.insertOrUpdate(
+      UserAccess(
+        companyId = companyId,
+        userId = userId,
+        level = level,
+        updateDate = OffsetDateTime.now(),
+        creationDate = OffsetDateTime.now()
+      )
+    )
 
   private def createMultipleWithoutRun(accesses: List[CompanyAccessCreationInput]) =
     table.insertOrUpdateAll(

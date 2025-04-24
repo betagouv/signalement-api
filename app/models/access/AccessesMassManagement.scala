@@ -3,7 +3,11 @@ package models.access
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.User
+import models.UserRole.Admin
 import models.access.AccessesMassManagement.MassManagementOperation.Remove
+import models.company.AccessLevel
+import models.company.AccessLevel.ADMIN
+import models.company.AccessLevel.MEMBER
 import models.token.ProAccessToken
 import play.api.libs.json.Json
 import play.api.libs.json.JsonValidationError
@@ -21,11 +25,15 @@ object AccessesMassManagement {
     implicit val writes: OWrites[MassManagementUsers] = Json.writes[MassManagementUsers]
   }
   sealed trait MassManagementOperation extends EnumEntry
+  sealed trait MassManagementOperationSetAs extends MassManagementOperation {
+    def desiredLevel: AccessLevel
+  }
   object MassManagementOperation extends PlayEnum[MassManagementOperation] {
     final case object Remove    extends MassManagementOperation
-    final case object SetMember extends MassManagementOperation
-    final case object SetAdmin  extends MassManagementOperation
+    final case object SetMember extends MassManagementOperationSetAs { override def desiredLevel = MEMBER }
+    final case object SetAdmin  extends MassManagementOperationSetAs { override def desiredLevel = ADMIN  }
     override def values: IndexedSeq[MassManagementOperation] = findValues
+
   }
 
   case class MassManagementInputs(

@@ -5,10 +5,11 @@ import controllers.error.AppError.CantPerformAction
 import controllers.error.ForbiddenError
 import models.User
 import models.access.AccessesMassManagement.MassManagementInputs
+import models.access.AccessesMassManagement.MassManagementOperationSetAs
+import models.access.AccessesMassManagement.MassManagementUsers
 import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.access.AccessesMassManagement.MassManagementOperation.SetAdmin
 import models.access.AccessesMassManagement.MassManagementOperation.SetMember
-import models.access.AccessesMassManagement.MassManagementUsers
 import models.auth.UserLogin
 import models.company.AccessLevel
 import models.company.CompanyAccessCreationInput
@@ -85,11 +86,8 @@ class AccessesMassManagementController(
             )
           } yield ()
 
-        case SetMember | SetAdmin =>
-          val desiredLevel = inputs.operation match {
-            case SetMember => AccessLevel.MEMBER
-            case SetAdmin  => AccessLevel.ADMIN
-          }
+        case operationSetAs: MassManagementOperationSetAs =>
+          val desiredLevel = operationSetAs.desiredLevel
           val accessesToCreate = for {
             companyId <- inputs.companiesIds
             userId    <- inputs.users.usersIds
@@ -101,24 +99,19 @@ class AccessesMassManagementController(
           for {
             // TODO il y a un event à créer peut-être ?
             _ <- companyAccessRepository.createMultipleUserAccesses(accessesToCreate)
-
-            // TODO set les accesses à membre/admin de ces invited token ids sur ces entreprises ??? si possible
-            // ....
-
-            // on invite les emailsToInvite
+            _ <- Future.sequence(
+              inputs.users.alreadyInvitedTokenIds.map(tokenId =>
+                proAccessTokenOrchestrator.extendInvitationToAdditionalCompanies(tokenId, inputCompanies, desiredLevel)
+              )
+            )
             _ <- Future.sequence(
               inputs.users.emailsToInvite.map(email =>
                 proAccessTokenOrchestrator.sendInvitations(inputCompanies, EmailAddress(email), desiredLevel)
               )
             )
-            _ <- Future.unit
-
-            _ <- Future.unit
           } yield ()
-          ???
       }
-    } yield ???
-    Future.successful(Ok)
+    } yield Ok
   }
 
 }

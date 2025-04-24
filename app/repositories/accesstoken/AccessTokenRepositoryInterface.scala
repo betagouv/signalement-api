@@ -18,6 +18,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]]
 
+  def fetchCompanyJoinTokenByTokenId(tokenId: UUID): Future[Option[AccessToken]]
+
   def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]]
 
   def findActivationToken(companyId: UUID, token: String): Future[Option[AccessToken]]

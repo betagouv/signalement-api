@@ -195,7 +195,6 @@ class ProAccessTokenOrchestrator(
   private def genInvitationToken(
       company: Company,
       level: AccessLevel,
-      validity: Option[java.time.temporal.TemporalAmount],
       emailedTo: EmailAddress
   ): Future[String] =
     for {
@@ -203,7 +202,7 @@ class ProAccessTokenOrchestrator(
       _ <- existingToken
         .map { existingToken =>
           logger.debug("Found existing token for that user and company, updating existing token")
-          accessTokenRepository.updateToken(existingToken, level, validity)
+          accessTokenRepository.updateToken(existingToken, level, tokenConfiguration.companyJoinDuration)
         }
         .getOrElse(Future.successful(None))
       token <- existingToken
@@ -223,9 +222,28 @@ class ProAccessTokenOrchestrator(
         }
     } yield token.token
 
+  private def genInvitationTokens(
+      companies: List[Company],
+      level: AccessLevel,
+      emailedTo: EmailAddress
+  ): Future[List[(String, Company)]] =
+    for {
+      list <- Future.sequence(
+        companies.map(company => genInvitationToken(company, level, emailedTo).map(token => token -> company))
+      )
+    } yield list
+
+  def extendInvitationToAdditionalCompanies(existingTokenId: UUID, companies: List[Company], level: AccessLevel) =
+    for {
+      maybeToken <- accessTokenRepository.fetchCompanyJoinTokenByTokenId(existingTokenId)
+      token      <- maybeToken.liftTo[Future](ProAccountActivationTokenNotFoundOrInvalidWithoutSiret(existingTokenId))
+      email <- token.emailedTo.liftTo[Future](ServerError(s"Company join token $existingTokenId has no email field"))
+      _     <- genInvitationTokens(companies, level, email)
+    } yield ()
+
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
-      tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
+      tokenCode <- genInvitationToken(company, level, email)
       _ <- mailService.send(
         ProCompanyAccessInvitation.Email(
           recipient = email,
@@ -243,13 +261,7 @@ class ProAccessTokenOrchestrator(
       level: AccessLevel
   ): Future[Unit] =
     for {
-      list <- Future.sequence(
-        companies.map(company =>
-          genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email).map(token =>
-            token -> company
-          )
-        )
-      )
+      list <- genInvitationTokens(companies, level, email)
       _ <- list match {
         case Nil => Future.unit
         case (tokenCode, c) :: _ =>
