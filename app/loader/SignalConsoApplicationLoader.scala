@@ -24,6 +24,7 @@ import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
 import org.apache.pekko.actor.typed.DispatcherSelector
+import org.apache.pekko.actor.typed.MailboxSelector
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -315,6 +316,13 @@ class SignalConsoComponents(
       DispatcherSelector.fromConfig("my-blocking-dispatcher")
     )
 
+  val albertSummaryActor: typed.ActorRef[AlbertSummaryActor.AlbertSummaryCommand] =
+    actorSystem.spawn(
+      AlbertSummaryActor.create(albertService, albertClassificationRepository),
+      "albert-summary-actor",
+      MailboxSelector.bounded(5)
+    )
+
   val pdfService                      = new PDFService(signalConsoConfiguration, htmlConverterActor)
   implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService               = new AttachmentService(environment, pdfService, frontRoute)
@@ -479,6 +487,7 @@ class SignalConsoComponents(
     companySyncService,
     engagementRepository,
     subcategoryLabelRepository,
+    albertSummaryActor,
     messagesApi
   )
 
