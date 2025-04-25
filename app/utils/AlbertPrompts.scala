@@ -14,7 +14,7 @@ object AlbertPrompts {
        |    **category** : La catégorie assignée parmi "Valide", "Injurieux", "Incompréhensible".
        |    **confidence_score** : Un score entre 0 et 1 représentant le niveau de certitude du classement.
        |    **explanation** : Une explication textuelle du classement.
-       |    **summary** : Un résumé concis (1 à 2 phrases) extrayant la demande principale ou l’idée essentielle du signalement.
+       |    **summary** : Un résumé concis (1 à 3 phrases) extrayant la demande principale ou l’idée essentielle du signalement.
        |
        |Voici un exemple de réponse attendu :
        |
