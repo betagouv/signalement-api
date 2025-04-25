@@ -1,13 +1,7 @@
 package repositories.companyaccess
 
 import models._
-import models.company.AccessLevel
-import models.company.Company
-import models.company.CompanyAccess
-import models.company.CompanyAccessCreationInput
-import models.company.CompanyAccessKind
-import models.company.CompanyWithAccess
-import models.company.UserAccess
+import models.company._
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
@@ -22,13 +16,13 @@ import utils.MapUtils
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
     extends CompanyAccessRepositoryInterface {
 
   val table: TableQuery[CompanyAccessTable] = CompanyAccessTable.table
+
   import dbConfig._
 
   override def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
@@ -42,13 +36,15 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ).map(_.getOrElse(AccessLevel.NONE))
 
   override def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]] =
-    db.run(
-      table
-        .filter(_.companyId inSetBind companyIds)
-        .filter(_.userId === userId)
-        .to[List]
-        .result
-    )
+    getUserAccesses(companyIds, List(userId))
+
+  override def getUserAccesses(companyIds: List[UUID], userIds: List[UUID]): Future[List[UserAccess]] = db.run(
+    table
+      .filter(_.companyId inSetBind companyIds)
+      .filter(_.userId inSetBind userIds)
+      .to[List]
+      .result
+  )
 
   override def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
@@ -78,26 +74,26 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     )
 
   private[this] def fetchUsersAndAccessesByCompanies(
-      companyIds: List[UUID],
-      levels: Seq[AccessLevel]
-  ): Future[List[(UUID, User)]] =
+                                                      companyIds: List[UUID],
+                                                      levels: Seq[AccessLevel]
+                                                    ): Future[List[(UUID, User)]] =
     db.run(
       (for {
         access <- table if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
-        user   <- UserTable.table if user.id === access.userId
+        user <- UserTable.table if user.id === access.userId
       } yield (access.companyId, user)).to[List].result
     )
 
   override def fetchUsersByCompanies(
-      companyIds: List[UUID],
-      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
-  ): Future[List[User]] =
+                                      companyIds: List[UUID],
+                                      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+                                    ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
   override def fetchUsersByCompanyIds(
-      companyIds: List[UUID],
-      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
-  ): Future[Map[UUID, List[User]]] =
+                                       companyIds: List[UUID],
+                                       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+                                     ): Future[Map[UUID, List[User]]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels)
       .map(users => users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
       .map(map => MapUtils.fillMissingKeys(map, companyIds, Nil))
@@ -130,10 +126,10 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
   override def createCompanyAccessWithoutRun(
-      companyId: UUID,
-      userId: UUID,
-      level: AccessLevel
-  ): FixedSqlAction[Int, NoStream, Effect.Write] =
+                                              companyId: UUID,
+                                              userId: UUID,
+                                              level: AccessLevel
+                                            ): FixedSqlAction[Int, NoStream, Effect.Write] =
     CompanyAccessTable.table.insertOrUpdate(
       UserAccess(
         companyId = companyId,
@@ -144,26 +140,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       )
     )
 
-  private def createMultipleWithoutRun(accesses: List[CompanyAccessCreationInput]) =
-    table.insertOrUpdateAll(
-      accesses.map(access =>
-        UserAccess(
-          companyId = access.companyId,
-          userId = access.userId,
-          level = access.level,
-          updateDate = OffsetDateTime.now(),
-          creationDate = OffsetDateTime.now()
-        )
-      )
-    )
-
   override def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
     db.run(createCompanyAccessWithoutRun(companyId, userId, level))
-
-  override def createMultipleUserAccesses(accesses: List[CompanyAccessCreationInput]): Future[Unit] =
-    db.run(
-      createMultipleWithoutRun(accesses)
-    ).map(_ => ())
 
   override def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
@@ -175,8 +153,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ).map(_ => ())
 
   override def proFirstActivationCount(
-      ticks: Int = 12
-  ): Future[Vector[(Timestamp, Int)]] =
+                                        ticks: Int = 12
+                                      ): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (
           select v.a, count(distinct id)
           from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date
@@ -190,11 +168,4 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ) as res order by 1 ASC;    
          """.as[(Timestamp, Int)])
 
-  override def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID]): Future[Unit] =
-    db.run(
-      table
-        .filter(_.companyId.inSetBind(companiesIds))
-        .filter(_.userId.inSetBind(usersIds))
-        .delete
-    ).map(_ => ())
 }

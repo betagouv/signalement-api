@@ -5,6 +5,7 @@ import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.EmailAlreadyExist
 import controllers.error.AppError.UserAccountEmailAlreadyExist
 import controllers.error.AppError.UserNotFound
+import controllers.error.AppError.UserNotFoundById
 import controllers.error.AppError.UserNotInvited
 import models.AccessToken
 import models.DraftUser
@@ -35,6 +36,8 @@ trait UserOrchestratorInterface {
   def createSignalConsoUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User]
 
   def findOrError(emailAddress: EmailAddress): Future[User]
+
+  def findAllByIdOrError(usersIds: List[UUID]): Future[List[User]]
 
   def find(emailAddress: EmailAddress): Future[Option[User]]
 
@@ -142,6 +145,18 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
     userRepository
       .findByEmail(emailAddress.value)
       .flatMap(_.liftTo[Future](UserNotFound(emailAddress.value)))
+
+  override def findAllByIdOrError(usersIds: List[UUID]): Future[List[User]] =
+    for {
+      users <- userRepository.findByIds(usersIds)
+      firstMissing = usersIds.find(id => !users.exists(_.id == id))
+      _ <- {
+        firstMissing match {
+          case Some(id) => Future.failed(UserNotFoundById(id))
+          case _        => Future.unit
+        }
+      }
+    } yield users.toList
 
   override def find(emailAddress: EmailAddress): Future[Option[User]] =
     userRepository

@@ -4,6 +4,9 @@ import controllers.error.AppError.ActivationCodeAlreadyUsed
 import controllers.error.AppError.CompanyActivationCodeExpired
 import controllers.error.AppError.CompanyActivationSiretOrCodeInvalid
 import controllers.error.AppError.TooMuchCompanyActivationAttempts
+import controllers.error.AppError.UserNotFound
+import controllers.error.AppError.ServerError
+import controllers.error.AppError.UserNotFoundById
 import models.AccessToken
 import models.User
 import models.access.ActivationLinkRequest
@@ -32,6 +35,9 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
+import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
+import services.EventsBuilder.userAccessRemovedEvent
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.SIREN
 import utils.SIRET
@@ -40,6 +46,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.Logs.RichLogger
 
+import java.util.UUID
 import scala.concurrent.duration._
 class CompanyAccessOrchestrator(
     companyAccessRepository: CompanyAccessRepositoryInterface,
@@ -47,7 +54,9 @@ class CompanyAccessOrchestrator(
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface,
     val eventsRepository: EventRepositoryInterface,
-    val accessesOrchestrator: ProAccessTokenOrchestrator
+    val accessesOrchestrator: ProAccessTokenOrchestrator,
+    val userOrchestrator: UserOrchestrator,
+    val userRepository: UserRepositoryInterface
 )(implicit val ec: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -217,5 +226,26 @@ class CompanyAccessOrchestrator(
         logger.error(s"User is not supposed to access this feature")
         List.empty[UserWithAccessLevel]
     }
+
+  def removeAccess(companyId: UUID, user: User, requestedBy: User): Future[Unit] =
+    for {
+      _ <- companyAccessRepository.createAccess(companyId, user.id, AccessLevel.NONE)
+      _ <- eventsRepository
+        .create(userAccessRemovedEvent(companyId, user, requestedBy))
+        .map(_ => ())
+    } yield ()
+
+  def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID], requestedBy: User) =
+    for {
+      users            <- userOrchestrator.findAllByIdOrError(usersIds)
+      existingAccesses <- companyAccessRepository.getUserAccesses(companiesIds, usersIds)
+      _ <- Future.sequence(
+        existingAccesses.map { access =>
+          val userId = access.userId
+          val user   = users.find(_.id == userId).getOrElse(throw ServerError(s"User $userId was supposed to exist"))
+          removeAccess(companyId = access.companyId, user = user, requestedBy = requestedBy)
+        }
+      )
+    } yield ()
 
 }

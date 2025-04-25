@@ -2,20 +2,12 @@ package controllers
 
 import authentication.Authenticator
 import controllers.error.AppError.CantPerformAction
-import controllers.error.ForbiddenError
 import models.User
+import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.access.AccessesMassManagement.MassManagementInputs
 import models.access.AccessesMassManagement.MassManagementOperationSetAs
 import models.access.AccessesMassManagement.MassManagementUsers
-import models.access.AccessesMassManagement.MassManagementOperation.Remove
-import models.access.AccessesMassManagement.MassManagementOperation.SetAdmin
-import models.access.AccessesMassManagement.MassManagementOperation.SetMember
-import models.auth.UserLogin
-import models.company.AccessLevel
-import models.company.CompanyAccessCreationInput
-import orchestrators.CompaniesVisibilityOrchestrator
-import orchestrators.CompanyOrchestrator
-import orchestrators.ProAccessTokenOrchestrator
+import orchestrators._
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
@@ -29,7 +21,8 @@ class AccessesMassManagementController(
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
-    companyAccessRepository: CompanyAccessRepositoryInterface,
+    companyAccessOrchestrator: CompanyAccessOrchestrator,
+    userOrchestrator: UserOrchestrator,
     accessTokenRepository: AccessTokenRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
@@ -51,6 +44,7 @@ class AccessesMassManagementController(
       users = mapOfUsers.values.flatten.toList.distinctBy(_.id)
       invitedByEmail <- proAccessTokenOrchestrator
         .listProPendingTokensSentByEmail(siretsAndIds.map(_._2), req.identity)
+        .map(_.distinctBy(_.emailedTo))
     } yield Ok(
       Json.toJson(
         MassManagementUsers(
@@ -62,6 +56,8 @@ class AccessesMassManagementController(
   }
 
   def manageAccesses = Act.secured.pros.forbidImpersonation.async(parse.json) { req =>
+    // TODO tester à peu près que j'ai bien compris chacun des cas
+    // TODO add a global log and event
     for {
       inputs <- req.parseBody[MassManagementInputs]()
       // le pro doit avoir acces ADMIN à ces entreprises
@@ -78,33 +74,30 @@ class AccessesMassManagementController(
       _ <- inputs.operation match {
         case Remove =>
           for {
-            // TODO il y a un event à créer normalement
-            _ <- companyAccessRepository.removeAccessesIfExist(inputs.companiesIds, inputs.users.usersIds)
+            _ <- companyAccessOrchestrator.removeAccessesIfExist(
+              inputs.companiesIds,
+              inputs.users.usersIds,
+              req.identity
+            )
             _ <- accessTokenRepository.invalidateCompanyJoinAccessTokens(
               inputs.companiesIds,
               inputs.users.alreadyInvitedTokenIds
             )
           } yield ()
-
         case operationSetAs: MassManagementOperationSetAs =>
           val desiredLevel = operationSetAs.desiredLevel
-          val accessesToCreate = for {
-            companyId <- inputs.companiesIds
-            userId    <- inputs.users.usersIds
-          } yield CompanyAccessCreationInput(
-            companyId = companyId,
-            userId = userId,
-            desiredLevel
-          )
           for {
-            // TODO il y a un event à créer peut-être ?
-            _ <- companyAccessRepository.createMultipleUserAccesses(accessesToCreate)
+            users <- userOrchestrator.findAllByIdOrError(inputs.users.usersIds)
+            _ <- Future.sequence(
+              users.map(user => proAccessTokenOrchestrator.addInvitedUserAndNotify(user, inputCompanies, desiredLevel))
+            )
             _ <- Future.sequence(
               inputs.users.alreadyInvitedTokenIds.map(tokenId =>
                 proAccessTokenOrchestrator.extendInvitationToAdditionalCompanies(tokenId, inputCompanies, desiredLevel)
               )
             )
             _ <- Future.sequence(
+              // TODO what if the user already existed as a full user but our requested user didn't know it ?
               inputs.users.emailsToInvite.map(email =>
                 proAccessTokenOrchestrator.sendInvitations(inputCompanies, EmailAddress(email), desiredLevel)
               )

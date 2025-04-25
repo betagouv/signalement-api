@@ -18,6 +18,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.EventsBuilder.userAccessRemovedEvent
 import services.emails.EmailDefinitionsPro.ProCompaniesAccessesInvitations
 import services.emails.EmailDefinitionsPro.ProCompanyAccessInvitation
 import services.emails.EmailDefinitionsPro.ProNewCompaniesAccesses
@@ -191,6 +192,8 @@ class ProAccessTokenOrchestrator(
       }
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
+
+
 
   private def genInvitationToken(
       company: Company,

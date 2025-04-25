@@ -54,8 +54,17 @@ object AccessesMassManagement {
   }
 
   case class MassManagementUsersInput(
+      // existing users
+      // -> we can remove/add access to some companies
       usersIds: List[UUID],
+      // people that have been invited to join one company but have not created their account yet (i.e. access_token COMPANY_JOIN)
+      // -> we can remove their invitation or expand it to more companies
+      // TODO reshape all that to use emails, otherwise it's wrong
       alreadyInvitedTokenIds: List[UUID],
+      // some new emails, manually typed by the requesting user, that we are gonna invite to the companies
+      // Note that usually it will be emails that are brand new to SignalConso, that don't have accounts
+      // but it is possible that they already have a user account, or an invitation,
+      // but it wasn't on any company that our requesting user can see.
       emailsToInvite: List[String]
   ) {
     def count = (usersIds ++ alreadyInvitedTokenIds ++ emailsToInvite).length

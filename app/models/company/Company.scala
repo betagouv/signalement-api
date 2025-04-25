@@ -32,11 +32,6 @@ case class UserAccess(
     updateDate: OffsetDateTime,
     creationDate: OffsetDateTime
 )
-case class CompanyAccessCreationInput(
-    companyId: UUID,
-    userId: UUID,
-    level: AccessLevel
-)
 
 case class Company(
     id: UUID = UUID.randomUUID(),

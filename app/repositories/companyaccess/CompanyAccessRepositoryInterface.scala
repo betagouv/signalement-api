@@ -2,7 +2,7 @@ package repositories.companyaccess
 import models.User
 import models.company.AccessLevel
 import models.company.Company
-import models.company.CompanyAccessCreationInput
+
 import models.company.CompanyWithAccess
 import models.company.UserAccess
 import repositories.PostgresProfile
@@ -19,6 +19,7 @@ trait CompanyAccessRepositoryInterface {
 
   def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]]
 
+  def getUserAccesses(companyIds: List[UUID], userIds: List[UUID]): Future[List[UserAccess]]
   def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]]
 
   def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]]
@@ -39,8 +40,6 @@ trait CompanyAccessRepositoryInterface {
 
   def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int]
 
-  def createMultipleUserAccesses(accesses: List[CompanyAccessCreationInput]): Future[Unit]
-
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit]
 
   def proFirstActivationCount(
@@ -53,6 +52,5 @@ trait CompanyAccessRepositoryInterface {
       level: AccessLevel
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
 
-  def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID]): Future[Unit]
 
 }

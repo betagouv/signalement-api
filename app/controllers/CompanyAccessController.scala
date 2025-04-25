@@ -21,6 +21,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.EventsBuilder.userAccessRemovedEvent
 import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
@@ -112,19 +113,7 @@ class CompanyAccessController(
 
   private def removeAccessFor(companyId: UUID, user: User, requestBy: User) =
     for {
-      _ <- companyAccessRepository.createAccess(companyId, user.id, AccessLevel.NONE)
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          None,
-          Some(companyId),
-          Some(requestBy.id),
-          OffsetDateTime.now(),
-          Constants.EventType.fromUserRole(requestBy.userRole),
-          Constants.ActionEvent.USER_ACCESS_REMOVED,
-          Json.obj("userId" -> user.id, "email" -> user.email)
-        )
-      )
+      _ <- companyAccessOrchestrator.removeAccess(companyId, user, requestBy)
     } yield ()
 
   def updateAccess(siret: String, userId: UUID) =
@@ -147,25 +136,13 @@ class CompanyAccessController(
       for {
         maybeUser <- userRepository.get(userId)
         user      <- maybeUser.liftTo[Future](UserNotFoundById(userId))
-        _         <- companyAccessRepository.createAccess(request.company.id, user.id, AccessLevel.NONE)
-        _ <- eventRepository.create(
-          Event(
-            UUID.randomUUID(),
-            None,
-            Some(request.company.id),
-            Some(request.identity.id),
-            OffsetDateTime.now(),
-            Constants.EventType.fromUserRole(request.identity.userRole),
-            Constants.ActionEvent.USER_ACCESS_REMOVED,
-            Json.obj("userId" -> userId, "email" -> user.email)
-          )
-        )
+        _         <- companyAccessOrchestrator.removeAccess(request.company.id, user, requestedBy = request.identity)
         // this operation may leave some reports assigned to this user, to which he doesn't have access anymore
         // in theory here we should find these reports and de-assign them
       } yield NoContent
     }
 
-  case class AccessInvitation(email: EmailAddress, level: AccessLevel)
+  private case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
   def sendInvitation(siret: String) =
     Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).forbidImpersonation.async(parse.json) {
@@ -211,7 +188,7 @@ class CompanyAccessController(
 
   }
 
-  case class AcceptTokenRequest(token: String)
+  private case class AcceptTokenRequest(token: String)
 
   def acceptToken(siret: String) = Act.secured.all.allowImpersonation.async(parse.json) { implicit request =>
     implicit val reads = Json.reads[AcceptTokenRequest]
