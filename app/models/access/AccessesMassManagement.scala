@@ -19,7 +19,7 @@ import java.util.UUID
 object AccessesMassManagement {
   case class MassManagementUsers(
       users: List[User],
-      invitedByEmail: List[ProAccessToken]
+      invitedEmails: List[String]
   )
   object MassManagementUsers {
     implicit val writes: OWrites[MassManagementUsers] = Json.writes[MassManagementUsers]
@@ -59,15 +59,14 @@ object AccessesMassManagement {
       usersIds: List[UUID],
       // people that have been invited to join one company but have not created their account yet (i.e. access_token COMPANY_JOIN)
       // -> we can remove their invitation or expand it to more companies
-      // TODO reshape all that to use emails, otherwise it's wrong
-      alreadyInvitedTokenIds: List[UUID],
+      alreadyInvitedEmails: List[String],
       // some new emails, manually typed by the requesting user, that we are gonna invite to the companies
       // Note that usually it will be emails that are brand new to SignalConso, that don't have accounts
       // but it is possible that they already have a user account, or an invitation,
       // but it wasn't on any company that our requesting user can see.
       emailsToInvite: List[String]
   ) {
-    def count = (usersIds ++ alreadyInvitedTokenIds ++ emailsToInvite).length
+    def count = (usersIds ++ alreadyInvitedEmails ++ emailsToInvite).length
   }
 
   object MassManagementUsersInput {

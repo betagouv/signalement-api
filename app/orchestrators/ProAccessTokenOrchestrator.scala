@@ -193,8 +193,6 @@ class ProAccessTokenOrchestrator(
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
 
-
-
   private def genInvitationToken(
       company: Company,
       level: AccessLevel,
@@ -236,14 +234,6 @@ class ProAccessTokenOrchestrator(
       )
     } yield list
 
-  def extendInvitationToAdditionalCompanies(existingTokenId: UUID, companies: List[Company], level: AccessLevel) =
-    for {
-      maybeToken <- accessTokenRepository.fetchCompanyJoinTokenByTokenId(existingTokenId)
-      token      <- maybeToken.liftTo[Future](ProAccountActivationTokenNotFoundOrInvalidWithoutSiret(existingTokenId))
-      email <- token.emailedTo.liftTo[Future](ServerError(s"Company join token $existingTokenId has no email field"))
-      _     <- genInvitationTokens(companies, level, email)
-    } yield ()
-
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       tokenCode <- genInvitationToken(company, level, email)
@@ -278,6 +268,23 @@ class ProAccessTokenOrchestrator(
           )
       }
       _ = logger.debug(s"Token sent to ${email} for companies ${companies}")
+    } yield ()
+
+  def invalidateInvitationsIfExist(
+      companies: List[Company],
+      email: EmailAddress
+  ): Future[Unit] =
+    for {
+      allTokensForEmail <- accessTokenRepository.fetchPendingTokens(email)
+      tokensToInvalidate = allTokensForEmail
+        .filter(_.kind == CompanyJoin)
+        .filter(t =>
+          t.companyId match {
+            case None            => false
+            case Some(companyId) => companies.exists(_.id == companyId)
+          }
+        )
+      _ <- Future.sequence(tokensToInvalidate.map(accessTokenRepository.invalidateToken))
     } yield ()
 
 }

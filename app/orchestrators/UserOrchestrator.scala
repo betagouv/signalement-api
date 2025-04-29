@@ -38,6 +38,7 @@ trait UserOrchestratorInterface {
   def findOrError(emailAddress: EmailAddress): Future[User]
 
   def findAllByIdOrError(usersIds: List[UUID]): Future[List[User]]
+  def findByEmails(emails: List[String]): Future[Seq[User]]
 
   def find(emailAddress: EmailAddress): Future[Option[User]]
 
@@ -157,6 +158,9 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
         }
       }
     } yield users.toList
+
+  def findByEmails(emails: List[EmailAddress]): Future[Seq[User]] =
+    userRepository.findByEmails(emails)
 
   override def find(emailAddress: EmailAddress): Future[Option[User]] =
     userRepository

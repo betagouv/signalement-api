@@ -7,11 +7,11 @@ import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.access.AccessesMassManagement.MassManagementInputs
 import models.access.AccessesMassManagement.MassManagementOperationSetAs
 import models.access.AccessesMassManagement.MassManagementUsers
+import models.company.CompanyWithAccess
 import orchestrators._
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext
@@ -42,14 +42,14 @@ class AccessesMassManagementController(
       siretsAndIds = companies.map(_.company).map(c => c.siret -> c.id)
       mapOfUsers <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(siretsAndIds)
       users = mapOfUsers.values.flatten.toList.distinctBy(_.id)
-      invitedByEmail <- proAccessTokenOrchestrator
+      proAccessTokensEmailed <- proAccessTokenOrchestrator
         .listProPendingTokensSentByEmail(siretsAndIds.map(_._2), req.identity)
-        .map(_.distinctBy(_.emailedTo))
+      invitedEmails = proAccessTokensEmailed.flatMap(_.emailedTo).map(_.value).distinct
     } yield Ok(
       Json.toJson(
         MassManagementUsers(
           users,
-          invitedByEmail
+          invitedEmails
         )
       )
     )
@@ -62,49 +62,84 @@ class AccessesMassManagementController(
       inputs <- req.parseBody[MassManagementInputs]()
       // le pro doit avoir acces ADMIN à ces entreprises
       allCompaniesOfPro <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(req.identity)
-      proManageableCompaniesIds = allCompaniesOfPro.filter(_.isAdmin).map(_.company.id)
-      _ <-
-        if (inputs.companiesIds.forall(proManageableCompaniesIds.contains)) { Future.unit }
-        else { Future.failed(CantPerformAction) }
-      // parmi les users aucun ne doit etre lui-meme
-      _ <-
-        if (inputs.users.usersIds.contains(req.identity.id)) { Future.failed(CantPerformAction) }
-        else { Future.unit }
-      inputCompanies = allCompaniesOfPro.map(_.company).filter(x => inputs.companiesIds.contains(x.id))
+      _ = checkInputs(inputs, allCompaniesOfPro, req.identity)
+      (companiesToManage, usersToManage, emailsToManage) <- prepareDataToManage(inputs)
       _ <- inputs.operation match {
         case Remove =>
           for {
             _ <- companyAccessOrchestrator.removeAccessesIfExist(
-              inputs.companiesIds,
-              inputs.users.usersIds,
+              companiesToManage.map(_.id),
+              usersToManage.map(_.id),
               req.identity
             )
-            _ <- accessTokenRepository.invalidateCompanyJoinAccessTokens(
-              inputs.companiesIds,
-              inputs.users.alreadyInvitedTokenIds
-            )
+            _ <- Future.sequence(emailsToManage.map { email =>
+              proAccessTokenOrchestrator.invalidateInvitationsIfExist(companiesToManage, email)
+            })
           } yield ()
         case operationSetAs: MassManagementOperationSetAs =>
           val desiredLevel = operationSetAs.desiredLevel
           for {
-            users <- userOrchestrator.findAllByIdOrError(inputs.users.usersIds)
             _ <- Future.sequence(
-              users.map(user => proAccessTokenOrchestrator.addInvitedUserAndNotify(user, inputCompanies, desiredLevel))
-            )
-            _ <- Future.sequence(
-              inputs.users.alreadyInvitedTokenIds.map(tokenId =>
-                proAccessTokenOrchestrator.extendInvitationToAdditionalCompanies(tokenId, inputCompanies, desiredLevel)
+              usersToManage.map(user =>
+                proAccessTokenOrchestrator.addInvitedUserAndNotify(user, companiesToManage, desiredLevel)
               )
             )
             _ <- Future.sequence(
-              // TODO what if the user already existed as a full user but our requested user didn't know it ?
-              inputs.users.emailsToInvite.map(email =>
-                proAccessTokenOrchestrator.sendInvitations(inputCompanies, EmailAddress(email), desiredLevel)
+              emailsToManage.map(email =>
+                proAccessTokenOrchestrator.sendInvitations(companiesToManage, email, desiredLevel)
               )
             )
           } yield ()
       }
     } yield Ok
   }
+
+  private def checkInputs(
+      inputs: MassManagementInputs,
+      allCompaniesOfPro: List[CompanyWithAccess],
+      requestedBy: User
+  ): Future[Unit] = {
+    val proManageableCompaniesIds = allCompaniesOfPro.filter(_.isAdmin).map(_.company.id)
+    for {
+      _ <-
+        if (inputs.companiesIds.forall(proManageableCompaniesIds.contains)) {
+          Future.unit
+        } else {
+          Future.failed(CantPerformAction)
+        }
+      _ <-
+        if (
+          inputs.users.usersIds.contains(
+            requestedBy.id
+          ) || (inputs.users.emailsToInvite ++ inputs.users.alreadyInvitedEmails).contains(requestedBy.email)
+        ) {
+          Future.failed(CantPerformAction)
+        } else {
+          Future.unit
+        }
+    } yield ()
+  }
+
+  private def prepareDataToManage(
+      inputs: MassManagementInputs,
+      allCompaniesOfPro: List[CompanyWithAccess]
+  ) =
+    // The user can select
+    // - existing users
+    // - emails that have already some invitation to some company
+    // - emails manually typed, that at first glance should not belong to any existing user or invitation
+    //    => but actually they could theoretically correspond to a user or invitation that the requesting user didn't know about
+    //       if it was not on a company that he knows about
+    // Thus we have to treat the "emailsToInvite" as something that could be a user or an already invited email
+    for {
+
+      users <- userOrchestrator.findAllByIdOrError(inputs.users.usersIds)
+      emails =
+        (inputs.users.alreadyInvitedEmails ++ inputs.users.emailsToInvite).map(EmailAddress.apply)
+      usersFromEmails <- userOrchestrator.findByEmails(emails)
+      usersToManage     = (users ++ usersFromEmails).distinctBy(_.id)
+      emailsToManage    = emails.filterNot(email => usersFromEmails.exists(_.email == email))
+      companiesToManage = allCompaniesOfPro.map(_.company).filter(x => inputs.companiesIds.contains(x.id))
+    } yield (companiesToManage, usersToManage, emailsToManage)
 
 }
