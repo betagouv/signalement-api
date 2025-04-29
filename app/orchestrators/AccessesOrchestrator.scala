@@ -8,7 +8,6 @@ import controllers.error.AppError._
 import io.scalaland.chimney.dsl._
 import models.AuthProvider.ProConnect
 import models._
-import models.company.AccessLevel
 import models.token.AdminOrDgccrfTokenKind
 import models.token.AgentAccessToken
 import models.token.DGCCRFUserActivationToken
@@ -23,7 +22,6 @@ import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.EmailAddressService
-import services.EventsBuilder.userAccessRemovedEvent
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfProConnectInvitation

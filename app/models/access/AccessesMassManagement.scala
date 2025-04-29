@@ -3,12 +3,10 @@ package models.access
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.User
-import models.UserRole.Admin
 import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.company.AccessLevel
 import models.company.AccessLevel.ADMIN
 import models.company.AccessLevel.MEMBER
-import models.token.ProAccessToken
 import play.api.libs.json.Json
 import play.api.libs.json.JsonValidationError
 import play.api.libs.json.OWrites
