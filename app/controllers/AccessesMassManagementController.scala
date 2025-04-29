@@ -7,11 +7,11 @@ import models.access.AccessesMassManagement.MassManagementOperation.Remove
 import models.access.AccessesMassManagement.MassManagementInputs
 import models.access.AccessesMassManagement.MassManagementOperationSetAs
 import models.access.AccessesMassManagement.MassManagementUsers
+import models.company.Company
 import models.company.CompanyWithAccess
 import orchestrators._
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import repositories.accesstoken.AccessTokenRepositoryInterface
 import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext
@@ -23,7 +23,6 @@ class AccessesMassManagementController(
     proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
     userOrchestrator: UserOrchestrator,
-    accessTokenRepository: AccessTokenRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit
@@ -59,17 +58,16 @@ class AccessesMassManagementController(
     // TODO tester à peu près que j'ai bien compris chacun des cas
     // TODO add a global log and event
     for {
-      inputs <- req.parseBody[MassManagementInputs]()
-      // le pro doit avoir acces ADMIN à ces entreprises
+      inputs            <- req.parseBody[MassManagementInputs]()
       allCompaniesOfPro <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(req.identity)
-      _ = checkInputs(inputs, allCompaniesOfPro, req.identity)
-      (companiesToManage, usersToManage, emailsToManage) <- prepareDataToManage(inputs)
+      _                 <- Future(checkIsAllowed(inputs, allCompaniesOfPro, req.identity))
+      (companiesToManage, usersToManage, emailsToManage) <- prepareDataToManage(inputs, allCompaniesOfPro)
       _ <- inputs.operation match {
         case Remove =>
           for {
             _ <- companyAccessOrchestrator.removeAccessesIfExist(
               companiesToManage.map(_.id),
-              usersToManage.map(_.id),
+              usersToManage,
               req.identity
             )
             _ <- Future.sequence(emailsToManage.map { email =>
@@ -94,36 +92,26 @@ class AccessesMassManagementController(
     } yield Ok
   }
 
-  private def checkInputs(
+  private def checkIsAllowed(
       inputs: MassManagementInputs,
       allCompaniesOfPro: List[CompanyWithAccess],
       requestedBy: User
-  ): Future[Unit] = {
+  ): Unit = {
     val proManageableCompaniesIds = allCompaniesOfPro.filter(_.isAdmin).map(_.company.id)
-    for {
-      _ <-
-        if (inputs.companiesIds.forall(proManageableCompaniesIds.contains)) {
-          Future.unit
-        } else {
-          Future.failed(CantPerformAction)
-        }
-      _ <-
-        if (
-          inputs.users.usersIds.contains(
-            requestedBy.id
-          ) || (inputs.users.emailsToInvite ++ inputs.users.alreadyInvitedEmails).contains(requestedBy.email)
-        ) {
-          Future.failed(CantPerformAction)
-        } else {
-          Future.unit
-        }
-    } yield ()
+    if (
+      !inputs.companiesIds.forall(proManageableCompaniesIds.contains) ||
+      inputs.users.usersIds.contains(
+        requestedBy.id
+      ) || (inputs.users.emailsToInvite ++ inputs.users.alreadyInvitedEmails).contains(requestedBy.email)
+    ) {
+      throw CantPerformAction
+    }
   }
 
   private def prepareDataToManage(
       inputs: MassManagementInputs,
       allCompaniesOfPro: List[CompanyWithAccess]
-  ) =
+  ): Future[(List[Company], List[User], List[EmailAddress])] =
     // The user can select
     // - existing users
     // - emails that have already some invitation to some company
@@ -132,7 +120,6 @@ class AccessesMassManagementController(
     //       if it was not on a company that he knows about
     // Thus we have to treat the "emailsToInvite" as something that could be a user or an already invited email
     for {
-
       users <- userOrchestrator.findAllByIdOrError(inputs.users.usersIds)
       emails =
         (inputs.users.alreadyInvitedEmails ++ inputs.users.emailsToInvite).map(EmailAddress.apply)

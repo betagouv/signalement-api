@@ -235,14 +235,15 @@ class CompanyAccessOrchestrator(
         .map(_ => ())
     } yield ()
 
-  def removeAccessesIfExist(companiesIds: List[UUID], usersIds: List[UUID], requestedBy: User) =
+  def removeAccessesIfExist(companiesIds: List[UUID], users: List[User], requestedBy: User) =
     for {
-      users            <- userOrchestrator.findAllByIdOrError(usersIds)
-      existingAccesses <- companyAccessRepository.getUserAccesses(companiesIds, usersIds)
+      existingAccesses <- companyAccessRepository.getUserAccesses(companiesIds, users.map(_.id))
       _ <- Future.sequence(
         existingAccesses.map { access =>
           val userId = access.userId
-          val user   = users.find(_.id == userId).getOrElse(throw ServerError(s"User $userId was supposed to exist"))
+          val user = users
+            .find(_.id == userId)
+            .getOrElse(throw ServerError(s"Can't remove access of $userId, it was not in the original list of users"))
           removeAccess(companyId = access.companyId, user = user, requestedBy = requestedBy)
         }
       )
