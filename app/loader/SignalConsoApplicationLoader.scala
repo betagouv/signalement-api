@@ -382,7 +382,9 @@ class SignalConsoComponents(
       accessTokenRepository,
       companyActivationAttemptRepository,
       eventRepository,
-      proAccessTokenOrchestrator
+      proAccessTokenOrchestrator,
+      userOrchestrator,
+      userRepository
     )
 
   private val taskConfiguration: TaskConfiguration = applicationConfiguration.task
@@ -865,6 +867,8 @@ class SignalConsoComponents(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
     proAccessTokenOrchestrator,
+    companyAccessOrchestrator,
+    userOrchestrator,
     cookieAuthenticator,
     controllerComponents
   )

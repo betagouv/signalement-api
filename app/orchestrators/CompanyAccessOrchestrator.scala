@@ -45,7 +45,7 @@ class CompanyAccessOrchestrator(
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface,
     val eventsRepository: EventRepositoryInterface,
-    val accessesOrchestrator: ProAccessTokenOrchestrator,
+    val proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     val userOrchestrator: UserOrchestrator,
     val userRepository: UserRepositoryInterface
 )(implicit val ec: ExecutionContext) {
@@ -74,7 +74,7 @@ class CompanyAccessOrchestrator(
       _ = logger.debug("Token found")
       _ <- validateToken(token, siret)
       _ = logger.debug("Token validated")
-      _ <- accessesOrchestrator.addUserOrInvite(company, activationLinkRequest.email, AccessLevel.ADMIN, None)
+      _ <- proAccessTokenOrchestrator.addUserOrInvite(company, activationLinkRequest.email, AccessLevel.ADMIN, None)
     } yield ()
 
     future.recoverWith {
