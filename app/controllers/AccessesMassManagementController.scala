@@ -10,6 +10,7 @@ import models.access.AccessesMassManagement.MassManagementUsers
 import models.company.Company
 import models.company.CompanyWithAccess
 import orchestrators._
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import utils.EmailAddress
@@ -28,6 +29,8 @@ class AccessesMassManagementController(
 )(implicit
     val ec: ExecutionContext
 ) extends BaseCompanyController(authenticator, controllerComponents) {
+
+  val logger: Logger                                  = Logger(this.getClass)
 
   def getCompaniesOfPro = Act.secured.pros.allowImpersonation.async { req =>
     for {
@@ -55,7 +58,7 @@ class AccessesMassManagementController(
   }
 
   // TODO move to an orchestrator
-  def manageAccesses = Act.secured.pros.forbidImpersonation.async(parse.json) { req =>
+  def massManageAccesses = Act.secured.pros.forbidImpersonation.async(parse.json) { req =>
     // TODO tester à peu près que j'ai bien compris chacun des cas
     // TODO add a global event at the end
     for {
