@@ -54,14 +54,22 @@ class AccessesMassManagementController(
     )
   }
 
+  // TODO move to an orchestrator
   def manageAccesses = Act.secured.pros.forbidImpersonation.async(parse.json) { req =>
     // TODO tester à peu près que j'ai bien compris chacun des cas
-    // TODO add a global log and event
+    // TODO add a global event at the end
     for {
-      inputs            <- req.parseBody[MassManagementInputs]()
+      inputs <- req.parseBody[MassManagementInputs]()
+      _ = logger.info(
+        s"MassManagement operation requested : ${inputs.toStringForLogs()}"
+      )
       allCompaniesOfPro <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(req.identity)
       _                 <- Future(checkIsAllowed(inputs, allCompaniesOfPro, req.identity))
       (companiesToManage, usersToManage, emailsToManage) <- prepareDataToManage(inputs, allCompaniesOfPro)
+      _ = logger.info(
+        s"Will actually apply to companies ${companiesToManage.map(_.id)}, users ${usersToManage
+            .map(_.id)}, emails ${emailsToManage}"
+      )
       _ <- inputs.operation match {
         case Remove =>
           for {

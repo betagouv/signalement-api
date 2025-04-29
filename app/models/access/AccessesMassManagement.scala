@@ -38,7 +38,10 @@ object AccessesMassManagement {
       operation: MassManagementOperation,
       companiesIds: List[UUID],
       users: MassManagementUsersInput
-  )
+  ) {
+    def toStringForLogs() =
+      s"$operation on companies ${companiesIds}, users = ${users.usersIds}, already invited = ${users.alreadyInvitedEmails}, to invite = ${users.emailsToInvite}"
+  }
 
   object MassManagementInputs {
 
