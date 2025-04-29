@@ -61,15 +61,6 @@ class AccessTokenRepository(
         .headOption
     )
 
-  override def fetchCompanyJoinTokenByTokenId(tokenId: UUID): Future[Option[AccessToken]] =
-    db.run(
-      fetchValidTokens
-        .filter(_.kind === (CompanyJoin: TokenKind))
-        .filter(_.id === tokenId)
-        .result
-        .headOption
-    )
-
   override def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)

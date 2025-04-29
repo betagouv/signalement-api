@@ -7,26 +7,21 @@ import controllers.error.AppError.UserNotFoundById
 import models.User
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
-import models.event.Event
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
 import orchestrators.CompanyOrchestrator
 import orchestrators.ProAccessTokenOrchestrator
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import services.EventsBuilder.userAccessRemovedEvent
-import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
 
-import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

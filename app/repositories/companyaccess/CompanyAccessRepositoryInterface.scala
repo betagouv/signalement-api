@@ -52,5 +52,4 @@ trait CompanyAccessRepositoryInterface {
       level: AccessLevel
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
 
-
 }

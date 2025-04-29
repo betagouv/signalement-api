@@ -16,7 +16,8 @@ import utils.MapUtils
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
     extends CompanyAccessRepositoryInterface {
@@ -74,26 +75,26 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     )
 
   private[this] def fetchUsersAndAccessesByCompanies(
-                                                      companyIds: List[UUID],
-                                                      levels: Seq[AccessLevel]
-                                                    ): Future[List[(UUID, User)]] =
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel]
+  ): Future[List[(UUID, User)]] =
     db.run(
       (for {
         access <- table if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
-        user <- UserTable.table if user.id === access.userId
+        user   <- UserTable.table if user.id === access.userId
       } yield (access.companyId, user)).to[List].result
     )
 
   override def fetchUsersByCompanies(
-                                      companyIds: List[UUID],
-                                      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
-                                    ): Future[List[User]] =
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
   override def fetchUsersByCompanyIds(
-                                       companyIds: List[UUID],
-                                       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
-                                     ): Future[Map[UUID, List[User]]] =
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[Map[UUID, List[User]]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels)
       .map(users => users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
       .map(map => MapUtils.fillMissingKeys(map, companyIds, Nil))
@@ -126,10 +127,10 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
   override def createCompanyAccessWithoutRun(
-                                              companyId: UUID,
-                                              userId: UUID,
-                                              level: AccessLevel
-                                            ): FixedSqlAction[Int, NoStream, Effect.Write] =
+      companyId: UUID,
+      userId: UUID,
+      level: AccessLevel
+  ): FixedSqlAction[Int, NoStream, Effect.Write] =
     CompanyAccessTable.table.insertOrUpdate(
       UserAccess(
         companyId = companyId,
@@ -153,8 +154,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ).map(_ => ())
 
   override def proFirstActivationCount(
-                                        ticks: Int = 12
-                                      ): Future[Vector[(Timestamp, Int)]] =
+      ticks: Int = 12
+  ): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (
           select v.a, count(distinct id)
           from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date

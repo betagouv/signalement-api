@@ -1,23 +1,12 @@
 package orchestrators
 
-import controllers.error.AppError.ActivationCodeAlreadyUsed
-import controllers.error.AppError.CompanyActivationCodeExpired
-import controllers.error.AppError.CompanyActivationSiretOrCodeInvalid
-import controllers.error.AppError.TooMuchCompanyActivationAttempts
-import controllers.error.AppError.UserNotFound
-import controllers.error.AppError.ServerError
-import controllers.error.AppError.UserNotFoundById
-import models.AccessToken
-import models.User
-import models.access.ActivationLinkRequest
-import models.access.UserWithAccessLevel
-import models.access.UserWithAccessLevelAndNbResponse
-
-import java.time.OffsetDateTime.now
 import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.catsSyntaxOption
 import cats.implicits.catsSyntaxOptionId
 import cats.implicits.toTraverseOps
+import controllers.error.AppError._
+import models.AccessToken
+import models.User
 import models.UserRole.Admin
 import models.UserRole.DGAL
 import models.UserRole.DGCCRF
@@ -25,6 +14,9 @@ import models.UserRole.Professionnel
 import models.UserRole.ReadOnlyAdmin
 import models.UserRole.SuperAdmin
 import models.access.UserWithAccessLevel.toApi
+import models.access.ActivationLinkRequest
+import models.access.UserWithAccessLevel
+import models.access.UserWithAccessLevelAndNbResponse
 import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyActivationAttempt
@@ -35,18 +27,17 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
-import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import services.EventsBuilder.userAccessRemovedEvent
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Logs.RichLogger
 import utils.SIREN
 import utils.SIRET
 
+import java.time.OffsetDateTime.now
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import utils.Logs.RichLogger
-
-import java.util.UUID
 import scala.concurrent.duration._
 class CompanyAccessOrchestrator(
     companyAccessRepository: CompanyAccessRepositoryInterface,
