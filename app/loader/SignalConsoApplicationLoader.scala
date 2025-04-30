@@ -343,6 +343,7 @@ class SignalConsoComponents(
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,
+    companiesVisibilityOrchestrator,
     companyRepository,
     companyAccessRepository,
     accessTokenRepository,

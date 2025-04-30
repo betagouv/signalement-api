@@ -46,6 +46,7 @@ trait ProAccessTokenOrchestratorInterface {
   ): Future[Unit]
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
   def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit]
+  def addInvitedUserIfNeededAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit]
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
   def sendInvitations(
       companies: List[Company],
@@ -56,6 +57,7 @@ trait ProAccessTokenOrchestratorInterface {
 
 class ProAccessTokenOrchestrator(
     userOrchestrator: UserOrchestratorInterface,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
@@ -190,6 +192,15 @@ class ProAccessTokenOrchestrator(
           mailService.send(ProNewCompaniesAccesses.Email(user.email, companies, SIREN.fromSIRET(c.siret)))
       }
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
+    } yield ()
+
+  def addInvitedUserIfNeededAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
+    for {
+      proCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(user)
+      companiesNotHavingTheDesiredAccess = companies.filterNot(c =>
+        proCompanies.exists(cWA => cWA.company.id == c.id && cWA.access.level == level)
+      )
+      _ <- addInvitedUserAndNotify(user, companiesNotHavingTheDesiredAccess, level)
     } yield ()
 
   private def genInvitationToken(

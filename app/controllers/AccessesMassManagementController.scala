@@ -30,7 +30,7 @@ class AccessesMassManagementController(
     val ec: ExecutionContext
 ) extends BaseCompanyController(authenticator, controllerComponents) {
 
-  val logger: Logger                                  = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def getCompaniesOfPro = Act.secured.pros.allowImpersonation.async { req =>
     for {
@@ -90,7 +90,7 @@ class AccessesMassManagementController(
           for {
             _ <- Future.sequence(
               usersToManage.map(user =>
-                proAccessTokenOrchestrator.addInvitedUserAndNotify(user, companiesToManage, desiredLevel)
+                proAccessTokenOrchestrator.addInvitedUserIfNeededAndNotify(user, companiesToManage, desiredLevel)
               )
             )
             _ <- Future.sequence(
