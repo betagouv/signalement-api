@@ -428,6 +428,13 @@ class SignalConsoComponents(
       responseConsumerReviewRepository
     )
 
+  val accessesMassManagementOrchestrator = new AccessesMassManagementOrchestrator(
+    companiesVisibilityOrchestrator,
+    proAccessTokenOrchestrator,
+    companyAccessOrchestrator,
+    userOrchestrator
+  )
+
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
   def antivirusService: AntivirusServiceInterface =
@@ -865,11 +872,8 @@ class SignalConsoComponents(
   )
 
   val accessesMassManagementController = new AccessesMassManagementController(
-    companyOrchestrator,
     companiesVisibilityOrchestrator,
-    proAccessTokenOrchestrator,
-    companyAccessOrchestrator,
-    userOrchestrator,
+    accessesMassManagementOrchestrator,
     cookieAuthenticator,
     controllerComponents
   )

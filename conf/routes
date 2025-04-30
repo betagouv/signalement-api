@@ -253,7 +253,7 @@ DELETE        /api/accesses/visible-users/:userId                       controll
 #######################################
 
 GET           /api/accesses-mass-management/companies                   controllers.AccessesMassManagementController.getCompaniesOfPro()
-GET           /api/accesses-mass-management/users                       controllers.AccessesMassManagementController.getUsersOfPro()
+GET           /api/accesses-mass-management/users                       controllers.AccessesMassManagementController.getUsersAndEmailsKnownToPro()
 POST          /api/accesses-mass-management/manage                      controllers.AccessesMassManagementController.massManageAccesses()
 
 ###################################
