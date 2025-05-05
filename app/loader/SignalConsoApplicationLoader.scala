@@ -432,7 +432,8 @@ class SignalConsoComponents(
     companiesVisibilityOrchestrator,
     proAccessTokenOrchestrator,
     companyAccessOrchestrator,
-    userOrchestrator
+    userOrchestrator,
+    eventRepository
   )
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)

@@ -9,6 +9,8 @@ import models.access.AccessesMassManagement.MassManagementUsers
 import models.company.Company
 import models.company.CompanyWithAccess
 import play.api.Logger
+import repositories.event.EventRepositoryInterface
+import services.EventsBuilder.accessesMassManagementEvent
 import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext
@@ -18,7 +20,8 @@ class AccessesMassManagementOrchestrator(
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
-    userOrchestrator: UserOrchestrator
+    userOrchestrator: UserOrchestrator,
+    eventRepository: EventRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -38,7 +41,6 @@ class AccessesMassManagementOrchestrator(
     )
 
   def massManageAccesses(inputs: MassManagementInputs, requestedBy: User): Future[Unit] = {
-    // TODO add a global event at the end
     logger.info(
       s"MassManagement operation requested : ${inputs.toStringForLogs()}"
     )
@@ -76,7 +78,17 @@ class AccessesMassManagementOrchestrator(
               )
             )
           } yield ()
+
       }
+      _ <- eventRepository.create(
+        accessesMassManagementEvent(
+          inputs.operation,
+          companiesToManage,
+          usersToManage,
+          emailsToManage,
+          requestedBy
+        )
+      )
     } yield ()
   }
 
