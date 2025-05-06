@@ -51,7 +51,7 @@ class CompanyController(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           companyCreation =>
             companyOrchestrator
-              .create(companyCreation)
+              .getOrCreate(companyCreation)
               .map(company => Ok(Json.toJson(company)))
         )
     }

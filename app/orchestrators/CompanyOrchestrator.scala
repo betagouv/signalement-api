@@ -3,6 +3,7 @@ package orchestrators
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import config.EmailConfiguration
+import config.SignalConsoConfiguration
 import config.TaskConfiguration
 import config.TokenConfiguration
 import controllers.CompanyObjects.CompanyList
@@ -54,6 +55,7 @@ import cats.syntax.traverse._
 class CompanyOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+    val companyAccessOrchestrator: CompanyAccessOrchestrator,
     val reportRepository: ReportRepositoryInterface,
     val websiteRepository: WebsiteRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
@@ -62,7 +64,8 @@ class CompanyOrchestrator(
     val taskConfiguration: TaskConfiguration,
     val frontRoute: FrontRoute,
     val emailConfiguration: EmailConfiguration,
-    val tokenConfiguration: TokenConfiguration
+    val tokenConfiguration: TokenConfiguration,
+    val signalConsoConfiguration: SignalConsoConfiguration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -79,9 +82,16 @@ class CompanyOrchestrator(
       }
     } yield company
 
-  def create(companyCreation: CompanyCreation): Future[Company] =
-    companyRepository
-      .getOrCreate(companyCreation.siret, companyCreation.toCompany())
+  def getOrCreate(companyCreation: CompanyCreation): Future[Company] =
+    for {
+      (company, wasJustCreated) <- companyRepository.getOrCreate(companyCreation.siret, companyCreation.toCompany())
+      _ =
+        if (
+          wasJustCreated && !company.isHeadOffice && signalConsoConfiguration.enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation
+        ) {
+          companyAccessOrchestrator.duplicateAccessesFromHeadOffice(company)
+        } else Future.unit
+    } yield company
 
   def fetchHosts(companyId: UUID): Future[Seq[(String, Int)]] =
     reportRepository.getHostsOfCompany(companyId)

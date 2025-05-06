@@ -30,7 +30,7 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def getReportsCounts(companyIds: List[UUID]): Future[Map[UUID, Long]]
 
-  def getOrCreate(siret: SIRET, data: Company): Future[Company]
+  def getOrCreate(siret: SIRET, data: Company): Future[(Company, Boolean)]
 
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]]
 

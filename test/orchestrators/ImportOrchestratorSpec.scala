@@ -1,18 +1,16 @@
 package orchestrators
 
 import models.company.AccessLevel
-import models.company.Company
-import org.specs2.mutable.Specification
-import repositories.company.CompanyRepositoryInterface
-import org.mockito.Mockito.when
+import models.company.CompanyCreation
 import org.mockito.ArgumentMatchers.argThat
-import org.mockito.ArgumentMatchers.{eq => eqTo}
+import org.mockito.Mockito.when
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito.mock
+import org.specs2.mutable.Specification
+import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import tasks.company.CompanySyncServiceInterface
 import utils.Fixtures
-import utils.SIRET
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,6 +25,7 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
         val companyRepository          = mock[CompanyRepositoryInterface]
         val companySyncService         = mock[CompanySyncServiceInterface]
         val userOrchestrator           = mock[UserOrchestratorInterface]
+        val companyOrchestrator        = mock[CompanyOrchestrator]
         val proAccessTokenOrchestrator = mock[ProAccessTokenOrchestratorInterface]
         val websiteRepository          = mock[WebsiteRepositoryInterface]
         val websitesOrchestrator       = mock[WebsitesOrchestrator]
@@ -36,6 +35,7 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
             companyRepository,
             companySyncService,
             userOrchestrator,
+            companyOrchestrator,
             proAccessTokenOrchestrator,
             websiteRepository,
             websitesOrchestrator
@@ -49,9 +49,9 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
         val existingCompanySR2   = Fixtures.genCompanySearchResult(Some(siren)).sample.get
         val companySR3           = Fixtures.genCompanySearchResult(Some(siren)).sample.get
         val companySearchResults = List(existingCompanySR1, existingCompanySR2, companySR3)
-        val existingCompany1     = importOrchestrator.toCompany(existingCompanySR1) // hardcode it ?
-        val existingCompany2     = importOrchestrator.toCompany(existingCompanySR2) // hardcode it ?
-        val company3             = importOrchestrator.toCompany(companySR3)         // hardcode it ?
+        val existingCompany1     = existingCompanySR1.toCreation.toCompany()
+        val existingCompany2     = existingCompanySR2.toCreation.toCompany()
+        val company3             = companySR3.toCreation.toCompany()
         val users                = List(existingUser1, existingUser2, user3)
 
         when(companyRepository.findBySirets(List.empty)).thenReturn(Future.successful(List.empty))
@@ -60,9 +60,8 @@ class ImportOrchestratorSpec extends Specification with FutureMatchers {
         when(companyRepository.findBySirets(companySearchResults.map(_.siret)))
           .thenReturn(Future.successful(List(existingCompany1, existingCompany2)))
         when(
-          companyRepository.getOrCreate(
-            SIRET.fromUnsafe(eqTo(company3.siret.value)),
-            argMatching[Company] { case Company(_, company3.siret, _, _, _, _, _, _, _, _, _, _, _, _) => }
+          companyOrchestrator.getOrCreate(
+            argMatching[CompanyCreation] { case cc: CompanyCreation if cc.siret == company3.siret => }
           )
         ).thenReturn(Future.successful(company3))
         when(userOrchestrator.list(users.map(_.email)))
