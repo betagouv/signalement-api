@@ -382,4 +382,5 @@ class AccessesOrchestrator(
     _ = logger.debug(s"Successfully validated email ${email}")
     updatedUser <- userOrchestrator.findOrError(user.email)
   } yield updatedUser
+
 }

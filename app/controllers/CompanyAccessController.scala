@@ -7,25 +7,20 @@ import controllers.error.AppError.UserNotFoundById
 import models.User
 import models.access.ActivationLinkRequest
 import models.company.AccessLevel
-import models.event.Event
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
 import orchestrators.CompanyOrchestrator
 import orchestrators.ProAccessTokenOrchestrator
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
 
-import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -39,7 +34,6 @@ class CompanyAccessController(
     accessesOrchestrator: ProAccessTokenOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
-    eventRepository: EventRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -112,19 +106,7 @@ class CompanyAccessController(
 
   private def removeAccessFor(companyId: UUID, user: User, requestBy: User) =
     for {
-      _ <- companyAccessRepository.createUserAccess(companyId, user.id, AccessLevel.NONE)
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          None,
-          Some(companyId),
-          Some(requestBy.id),
-          OffsetDateTime.now(),
-          Constants.EventType.fromUserRole(requestBy.userRole),
-          Constants.ActionEvent.USER_ACCESS_REMOVED,
-          Json.obj("userId" -> user.id, "email" -> user.email)
-        )
-      )
+      _ <- companyAccessOrchestrator.removeAccess(companyId, user, requestBy)
     } yield ()
 
   def updateAccess(siret: String, userId: UUID) =
@@ -135,7 +117,7 @@ class CompanyAccessController(
           for {
             user <- userRepository.get(userId)
             _ <- user
-              .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, level))
+              .map(u => companyAccessRepository.createAccess(request.company.id, u.id, level))
               .getOrElse(Future.unit)
           } yield if (user.isDefined) Ok else NotFound
         )
@@ -147,25 +129,13 @@ class CompanyAccessController(
       for {
         maybeUser <- userRepository.get(userId)
         user      <- maybeUser.liftTo[Future](UserNotFoundById(userId))
-        _         <- companyAccessRepository.createUserAccess(request.company.id, user.id, AccessLevel.NONE)
-        _ <- eventRepository.create(
-          Event(
-            UUID.randomUUID(),
-            None,
-            Some(request.company.id),
-            Some(request.identity.id),
-            OffsetDateTime.now(),
-            Constants.EventType.fromUserRole(request.identity.userRole),
-            Constants.ActionEvent.USER_ACCESS_REMOVED,
-            Json.obj("userId" -> userId, "email" -> user.email)
-          )
-        )
+        _         <- companyAccessOrchestrator.removeAccess(request.company.id, user, requestedBy = request.identity)
         // this operation may leave some reports assigned to this user, to which he doesn't have access anymore
         // in theory here we should find these reports and de-assign them
       } yield NoContent
     }
 
-  case class AccessInvitation(email: EmailAddress, level: AccessLevel)
+  private case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
   def sendInvitation(siret: String) =
     Act.securedWithCompanyAccessBySiret(siret, adminLevelOnly = true).forbidImpersonation.async(parse.json) {
@@ -211,7 +181,7 @@ class CompanyAccessController(
 
   }
 
-  case class AcceptTokenRequest(token: String)
+  private case class AcceptTokenRequest(token: String)
 
   def acceptToken(siret: String) = Act.secured.all.allowImpersonation.async(parse.json) { implicit request =>
     implicit val reads = Json.reads[AcceptTokenRequest]

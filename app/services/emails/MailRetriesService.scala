@@ -76,13 +76,8 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
         )}, subject "${emailRequest.subject}")"""
 
     val future = Future {
-      logger.info("@@@@@@@@@@")
-      logger.info("@@@@@@@@@@@@@@")
-      logger.info("@@@@@@@@@@@@@@@@@@")
+
       logger.infoWithTitle("email_sending_attempt", s"Sending email $logDetails")
-      logger.info("@@@@@@@@@@@@@@@@@@")
-      logger.info("@@@@@@@@@@@@@@")
-      logger.info("@@@@@@@@@@")
       // /!\ synchronous, blocks the thread
       sendEmail(emailRequest)
     }(executionContextForBlockingSmtpCalls)

@@ -32,6 +32,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def fetchPendingTokens(company: Company): Future[List[AccessToken]]
 
+  def fetchPendingTokens(companiesIds: List[UUID]): Future[List[AccessToken]]
+
   def removePendingTokens(company: Company): Future[Int]
 
   def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]]
@@ -43,6 +45,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit]
 
   def invalidateToken(token: AccessToken): Future[Int]
+
+  def invalidateCompanyJoinAccessTokens(companyIds: List[UUID], tokenIds: List[UUID]): Future[Int]
 
   def updateToken(token: AccessToken, level: AccessLevel, validity: Option[TemporalAmount]): Future[Int]
 

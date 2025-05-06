@@ -324,7 +324,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             )
           )
         )
-        _ <- companyAccessRepository.createUserAccess(c.id, u.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createAccess(c.id, u.id, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
     )

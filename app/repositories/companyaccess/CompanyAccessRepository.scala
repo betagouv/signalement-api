@@ -1,12 +1,7 @@
 package repositories.companyaccess
 
 import models._
-import models.company.AccessLevel
-import models.company.Company
-import models.company.CompanyAccess
-import models.company.CompanyAccessKind
-import models.company.CompanyWithAccess
-import models.company.UserAccess
+import models.company._
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
@@ -28,6 +23,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     extends CompanyAccessRepositoryInterface {
 
   val table: TableQuery[CompanyAccessTable] = CompanyAccessTable.table
+
   import dbConfig._
 
   override def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
@@ -41,13 +37,15 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     ).map(_.getOrElse(AccessLevel.NONE))
 
   override def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]] =
-    db.run(
-      table
-        .filter(_.companyId inSetBind companyIds)
-        .filter(_.userId === userId)
-        .to[List]
-        .result
-    )
+    getUserAccesses(companyIds, List(userId))
+
+  override def getUserAccesses(companyIds: List[UUID], userIds: List[UUID]): Future[List[UserAccess]] = db.run(
+    table
+      .filter(_.companyId inSetBind companyIds)
+      .filter(_.userId inSetBind userIds)
+      .to[List]
+      .result
+  )
 
   override def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
@@ -128,7 +126,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       )
     } yield MapUtils.fillMissingKeys(tuples.toMap, companyIds, 0)
 
-  override def createCompanyUserAccessWithoutRun(
+  override def createCompanyAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel
@@ -143,8 +141,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       )
     )
 
-  override def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
-    db.run(createCompanyUserAccessWithoutRun(companyId, userId, level))
+  override def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
+    db.run(createCompanyAccessWithoutRun(companyId, userId, level))
 
   override def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(

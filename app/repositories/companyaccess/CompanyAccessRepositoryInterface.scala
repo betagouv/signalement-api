@@ -2,6 +2,7 @@ package repositories.companyaccess
 import models.User
 import models.company.AccessLevel
 import models.company.Company
+
 import models.company.CompanyWithAccess
 import models.company.UserAccess
 import repositories.PostgresProfile
@@ -18,6 +19,7 @@ trait CompanyAccessRepositoryInterface {
 
   def getUserAccesses(companyIds: List[UUID], userId: UUID): Future[List[UserAccess]]
 
+  def getUserAccesses(companyIds: List[UUID], userIds: List[UUID]): Future[List[UserAccess]]
   def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]]
 
   def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]]
@@ -36,7 +38,7 @@ trait CompanyAccessRepositoryInterface {
 
   def countAccesses(companyIds: List[UUID]): Future[Map[UUID, Int]]
 
-  def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int]
+  def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int]
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit]
 
@@ -44,7 +46,7 @@ trait CompanyAccessRepositoryInterface {
       ticks: Int = 12
   ): Future[Vector[(Timestamp, Int)]]
 
-  def createCompanyUserAccessWithoutRun(
+  def createCompanyAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel

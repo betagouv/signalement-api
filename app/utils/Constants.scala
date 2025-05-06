@@ -121,6 +121,8 @@ object Constants {
 
     object REATTRIBUTE extends ActionEventValue("Réattribution du signalement")
 
+    object ACCESSES_MASS_MANAGED extends ActionEventValue("AccessesMassManaged")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -161,7 +163,8 @@ object Constants {
       REPORT_REOPENED_BY_ADMIN,
       USER_ACCESS_CREATED,
       USER_ACCESS_REMOVED,
-      REATTRIBUTE
+      REATTRIBUTE,
+      ACCESSES_MASS_MANAGED
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =

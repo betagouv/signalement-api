@@ -43,10 +43,6 @@ object AppErrorTransformer {
         logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.NotFound(Json.toJson(ErrorPayload(error)))
 
-      case error: PreconditionError =>
-        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
-        Results.PreconditionFailed(Json.toJson(ErrorPayload(error)))
-
       case error: ConflictError =>
         logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.Conflict(Json.toJson(ErrorPayload(error)))

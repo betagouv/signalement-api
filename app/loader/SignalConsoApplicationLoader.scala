@@ -343,6 +343,7 @@ class SignalConsoComponents(
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,
+    companiesVisibilityOrchestrator,
     companyRepository,
     companyAccessRepository,
     accessTokenRepository,
@@ -383,7 +384,9 @@ class SignalConsoComponents(
       accessTokenRepository,
       companyActivationAttemptRepository,
       eventRepository,
-      proAccessTokenOrchestrator
+      proAccessTokenOrchestrator,
+      userOrchestrator,
+      userRepository
     )
 
   private val taskConfiguration: TaskConfiguration = applicationConfiguration.task
@@ -425,6 +428,14 @@ class SignalConsoComponents(
       eventRepository,
       responseConsumerReviewRepository
     )
+
+  val accessesMassManagementOrchestrator = new AccessesMassManagementOrchestrator(
+    companiesVisibilityOrchestrator,
+    proAccessTokenOrchestrator,
+    companyAccessOrchestrator,
+    userOrchestrator,
+    eventRepository
+  )
 
   val htmlFromTemplateGenerator = new HtmlFromTemplateGenerator(messagesApi, frontRoute)
 
@@ -849,7 +860,6 @@ class SignalConsoComponents(
       proAccessTokenOrchestrator,
       companiesVisibilityOrchestrator,
       companyAccessOrchestrator,
-      eventRepository,
       cookieAuthenticator,
       controllerComponents
     )
@@ -858,6 +868,13 @@ class SignalConsoComponents(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
     albertOrchestrator,
+    cookieAuthenticator,
+    controllerComponents
+  )
+
+  val accessesMassManagementController = new AccessesMassManagementController(
+    companiesVisibilityOrchestrator,
+    accessesMassManagementOrchestrator,
     cookieAuthenticator,
     controllerComponents
   )
@@ -1025,6 +1042,7 @@ class SignalConsoComponents(
       authController,
       accountController,
       blacklistedEmailsController,
+      accessesMassManagementController,
       importController,
       reportBlockedNotificationController,
       subscriptionController,
