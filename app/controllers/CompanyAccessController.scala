@@ -17,7 +17,6 @@ import play.api.mvc.ControllerComponents
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.SIRET
@@ -35,7 +34,6 @@ class CompanyAccessController(
     accessesOrchestrator: ProAccessTokenOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyAccessOrchestrator: CompanyAccessOrchestrator,
-    eventRepository: EventRepositoryInterface,
     authenticator: Authenticator[User],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
