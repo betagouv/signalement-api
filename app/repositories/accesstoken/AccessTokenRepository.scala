@@ -7,6 +7,7 @@ import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyFollowUp
 import models.token.TokenKind.CompanyInit
+import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.UpdateEmail
@@ -47,6 +48,9 @@ class AccessTokenRepository(
 
   private def fetchCompanyValidTokens(company: Company): Query[AccessTokenTable, AccessToken, Seq] =
     fetchCompanyValidTokens(company.id)
+
+  private def fetchCompaniesValidTokens(companiesIds: List[UUID]): Query[AccessTokenTable, AccessToken, Seq] =
+    fetchValidTokens.filter(_.companyId inSetBind companiesIds)
 
   override def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(
@@ -120,6 +124,14 @@ class AccessTokenRepository(
         .result
     )
 
+  override def fetchPendingTokens(companiesIds: List[UUID]): Future[List[AccessToken]] =
+    db.run(
+      fetchCompaniesValidTokens(companiesIds)
+        .sortBy(_.expirationDate.desc)
+        .to[List]
+        .result
+    )
+
   override def removePendingTokens(company: Company): Future[Int] = db.run(
     fetchCompanyValidTokens(company).delete
   )
@@ -157,7 +169,7 @@ class AccessTokenRepository(
     db.run(
       DBIO
         .seq(
-          companyAccessRepository.createCompanyUserAccessWithoutRun(
+          companyAccessRepository.createCompanyAccessWithoutRun(
             token.companyId.get,
             user.id,
             token.companyLevel.get
@@ -177,7 +189,7 @@ class AccessTokenRepository(
     db.run(
       DBIO
         .seq(
-          companyAccessRepository.createCompanyUserAccessWithoutRun(company.id, user.id, level),
+          companyAccessRepository.createCompanyAccessWithoutRun(company.id, user.id, level),
           table
             .filter(_.companyId === company.id)
             .filter(_.emailedTo.isEmpty)
@@ -191,6 +203,16 @@ class AccessTokenRepository(
     db.run(
       table
         .filter(_.id === token.id)
+        .map(_.valid)
+        .update(false)
+    )
+
+  override def invalidateCompanyJoinAccessTokens(companyIds: List[UUID], tokenIds: List[UUID]): Future[Int] =
+    db.run(
+      table
+        .filter(_.kind === (CompanyJoin: TokenKind))
+        .filter(_.companyId.inSetBind(companyIds))
+        .filter(_.id.inSetBind(tokenIds))
         .map(_.valid)
         .update(false)
     )

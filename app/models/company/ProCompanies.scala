@@ -25,14 +25,11 @@ case class ProCompanies[A](
 }
 
 object ProCompanies {
+
   // custom JSON to
   // - output the Map in a JSON-friendly way
   // - sort everything
-  implicit val writes: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = obj => {
-
-    val ordering: Ordering[CompanyWithAccessAndCounts] =
-      Ordering.by(c => (-c.reportsCount, -c.ongoingReportsCount, c.company.name, c.company.siret.value))
-
+  private def buildWrites[A](ordering: Ordering[A])(implicit oWrites: OWrites[A]): OWrites[ProCompanies[A]] = obj =>
     Json.obj(
       "headOfficesAndSubsidiaries" ->
         Json.toJson(
@@ -47,5 +44,13 @@ object ProCompanies {
         ),
       "loneSubsidiaries" -> Json.toJson(obj.loneSubsidiaries.sorted(ordering))
     )
-  }
+
+  implicit val writesForCompanyWithAccessAndCounts: OWrites[ProCompanies[CompanyWithAccessAndCounts]] = buildWrites(
+    Ordering.by(c => (-c.reportsCount, -c.ongoingReportsCount, c.company.name, c.company.siret.value))
+  )
+
+  implicit val writesForCompanyWithAccess: OWrites[ProCompanies[CompanyWithAccess]] = buildWrites(
+    Ordering.by(c => (c.company.name, c.company.siret.value))
+  )
+
 }

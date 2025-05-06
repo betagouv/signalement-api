@@ -46,6 +46,7 @@ trait ProAccessTokenOrchestratorInterface {
   ): Future[Unit]
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
   def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit]
+  def addInvitedUserIfNeededAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit]
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
   def sendInvitations(
       companies: List[Company],
@@ -56,6 +57,7 @@ trait ProAccessTokenOrchestratorInterface {
 
 class ProAccessTokenOrchestrator(
     userOrchestrator: UserOrchestratorInterface,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
@@ -73,10 +75,13 @@ class ProAccessTokenOrchestrator(
   def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]] =
     for {
       tokens <- accessTokenRepository.fetchPendingTokens(company)
-    } yield tokens
-      .map { token =>
-        ProAccessToken(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
-      }
+    } yield tokens.map(token => ProAccessToken(token, user))
+
+  def listProPendingTokensSentByEmail(companiesIds: List[UUID], user: User): Future[List[ProAccessToken]] =
+    for {
+      tokens <- accessTokenRepository.fetchPendingTokens(companiesIds)
+      tokenSentByEmail = tokens.filter(_.emailedTo.isDefined)
+    } yield tokenSentByEmail.map(token => ProAccessToken(token, user))
 
   def proFirstActivationCount(ticks: Option[Int]): Future[Seq[CountByDate]] =
     companyAccessRepository
@@ -189,10 +194,18 @@ class ProAccessTokenOrchestrator(
       _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
 
+  def addInvitedUserIfNeededAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
+    for {
+      proCompanies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(user)
+      companiesNotHavingTheDesiredAccess = companies.filterNot(c =>
+        proCompanies.exists(cWA => cWA.company.id == c.id && cWA.access.level == level)
+      )
+      _ <- addInvitedUserAndNotify(user, companiesNotHavingTheDesiredAccess, level)
+    } yield ()
+
   private def genInvitationToken(
       company: Company,
       level: AccessLevel,
-      validity: Option[java.time.temporal.TemporalAmount],
       emailedTo: EmailAddress
   ): Future[String] =
     for {
@@ -200,7 +213,7 @@ class ProAccessTokenOrchestrator(
       _ <- existingToken
         .map { existingToken =>
           logger.debug("Found existing token for that user and company, updating existing token")
-          accessTokenRepository.updateToken(existingToken, level, validity)
+          accessTokenRepository.updateToken(existingToken, level, tokenConfiguration.companyJoinDuration)
         }
         .getOrElse(Future.successful(None))
       token <- existingToken
@@ -220,9 +233,20 @@ class ProAccessTokenOrchestrator(
         }
     } yield token.token
 
+  private def genInvitationTokens(
+      companies: List[Company],
+      level: AccessLevel,
+      emailedTo: EmailAddress
+  ): Future[List[(String, Company)]] =
+    for {
+      list <- Future.sequence(
+        companies.map(company => genInvitationToken(company, level, emailedTo).map(token => token -> company))
+      )
+    } yield list
+
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
-      tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
+      tokenCode <- genInvitationToken(company, level, email)
       _ <- mailService.send(
         ProCompanyAccessInvitation.Email(
           recipient = email,
@@ -240,13 +264,7 @@ class ProAccessTokenOrchestrator(
       level: AccessLevel
   ): Future[Unit] =
     for {
-      list <- Future.sequence(
-        companies.map(company =>
-          genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email).map(token =>
-            token -> company
-          )
-        )
-      )
+      list <- genInvitationTokens(companies, level, email)
       _ <- list match {
         case Nil => Future.unit
         case (tokenCode, c) :: _ =>
@@ -260,6 +278,23 @@ class ProAccessTokenOrchestrator(
           )
       }
       _ = logger.debug(s"Token sent to ${email} for companies ${companies}")
+    } yield ()
+
+  def invalidateInvitationsIfExist(
+      companies: List[Company],
+      email: EmailAddress
+  ): Future[Unit] =
+    for {
+      allTokensForEmail <- accessTokenRepository.fetchPendingTokens(email)
+      tokensToInvalidate = allTokensForEmail
+        .filter(_.kind == CompanyJoin)
+        .filter(t =>
+          t.companyId match {
+            case None            => false
+            case Some(companyId) => companies.exists(_.id == companyId)
+          }
+        )
+      _ <- Future.sequence(tokensToInvalidate.map(accessTokenRepository.invalidateToken))
     } yield ()
 
 }

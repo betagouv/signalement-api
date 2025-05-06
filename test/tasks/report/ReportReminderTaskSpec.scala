@@ -58,7 +58,7 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
         if (withUser) {
           for {
             finalProUser <- userRepository.create(proUser)
-            _ <- companyAccessRepository.createUserAccess(
+            _ <- companyAccessRepository.createAccess(
               finalCompany.id,
               finalProUser.id,
               AccessLevel.MEMBER

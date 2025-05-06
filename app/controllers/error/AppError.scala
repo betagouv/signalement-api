@@ -27,7 +27,6 @@ sealed trait MalformedApiBadRequestError extends AppError
 sealed trait ForbiddenError              extends AppError
 sealed trait ConflictError               extends AppError
 sealed trait InternalAppError            extends AppError
-sealed trait PreconditionError           extends AppError
 
 object AppError {
 
@@ -174,6 +173,14 @@ object AppError {
     override val details: String =
       s"Lien invalide ou expiré, merci de contacter le support en donnant votre adresse email et numéro de SIRET."
     override val titleForLogs: String = "account_activation_token_not_found_or_invalid"
+  }
+
+  final case class ProAccountActivationTokenNotFoundOrInvalidWithoutSiret(token: UUID) extends NotFoundError {
+    override val scErrorCode: String = "SC-0015-04"
+    override val title: String       = s"Account activation token not found / invalid ${token}"
+    override val details: String =
+      s"Identifiant d'utilisateur invité invalide ou expiré."
+    override val titleForLogs: String = "account_activation_token_not_found_or_invalid_without_siret"
   }
 
   final case object EmailAlreadyExist extends ConflictError {
@@ -680,4 +687,5 @@ object AppError {
       "Nombre max d'éléments depassé"
     override val titleForLogs: String = "report_download_limit_exceeded"
   }
+
 }
