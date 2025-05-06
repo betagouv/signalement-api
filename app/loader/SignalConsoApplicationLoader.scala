@@ -392,6 +392,7 @@ class SignalConsoComponents(
   val companyOrchestrator = new CompanyOrchestrator(
     companyRepository,
     companiesVisibilityOrchestrator,
+    companyAccessOrchestrator,
     reportRepository,
     websiteRepository,
     accessTokenRepository,
@@ -400,7 +401,8 @@ class SignalConsoComponents(
     taskConfiguration,
     frontRoute,
     emailConfiguration,
-    tokenConfiguration
+    tokenConfiguration,
+    signalConsoConfiguration
   )
 
   val visibleReportOrchestrator = new VisibleReportOrchestrator(
@@ -483,6 +485,7 @@ class SignalConsoComponents(
     reportMetadataRepository,
     reportFileOrchestrator,
     companyRepository,
+    companyOrchestrator,
     socialNetworkRepository,
     accessTokenRepository,
     eventRepository,
@@ -600,7 +603,13 @@ class SignalConsoComponents(
   )
 
   val websitesOrchestrator =
-    new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
+    new WebsitesOrchestrator(
+      websiteRepository,
+      companyRepository,
+      companyOrchestrator,
+      reportRepository,
+      reportOrchestrator
+    )
 
   val albertOrchestrator = new AlbertOrchestrator(
     reportRepository,
@@ -993,6 +1002,7 @@ class SignalConsoComponents(
     companyRepository,
     companySyncService,
     userOrchestrator,
+    companyOrchestrator,
     proAccessTokenOrchestrator,
     websiteRepository,
     websitesOrchestrator

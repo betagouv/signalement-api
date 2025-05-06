@@ -38,6 +38,7 @@ import scala.concurrent.Future
 class WebsitesOrchestrator(
     val repository: WebsiteRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
+    companyOrchestrator: CompanyOrchestrator,
     val reportRepository: ReportRepositoryInterface,
     val reportOrchestrator: ReportOrchestrator
 )(implicit
@@ -49,7 +50,7 @@ class WebsitesOrchestrator(
   def create(url: URL, company: Company, user: User): Future[Website] =
     for {
       host                   <- url.getHost.liftTo[Future](MalformedHost(url.value))
-      createdCompany         <- companyRepository.getOrCreate(company.siret, company)
+      createdCompany         <- companyOrchestrator.getOrCreate(company.toCreation)
       identified             <- repository.listIdentified(host)
       notAssociatedToCompany <- repository.listNotAssociatedToCompany(host)
       _ <-
@@ -160,7 +161,7 @@ class WebsitesOrchestrator(
     for {
       company <- {
         logger.debug(s"Updating website (id ${websiteId}) with company siret : ${companyToAssign.siret}")
-        getOrCreateCompany(companyToAssign)
+        companyOrchestrator.getOrCreate(companyToAssign)
       }
       website    <- findWebsite(websiteId)
       identified <- repository.listIdentified(website.host)
@@ -235,12 +236,6 @@ class WebsitesOrchestrator(
   } yield website
 
   def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
-
-  private[this] def getOrCreateCompany(companyCreate: CompanyCreation): Future[Company] = companyRepository
-    .getOrCreate(
-      companyCreate.siret,
-      companyCreate.toCompany()
-    )
 
   private[this] def findWebsite(websiteId: WebsiteId): Future[Website] = for {
     maybeWebsite <- {

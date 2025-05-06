@@ -86,6 +86,7 @@ class ReportOrchestrator(
     reportMetadataRepository: ReportMetadataRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
+    companyOrchestrator: CompanyOrchestrator,
     socialNetworkRepository: SocialNetworkRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -481,7 +482,7 @@ class ReportOrchestrator(
           commercialName = draftReport.companyCommercialName,
           establishmentCommercialName = draftReport.companyEstablishmentCommercialName
         )
-        companyRepository.getOrCreate(siret, company).map { company =>
+        companyOrchestrator.getOrCreate(company.toCreation).map { company =>
           logger.debug("Company extracted from report")
           Some(company)
         }
@@ -494,19 +495,7 @@ class ReportOrchestrator(
     (for {
       socialNetwork   <- OptionT(socialNetworkRepository.get(socialNetworkSlug))
       companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
-      c = Company(
-        siret = companyToCreate.siret,
-        name = companyToCreate.name.getOrElse(""),
-        address = companyToCreate.address,
-        activityCode = companyToCreate.activityCode,
-        isHeadOffice = companyToCreate.isHeadOffice,
-        isOpen = companyToCreate.isOpen,
-        isPublic = companyToCreate.isPublic,
-        brand = companyToCreate.brand,
-        commercialName = companyToCreate.commercialName,
-        establishmentCommercialName = companyToCreate.establishmentCommercialName
-      )
-      company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+      company         <- OptionT.liftF(companyOrchestrator.getOrCreate(companyToCreate.toCreation))
     } yield company).value
 
   private def extractCompanyOfSocialNetwork(reportDraft: ReportDraft): Future[Option[Company]] =
@@ -526,19 +515,7 @@ class ReportOrchestrator(
       case Some(_) =>
         (for {
           companyToCreate <- OptionT(companySyncService.companyBySiret(SncfGaresEtConnexionsSIRET))
-          c = Company(
-            siret = companyToCreate.siret,
-            name = companyToCreate.name.getOrElse(""),
-            address = companyToCreate.address,
-            activityCode = companyToCreate.activityCode,
-            isHeadOffice = companyToCreate.isHeadOffice,
-            isOpen = companyToCreate.isOpen,
-            isPublic = companyToCreate.isPublic,
-            brand = companyToCreate.brand,
-            commercialName = companyToCreate.commercialName,
-            establishmentCommercialName = companyToCreate.establishmentCommercialName
-          )
-          company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+          company         <- OptionT.liftF(companyOrchestrator.getOrCreate(companyToCreate.toCreation))
         } yield company).value
       case None =>
         Future.successful(None)
@@ -553,19 +530,7 @@ class ReportOrchestrator(
         }
         (for {
           companyToCreate <- OptionT(companySyncService.companyBySiret(trainSiret))
-          c = Company(
-            siret = companyToCreate.siret,
-            name = companyToCreate.name.getOrElse(""),
-            address = companyToCreate.address,
-            activityCode = companyToCreate.activityCode,
-            isHeadOffice = companyToCreate.isHeadOffice,
-            isOpen = companyToCreate.isOpen,
-            isPublic = companyToCreate.isPublic,
-            brand = companyToCreate.brand,
-            commercialName = companyToCreate.commercialName,
-            establishmentCommercialName = companyToCreate.establishmentCommercialName
-          )
-          company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+          company         <- OptionT.liftF(companyOrchestrator.getOrCreate(companyToCreate.toCreation))
         } yield company).value
       case None =>
         Future.successful(None)
@@ -672,7 +637,7 @@ class ReportOrchestrator(
     val isSameCompany = existingReport.companySiret.contains(reportCompany.siret)
     for {
       _       <- if (isSameCompany) Future.failed(CannotAlreadyAssociatedToReport(reportCompany.siret)) else Future.unit
-      company <- companyRepository.getOrCreate(reportCompany.siret, reportCompany.toCompany)
+      company <- companyOrchestrator.getOrCreate(reportCompany.toCompany.toCreation)
       newExpirationDate <-
         if (newReportStatus.isNotFinal) {
           companiesVisibilityOrchestrator
@@ -1160,25 +1125,11 @@ class ReportOrchestrator(
     "daysToAnswer" -> (15 - ChronoUnit.DAYS.between(proResponseDate, OffsetDateTime.now()))
   )
 
-  private def toCompany(companySearchResult: CompanySearchResult) =
-    Company(
-      siret = companySearchResult.siret,
-      name = companySearchResult.name.getOrElse(""),
-      address = companySearchResult.address,
-      activityCode = companySearchResult.activityCode,
-      isHeadOffice = companySearchResult.isHeadOffice,
-      isOpen = companySearchResult.isOpen,
-      isPublic = companySearchResult.isPublic,
-      brand = companySearchResult.brand,
-      commercialName = companySearchResult.commercialName,
-      establishmentCommercialName = companySearchResult.establishmentCommercialName
-    )
-
   // On vérifie si le signalement est réattribuable
   // On vérifie en plus que la réattribution n'est pas à la meme entreprise
   def reattribute(
       reportId: UUID,
-      companyCreation: CompanySearchResult,
+      companySearchResult: CompanySearchResult,
       metadata: ReportMetadataDraft,
       consumerIp: ConsumerIp
   ): Future[Report] = for {
@@ -1186,11 +1137,11 @@ class ReportOrchestrator(
     report               <- maybeReport.liftTo[Future](ReportNotFound(reportId))
     maybeProResponseDate <- isReattributable(report)
     _ <- if (maybeProResponseDate.nonEmpty) Future.unit else Future.failed(ReportNotReattributable(reportId))
-    _ <- validateCompany(companyCreation.activityCode, Some(companyCreation.siret))
+    _ <- validateCompany(companySearchResult.activityCode, Some(companySearchResult.siret))
     _ <-
-      if (report.companySiret.contains(companyCreation.siret)) Future.failed(CantReattributeToTheSameCompany)
+      if (report.companySiret.contains(companySearchResult.siret)) Future.failed(CantReattributeToTheSameCompany)
       else Future.unit
-    company        <- companyRepository.getOrCreate(companyCreation.siret, toCompany(companyCreation))
+    company        <- companyOrchestrator.getOrCreate(companySearchResult.toCreation)
     reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))
     files = reportFilesMap.getOrElse(reportId, List.empty).filter(_.origin == ReportFileOrigin.Consumer)
     newFiles <- files.traverse(f => reportFileOrchestrator.duplicate(f.id, f.filename, f.reportId))

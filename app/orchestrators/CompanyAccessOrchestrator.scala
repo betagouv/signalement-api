@@ -241,4 +241,22 @@ class CompanyAccessOrchestrator(
       )
     } yield ()
 
+  def duplicateAccessesFromHeadOffice(company: Company): Future[Unit] =
+    if (company.isHeadOffice) { Future.unit }
+    else {
+      for {
+        maybeHeadOffice <- getHeadOffice(company)
+        _ <- maybeHeadOffice match {
+          case Some(headOffice) =>
+            for {
+              headOfficesAccesses <- companyAccessRepository.fetchUsersWithLevel(List(headOffice.id))
+              _ <- Future.sequence(headOfficesAccesses.map { case (user, level) =>
+                companyAccessRepository.createAccess(company.id, user.id, level)
+              })
+            } yield ()
+          case None => Future.unit
+        }
+      } yield ()
+    }
+
 }
