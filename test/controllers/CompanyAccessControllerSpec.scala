@@ -53,7 +53,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         admin  <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
         _      <- userRepository.create(proUnrelatedUser)
-        c      <- companyRepository.getOrCreate(company.siret, company)
+        (c, _) <- companyRepository.getOrCreate(company.siret, company)
         _      <- companyAccessRepository.createAccess(c.id, admin.id, AccessLevel.ADMIN)
         _      <- companyAccessRepository.createAccess(c.id, member.id, AccessLevel.MEMBER)
       } yield (),
@@ -209,7 +209,7 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   var token: AccessToken = null
 
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 
@@ -274,7 +274,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   var initialUserTokenValidity              = JavaDuration.ofMinutes(1)
 
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 
@@ -362,7 +362,7 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   var token: AccessToken = null
 
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 
@@ -421,7 +421,7 @@ class NewCompanyActivationWithWrongTokenSpec(implicit ee: ExecutionEnv) extends 
   var token: AccessToken = null
 
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 
@@ -482,7 +482,7 @@ class NewCompanyActivationWithWrongTokenAndTooManyAttemptsSpec(implicit ee: Exec
   var token: AccessToken = null
 
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 
@@ -553,7 +553,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   val newCompany         = Fixtures.genCompany.sample.get
   var token: AccessToken = null
   def e1 = {
-    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    val (company, _) = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
     company must haveClass[Company]
   }
 

@@ -33,8 +33,8 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
   override def setupData() =
     Await.result(
       for {
-        _ <- userRepository.create(adminUser)
-        c <- companyRepository.getOrCreate(company.siret, company)
+        _      <- userRepository.create(adminUser)
+        (c, _) <- companyRepository.getOrCreate(company.siret, company)
         _ <-
           reportRepository.create(
             Fixtures.genReportFromDraft(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)))

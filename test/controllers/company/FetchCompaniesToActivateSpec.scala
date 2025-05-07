@@ -59,7 +59,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def createCompanyAndToken = {
     val company = Fixtures.genCompany.sample.get
     for {
-      company <- companyRepository.getOrCreate(company.siret, company)
+      (company, _) <- companyRepository.getOrCreate(company.siret, company)
       token <- accessTokenRepository.create(
         AccessToken.build(
           CompanyInit,

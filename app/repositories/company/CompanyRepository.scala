@@ -151,10 +151,13 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       }.toMap
     } yield exhaustiveMap
 
-  override def getOrCreate(siret: SIRET, data: Company): Future[Company] =
+  override def getOrCreate(siret: SIRET, data: Company): Future[(Company, Boolean)] =
     db.run(table.filter(_.siret === siret).result.headOption).flatMap {
-      case Some(company) => Future.successful(company)
-      case None          => create(data)
+      case Some(company) => Future.successful((company, false))
+      case None =>
+        for {
+          company <- create(data)
+        } yield (company, true)
     }
 
   override def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =

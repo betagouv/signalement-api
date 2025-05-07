@@ -305,11 +305,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   override def setupData() =
     Await.result(
       for {
-        u <- userRepository.create(proUser)
-        _ <- userRepository.create(concernedAdminUser)
-        c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
-        _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
-        _ <- reportRepository.create(existingReport)
+        u      <- userRepository.create(proUser)
+        _      <- userRepository.create(concernedAdminUser)
+        (c, _) <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
+        _      <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
+        _      <- reportRepository.create(existingReport)
         _ <- Future.sequence(
           Seq(
             existingReport.email,

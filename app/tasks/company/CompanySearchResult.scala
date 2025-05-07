@@ -3,6 +3,7 @@ package tasks.company
 import io.scalaland.chimney.dsl._
 import models.company.Address
 import models.company.Company
+import models.company.CompanyCreation
 import models.website.Website
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -24,7 +25,21 @@ case class CompanySearchResult(
     isOpen: Boolean,
     isPublic: Boolean,
     lastUpdated: Option[OffsetDateTime] = None
-)
+) {
+  def toCreation =
+    CompanyCreation(
+      siret = siret,
+      name = name.getOrElse(""),
+      address = address,
+      activityCode = activityCode,
+      isHeadOffice = Some(isHeadOffice),
+      isOpen = Some(isOpen),
+      isPublic = Some(isPublic),
+      brand = brand,
+      commercialName = commercialName,
+      establishmentCommercialName = establishmentCommercialName
+    )
+}
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]

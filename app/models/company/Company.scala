@@ -51,6 +51,19 @@ case class Company(
 ) {
 
   def siren: SIREN = SIREN.fromSIRET(this.siret)
+
+  def toCreation = CompanyCreation(
+    siret = siret,
+    name = name,
+    address = address,
+    activityCode = activityCode,
+    isHeadOffice = Some(isHeadOffice),
+    isOpen = Some(isOpen),
+    isPublic = Some(isPublic),
+    brand = brand,
+    commercialName = commercialName,
+    establishmentCommercialName = establishmentCommercialName
+  )
 }
 
 case class CompanyRegisteredSearch(
@@ -149,7 +162,7 @@ case class CompanyCreation(
     commercialName: Option[String],
     establishmentCommercialName: Option[String]
 ) {
-  def toCompany(): Company = Company(
+  def toCompany() = Company(
     siret = siret,
     name = name,
     address = address,

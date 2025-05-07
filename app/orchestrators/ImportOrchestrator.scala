@@ -4,13 +4,11 @@ import cats.implicits.toTraverseOps
 import controllers.error.AppError.CreateWebsiteError
 import models.User
 import models.company.AccessLevel
-import models.company.Company
 import models.website.IdentificationStatus.Identified
 import models.website.IdentificationStatus
 import models.website.Website
 import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import tasks.company.CompanySearchResult
 import tasks.company.CompanySyncServiceInterface
 import utils.EmailAddress
 import utils.SIREN
@@ -35,25 +33,12 @@ class ImportOrchestrator(
     companyRepository: CompanyRepositoryInterface,
     companySyncService: CompanySyncServiceInterface,
     userOrchestrator: UserOrchestratorInterface,
+    companyOrchestrator: CompanyOrchestrator,
     proAccessTokenOrchestrator: ProAccessTokenOrchestratorInterface,
     websiteRepository: WebsiteRepositoryInterface,
     websitesOrchestrator: WebsitesOrchestrator
 )(implicit ec: ExecutionContext)
     extends ImportOrchestratorInterface {
-
-  private[orchestrators] def toCompany(c: CompanySearchResult) =
-    Company(
-      siret = c.siret,
-      name = c.name.getOrElse(""),
-      address = c.address,
-      activityCode = c.activityCode,
-      isHeadOffice = c.isHeadOffice,
-      isOpen = c.isOpen,
-      isPublic = c.isPublic,
-      brand = c.brand,
-      commercialName = c.commercialName,
-      establishmentCommercialName = c.establishmentCommercialName
-    )
 
   def importUsers(
       siren: Option[SIREN],
@@ -67,7 +52,7 @@ class ImportOrchestrator(
       missingSirets = sirets.diff(existingCompanies.map(_.siret))
       missingCompanies <- companySyncService.companiesBySirets(missingSirets)
       createdCompanies <- Future.sequence(
-        missingCompanies.map(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
+        missingCompanies.map(c => companyOrchestrator.getOrCreate(c.toCreation))
       )
 
       companiesFromSiren <- siren match {
@@ -77,7 +62,7 @@ class ImportOrchestrator(
       existingCompaniesFromSiren <- companyRepository.findBySirets(companiesFromSiren.map(_.siret))
       missingCompaniesFromSiren = companiesFromSiren.filter(c => existingCompaniesFromSiren.forall(_.siret != c.siret))
       createdCompaniesFromSiren <- Future.sequence(
-        missingCompaniesFromSiren.map(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
+        missingCompaniesFromSiren.map(c => companyOrchestrator.getOrCreate(c.toCreation))
       )
 
       existingUsers <- userOrchestrator.list(emails)
@@ -98,7 +83,7 @@ class ImportOrchestrator(
       existingCompanies <- companyRepository.findBySirets(sirets)
       missingSirets = sirets.diff(existingCompanies.map(_.siret))
       missingCompanies <- companySyncService.companiesBySirets(missingSirets)
-      createdCompanies <- missingCompanies.traverse(c => companyRepository.getOrCreate(c.siret, toCompany(c)))
+      createdCompanies <- missingCompanies.traverse(c => companyOrchestrator.getOrCreate(c.toCreation))
 
       allCompanies         = existingCompanies ++ createdCompanies
       companiesAndWebsites = websites.map { case (siret, host) => allCompanies.find(_.siret == siret).get -> host }
