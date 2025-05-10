@@ -411,7 +411,13 @@ class SignalConsoComponents(
 
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(reportRepository)
   val emailValidationOrchestrator =
-    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi,consumerConsentRepository)
+    new EmailValidationOrchestrator(
+      mailService,
+      emailValidationRepository,
+      emailConfiguration,
+      messagesApi,
+      consumerConsentRepository
+    )
 
   val eventsOrchestrator =
     new EventsOrchestrator(visibleReportOrchestrator, eventRepository, companyRepository)

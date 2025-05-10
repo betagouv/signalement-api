@@ -8,7 +8,8 @@ import models.EmailApi.EmailString
 import models.EmailValidation.EmailValidationThreshold
 import models._
 import models.consumerconsent.ConsumerConsent
-import models.email.{EmailValidationResult, ValidateEmailCode}
+import models.email.EmailValidationResult
+import models.email.ValidateEmailCode
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import repositories.consumerconsent.ConsumerConsentRepositoryInterface
@@ -19,7 +20,8 @@ import utils.EmailAddress
 
 import java.time._
 import java.util.Locale
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class EmailValidationOrchestrator(
     mailService: MailServiceInterface,
