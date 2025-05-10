@@ -7,29 +7,26 @@ import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
 import models.EmailValidation.EmailValidationThreshold
 import models._
-import models.email.EmailValidationResult
-import models.email.ValidateEmailCode
+import models.consumerconsent.ConsumerConsent
+import models.email.{EmailValidationResult, ValidateEmailCode}
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import repositories.consumerconsent.ConsumerConsentRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.emails.EmailDefinitionsConsumer.ConsumerValidateEmail
 import services.emails.MailServiceInterface
 import utils.EmailAddress
 
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import java.time._
 import java.util.Locale
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class EmailValidationOrchestrator(
     mailService: MailServiceInterface,
     emailValidationRepository: EmailValidationRepositoryInterface,
     emailConfiguration: EmailConfiguration,
-    messagesApi: MessagesApi
+    messagesApi: MessagesApi,
+    consumerConsentRepository: ConsumerConsentRepositoryInterface
 )(implicit
     executionContext: ExecutionContext
 ) {
@@ -69,7 +66,7 @@ class EmailValidationOrchestrator(
 
   private[this] def checkCodeAndValidate(emailValidationBody: ValidateEmailCode, emailValidation: EmailValidation) =
     if (emailValidation.confirmationCode == emailValidationBody.confirmationCode) {
-      validateEmail(emailValidationBody.email)
+      validateEmailAndSaveConsent(emailValidationBody)
     } else
       emailValidationRepository
         .update(
@@ -82,6 +79,17 @@ class EmailValidationOrchestrator(
           logger.debug("Invalid code")
           EmailValidationResult.invalidCode
         }
+
+  private def validateEmailAndSaveConsent(emailValidationBody: ValidateEmailCode) =
+    for {
+      emailValidationResult <- validateEmail(emailValidationBody.email)
+      _                     <- eventuallySaveConsent(emailValidationBody)
+    } yield emailValidationResult
+
+  private[this] def eventuallySaveConsent(emailCodeValidation: ValidateEmailCode) =
+    if (emailCodeValidation.consentToUseData.contains(true)) {
+      consumerConsentRepository.create(ConsumerConsent.create(emailCodeValidation.email))
+    } else { Future.unit }
 
   private[this] def sendValidationEmailIfNeeded(
       email: EmailAddress,
