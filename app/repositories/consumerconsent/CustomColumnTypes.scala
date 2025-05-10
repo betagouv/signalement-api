@@ -1,7 +1,7 @@
 package repositories.consumerconsent
 
 import models.consumerconsent.ConsumerConsentId
-import slick.jdbc.PostgresProfile.api._
+import repositories.PostgresProfile.api._
 
 import java.util.UUID
 

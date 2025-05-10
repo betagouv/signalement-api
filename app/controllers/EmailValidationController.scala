@@ -1,5 +1,6 @@
 package controllers
 
+import models.email.RemoveConsent
 import models.email.ValidateEmail
 import models.email.ValidateEmailCode
 import models.EmailValidationFilter
@@ -46,6 +47,14 @@ class EmailValidationController(
         validateEmailCode <- request.parseBody[ValidateEmailCode]()
         validationResult  <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
       } yield Ok(Json.toJson(validationResult))
+  }
+
+  def removeConsent(): Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
+    logger.debug("Calling remove consent API")
+    for {
+      request <- request.parseBody[RemoveConsent]()
+      _       <- emailValidationOrchestrator.removeConsent(request.email)
+    } yield NoContent
   }
 
   def searchEmailValidations() = Act.secured.adminsAndReadonly.async { implicit request =>
