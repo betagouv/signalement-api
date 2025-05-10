@@ -1,0 +1,6 @@
+package repositories.consumerconsent
+
+import models.consumerconsent.{ConsumerConsent, ConsumerConsentId}
+import repositories.TypedCRUDRepositoryInterface
+
+trait ConsumerConsentRepositoryInterface extends TypedCRUDRepositoryInterface[ConsumerConsent, ConsumerConsentId]

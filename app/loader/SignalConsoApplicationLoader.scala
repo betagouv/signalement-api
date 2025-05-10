@@ -68,6 +68,7 @@ import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryI
 import repositories.companyreportcounts.CompanyReportCountsRepository
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
+import repositories.consumerconsent.ConsumerConsentRepository
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.engagement.EngagementRepository
@@ -236,6 +237,9 @@ class SignalConsoComponents(
     new ResponseConsumerReviewRepository(dbConfig)
   val reportEngagementReviewRepository: ReportEngagementReviewRepositoryInterface =
     new ReportEngagementReviewRepository(dbConfig)
+
+  val consumerConsentRepository = new ConsumerConsentRepository(dbConfig)
+
   def reportFileRepository: ReportFileRepositoryInterface       = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface   = new SubscriptionRepository(dbConfig)
   def userRepository: UserRepositoryInterface                   = new UserRepository(dbConfig, passwordHasherRegistry)
@@ -407,7 +411,7 @@ class SignalConsoComponents(
 
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(reportRepository)
   val emailValidationOrchestrator =
-    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
+    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi,consumerConsentRepository)
 
   val eventsOrchestrator =
     new EventsOrchestrator(visibleReportOrchestrator, eventRepository, companyRepository)
