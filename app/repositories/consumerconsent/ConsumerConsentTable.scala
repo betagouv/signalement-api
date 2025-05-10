@@ -10,9 +10,9 @@ import utils.EmailAddress
 import java.time.OffsetDateTime
 
 class ConsumerConsentTable(tag: Tag)
-  extends TypedDatabaseTable[ConsumerConsent, ConsumerConsentId](tag, "consumer_consent") {
+    extends TypedDatabaseTable[ConsumerConsent, ConsumerConsentId](tag, "consumer_consent") {
 
-  def email = column[EmailAddress]("email")
+  def email        = column[EmailAddress]("email")
   def creationDate = column[OffsetDateTime]("creation_date")
   def deletionDate = column[Option[OffsetDateTime]]("deletion_date")
 
