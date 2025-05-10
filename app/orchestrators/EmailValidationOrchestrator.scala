@@ -40,6 +40,8 @@ class EmailValidationOrchestrator(
       emailValidation <- emailValidationRepository.findByEmail(email)
     } yield emailValidation.exists(_.isValid)
 
+  def removeConsent(emailAddress: EmailAddress) = consumerConsentRepository.removeConsent(emailAddress)
+
   def checkCodeAndValidateEmail(emailValidationBody: ValidateEmailCode): Future[EmailValidationResult] =
     for {
       maybeEmailValidation <- emailValidationRepository.findByEmail(emailValidationBody.email)

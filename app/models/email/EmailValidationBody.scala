@@ -5,6 +5,11 @@ import play.api.libs.json.OFormat
 import utils.EmailAddress
 
 import java.util.Locale
+case class RemoveConsent(email: EmailAddress)
+
+object RemoveConsent {
+  implicit val RemoveConsentFormat: OFormat[RemoveConsent] = Json.format[RemoveConsent]
+}
 
 case class ValidateEmail(email: EmailAddress, lang: Option[Locale])
 
