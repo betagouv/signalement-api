@@ -9,5 +9,5 @@ import scala.concurrent.Future
 
 trait ConsumerConsentRepositoryInterface extends TypedCRUDRepositoryInterface[ConsumerConsent, ConsumerConsentId] {
 
-  def removeConsent(emailAddress: EmailAddress) : Future[Unit]
+  def removeConsent(emailAddress: EmailAddress): Future[Unit]
 }
