@@ -1,13 +1,14 @@
 package repositories.consumerconsent
 
-import models.consumerconsent.{ConsumerConsent, ConsumerConsentId}
+import models.consumerconsent.ConsumerConsent
+import models.consumerconsent.ConsumerConsentId
 import repositories.TypedDatabaseTable
 import repositories.consumerconsent.CustomColumnTypes._
 import slick.jdbc.PostgresProfile.api._
 import utils.EmailAddress
 
 class ConsumerConsentTable(tag: Tag)
-    extends TypedDatabaseTable[ConsumerConsent, ConsumerConsentId](tag, "consumer_consent"){
+    extends TypedDatabaseTable[ConsumerConsent, ConsumerConsentId](tag, "consumer_consent") {
 
   def email = column[EmailAddress]("email")
 

@@ -1,6 +1,7 @@
 package models.email
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import utils.EmailAddress
 
 import java.util.Locale
