@@ -19,6 +19,7 @@ case class SignalConsoConfiguration(
     reportMaxNumberOfAttachments: Int,
     enableRateLimit: Boolean,
     enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation: Boolean,
+    accessesMigrationTaskIsDryRun: Boolean,
     antivirusServiceConfiguration: AntivirusServiceConfiguration
 )
 

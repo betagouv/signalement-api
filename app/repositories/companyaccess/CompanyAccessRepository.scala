@@ -60,19 +60,31 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .result
     ).map(_.map(x => CompanyWithAccess(x._1, CompanyAccess(x._2, kind = CompanyAccessKind.Direct))))
 
-  override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
+  override def fetchUsersWithLevelExcludingNone(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
-      table
-        .join(UserTable.table)
-        .on(_.userId === _.id)
-        .filter(_._1.companyId inSet companyIds)
+      fetchUsersWithLevelWithoutRun(companyIds)
         .filter(_._1.level =!= AccessLevel.NONE)
-        .sortBy(entry => (entry._1.level, entry._2.email))
         .map(r => (r._2, r._1.level))
         .distinct
         .to[List]
         .result
     )
+
+  override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
+    db.run(
+      fetchUsersWithLevelWithoutRun(companyIds)
+        .map(r => (r._2, r._1.level))
+        .distinct
+        .to[List]
+        .result
+    )
+
+  private def fetchUsersWithLevelWithoutRun(companyIds: Seq[UUID]) =
+    table
+      .join(UserTable.table)
+      .on(_.userId === _.id)
+      .filter(_._1.companyId inSet companyIds)
+      .sortBy(entry => (entry._1.level, entry._2.email))
 
   private[this] def fetchUsersAndAccessesByCompanies(
       companyIds: List[UUID],

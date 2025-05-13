@@ -62,6 +62,8 @@ import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepository
 import repositories.company.CompanySyncRepositoryInterface
+import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationRepository
+import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepository
@@ -122,6 +124,7 @@ import tasks.ScheduledTask
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
+import tasks.company.CompanyAccessInheritanceMigrationTask
 import tasks.company._
 import tasks.report.OldReportExportDeletionTask
 import tasks.report.OldReportsRgpdDeletionTask
@@ -219,6 +222,8 @@ class SignalConsoComponents(
   val taskRepository                                                    = new TaskRepository(dbConfig)
   val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
+  val companyAccessInheritanceMigrationRepository: CompanyAccessInheritanceMigrationRepositoryInterface =
+    new CompanyAccessInheritanceMigrationRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
   val asyncFileRepository: AsyncFileRepositoryInterface                 = new AsyncFileRepository(dbConfig)
@@ -800,6 +805,16 @@ class SignalConsoComponents(
     companyRepository
   )
 
+  val companyAccessInheritanceMigrationTask = new CompanyAccessInheritanceMigrationTask(
+    actorSystem,
+    companyRepository,
+    companyAccessRepository,
+    companyAccessInheritanceMigrationRepository,
+    taskConfiguration,
+    signalConsoConfiguration,
+    taskRepository
+  )
+
   // Controller
 
   val blacklistedEmailsController =
@@ -1078,7 +1093,8 @@ class SignalConsoComponents(
         subcategoryLabelTask,
         companyAlbertLabelTask,
         companyReportCountViewRefresherTask,
-        siretExtractionTask
+        siretExtractionTask,
+        companyAccessInheritanceMigrationTask
       ),
       if (applicationConfiguration.task.probe.active) {
         probeOrchestrator.buildAllTasks()
