@@ -11,7 +11,7 @@ import java.util.UUID
 class CompanyAccessInheritanceMigrationTable(tag: Tag)
     extends DatabaseTable[CompanyAccessInheritanceMigration](tag, "companies_access_inheritance_migration") {
 
-  def companyId   = column[UUID]("company_id")
+  def companyId   = column[UUID]("company_id", O.PrimaryKey)
   def processedAt = column[OffsetDateTime]("processed_at")
 
   type Data = (

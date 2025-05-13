@@ -89,7 +89,7 @@ class CompanyAccessInheritanceMigrationTask(
                   )
                   _ <- Future.sequence(accessesToSetOnSubsidiary.map { case (user, level) =>
                     logger.info(
-                      s"company_access_inheritance_migration_task : we should give ${user.email} ${user.id} $level access on ${subsidiary.siret} ${subsidiary.id}"
+                      s"company_access_inheritance_migration_task : we should give ${user.email} ${level.value} access on ${subsidiary.siret} (from head office ${headOffice.siret})"
                     )
                     if (isDryRun) Future.unit
                     else companyAccessRepository.createAccess(subsidiary.id, user.id, level)
