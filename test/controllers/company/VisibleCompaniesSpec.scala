@@ -128,7 +128,7 @@ The get visible companies endpoint should
 
   def e3 = {
     val headOfficeViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((headOfficeCompany.siret, headOfficeCompany.id))),
+      companiesVisibilityOrchestrator.fetchUsersOfCompanies(List((headOfficeCompany.siret, headOfficeCompany.id))),
       Duration.Inf
     )
     Await.result(
@@ -145,7 +145,7 @@ The get visible companies endpoint should
 
   def e4 = {
     val subsidiaryViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((subsidiaryCompany.siret, subsidiaryCompany.id))),
+      companiesVisibilityOrchestrator.fetchUsersOfCompanies(List((subsidiaryCompany.siret, subsidiaryCompany.id))),
       Duration.Inf
     )
     val subsidiaryViewers = Await.result(

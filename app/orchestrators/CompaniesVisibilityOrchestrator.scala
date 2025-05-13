@@ -45,35 +45,8 @@ class CompaniesVisibilityOrchestrator(
   def fetchUsersByCompany(companyId: UUID): Future[List[User]] =
     companyAccessRepository.fetchUsersByCompanies(List(companyId))
 
-  // Fetch all users of these companies, and of their head offices
-  // convoluted, could be simplified
-  // Why do we bother with company id + siret ? could a report company_id + company_siret point at different companies ?
-  // seems useless, especially since we're returning results with just the company_id
-  def fetchUsersWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
-    for {
-      usersByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(companies.map(_._2))
-      sirens = companies.map(c => SIREN.fromSIRET(c._1))
-      headOfficesCompany <-
-        companyRepo.findHeadOffices(sirens, openOnly = false)
-      headOfficeUsersByHeadOfficesCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(
-        headOfficesCompany.map(_.id)
-      )
-      headOfficeIdByCompanyIdMap: Map[UUID, Option[UUID]] = companies
-        // there seems no reason to worry about uniqueness, both SIRET and id are unique
-        .groupBy(_._2)
-        .view
-        .mapValues { uniqueSiretCompanyIdTuple =>
-          // here we are computing SIREN again, but we did that above already
-          val siren = uniqueSiretCompanyIdTuple.headOption.map(x => SIREN.fromSIRET(x._1))
-          headOfficesCompany.find(c => siren.contains(SIREN.fromSIRET(c.siret))).map(_.id)
-        }
-        .toMap
-    } yield usersByCompanyIdMap.map { case (companyId, usersOfCompany) =>
-      // we could just find the head office here based on the SIREN, no need to bother with constructing the "headOfficeIdByCompanyIdMap" earlier
-      val headOfficeId    = headOfficeIdByCompanyIdMap.get(companyId).flatten
-      val headOfficeUsers = headOfficeId.flatMap(headOfficeUsersByHeadOfficesCompanyIdMap.get).getOrElse(List())
-      (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
-    }
+  def fetchUsersOfCompanies(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
+    companyAccessRepository.fetchUsersByCompanyIds(companies.map(_._2))
 
   def fetchVisibleCompaniesExtended(pro: User) =
     for {
@@ -81,7 +54,7 @@ class CompaniesVisibilityOrchestrator(
       allCompaniesIds = proCompanies.toSimpleList.map(_.company.id)
       reportsCounts        <- companyRepo.getReportsCounts(allCompaniesIds)
       ongoingReportsCounts <- reportRepository.countOngoingReportsByCompany(allCompaniesIds)
-      usersByCompanyId <- fetchUsersWithHeadOffices(
+      usersByCompanyId <- fetchUsersOfCompanies(
         proCompanies.toSimpleList.map(c => c.company.siret -> c.company.id)
       )
       proCompaniesExtended = proCompanies.map { case CompanyWithAccess(company, access) =>
