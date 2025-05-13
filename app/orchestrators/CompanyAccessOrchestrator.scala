@@ -196,7 +196,7 @@ class CompanyAccessOrchestrator(
   ): Future[List[UserWithAccessLevel]] =
     for {
       companyAccess <- companyAccessRepository
-        .fetchUsersWithLevel(companies.map(_.id))
+        .fetchUsersWithLevelExcludingNone(companies.map(_.id))
     } yield (userLevel, user.userRole) match {
       case (_, SuperAdmin) | (_, Admin) | (_, ReadOnlyAdmin) =>
         logger.debug(s"Signal conso admin user : setting editable to true")
@@ -249,7 +249,7 @@ class CompanyAccessOrchestrator(
         _ <- maybeHeadOffice match {
           case Some(headOffice) =>
             for {
-              headOfficesAccesses <- companyAccessRepository.fetchUsersWithLevel(List(headOffice.id))
+              headOfficesAccesses <- companyAccessRepository.fetchUsersWithLevelExcludingNone(List(headOffice.id))
               _ <- Future.sequence(headOfficesAccesses.map { case (user, level) =>
                 companyAccessRepository.createAccess(company.id, user.id, level)
               })

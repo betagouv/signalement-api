@@ -22,6 +22,7 @@ trait CompanyAccessRepositoryInterface {
   def getUserAccesses(companyIds: List[UUID], userIds: List[UUID]): Future[List[UserAccess]]
   def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]]
 
+  def fetchUsersWithLevelExcludingNone(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]]
   def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]]
 
   def fetchUsersByCompanies(

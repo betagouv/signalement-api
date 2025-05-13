@@ -1,0 +1,6 @@
+package repositories.company.accessinheritancemigration
+
+import repositories.CRUDRepositoryInterface
+
+trait CompanyAccessInheritanceMigrationRepositoryInterface
+    extends CRUDRepositoryInterface[CompanyAccessInheritanceMigration] {}

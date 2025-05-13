@@ -24,6 +24,7 @@ import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
 import repositories.CRUDRepository
+import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationTable
 import repositories.companyreportcounts.CompanyReportCountsTable
 import slick.basic.DatabaseConfig
 import slick.lifted.Case.If
@@ -162,6 +163,18 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   override def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(table.filter(_.id inSetBind companyIds).to[List].result)
+
+  override def fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit: Int): Future[List[Company]] =
+    db.run(
+      table
+        .joinLeft(CompanyAccessInheritanceMigrationTable.table)
+        .on(_.id === _.companyId)
+        .filter { case (_, migration) => migration.isEmpty }
+        .take(limit)
+        .map { case (company, _) => company }
+        .to[List]
+        .result
+    )
 
   override def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(table.filter(_.siret === siret).result.headOption)

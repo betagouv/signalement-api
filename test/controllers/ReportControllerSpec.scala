@@ -1,20 +1,11 @@
 package controllers
 
-import config.AntivirusServiceConfiguration
-import config.EmailConfiguration
-import config.MobileAppConfiguration
-import config.SignalConsoConfiguration
-import config.TokenConfiguration
-import config.UploadConfiguration
+import config._
 import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
 import loader.SignalConsoComponents
 import models.BlacklistedEmail
-import models.report.DetailInputValue
-import models.report.IncomingReportResponse
-import models.report.ReportFile
-import models.report.ReportFileOrigin
-import models.report.ReportStatus
+import models.report._
 import models.report.ReportStatus.PromesseAction
 import models.report.delete.ReportAdminAction
 import models.report.delete.ReportAdminActionType.ConsumerThreatenByPro
@@ -39,22 +30,18 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.event.EventFilter
 import services.S3ServiceInterface
-import utils.Constants.ActionEvent.CONSUMER_THREATEN_BY_PRO
-import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-import utils.Constants.ActionEvent.REFUND_BLACKMAIL
-import utils.Constants.ActionEvent.RGPD_DELETE_REQUEST
-import utils.Constants.ActionEvent.SOLVED_CONTRACTUAL_DISPUTE
+import utils.AuthHelpers._
+import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.EmailAddress
 import utils.Fixtures
 import utils.S3ServiceMock
 import utils.TestApp
-import utils.AuthHelpers._
 
-import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.Period
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -406,7 +393,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 antivirusServiceConfiguration = AntivirusServiceConfiguration("", "", true, false),
                 reportsExportLimitMax = 30000,
                 reportsExportPdfLimitMax = 1000,
-                reportsListLimitMax = 10000
+                reportsListLimitMax = 10000,
+                enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation = false,
+                accessesMigrationTaskIsDryRun = true
               )
 
             override def emailConfiguration: EmailConfiguration =

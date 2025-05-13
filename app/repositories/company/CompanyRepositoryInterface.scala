@@ -34,6 +34,8 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]]
 
+  def fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit: Int): Future[List[Company]]
+
   def findBySiret(siret: SIRET): Future[Option[Company]]
 
   def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]]
