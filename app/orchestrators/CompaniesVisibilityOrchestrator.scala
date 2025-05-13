@@ -2,19 +2,7 @@ package orchestrators
 
 import models.User
 import models.UserRole
-import models.company.AccessLevel
-import models.company.Company
-import models.company.CompanyAccess
-import models.company.CompanyAccessKind
-import models.company.CompanyWithAccess
-import models.company.CompanyWithAccessAndCounts
-import models.company.ProCompanies
-import models.company.AccessLevel.ADMIN
-import models.company.AccessLevel.MEMBER
-import models.company.AccessLevel.NONE
-import models.company.CompanyAccessKind.Direct
-import models.company.CompanyAccessKind.Inherited
-import models.company.CompanyAccessKind.InheritedAdminAndDirectMember
+import models.company._
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -77,81 +65,33 @@ class CompaniesVisibilityOrchestrator(
   def fetchVisibleCompanies(pro: User) =
     for {
       companiesWithAccesses <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      (headOffices, subsidiaries) =
-        companiesWithAccesses.map(_.company).partition(_.isHeadOffice)
-      headOfficesWithTheirSubsidiaries <- fetchSubsidiaries(headOffices)
-      loneSubsidiaries = {
-        val subsidiariesFromHeadOffices = headOfficesWithTheirSubsidiaries.values.flatten
-        subsidiaries.filter(c => !subsidiariesFromHeadOffices.exists(_.id == c.id))
-      }
-      proCompanies = ProCompanies(headOfficesWithTheirSubsidiaries, loneSubsidiaries)
+      proCompanies = organizeProCompanies(companiesWithAccesses.map(_.company))
       proCompaniesWithAccesses = fillWithCorrespondingAccesses(
         proCompanies,
         companiesWithAccesses
       )
-      proCompaniesWithAllAccesses = addInheritedAccessesToSubsidiaries(
-        proCompaniesWithAccesses,
-        keepLegacyInheritanceAlgorithm = true
-      )
-    } yield proCompaniesWithAllAccesses
+    } yield proCompaniesWithAccesses
+
+  private def organizeProCompanies(companies: List[Company]): ProCompanies[Company] = {
+    val (headOffices, subsidiaries) = companies.partition(_.isHeadOffice)
+    val headOfficesWithSubsidiaries = headOffices.map { headOffice =>
+      val subsidiariesOfThisHeadOffice = subsidiaries.filter(_.siren == headOffice.siren)
+      headOffice -> subsidiariesOfThisHeadOffice
+    }.toMap
+    val loneSubsidiaries = {
+      val subsidiariesFromHeadOffices = headOfficesWithSubsidiaries.values.flatten
+      subsidiaries.filter(c => !subsidiariesFromHeadOffices.exists(_.id == c.id))
+    }
+    ProCompanies(
+      headOfficesWithSubsidiaries,
+      loneSubsidiaries
+    )
+  }
 
   def fetchVisibleCompaniesList(pro: User): Future[List[CompanyWithAccess]] =
     for {
       proCompaniesWithAccesses <- fetchVisibleCompanies(pro)
     } yield proCompaniesWithAccesses.toSimpleList
-
-  private[this] def addInheritedAccessesToSubsidiaries(
-      proCompaniesWithAccesses: ProCompanies[CompanyWithAccess],
-      // There was weird edge cases in how the inheritance was coded previously
-      // We have recoded everything but for now we maintain the odd behaviors
-      keepLegacyInheritanceAlgorithm: Boolean
-  ): ProCompanies[CompanyWithAccess] =
-    proCompaniesWithAccesses.copy(
-      headOfficesAndSubsidiaries = proCompaniesWithAccesses.headOfficesAndSubsidiaries.map {
-        case (headOffice, subsidiaries) =>
-          headOffice -> subsidiaries.map {
-
-            case CompanyWithAccess(subsidiary, CompanyAccess(NONE, _)) =>
-              val isAdminInAnyOfTheGroup = (headOffice +: subsidiaries).exists(_.isAdmin)
-
-              val level =
-                // This is a weird part of the old implementation, most likely unintended
-                // If no direct access, and we are member of the head office, BUT we are admin of a least one sibling
-                // Then we end up admin here...
-                if (keepLegacyInheritanceAlgorithm && isAdminInAnyOfTheGroup) ADMIN
-                else headOffice.access.level
-              CompanyWithAccess(
-                subsidiary,
-                CompanyAccess(level = level, kind = Inherited)
-              )
-            case companyWithAccess @ CompanyWithAccess(subsidiary, CompanyAccess(MEMBER, Direct))
-                if headOffice.access.level == ADMIN =>
-              keepLegacyInheritanceAlgorithm match {
-                case true =>
-                  // In the old implementation, the direct member access takes precedence over what's in the head office
-                  companyWithAccess
-                case false =>
-                  CompanyWithAccess(
-                    subsidiary,
-                    CompanyAccess(level = ADMIN, kind = InheritedAdminAndDirectMember)
-                  )
-              }
-            case other => other
-          }
-      }
-    )
-
-  private[this] def fetchSubsidiaries(headOffices: List[Company]): Future[Map[Company, List[Company]]] =
-    for {
-      allCompanies <- companyRepo.findBySiren(headOffices.map(_.siren))
-      mapWithSubsidiaries = headOffices.map { headOffice =>
-        val subsidiaries = allCompanies
-          .filter(_.siren == headOffice.siren)
-          .filter(_.siret != headOffice.siret)
-          .filter(!_.isHeadOffice)
-        headOffice -> subsidiaries
-      }.toMap
-    } yield mapWithSubsidiaries
 
   private[this] def fillWithCorrespondingAccesses(
       toFill: ProCompanies[Company],
@@ -174,6 +114,9 @@ class CompaniesVisibilityOrchestrator(
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
     for {
+      // Not sure of this logic, now that we don't have accesses inheritance.
+      // We shouldn't allow to search on the whole SIRENs of the head offices
+      // but then does it mean that we wouldn't be able to search by SIREN at all ? to investigate
       companyWithAccessList <- companyAccessRepository.fetchCompaniesWithLevel(user)
       authorizedSirets = companyWithAccessList.map(_.company.siret)
       authorizedHeadofficeSirens <-
@@ -218,21 +161,4 @@ class CompaniesVisibilityOrchestrator(
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
     )
 
-}
-
-object CompaniesVisibilityOrchestrator {
-
-  sealed trait AccessLevelInheritanceAlgorithm
-
-  object AccessLevelInheritanceAlgorithm {
-
-    // The intuitive way, what we should have :
-    // you inherit the from the head office, if it's better than the one you have
-    case object Intuitive extends AccessLevelInheritanceAlgorithm
-
-    // A weird implementation, it was like that before, we keep it this way for now
-    // it behaves differently in two different edge cases
-    case object KeepLegacyEdgeCases extends AccessLevelInheritanceAlgorithm
-
-  }
 }
