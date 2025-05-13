@@ -179,20 +179,6 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(table.filter(_.siret === siret).result.headOption)
 
-  def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]] =
-    db.run(
-      table
-        .filter(_.siret.asColumnOf[String] like s"${SIREN.fromSIRET(siret).value}%")
-        .filter { companyTable =>
-          val companyWithSameSiret: Rep[Boolean] = companyTable.siret === siret
-          val companyHeadOffice: Rep[Boolean]    = companyTable.isHeadOffice
-          companyWithSameSiret || companyHeadOffice
-        }
-        .filter(_.isOpen)
-        .result
-        .map(_.toList)
-    )
-
   def findHeadOffices(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] =
     db.run(
       table
