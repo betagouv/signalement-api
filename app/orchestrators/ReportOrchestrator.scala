@@ -140,7 +140,7 @@ class ReportOrchestrator(
   private def notifyProfessionalOfNewReportAndUpdateStatus(report: Report, company: Company): Future[Report] =
     for {
       maybeCompanyUsers <- companiesVisibilityOrchestrator
-        .fetchUsersWithHeadOffices(company.siret)
+        .fetchUsersOfCompany(company.siret)
         .map(NonEmptyList.fromList)
       updatedReport <- maybeCompanyUsers match {
 
@@ -342,13 +342,13 @@ class ReportOrchestrator(
       maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      maybeCompanyWithUsers <- maybeCompany.traverse(company =>
-        companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+      maybeCompanyUsers <- maybeCompany.traverse(company =>
+        companiesVisibilityOrchestrator.fetchUsersOfCompany(company.siret)
       )
       reportCreationDate = OffsetDateTime.now()
       expirationDate = chooseExpirationDate(
         baseDate = reportCreationDate,
-        companyHasUsers = maybeCompanyWithUsers.exists(_.nonEmpty)
+        companyHasUsers = maybeCompanyUsers.exists(_.nonEmpty)
       )
       reportToCreate = draftReport.generateReport(
         maybeCompany.map(_.id),
@@ -641,9 +641,9 @@ class ReportOrchestrator(
       newExpirationDate <-
         if (newReportStatus.isNotFinal) {
           companiesVisibilityOrchestrator
-            .fetchUsersWithHeadOffices(company.siret)
-            .map { companyAndHeadOfficeUsers =>
-              chooseExpirationDate(baseDate = updateDateTime, companyHasUsers = companyAndHeadOfficeUsers.nonEmpty)
+            .fetchUsersOfCompany(company.siret)
+            .map { companyUsers =>
+              chooseExpirationDate(baseDate = updateDateTime, companyHasUsers = companyUsers.nonEmpty)
             }
         } else Future.successful(existingReport.expirationDate)
 

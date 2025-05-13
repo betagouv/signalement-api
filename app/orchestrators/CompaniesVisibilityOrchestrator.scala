@@ -35,11 +35,13 @@ class CompaniesVisibilityOrchestrator(
     reportRepository: ReportRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
-  // Fetch all users of this company, and of its head office
-  def fetchUsersWithHeadOffices(siret: SIRET): Future[List[User]] =
+  def fetchUsersOfCompany(siret: SIRET): Future[List[User]] =
     for {
-      companies <- companyRepo.findCompanyAndHeadOffice(siret)
-      users     <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
+      maybeCompany <- companyRepo.findBySiret(siret)
+      users <- maybeCompany match {
+        case Some(company) => companyAccessRepository.fetchUsersByCompanies(List(company.id))
+        case None          => Future.successful(Nil)
+      }
     } yield users
 
   def fetchUsersByCompany(companyId: UUID): Future[List[User]] =
