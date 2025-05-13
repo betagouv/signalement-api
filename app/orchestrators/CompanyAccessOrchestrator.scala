@@ -111,7 +111,7 @@ class CompanyAccessOrchestrator(
   def listAccesses(company: Company, requestedBy: User): Future[List[UserWithAccessLevel]] =
     for {
       userLevel <- companyAccessRepository.getUserLevel(company.id, requestedBy)
-      accesses  <- getUserAccess(requestedBy, userLevel, List(company), editable = true)
+      accesses  <- getUserAccess(requestedBy, userLevel, List(company))
     } yield accesses
 
   def listAccessesMostActive(company: Company, user: User): Future[List[UserWithAccessLevelAndNbResponse]] =
@@ -149,8 +149,7 @@ class CompanyAccessOrchestrator(
   private def getUserAccess(
       user: User,
       userLevel: AccessLevel,
-      companies: List[Company],
-      editable: Boolean
+      companies: List[Company]
   ): Future[List[UserWithAccessLevel]] =
     for {
       companyAccess <- companyAccessRepository
@@ -167,7 +166,7 @@ class CompanyAccessOrchestrator(
           case (companyUser, level) if companyUser.id == user.id =>
             toApi(companyUser, level, editable = false)
           case (companyUser, level) =>
-            toApi(companyUser, level, editable)
+            toApi(companyUser, level, editable = true)
         }
       case (_, Professionnel) =>
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
