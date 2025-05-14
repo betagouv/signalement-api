@@ -945,7 +945,7 @@ class ReportOrchestrator(
         filter.siretSirenList,
         connectedUser
       )
-      _ = logger.trace(
+      _ = logger.info(
         s"Original sirenSirets : ${filter.siretSirenList} , SanitizedSirenSirets : $sanitizedSirenSirets"
       )
       paginatedReportFiles <-

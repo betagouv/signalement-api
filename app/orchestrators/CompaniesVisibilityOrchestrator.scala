@@ -112,48 +112,23 @@ class CompaniesVisibilityOrchestrator(
 
   }
 
-  private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
-    for {
-      // Not sure of this logic, now that we don't have accesses inheritance.
-      // We shouldn't allow to search on the whole SIRENs of the head offices
-      // but then does it mean that we wouldn't be able to search by SIREN at all ? to investigate
-      companyWithAccessList <- companyAccessRepository.fetchCompaniesWithLevel(user)
-      authorizedSirets = companyWithAccessList.map(_.company.siret)
-      authorizedHeadofficeSirens <-
-        companyRepo
-          .findBySirets(authorizedSirets)
-          .map(companies =>
-            companies
-              .filter(_.isHeadOffice)
-              .map(c => SIREN.fromSIRET(c.siret))
-          )
-    } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
-
   def filterUnauthorizedSiretSirenList(siretSirenList: Seq[String], user: User): Future[Seq[String]] =
     if (user.userRole == UserRole.Professionnel) {
       val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
-      fetchVisibleSiretsSirens(user).map { allowed =>
-        val filteredSiretsSirens = SiretsSirens(
-          sirets = formattedSiretsSirens.sirets.filter(wanted =>
-            allowed.sirens.contains(SIREN.fromSIRET(wanted)) || allowed.sirets.contains(wanted)
-          ),
-          sirens = allowed.sirens.intersect(formattedSiretsSirens.sirens)
-        ).toList()
-        if (filteredSiretsSirens.isEmpty) {
-          allowed.toList()
-        } else {
-          filteredSiretsSirens
+      val wantedSirets          = formattedSiretsSirens.sirets
+      for {
+        companies <- companyAccessRepository.fetchCompaniesWithLevel(user)
+        allAllowedSirets = companies.map(_.company.siret)
+        sirets = wantedSirets match {
+          case Seq() => allAllowedSirets
+          case list  => list.filter(allAllowedSirets.contains)
         }
-      }
+      } yield SiretsSirens(sirens = Nil, sirets = sirets).toList()
     } else {
       Future.successful(siretSirenList)
     }
 
-  private[this] def removeRedundantSirets(id: SiretsSirens): SiretsSirens =
-    SiretsSirens(
-      id.sirens,
-      id.sirets.filter(siret => !id.sirens.contains(SIREN.fromSIRET(siret)))
-    )
+  
 
   private[this] def formatSiretSirenList(siretSirenList: Seq[String]): SiretsSirens =
     SiretsSirens(
