@@ -62,5 +62,4 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
 
   override def streamCompanies: Source[Company, NotUsed] = ???
 
-  override def fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit: Int): Future[List[Company]] = ???
 }

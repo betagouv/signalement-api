@@ -3,10 +3,6 @@ package loader
 import _root_.controllers._
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
-import org.apache.pekko.actor.typed
-import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
-import org.apache.pekko.util.Timeout
-import authentication.CookieAuthenticator
 import authentication._
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -23,8 +19,11 @@ import orchestrators.proconnect.ProConnectOrchestrator
 import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
+import org.apache.pekko.actor.typed
 import org.apache.pekko.actor.typed.DispatcherSelector
 import org.apache.pekko.actor.typed.MailboxSelector
+import org.apache.pekko.actor.typed.scaladsl.adapter.ClassicActorSystemOps
+import org.apache.pekko.util.Timeout
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
@@ -62,8 +61,6 @@ import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepository
 import repositories.company.CompanySyncRepositoryInterface
-import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationRepository
-import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companyactivationattempt.CompanyActivationAttemptRepository
@@ -124,15 +121,8 @@ import tasks.ScheduledTask
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
-import tasks.company.CompanyAccessInheritanceMigrationTask
 import tasks.company._
-import tasks.report.OldReportExportDeletionTask
-import tasks.report.OldReportsRgpdDeletionTask
-import tasks.report.OrphanReportFileDeletionTask
-import tasks.report.ReportClosureTask
-import tasks.report.ReportNotificationTask
-import tasks.report.ReportRemindersTask
-import tasks.report.SampleDataGenerationTask
+import tasks.report._
 import tasks.subcategorylabel.SubcategoryLabelTask
 import tasks.website.SiretExtractionTask
 import utils.CustomIpFilter
@@ -222,8 +212,6 @@ class SignalConsoComponents(
   val taskRepository                                                    = new TaskRepository(dbConfig)
   val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
-  val companyAccessInheritanceMigrationRepository: CompanyAccessInheritanceMigrationRepositoryInterface =
-    new CompanyAccessInheritanceMigrationRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
   val asyncFileRepository: AsyncFileRepositoryInterface                 = new AsyncFileRepository(dbConfig)
@@ -806,16 +794,6 @@ class SignalConsoComponents(
     companyRepository
   )
 
-  val companyAccessInheritanceMigrationTask = new CompanyAccessInheritanceMigrationTask(
-    actorSystem,
-    companyRepository,
-    companyAccessRepository,
-    companyAccessInheritanceMigrationRepository,
-    taskConfiguration,
-    signalConsoConfiguration,
-    taskRepository
-  )
-
   // Controller
 
   val blacklistedEmailsController =
@@ -1094,8 +1072,7 @@ class SignalConsoComponents(
         subcategoryLabelTask,
         companyAlbertLabelTask,
         companyReportCountViewRefresherTask,
-        siretExtractionTask,
-        companyAccessInheritanceMigrationTask
+        siretExtractionTask
       ),
       if (applicationConfiguration.task.probe.active) {
         probeOrchestrator.buildAllTasks()

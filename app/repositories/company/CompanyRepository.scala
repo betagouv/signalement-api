@@ -1,37 +1,32 @@
 package repositories.company
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.Source
-import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
-import models.company.SearchCompanyIdentity.SearchCompanyIdentityName
-import models.company.SearchCompanyIdentity.SearchCompanyIdentityRCS
-import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiren
-import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
-import models.company.CompanySort.SortCriteria
 import models.company.Address
 import models.company.Company
 import models.company.CompanyRegisteredSearch
 import models.company.CompanySort
+import models.company.CompanySort.SortCriteria
+import models.company.SearchCompanyIdentity._
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
+import repositories.companyreportcounts.CompanyReportCountsTable
 import repositories.user.UserTable
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.jdbc.ResultSetConcurrency
 import slick.jdbc.ResultSetType
-import utils.Country
-import utils.EmailAddress
-import utils.SIREN
-import utils.SIRET
-import repositories.CRUDRepository
-import repositories.company.accessinheritancemigration.CompanyAccessInheritanceMigrationTable
-import repositories.companyreportcounts.CompanyReportCountsTable
-import slick.basic.DatabaseConfig
 import slick.lifted.Case.If
 import slick.lifted.Rep
 import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.Departments.toPostalCode
+import utils.Country
+import utils.EmailAddress
+import utils.SIREN
+import utils.SIRET
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
@@ -163,18 +158,6 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
 
   override def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(table.filter(_.id inSetBind companyIds).to[List].result)
-
-  override def fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit: Int): Future[List[Company]] =
-    db.run(
-      table
-        .joinLeft(CompanyAccessInheritanceMigrationTable.table)
-        .on(_.id === _.companyId)
-        .filter { case (_, migration) => migration.isEmpty }
-        .take(limit)
-        .map { case (company, _) => company }
-        .to[List]
-        .result
-    )
 
   override def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(table.filter(_.siret === siret).result.headOption)
