@@ -97,10 +97,9 @@ class VisibleCompaniesSpec(implicit ee: ExecutionEnv) extends BaseVisibleCompani
     s2"""
 
 The get visible companies endpoint should
-  list headOffice and subsidiary companies for a user who access to the headOffice $e1
+  list headOffice for a user who access to the headOffice $e1
   list only the subsidiary company for a user who only access to the subsidiary $e2
   list admins and member having direct access to the headOffice $e3
-  list admins and member having access to the subsidiary including headOffices admins and members $e4
 """
 
   def e1 = {
@@ -110,8 +109,7 @@ The get visible companies endpoint should
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must haveVisibleCompanies(
-      aVisibleCompany(headOfficeCompany.siret),
-      aVisibleCompany(subsidiaryCompany.siret)
+      aVisibleCompany(headOfficeCompany.siret)
     )
   }
 
@@ -128,37 +126,17 @@ The get visible companies endpoint should
 
   def e3 = {
     val headOfficeViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((headOfficeCompany.siret, headOfficeCompany.id))),
+      companiesVisibilityOrchestrator.fetchUsersOfCompanies(List((headOfficeCompany.siret, headOfficeCompany.id))),
       Duration.Inf
     )
     Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(headOfficeCompany.siret),
+      companiesVisibilityOrchestrator.fetchUsersOfCompany(headOfficeCompany.siret),
       Duration.Inf
     )
     headOfficeViewersList(headOfficeCompany.id).map(_.id).sorted must beEqualTo(
       List(
         adminWithAccessToHeadOffice,
         proUserWithAccessToHeadOffice
-      ).map(_.id).sorted
-    )
-  }
-
-  def e4 = {
-    val subsidiaryViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((subsidiaryCompany.siret, subsidiaryCompany.id))),
-      Duration.Inf
-    )
-    val subsidiaryViewers = Await.result(
-      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(subsidiaryCompany.siret),
-      Duration.Inf
-    )
-    subsidiaryViewersList(subsidiaryCompany.id).map(_.id).sorted must beEqualTo(subsidiaryViewers.map(_.id).sorted)
-    subsidiaryViewersList(subsidiaryCompany.id).map(_.id).sorted must beEqualTo(
-      List(
-        proUserWithAccessToHeadOffice,
-        proUserWithAccessToSubsidiary,
-        adminWithAccessToHeadOffice,
-        adminWithAccessToSubsidiary
       ).map(_.id).sorted
     )
   }

@@ -206,6 +206,6 @@ class ReportRemindersTask(
           id    <- r.companyId
         } yield (siret, id)
       )
-      usersByCompanyId <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(companiesSiretsAndIds.distinct)
+      usersByCompanyId <- companiesVisibilityOrchestrator.fetchUsersOfCompanies(companiesSiretsAndIds.distinct)
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, usersByCompanyId.getOrElse(companyId, Nil))))
 }

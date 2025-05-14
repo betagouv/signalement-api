@@ -30,7 +30,7 @@ class AccessesMassManagementOrchestrator(
     for {
       companies <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(user)
       siretsAndIds = companies.map(_.company).map(c => c.siret -> c.id)
-      mapOfUsers <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(siretsAndIds)
+      mapOfUsers <- companiesVisibilityOrchestrator.fetchUsersOfCompanies(siretsAndIds)
       users = mapOfUsers.values.flatten.toList.distinctBy(_.id)
       proAccessTokensEmailed <- proAccessTokenOrchestrator
         .listProPendingTokensSentByEmail(siretsAndIds.map(_._2), user)

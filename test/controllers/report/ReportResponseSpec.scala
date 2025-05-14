@@ -102,56 +102,6 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
     """
 }
 
-class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
-
-  implicit val messagesProvider: MessagesProvider =
-    MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
-
-  override def is =
-    s2"""
-        Given an authenticated pro user which have rights on head office         ${step {
-        someUser = Some(concernedHeadOfficeProUser)
-      }}
-        When post a response with type "ACCEPTED"                                ${step {
-        someResult = Some(postReportResponse(reportResponseAccepted))
-      }}
-        Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
-        ActionEvent.REPORT_PRO_RESPONSE
-      )}
-        And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(
-        ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-      )}
-        And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
-        ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-      )}
-        And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-        ReportStatus.PromesseAction
-      )}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
-        reportFixture.email,
-        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
-        views.html.mails.consumer
-          .reportToConsumerAcknowledgmentPro(
-            report,
-            Some(company),
-            reportResponseAccepted.toExisting,
-            isReassignable = false,
-            frontRoute.website.reportReview(report.id.toString)
-          )
-          .toString,
-        attachementService.ConsumerProResponseNotificationAttachement(Locale.FRENCH)
-      )}
-        And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
-        concernedHeadOfficeProUser.email,
-        "Votre réponse au signalement",
-        views.html.mails.professional
-          .reportAcknowledgmentPro(reportResponseAccepted.toExisting, concernedHeadOfficeProUser)
-          .toString
-      )}
-    """
-}
-
 class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   implicit val messagesProvider: MessagesProvider =
     MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
@@ -268,9 +218,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
   val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro, isHeadOffice = false)
-  val headOfficeCompany =
-    Fixtures.genCompany.sample.get
-      .copy(siret = Fixtures.genSiret(Some(SIREN.fromSIRET(siretForConcernedPro))).sample.get, isHeadOffice = true)
 
   val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
@@ -278,8 +225,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var report    = reportFixture
 
   val concernedProUser = Fixtures.genProUser.sample.get
-
-  val concernedHeadOfficeProUser = Fixtures.genProUser.sample.get
 
   val notConcernedProUser = Fixtures.genProUser.sample.get
 
@@ -327,19 +272,9 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     Await.result(
       for {
         _ <- userRepository.create(concernedProUser)
-        _ <- userRepository.create(concernedHeadOfficeProUser)
         _ <- userRepository.create(notConcernedProUser)
-
         _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
-
         _ <- companyAccessRepository.createAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
-        _ <- companyAccessRepository.createAccess(
-          headOfficeCompany.id,
-          concernedHeadOfficeProUser.id,
-          AccessLevel.ADMIN
-        )
-
         _ <- reportRepository.create(reportFixture)
         _ <- reportFileRepository.create(reportResponseFile)
       } yield (),

@@ -35,8 +35,6 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
   override def findBySiret(siret: SIRET): Future[Option[Company]] =
     Future.successful(database.find(_._2.siret == siret).map(_._2))
 
-  override def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]] = ???
-
   override def findHeadOffices(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] = ???
 
   override def findBySirets(sirets: List[SIRET]): Future[List[Company]] = ???
