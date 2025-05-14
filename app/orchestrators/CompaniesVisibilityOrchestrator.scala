@@ -128,8 +128,6 @@ class CompaniesVisibilityOrchestrator(
       Future.successful(siretSirenList)
     }
 
-  
-
   private[this] def formatSiretSirenList(siretSirenList: Seq[String]): SiretsSirens =
     SiretsSirens(
       sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.fromUnsafe),
