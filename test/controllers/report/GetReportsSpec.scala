@@ -245,7 +245,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future.successful(someResult.get))(timeout).toString must
-          /("totalCount" -> 2) and
+          /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and
           not(
             haveReports(
