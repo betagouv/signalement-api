@@ -57,17 +57,17 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
     """
 }
 
-class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) extends GetReportsSpec {
+class GetReportsByProUserWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated pro user who access to the headOffice               ${step {
-        someUser = Some(proUserWithAccessToHeadOffice)
+         Given an authenticated pro user who access to the subsidiary               ${step {
+        someUser = Some(proUserWithAccessToSubsidiary)
       }}
          When retrieving reports                                                    ${step {
         someResult = Some(getReports())
       }}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${reportsMustBeRenderedForUser(
-        proUserWithAccessToHeadOffice
+         Then subsidiary reports are rendered to the user as a Pro   ${reportsMustBeRenderedForUser(
+        proUserWithAccessToSubsidiary
       )}
     """
 }
@@ -243,12 +243,13 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
-      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToHeadOffice =>
+      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future.successful(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
-          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
+          haveReports(aReport(reportToProcessOnSubsidiary)) and
           not(
             haveReports(
+              aReport(reportToProcessOnHeadOffice),
               aReport(reportFromEmployeeOnHeadOffice),
               aReport(reportNAOnHeadOffice),
               aReport(reportNAOnHeadOfficeButVisible)
