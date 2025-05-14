@@ -133,6 +133,7 @@ object CompanyWithAccessAndCounts {
 
 sealed trait CompanyAccessKind extends EnumEntry
 
+// I think this enum CompanyAccessKind is not used in front and can be eliminated
 object CompanyAccessKind extends PlayEnum[CompanyAccessKind] {
 
   val values = findValues

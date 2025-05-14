@@ -38,8 +38,6 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def findBySiret(siret: SIRET): Future[Option[Company]]
 
-  def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]]
-
   def findHeadOffices(siren: List[SIREN], openOnly: Boolean): Future[List[Company]]
 
   def findBySirets(sirets: List[SIRET]): Future[List[Company]]
