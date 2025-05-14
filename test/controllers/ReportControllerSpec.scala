@@ -394,8 +394,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 reportsExportLimitMax = 30000,
                 reportsExportPdfLimitMax = 1000,
                 reportsListLimitMax = 10000,
-                enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation = false,
-                accessesMigrationTaskIsDryRun = true,
                 disableAuthAttemptRecording = false
               )
 
