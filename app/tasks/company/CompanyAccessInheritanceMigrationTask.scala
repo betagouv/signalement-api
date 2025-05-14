@@ -45,7 +45,7 @@ class CompanyAccessInheritanceMigrationTask(
 
   override def runTask(): Future[Unit] =
     for {
-      companies <- companyRepository.fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit = 5000)
+      companies <- companyRepository.fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit = 15000)
       _ = logger.info(s"company_access_inheritance_migration_task working on ${companies.length} companies")
       _ <- Future.sequence(companies.map {
         case company if company.isHeadOffice =>
