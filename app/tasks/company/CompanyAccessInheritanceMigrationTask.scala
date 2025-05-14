@@ -38,13 +38,14 @@ class CompanyAccessInheritanceMigrationTask(
       taskConfiguration
     ) {
 
-  override val taskSettings = FrequentTaskSettings(interval = 20.minutes)
+  // 5000 companies processed every 5 minutes, it should take ~3h25 to process all our companies
+  override val taskSettings = FrequentTaskSettings(interval = 5.minutes)
 
   val isDryRun = signalConsoConfiguration.accessesMigrationTaskIsDryRun
 
   override def runTask(): Future[Unit] =
     for {
-      companies <- companyRepository.fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit = 1000)
+      companies <- companyRepository.fetchCompaniesNotYetProcessedForAccessInheritanceMigration(limit = 5000)
       _ = logger.info(s"company_access_inheritance_migration_task working on ${companies.length} companies")
       _ <- Future.sequence(companies.map {
         case company if company.isHeadOffice =>
