@@ -86,9 +86,7 @@ class CompanyOrchestrator(
     for {
       (company, wasJustCreated) <- companyRepository.getOrCreate(companyCreation.siret, companyCreation.toCompany())
       _ =
-        if (
-          wasJustCreated && !company.isHeadOffice && signalConsoConfiguration.enableCopyAccessesOfHeadOfficeUponSubsidiaryCreation
-        ) {
+        if (wasJustCreated && !company.isHeadOffice) {
           companyAccessOrchestrator.duplicateAccessesFromHeadOffice(company)
         } else Future.unit
     } yield company

@@ -244,6 +244,8 @@ POST          /api/blacklisted-emails                                   controll
 DELETE        /api/blacklisted-emails/:uuid                             controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
 
 # page "Utilisateurs" dans sa version Pros
+# cette page a été supprimé (n'est plus affichée, mais est encore dans le code)
+# pour l'instant les endpoints ont juste été désactivés mais on pourrait les supprimer
 GET           /api/accesses/visible-users                               controllers.CompanyAccessController.visibleUsersToPro()
 POST          /api/accesses/visible-users/:email                        controllers.CompanyAccessController.inviteProToMyCompanies(email: String)
 DELETE        /api/accesses/visible-users/:userId                       controllers.CompanyAccessController.revokeProFromMyCompanies(userId: java.util.UUID)
