@@ -63,7 +63,7 @@ class CompanyAccessController(
         .map(count => Ok(Json.toJson(count)))
     }
 
-  def visibleUsersToPro = Act.secured.pros.allowImpersonation.async { implicit request =>
+  def visibleUsersToPro = Act.secured.disabled.async { implicit request =>
     for {
       companiesWithAccesses <- companiesVisibilityOrchestrator.fetchVisibleCompaniesList(request.identity)
       onlyAdminCompanies = companiesWithAccesses.filter(_.isAdmin)
@@ -78,7 +78,7 @@ class CompanyAccessController(
   }
 
   def inviteProToMyCompanies(email: String) =
-    Act.secured.pros.forbidImpersonation.async { implicit request =>
+    Act.secured.disabled.async { implicit request =>
       for {
         accesses  <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
         maybeUser <- userRepository.findByEmail(email)
@@ -93,7 +93,7 @@ class CompanyAccessController(
     }
 
   def revokeProFromMyCompanies(userId: UUID) =
-    Act.secured.pros.forbidImpersonation.async { implicit request =>
+    Act.secured.disabled.async { implicit request =>
       for {
         maybeUser             <- userRepository.get(userId)
         user                  <- maybeUser.liftTo[Future](UserNotFoundById(userId))

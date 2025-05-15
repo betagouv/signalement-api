@@ -108,6 +108,12 @@ abstract class BaseController(
         Future.successful(TooManyRequests(s"""Rate limit exceeded"""))
     }
 
+  private def disabledActionFilter[F[_] <: Request[_]] = new ActionFilter[F] {
+    override protected def executionContext = ec
+    override protected def filter[A](request: F[A]): Future[Option[Result]] =
+      Future.successful(Some(Gone))
+  }
+
   // We should always use our wrappers, to get our error handling
   // We must NOT bind Action to UnsecuredAction as it was before
   // It has not the same behaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
@@ -167,6 +173,8 @@ abstract class BaseController(
         val signalConso = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(SignalConso)))
         val proConnect  = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(ProConnect)))
       }
+      // to completely forbid an endpoint, without yet removing the code
+      val disabled = securedAction.andThen(disabledActionFilter)
 
     }
     val userAware = AskImpersonationDslOnMaybeUser(userAwareAction)
