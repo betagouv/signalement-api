@@ -236,6 +236,7 @@ POST          /api/account/admin/invitation                             controll
 # tab "Consos non validés"
 GET           /api/email-validation/search                              controllers.EmailValidationController.searchEmailValidations()
 POST          /api/email-validation/validate                            controllers.EmailValidationController.forceValidateEmail()
+DELETE        /api/remove-consent                                       controllers.EmailValidationController.removeConsent()
 # tab "Historique de connexion"
 GET           /api/auth-attempts                                        controllers.AuthController.listAuthAttempts(login: Option[String], offset: Option[Long], limit: Option[Int])
 # tab "Liste noire des consos"
