@@ -688,4 +688,11 @@ object AppError {
     override val titleForLogs: String = "report_download_limit_exceeded"
   }
 
+  final case class UserCannotBeInvited(login: String) extends ForbiddenError {
+    override val scErrorCode: String = "SC-0076"
+    override val title: String       = "Cannot invite this user"
+    override val details: String =
+      s"Utilisateur $login n’a pas accès à l’espace professionnel de SignalConso (site gouvernemental), essayez avec une autre adresse"
+    override val titleForLogs: String = "user_not_invited"
+  }
 }
