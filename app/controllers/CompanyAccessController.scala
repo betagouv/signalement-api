@@ -18,7 +18,6 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.user.UserRepositoryInterface
-import utils.Constants
 import utils.EmailAddress
 import utils.SIRET
 

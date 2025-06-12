@@ -273,7 +273,7 @@ class ProAccessTokenOrchestrator(
       level: AccessLevel
   ): Future[Unit] =
     for {
-      _ <- validateEmailAdress(email.value)
+      _    <- validateEmailAdress(email.value)
       list <- genInvitationTokens(companies, level, email)
       _ <- list match {
         case Nil => Future.unit
