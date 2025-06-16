@@ -59,7 +59,7 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
         } yield dd33Email ++ storeDDEmail.getOrElse(Seq.empty)
       case Some(ReportTag.ProduitDangereux) =>
         subscriptionRepository.getDirectionDepartementaleEmail("21")
-      case None => Future.successful(Seq.empty)
+      case _ => Future.successful(Seq.empty)
     }
 
   private def getDDEmails(report: Report): Future[Seq[EmailAddress]] =
