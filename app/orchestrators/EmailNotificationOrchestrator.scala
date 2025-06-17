@@ -43,8 +43,10 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
   private def extractPostalCode(s: String) =
     postalCodeRegex.findFirstIn(s)
 
-  private def computeSpecialRecipients(report: Report): Future[Seq[EmailAddress]] =
-    shouldNotifyDgccrf(report) match {
+  private def getDDEmails(report: Report) = {
+    val maybeTag = shouldNotifyDgccrf(report)
+
+    maybeTag match {
       // Cas spécial BauxPrecaire
       case Some(ReportTag.BauxPrecaire) =>
         for {
@@ -56,21 +58,19 @@ class EmailNotificationOrchestrator(mailService: MailService, subscriptionReposi
             .map(_.value)
             .flatMap(extractPostalCode)
             .traverse(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-        } yield dd33Email ++ storeDDEmail.getOrElse(Seq.empty)
-      case Some(ReportTag.ProduitDangereux) =>
-        subscriptionRepository.getDirectionDepartementaleEmail("21")
-      case _ => Future.successful(Seq.empty)
+          // En fallback, l'adresse de l'entreprise identifiée
+          companyDDEmail <- report.companyAddress.postalCode.traverse(postalCode =>
+            subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2))
+          )
+        } yield dd33Email ++ companyDDEmail.getOrElse(Seq.empty) ++ storeDDEmail.getOrElse(Seq.empty)
+      case Some(_) =>
+        // Cas nominal, on prend les emails de la DD de l'entreprise
+        report.companyAddress.postalCode
+          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+          .getOrElse(Future.successful(Seq.empty))
+      case None => Future.successful(Seq.empty)
     }
-
-  private def getDDEmails(report: Report): Future[Seq[EmailAddress]] =
-    for {
-      dgccrfDefaultRecipient <-
-        report.companyAddress.postalCode.traverse(postalCode =>
-          subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2))
-        )
-
-      specialRecipient <- computeSpecialRecipients(report)
-    } yield dgccrfDefaultRecipient.getOrElse(Seq.empty) ++ specialRecipient
+  }
 
   def notifyDgccrfIfNeeded(report: Report, subcategoryLabel: Option[SubcategoryLabel]): Future[Unit] =
     getNotificationEmail(report, subcategoryLabel) match {
