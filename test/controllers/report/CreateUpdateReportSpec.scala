@@ -240,7 +240,11 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
         report.copy(
           companyName = Some(reportCompanySameSiret.name),
           companyAddress = reportCompanySameSiret.address,
-          companySiret = Some(reportCompanySameSiret.siret)
+          companySiret = Some(reportCompanySameSiret.siret),
+          companyCommercialName = reportCompanySameSiret.commercialName,
+          companyEstablishmentCommercialName = reportCompanySameSiret.establishmentCommercialName,
+          companyBrand = reportCompanySameSiret.brand,
+          companyActivityCode = reportCompanySameSiret.activityCode
         )
       )}
     """
@@ -302,9 +306,21 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get
-    .copy(name = existingCompany.name, siret = existingCompany.siret, address = existingCompany.address)
+    .copy(name = existingCompany.name, siret = existingCompany.siret, address = existingCompany.address,
+      commercialName = existingCompany.commercialName,
+      establishmentCommercialName = existingCompany.establishmentCommercialName,
+      brand = existingCompany.brand,
+      activityCode = existingCompany.activityCode)
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
-    .copy(name = anotherCompany.name, siret = anotherCompany.siret, address = anotherCompany.address)
+    .copy(
+      name = anotherCompany.name,
+      siret = anotherCompany.siret,
+      address = anotherCompany.address,
+      commercialName = anotherCompany.commercialName,
+      establishmentCommercialName = anotherCompany.establishmentCommercialName,
+      brand = anotherCompany.brand,
+      activityCode = anotherCompany.activityCode
+    )
 
   override def setupData() =
     Await.result(
