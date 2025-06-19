@@ -260,7 +260,11 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
           companyAddress = reportCompanyAnotherSiret.address,
           companySiret = Some(reportCompanyAnotherSiret.siret),
           status = ReportStatus.TraitementEnCours,
-          expirationDate = report.creationDate.plus(Period.ofDays(60))
+          expirationDate = report.creationDate.plus(Period.ofDays(60)),
+          companyCommercialName = reportCompanyAnotherSiret.commercialName,
+          companyEstablishmentCommercialName = reportCompanyAnotherSiret.establishmentCommercialName,
+          companyBrand = reportCompanyAnotherSiret.brand,
+          companyActivityCode = reportCompanyAnotherSiret.activityCode
         )
       )}
     """
