@@ -655,7 +655,11 @@ class ReportOrchestrator(
           companyAddress = company.address,
           companySiret = Some(company.siret),
           status = newReportStatus,
-          expirationDate = newExpirationDate
+          expirationDate = newExpirationDate,
+          companyCommercialName = company.commercialName,
+          companyEstablishmentCommercialName = company.establishmentCommercialName,
+          companyBrand = company.brand,
+          companyActivityCode = company.activityCode
         )
       )
       // Notify the pro if needed
