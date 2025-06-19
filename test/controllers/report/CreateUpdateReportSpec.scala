@@ -306,11 +306,15 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get
-    .copy(name = existingCompany.name, siret = existingCompany.siret, address = existingCompany.address,
+    .copy(
+      name = existingCompany.name,
+      siret = existingCompany.siret,
+      address = existingCompany.address,
       commercialName = existingCompany.commercialName,
       establishmentCommercialName = existingCompany.establishmentCommercialName,
       brand = existingCompany.brand,
-      activityCode = existingCompany.activityCode)
+      activityCode = existingCompany.activityCode
+    )
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
     .copy(
       name = anotherCompany.name,
