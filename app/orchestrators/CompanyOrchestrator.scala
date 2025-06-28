@@ -85,7 +85,7 @@ class CompanyOrchestrator(
   def getOrCreate(companyCreation: CompanyCreation): Future[Company] =
     for {
       (company, wasJustCreated) <- companyRepository.getOrCreate(companyCreation.siret, companyCreation.toCompany())
-      _ =
+      _ <-
         if (wasJustCreated && !company.isHeadOffice) {
           companyAccessOrchestrator.duplicateAccessesFromHeadOffice(company)
         } else Future.unit
