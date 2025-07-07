@@ -25,9 +25,11 @@
 )
 
 <!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr">
     <head>
         <meta name="viewport" content="width=device-width" />
+        <meta name="author" content="SignalConso">
+        <meta name="creator" content="SignalConso">
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>@Messages("reportPDF.page.title", report.id)</title>
@@ -37,10 +39,10 @@
     <body>
         <div style="page-break-before: always;">
             <div class="logo-marianne">
-                <img src='@routes.Assets.versioned("images/logo-marianne.jpg")'/>
+                <img src='@routes.Assets.versioned("images/logo-marianne.jpg")' alt="logo Marianne"/>
             </div>
             <div class="logo-sc">
-                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' alt="logo SignalConso" height="1.7cm"/>
             </div>
             <div class="references">
                 <small>
@@ -234,7 +236,7 @@
                 }
             </div>
             <div class="footer text-center">
-                <img src='@routes.Assets.versioned("images/logo-ministere.jpg")'/>
+                <img src='@routes.Assets.versioned("images/logo-ministere.jpg")' alt="logo du ministère"/>
             </div>
         </div>
     </body>
