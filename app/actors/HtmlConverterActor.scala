@@ -6,7 +6,9 @@ import org.apache.pekko.actor.typed.DispatcherSelector
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.kernel.pdf.{DocumentProperties, PdfDocument, PdfWriter}
+import com.itextpdf.kernel.pdf.DocumentProperties
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
 import play.api.Logger
 
 import java.io.InputStream
@@ -18,17 +20,13 @@ import scala.util.Success
 
 object HtmlConverterActor {
 
-  def convertToPdf(htmlStream: InputStream, pdfStream: OutputStream, converterProperties: ConverterProperties): Unit = {
+  def convertToPdf(htmlStream: InputStream, pdfStream: OutputStream, converterProperties: ConverterProperties): Unit =
     convertToPdf(htmlStream, new PdfWriter(pdfStream), converterProperties)
-  }
 
   def convertToPdf(htmlStream: InputStream, pdfWriter: PdfWriter, converterProperties: ConverterProperties): Unit = {
     val document = new PdfDocument(pdfWriter, new DocumentProperties().setEventCountingMetaInfo(new IMetaInfo {}))
     document.setTagged()
-    HtmlConverter.convertToPdf(
-      htmlStream,
-      document,
-      converterProperties)
+    HtmlConverter.convertToPdf(htmlStream, document, converterProperties)
   }
 
   sealed trait ConvertCommand
