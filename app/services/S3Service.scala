@@ -9,11 +9,10 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
 import java.nio.file.Path
-import com.amazonaws.HttpMethod
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
-import com.amazonaws.services.s3.model.ResponseHeaderOverrides
-import config.BucketConfiguration
+import java.time.Duration
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import org.apache.pekko.stream.connectors.s3.MultipartUploadResult
 import org.apache.pekko.stream.connectors.s3.ObjectMetadata
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
@@ -22,13 +21,11 @@ import play.api.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class S3Service(awsS3Client: AmazonS3)(implicit
+class S3Service(bucketName: String)(implicit
     val materializer: Materializer,
-    val executionContext: ExecutionContext,
-    val bucketConfiguration: BucketConfiguration
+    val executionContext: ExecutionContext
 ) extends S3ServiceInterface {
-  val logger: Logger           = Logger(this.getClass)
-  private[this] val bucketName = bucketConfiguration.amazonBucketName
+  val logger: Logger = Logger(this.getClass)
 
   private val pekkoS3Client = S3
 
@@ -58,17 +55,24 @@ class S3Service(awsS3Client: AmazonS3)(implicit
   override def delete(bucketKey: String): Future[Done] =
     pekkoS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
-  override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
-    val headerOverrides = new ResponseHeaderOverrides()
-    // Force attachment to be download by browser
-    headerOverrides.setContentDisposition("attachment;")
-    // See https://docs.aws.amazon.com/AmazonS3/latest/dev/ShareObjectPreSignedURLJavaSDK.html
-    val expiration = new java.util.Date
-    expiration.setTime(expiration.getTime + 1000 * 60 * 60)
-    val generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, bucketKey)
-      .withMethod(method)
-      .withResponseHeaders(headerOverrides)
-      .withExpiration(expiration)
-    awsS3Client.generatePresignedUrl(generatePresignedUrlRequest).toString
+  override def getSignedUrl(bucketKey: String): String = {
+    val getObjectRequest = GetObjectRequest
+      .builder()
+      .responseContentDisposition("attachment;")
+      .bucket(bucketName)
+      .key(bucketKey)
+      .build()
+
+    val presignRequest = GetObjectPresignRequest
+      .builder()
+      .signatureDuration(Duration.ofHours(1))
+      .getObjectRequest(getObjectRequest)
+      .build()
+
+    val presigner = S3Presigner
+      .builder()
+      .build()
+
+    presigner.presignGetObject(presignRequest).url().toString
   }
 }

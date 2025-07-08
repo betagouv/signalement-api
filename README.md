@@ -56,9 +56,10 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 | SKIP_REPORT_EMAIL_VALIDATION              | Ignorer la validation d'email consommateur lors d'un dépôt de signalement, à utiliser en cas de problème avec le provider email                                 | false                            |
 | EMAIL_PROVIDERS_BLOCKLIST                 | Ne valide pas les emails avec les providers listés dans cette variable                                                                                          |                                  |
 | OUTBOUND_EMAIL_FILTER_REGEX               | Filter l'envoi d'email sortant (utilisé sur demo / local )                                                                                                      | ".\*"                            |
-| S3_ACCESS_KEY_ID                          | ID du compte S3 utilisé                                                                                                                                         |                                  |
-| S3_SECRET_ACCESS_KEY                      | SECRET du compte S3 utilisé                                                                                                                                     |                                  |
+| AWS_ACCESS_KEY_ID                         | ID du compte S3 utilisé                                                                                                                                         |                                  |
+| AWS_SECRET_ACCESS_KEY                     | SECRET du compte S3 utilisé                                                                                                                                     |                                  |
 | S3_ENDPOINT_URL                           | host du bucket                                                                                                                                                  |                                  |
+| AWS_ENDPOINT_URL                          | host du bucket                                                                                                                                                  |                                  |
 | BUCKETS_REPORT                            | nom du bucket                                                                                                                                                   |                                  |
 | SIGNER_KEY                                | Secret utlisé pour forger un cookie, une modification invalidera les cookies courants                                                                           |                                  |
 | CRYPTER_KEY                               | clé utlisée pour forger un cookie, une modification invalidera les cookies courants                                                                             |                                  |
@@ -133,8 +134,8 @@ function scsbt {
   OUTBOUND_EMAIL_FILTER_REGEX="beta?.gouv|@.*gouv.fr" \
   SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE="false" \
   TMP_DIR="/tmp/" \
-  S3_ACCESS_KEY_ID="XXX" \
-  S3_SECRET_ACCESS_KEY="XXX" \
+  AWS_ACCESS_KEY_ID="XXX" \
+  AWS_SECRET_ACCESS_KEY="XXX" \
   POSTGRESQL_ADDON_URI="XXX" \
   ETABLISSEMENT_API_URL="http://localhost:9002/api/companies/search" \
   ETABLISSEMENT_API_KEY="XXX" \
@@ -172,8 +173,8 @@ function scsbt
   set -x OUTBOUND_EMAIL_FILTER_REGEX "beta?.gouv|@.*gouv.fr"
   set -x SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE "false"
   set -x TMP_DIR "/tmp/"
-  set -x S3_ACCESS_KEY_ID "XXX"
-  set -x S3_SECRET_ACCESS_KEY "XXX"
+  set -x AWS_ACCESS_KEY_ID "XXX"
+  set -x AWS_SECRET_ACCESS_KEY "XXX"
   set -x POSTGRESQL_ADDON_URI "XXX"
   set -x ETABLISSEMENT_API_URL "http://localhost:9002/api/companies/search"
   set -x ETABLISSEMENT_API_KEY "XXX"
