@@ -4,11 +4,6 @@ import _root_.controllers._
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
 import authentication._
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
@@ -265,27 +260,7 @@ class SignalConsoComponents(
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
-  implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
-    keyId = configuration.get[String]("pekko.connectors.s3.aws.credentials.access-key-id"),
-    secretKey = configuration.get[String]("pekko.connectors.s3.aws.credentials.secret-access-key"),
-    amazonBucketName = applicationConfiguration.amazonBucketName
-  )
-
-  private val awsS3Client: AmazonS3 = AmazonS3ClientBuilder
-    .standard()
-    .withEndpointConfiguration(
-      new EndpointConfiguration("https://cellar-c2.services.clever-cloud.com", "us-east-1")
-    )
-    .withCredentials(
-      new AWSStaticCredentialsProvider(
-        new BasicAWSCredentials(
-          bucketConfiguration.keyId,
-          bucketConfiguration.secretKey
-        )
-      )
-    )
-    .build()
-  lazy val s3Service: S3ServiceInterface = new S3Service(awsS3Client)
+  lazy val s3Service: S3ServiceInterface = new S3Service(applicationConfiguration.amazonBucketName)
 
   val albertService = new AlbertService(applicationConfiguration.albert)
 
