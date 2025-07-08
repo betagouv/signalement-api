@@ -20,7 +20,7 @@ object Dependencies {
     lazy val catsCoreVersion           = "2.13.0"
     lazy val pureConfigVersion         = "0.17.8"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version       = "1.12.780"
+    lazy val awsJavaSdkS3Version       = "2.31.77"
     lazy val jacksonModuleScalaVersion = "2.18.2"
     lazy val postgresqlVersion         = "42.7.5"
     lazy val refinedVersion            = "0.11.3"
@@ -69,7 +69,7 @@ object Dependencies {
     val pekkoHttpXml       = "org.apache.pekko"      %% "pekko-http-xml"        % Versions.pekkoHttpVersion
     val jbcrypt            = "org.mindrot"            % "jbcrypt"               % "0.4"
     val enumeratumPlay     = "com.beachape"          %% "enumeratum-play"       % Versions.enumeratumVersion
-    val awsJavaSdkS3       = "com.amazonaws"          % "aws-java-sdk-s3"       % Versions.awsJavaSdkS3Version
+    val awsJavaSdkS3       = "software.amazon.awssdk"          % "s3"       % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql"       % "postgresql"  % Versions.postgresqlVersion

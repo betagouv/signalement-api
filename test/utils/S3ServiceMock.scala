@@ -5,7 +5,6 @@ import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.amazonaws.HttpMethod
 import org.apache.pekko.stream.connectors.s3.MultipartUploadResult
 import org.apache.pekko.stream.connectors.s3.ObjectMetadata
 import services.S3ServiceInterface
@@ -27,7 +26,7 @@ class S3ServiceMock(atomicQueue: ConcurrentLinkedQueue[String] = new ConcurrentL
     Done
   }
 
-  override def getSignedUrl(bucketKey: String, method: HttpMethod): String = ???
+  override def getSignedUrl(bucketKey: String): String = ???
 
   override def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] = ???
 
