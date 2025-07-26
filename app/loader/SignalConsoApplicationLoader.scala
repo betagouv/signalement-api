@@ -217,7 +217,8 @@ class SignalConsoComponents(
   def companyRepository: CompanyRepositoryInterface                     = new CompanyRepository(dbConfig)
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
-  val consumerRepository: ConsumerRepositoryInterface               = new ConsumerRepository(dbConfig)
+  val consumerRepository: ConsumerRepositoryInterface =
+    new ConsumerRepository(dbConfig)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
 
   def eventRepository: EventRepositoryInterface                   = new EventRepository(dbConfig)
@@ -256,7 +257,11 @@ class SignalConsoComponents(
 
   val cookieAuthenticator =
     new CookieAuthenticator(signer, crypter, applicationConfiguration.cookie, userRepository)
-  val apiKeyAuthenticator = new APIKeyAuthenticator(passwordHasherRegistry, consumerRepository)
+  val apiKeyAuthenticator = new APIKeyAuthenticator(
+    passwordHasherRegistry,
+    consumerRepository,
+    applicationConfiguration.apiConsumerTokenExpirationDelayInMonths
+  )
 
   val credentialsProvider = new CredentialsProvider(passwordHasherRegistry, userRepository)
 
