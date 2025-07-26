@@ -44,7 +44,7 @@ class APIKeyAuthenticator(
   }
 
   private def validateExpiration(c: Consumer) =
-    if (c.creationDate.isBefore(OffsetDateTime.now().minusMonths(apiConsumerTokenExpirationDelayInMonths))) {
+    if (c.creationDate.isBefore(OffsetDateTime.now().minusMonths(apiConsumerTokenExpirationDelayInMonths.toLong))) {
       Left(BrokenAuthError("Expired credentials, please contact the support to generate a new API Key."))
     } else {
       logger.info(s"Access to the API with token ${c.name}.")
