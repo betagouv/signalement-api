@@ -205,7 +205,7 @@ class ProbeOrchestrator(
         "Nombre de premières lectures d'un signalement par les pros",
         runInterval = 1.hour,
         evaluationPeriod = 6.hours,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(700)),
+        expectedRange = ExpectedRange(min = Some(1), max = Some(1200)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_READING_BY_PRO, dateTime, evaluationPeriod),
         onlyRunInBusyHours = true
       ),
@@ -293,7 +293,7 @@ class ProbeOrchestrator(
         "Nombre d'uploads de fichiers par des pros",
         runInterval = 6.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(250)),
+        expectedRange = ExpectedRange(min = Some(1), max = Some(500)),
         query = (dateTime, evaluationPeriod) =>
           reportFileRepository
             .count(
