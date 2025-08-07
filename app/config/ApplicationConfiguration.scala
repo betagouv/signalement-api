@@ -18,5 +18,6 @@ case class ApplicationConfiguration(
     proConnect: ProConnectConfiguration,
     socialBlade: SocialBladeClientConfiguration,
     websiteApi: WebsiteApiConfiguration,
-    albert: AlbertConfiguration
+    albert: AlbertConfiguration,
+    apiConsumerTokenExpirationDelayInMonths: Int
 )
