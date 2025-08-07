@@ -1,50 +1,64 @@
 package authentication
 
+import cats.implicits.toTraverseOps
 import controllers.error.AppError.BrokenAuthError
 import models.Consumer
 import play.api.Logger
 import play.api.mvc.Request
 import repositories.consumer.ConsumerRepositoryInterface
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class APIKeyAuthenticator(
     passwordHasherRegistry: PasswordHasherRegistry,
-    consumerRepository: ConsumerRepositoryInterface
+    consumerRepository: ConsumerRepositoryInterface,
+    apiConsumerTokenExpirationDelayInMonths: Int
 )(implicit ec: ExecutionContext)
     extends Authenticator[Consumer] {
 
   val logger: Logger = Logger(this.getClass)
 
+  private val XApiKey = "X-Api-Key"
+
   override def authenticate[B](request: Request[B]): Future[Either[BrokenAuthError, Option[Consumer]]] = {
     val hasher         = passwordHasherRegistry.current
-    val headerValueOpt = request.headers.get("X-Api-Key")
+    val headerValueOpt = request.headers.get(XApiKey)
 
     headerValueOpt
-      .map { headerValue =>
-        consumerRepository.getAll().map { consumers =>
-          val keyMatchOpt = consumers.find { c =>
-            hasher.matches(Credentials.toPasswordInfo(c.apiKey), headerValue)
-          }
-          keyMatchOpt match {
-            case Some(consumer) =>
-              logger.info(s"Access to the API with token ${consumer.name}.")
-              Some(consumer)
-            case _ =>
-              logger.error(
-                s"Access denied to the external API, invalid X-Api-Key header when calling ${request.uri}."
+      .traverse { headerValue =>
+        consumerRepository
+          .getAll()
+          .map(
+            _.find(c => hasher.matches(Credentials.toPasswordInfo(c.apiKey), headerValue))
+              .toRight(
+                BrokenAuthError(
+                  s"Access denied to the external API, invalid $XApiKey header when calling ${request.uri}."
+                )
               )
-              None
-          }
-        }
+              .flatMap(validateExpiration)
+          )
       }
-      .getOrElse {
-        logger.error(
-          s"Access denied to the external API, missing X-Api-Key header when calling ${request.uri}."
-        )
-        Future.successful(None)
-      }
-      .map(Right(_))
+      .map(handleMissingHeader(request, _))
   }
+
+  private def validateExpiration(c: Consumer) =
+    if (c.creationDate.isBefore(OffsetDateTime.now().minusMonths(apiConsumerTokenExpirationDelayInMonths.toLong))) {
+      Left(BrokenAuthError("Expired credentials, please contact the support to generate a new API Key."))
+    } else {
+      logger.info(s"Access to the API with token ${c.name}.")
+      Right(c)
+    }
+
+  private def handleMissingHeader[B](request: Request[B], maybeHeader: Option[Either[BrokenAuthError, Consumer]]) =
+    maybeHeader.map(_.map(Some(_))).getOrElse {
+      logger.error(
+        s"Access denied to the external API, missing $XApiKey header when calling ${request.uri}."
+      )
+      Left(
+        BrokenAuthError(s"Access denied to the external API, missing $XApiKey header when calling ${request.uri}.")
+      )
+    }
+
 }
