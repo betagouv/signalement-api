@@ -4,6 +4,7 @@ import authentication.PasswordHasherRegistry
 import controllers.error.AppError.EmailAlreadyExist
 import models.UserRole.DGAL
 import models.UserRole.DGCCRF
+import models.UserRole.SSMVM
 import models._
 import play.api.Logger
 import repositories.CRUDRepository
@@ -41,7 +42,9 @@ class UserRepository(
     db
       .run(
         table
-          .filter(user => user.role === DGCCRF.entryName || user.role === DGAL.entryName)
+          .filter(user =>
+            user.role === DGCCRF.entryName || user.role === DGAL.entryName || user.role === SSMVM.entryName
+          )
           .filter(_.lastEmailValidation <= expirationDate)
           .to[List]
           .result
@@ -53,7 +56,7 @@ class UserRepository(
   ): Future[List[(User, Option[Int])]] =
     db.run(
       UserTable.table
-        .filter(user => user.role === DGCCRF.entryName || user.role === DGAL.entryName)
+        .filter(user => user.role === DGCCRF.entryName || user.role === DGAL.entryName || user.role === SSMVM.entryName)
         .filter(_.lastEmailValidation <= reminderDate)
         .filter(_.lastEmailValidation > expirationDate)
         .joinLeft(
@@ -61,6 +64,7 @@ class UserRepository(
             .filter(_.action === ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT.value)
             .filter(user =>
               user.eventType === EventType.DGCCRF.entryName || user.eventType === EventType.DGAL.entryName
+                || user.eventType === EventType.SSMVM.entryName
             )
             .filter(_.userId.isDefined)
             .groupBy(_.userId)

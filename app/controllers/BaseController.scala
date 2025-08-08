@@ -212,7 +212,7 @@ abstract class BaseCompanyController(
             request.identity.userRole match {
               case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.DGCCRF =>
                 Future.successful(Some(AccessLevel.ADMIN))
-              case UserRole.DGAL | UserRole.Professionnel =>
+              case UserRole.DGAL | UserRole.SSMVM | UserRole.Professionnel =>
                 company
                   .map(c =>
                     companiesVisibilityOrchestrator

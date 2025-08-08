@@ -8,6 +8,7 @@ import models.User
 import models.UserRole
 import models.report.PreFilter
 import models.report.Report
+import models.report.ReportCategory
 import models.report.ReportFile
 import models.report.ReportFilter
 import repositories.report.ReportRepositoryInterface
@@ -137,6 +138,16 @@ object ReportNotificationTask {
                                                               PreFilter.DGALFilter.tags
                                                                 .intersect(report.tags)
                                                                 .nonEmpty)
+            case Some(UserRole.SSMVM) =>
+              report.category == ReportCategory.VoitureVehiculeVelo.entryName &&
+              (
+                report.subcategories.startsWith(
+                  List("Reparation_revision_vente_de_vehicule", "Probleme_avec_les_airbags_Takata")
+                ) ||
+                  report.subcategories.startsWith(
+                    List("Reparation_revision_vente_de_vehicule", "Prestation_mal_realisee_ou_pas_realisee")
+                  )
+              )
             case Some(UserRole.DGCCRF)        => true
             case Some(UserRole.Admin)         => true
             case Some(UserRole.SuperAdmin)    => true

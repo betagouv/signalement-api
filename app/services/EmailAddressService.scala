@@ -5,6 +5,7 @@ object EmailAddressService {
   private val adminEmailRegexp  = """.+\.betagouv(\+.+)?@gmail\.com|.+@beta\.gouv\.fr|.+@dgccrf\.finances\.gouv\.fr""".r
   private val dgccrfEmailRegexp = """.+\.gouv\.fr""".r
   private val dgalEmailRegexp   = """.+\.gouv\.fr""".r
+  private val ssmvmEmailRegexp  = """.+\.gouv\.fr""".r
 
   def isEmailAcceptableForAdminAccount(emailAddress: String): Boolean =
     adminEmailRegexp.matches(emailAddress)
@@ -14,6 +15,9 @@ object EmailAddressService {
 
   def isEmailAcceptableForDgalAccount(emailAddress: String): Boolean =
     dgalEmailRegexp.matches(emailAddress)
+
+  def isEmailAcceptableForSSMVMAccount(emailAddress: String): Boolean =
+    ssmvmEmailRegexp.matches(emailAddress)
 
   def isAgentEmail(email: String) =
     isEmailAcceptableForDgalAccount(email) || isEmailAcceptableForDgccrfAccount(email)

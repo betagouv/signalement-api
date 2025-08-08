@@ -65,7 +65,9 @@ class InactiveDgccrfAccountReminderTask(
           None,
           Some(user.id),
           now,
-          if (user.userRole == UserRole.DGAL) EventType.DGAL else EventType.DGCCRF,
+          if (user.userRole == UserRole.DGAL) EventType.DGAL
+          else if (user.userRole == UserRole.SSMVM) EventType.SSMVM
+          else EventType.DGCCRF,
           ActionEvent.EMAIL_INACTIVE_AGENT_ACCOUNT,
           Json.obj(
             "lastEmailValidation" -> user.lastEmailValidation,

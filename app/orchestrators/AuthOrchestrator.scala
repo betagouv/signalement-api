@@ -147,7 +147,7 @@ class AuthOrchestrator(
     maybeUserToImpersonate <- userRepository.findByEmail(userEmail.value)
     userToImpersonate      <- maybeUserToImpersonate.liftTo[Future](UserNotFound(userEmail.value))
     _ <- userToImpersonate.userRole match {
-      case UserRole.Professionnel | UserRole.DGAL | UserRole.DGCCRF => Future.unit
+      case UserRole.Professionnel | UserRole.DGAL | UserRole.SSMVM | UserRole.DGCCRF => Future.unit
       case role => Future.failed(BrokenAuthError(s"Connecting as $role is forbidden"))
     }
     cookie <- authenticator.initSignalConsoCookie(userEmail, Some(request.identity.email)).liftTo[Future]
@@ -209,7 +209,7 @@ class AuthOrchestrator(
   } yield ()
 
   private def validateAgentAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
-    case UserRole.DGCCRF | UserRole.DGAL if needsEmailRevalidation(user) =>
+    case UserRole.DGCCRF | UserRole.DGAL | UserRole.SSMVM if needsEmailRevalidation(user) =>
       accessesOrchestrator
         .sendEmailValidation(user)
         .flatMap(_ => throw DGCCRFUserEmailValidationExpired(user.email.value))

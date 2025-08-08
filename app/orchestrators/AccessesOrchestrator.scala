@@ -16,6 +16,7 @@ import models.token.TokenKind.AdminAccount
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ReadOnlyAdminAccount
+import models.token.TokenKind.SSMVMAccount
 import models.token.TokenKind.SuperAdminAccount
 import models.token.TokenKind.UpdateEmail
 import models.token.TokenKind.ValidateEmail
@@ -50,6 +51,7 @@ class AccessesOrchestrator(
   implicit val timeout: org.apache.pekko.util.Timeout = 5.seconds
 
   private def tokenKindToUserRole(tokenKind: TokenKind) = tokenKind match {
+    case TokenKind.SSMVMAccount  => Some(UserRole.SSMVM)
     case TokenKind.DGALAccount   => Some(UserRole.DGAL)
     case TokenKind.DGCCRFAccount => Some(UserRole.DGCCRF)
     case _                       => None
@@ -65,7 +67,7 @@ class AccessesOrchestrator(
       )
       _ <- userOrchestrator.find(emailedTo).ensure(EmailAlreadyExist)(user => user.isEmpty)
       _ <- user.userRole match {
-        case UserRole.DGAL | UserRole.DGCCRF =>
+        case UserRole.DGAL | UserRole.SSMVM | UserRole.DGCCRF =>
           accessTokenRepository.validateEmail(updateEmailToken, user)
         case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.Professionnel =>
           accessTokenRepository.invalidateToken(updateEmailToken)
@@ -83,6 +85,8 @@ class AccessesOrchestrator(
         EmailAddressService.isEmailAcceptableForDgccrfAccount _
       case UserRole.DGAL =>
         EmailAddressService.isEmailAcceptableForDgalAccount _
+      case UserRole.SSMVM =>
+        EmailAddressService.isEmailAcceptableForSSMVMAccount _
       case UserRole.Professionnel => (_: String) => true
     }
 
@@ -167,6 +171,7 @@ class AccessesOrchestrator(
       .collect {
         case t if t.kind == TokenKind.DGCCRFAccount        => (t, UserRole.DGCCRF)
         case t if t.kind == TokenKind.DGALAccount          => (t, UserRole.DGAL)
+        case t if t.kind == TokenKind.SSMVMAccount         => (t, UserRole.SSMVM)
         case t if t.kind == TokenKind.SuperAdminAccount    => (t, UserRole.SuperAdmin)
         case t if t.kind == TokenKind.AdminAccount         => (t, UserRole.Admin)
         case t if t.kind == TokenKind.ReadOnlyAdminAccount => (t, UserRole.ReadOnlyAdmin)
@@ -229,6 +234,12 @@ class AccessesOrchestrator(
           _   <- validateEmails(parsedEmails, EmailAddressService.isEmailAcceptableForDgalAccount)
           res <- Future.sequence(parsedEmails.map(sendDGALInvitation))
         } yield res
+      case UserRole.SSMVM =>
+        val parsedEmails = parseEmails(emails)
+        for {
+          _   <- validateEmails(parsedEmails, EmailAddressService.isEmailAcceptableForSSMVMAccount)
+          res <- Future.sequence(parsedEmails.map(sendSSMVMInvitation))
+        } yield res
       case _ => Future.failed(WrongUserRole(role))
     }
 
@@ -246,6 +257,9 @@ class AccessesOrchestrator(
 
   def sendDGALInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGALAccount)
+
+  def sendSSMVMInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrAgentInvitation(email, TokenKind.SSMVMAccount)
 
   def sendSuperAdminInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.SuperAdminAccount)
@@ -272,6 +286,13 @@ class AccessesOrchestrator(
           DgccrfAgentAccessLink.Email("DGAL") _,
           frontRoute.dashboard.Agent.register _
         )
+      case SSMVMAccount =>
+        (
+          EmailAddressService.isEmailAcceptableForSSMVMAccount _,
+          tokenConfiguration.dgccrfJoinDuration,
+          DgccrfAgentAccessLink.Email("SSMVM") _,
+          frontRoute.dashboard.Agent.register _
+        )
       case AdminAccount | SuperAdminAccount | ReadOnlyAdminAccount =>
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
@@ -295,7 +316,8 @@ class AccessesOrchestrator(
           existingTokens.find(t =>
             t.kind == SuperAdminAccount || t.kind == AdminAccount || t.kind == ReadOnlyAdminAccount
           )
-        case DGALAccount | DGCCRFAccount => existingTokens.find(t => t.kind == DGCCRFAccount || t.kind == DGALAccount)
+        case SSMVMAccount | DGALAccount | DGCCRFAccount =>
+          existingTokens.find(t => t.kind == DGCCRFAccount || t.kind == DGALAccount || t.kind == SSMVMAccount)
       }
       token <-
         existingToken match {
@@ -371,9 +393,9 @@ class AccessesOrchestrator(
     user <- userOrchestrator
       .findOrError(email)
       .ensure {
-        logger.error("Cannot revalidate user with role different from DGCCRF or DGAL")
+        logger.error("Cannot revalidate user with role different from DGCCRF or DGAL or SSMVM")
         CantPerformAction
-      }(user => user.userRole == UserRole.DGCCRF || user.userRole == UserRole.DGAL)
+      }(user => user.userRole == UserRole.DGCCRF || user.userRole == UserRole.DGAL || user.userRole == UserRole.SSMVM)
     _ = logger.debug(s"Validating agent user email")
     _ <-
       if (emailValidationToken.nonEmpty) {

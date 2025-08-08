@@ -349,6 +349,19 @@ object ReportTable {
     case Some(UserRole.ReadOnlyAdmin) => table
     case Some(UserRole.DGCCRF)        => table
     case Some(UserRole.DGAL)          => orFilter(table, PreFilter.DGALFilter)
+    case Some(UserRole.SSMVM) =>
+      table
+        .filter(_.category === ReportCategory.VoitureVehiculeVelo.entryName)
+        .filter(report =>
+          report.subcategories @> List(
+            "Reparation_revision_vente_de_vehicule",
+            "Probleme_avec_les_airbags_Takata"
+          ).bind ||
+            report.subcategories @> List(
+              "Reparation_revision_vente_de_vehicule",
+              "Prestation_mal_realisee_ou_pas_realisee"
+            ).bind
+        )
     case Some(UserRole.Professionnel) =>
       table
         .filter(_.visibleToPro === true)

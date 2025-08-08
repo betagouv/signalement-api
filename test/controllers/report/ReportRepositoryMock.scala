@@ -120,6 +120,7 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       case Some(UserRole.ReadOnlyAdmin) => database.get(id)
       case Some(UserRole.DGCCRF)        => database.get(id)
       case Some(UserRole.DGAL)          => database.get(id)
+      case Some(UserRole.SSMVM)         => database.get(id)
       case Some(UserRole.Professionnel) => database.get(id).filter(_.visibleToPro)
       case None                         => database.get(id)
     }

@@ -11,6 +11,7 @@ object UserRole extends PlayEnum[UserRole] {
   final case object ReadOnlyAdmin extends UserRole
   final case object DGCCRF        extends UserRole
   final case object DGAL          extends UserRole
+  final case object SSMVM         extends UserRole
   final case object Professionnel extends UserRole
 
   override def values: IndexedSeq[UserRole] = findValues
@@ -18,8 +19,8 @@ object UserRole extends PlayEnum[UserRole] {
   val Admins                     = List(SuperAdmin, Admin)
   val AdminsAndReadOnly          = ReadOnlyAdmin +: Admins
   val AdminsAndReadOnlyAndCCRF   = DGCCRF +: AdminsAndReadOnly
-  val AdminsAndReadOnlyAndAgents = DGAL +: AdminsAndReadOnlyAndCCRF
-  val Agents                     = List(DGAL, DGCCRF)
+  val AdminsAndReadOnlyAndAgents = SSMVM +: DGAL +: AdminsAndReadOnlyAndCCRF
+  val Agents                     = List(DGAL, DGCCRF, SSMVM)
   val AdminsAndAgents            = Admins ++ Agents
 
   def isAdminOrAgent(userRole: UserRole) = AdminsAndReadOnlyAndAgents.contains(userRole)

@@ -39,7 +39,8 @@ class VisibleReportOrchestrator(
       )
       visibleReportExtra <-
         user.userRole match {
-          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
+          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SSMVM | UserRole.SuperAdmin | UserRole.Admin |
+              UserRole.ReadOnlyAdmin =>
             Future.successful(reportExtra)
           case Professionnel =>
             companiesVisibilityOrchestrator
@@ -61,7 +62,8 @@ class VisibleReportOrchestrator(
       report <- reportRepository.getFor(Some(user), reportId)
       visibleReport <-
         user.userRole match {
-          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin =>
+          case UserRole.DGCCRF | UserRole.DGAL | UserRole.SSMVM | UserRole.SuperAdmin | UserRole.Admin |
+              UserRole.ReadOnlyAdmin =>
             Future.successful(report)
           case Professionnel =>
             companiesVisibilityOrchestrator

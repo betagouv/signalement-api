@@ -61,6 +61,12 @@ class AccountController(
           request
             .parseBody[InvitationRequest]()
             .flatMap(invitationRequest => accessesOrchestrator.sendDGALInvitation(invitationRequest.email).map(_ => Ok))
+        case UserRole.SSMVM =>
+          request
+            .parseBody[InvitationRequest]()
+            .flatMap(invitationRequest =>
+              accessesOrchestrator.sendSSMVMInvitation(invitationRequest.email).map(_ => Ok)
+            )
         case _ => Future.failed(error.AppError.WrongUserRole(role))
       }
     }
@@ -98,7 +104,7 @@ class AccountController(
   def fetchPendingAgent(role: Option[UserRole]) =
     Act.secured.adminsAndReadonly.async { _ =>
       role match {
-        case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | None =>
+        case Some(UserRole.DGCCRF) | Some(UserRole.DGAL) | Some(UserRole.SSMVM) | None =>
           accessesOrchestrator
             .listAgentPendingTokens(role)
             .map(tokens => Ok(Json.toJson(tokens)))
@@ -109,7 +115,7 @@ class AccountController(
   def fetchAgentUsers =
     Act.secured.adminsAndReadonly.async { _ =>
       for {
-        users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL))
+        users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.DGAL, UserRole.SSMVM))
       } yield Ok(Json.toJson(users))
     }
 

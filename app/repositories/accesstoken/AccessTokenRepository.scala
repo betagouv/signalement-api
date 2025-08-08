@@ -10,6 +10,7 @@ import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGALAccount
 import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.SSMVMAccount
 import models.token.TokenKind.UpdateEmail
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
@@ -159,7 +160,9 @@ class AccessTokenRepository(
       table
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
-        .filter(t => t.kind === (DGCCRFAccount: TokenKind) || t.kind === (DGALAccount: TokenKind))
+        .filter(t =>
+          t.kind === (DGCCRFAccount: TokenKind) || t.kind === (DGALAccount: TokenKind) || t.kind === (SSMVMAccount: TokenKind)
+        )
         .to[List]
         .result
     )
