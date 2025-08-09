@@ -1,10 +1,14 @@
 package actors
 
+import com.itextpdf.commons.actions.contexts.IMetaInfo
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.DispatcherSelector
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
+import com.itextpdf.kernel.pdf.DocumentProperties
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
 import play.api.Logger
 
 import java.io.InputStream
@@ -15,6 +19,16 @@ import scala.util.Failure
 import scala.util.Success
 
 object HtmlConverterActor {
+
+  def convertToPdf(htmlStream: InputStream, pdfStream: OutputStream, converterProperties: ConverterProperties): Unit =
+    convertToPdf(htmlStream, new PdfWriter(pdfStream), converterProperties)
+
+  def convertToPdf(htmlStream: InputStream, pdfWriter: PdfWriter, converterProperties: ConverterProperties): Unit = {
+    val document = new PdfDocument(pdfWriter, new DocumentProperties().setEventCountingMetaInfo(new IMetaInfo {}))
+    document.setTagged()
+    HtmlConverter.convertToPdf(htmlStream, document, converterProperties)
+  }
+
   sealed trait ConvertCommand
   case class Convert(
       htmlStream: InputStream,
@@ -35,7 +49,7 @@ object HtmlConverterActor {
         case Convert(htmlStream, outputStream, converterProperties) =>
           logger.debug("Begin html conversion")
           val job = Future {
-            HtmlConverter.convertToPdf(htmlStream, outputStream, converterProperties)
+            convertToPdf(htmlStream, outputStream, converterProperties)
           }
           context.pipeToSelf(job) {
             case Success(_) => ConvertSuccess(outputStream)
