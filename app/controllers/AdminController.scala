@@ -307,7 +307,7 @@ class AdminController(
     }
 
   def generateAlbertReportAnalysis(reportId: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async { _ =>
       for {
         maybeReport          <- reportRepository.get(reportId)
         report               <- maybeReport.liftTo[Future](AppError.ReportNotFound(reportId))
@@ -329,7 +329,7 @@ class AdminController(
     }
 
   def getAlbertReportAnalysis(reportId: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { _ =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async { _ =>
       albertClassificationRepository
         .getByReportId(reportId)
         .map(maybeClassification => Ok(Json.toJson(maybeClassification)))

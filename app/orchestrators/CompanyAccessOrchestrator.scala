@@ -11,6 +11,7 @@ import models.UserRole.DGAL
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
 import models.UserRole.ReadOnlyAdmin
+import models.UserRole.SSMVM
 import models.UserRole.SuperAdmin
 import models.access.UserWithAccessLevel.toApi
 import models.access.ActivationLinkRequest
@@ -171,7 +172,7 @@ class CompanyAccessOrchestrator(
       case (_, Professionnel) =>
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false) }
-      case (_, DGAL) =>
+      case (_, DGAL | SSMVM) =>
         logger.error(s"User is not supposed to access this feature")
         List.empty[UserWithAccessLevel]
     }

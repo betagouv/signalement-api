@@ -29,6 +29,7 @@ import models.UserRole.Admins
 import models.UserRole.AdminsAndAgents
 import models.UserRole.AdminsAndReadOnly
 import models.UserRole.AdminsAndReadOnlyAndAgents
+import models.UserRole.AdminsAndReadOnlyAndAgentsWithSSMVM
 import models.UserRole.AdminsAndReadOnlyAndCCRF
 import models.UserRole.Professionnel
 import models.UserRole.SuperAdmin
@@ -159,6 +160,9 @@ abstract class BaseController(
       val adminsAndReadonlyAndAgents = AskImpersonationDsl(
         securedAction.andThen(WithRole(AdminsAndReadOnlyAndAgents))
       )
+      val adminsAndReadonlyAndAgentsWithSSMVM = AskImpersonationDsl(
+        securedAction.andThen(WithRole(AdminsAndReadOnlyAndAgentsWithSSMVM))
+      )
       val adminsAndReadonlyAndDgccrf = AskImpersonationDsl(
         securedAction.andThen(WithRole(AdminsAndReadOnlyAndCCRF))
       )
@@ -212,7 +216,7 @@ abstract class BaseCompanyController(
             request.identity.userRole match {
               case UserRole.SuperAdmin | UserRole.Admin | UserRole.ReadOnlyAdmin | UserRole.DGCCRF =>
                 Future.successful(Some(AccessLevel.ADMIN))
-              case UserRole.DGAL | UserRole.Professionnel =>
+              case UserRole.DGAL | UserRole.SSMVM | UserRole.Professionnel =>
                 company
                   .map(c =>
                     companiesVisibilityOrchestrator
