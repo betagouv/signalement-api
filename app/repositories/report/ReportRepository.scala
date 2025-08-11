@@ -672,15 +672,6 @@ object ReportRepository {
     }
   }
 
-  // Utilisé pour caster un type mal généré par slick : @>
-  // Cette fonction attend le même type à gauche et à droite
-  // mais slick génère varchar[] @> text[]
-  private val castVarCharArrayToTextArray = SimpleExpression.unary[List[String], List[String]] { (s, qb) =>
-    qb.sqlBuilder += "CAST( ": Unit
-    qb.expr(s)
-    qb.sqlBuilder += " AS TEXT[])": Unit
-  }
-
   implicit private val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
     MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 

@@ -208,7 +208,7 @@ class ReportController(
   }
 
   def downloadReportAsZipWithFiles(reportId: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async(parse.empty) { implicit request =>
       reportWithDataOrchestrator
         .getReportsFull(ReportFilter(ids = List(reportId)), request.identity)
         .map { reportIds =>
@@ -225,7 +225,7 @@ class ReportController(
     }
 
   def getCompanyCloudWord(companyId: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async(parse.empty) { _ =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async(parse.empty) { _ =>
       reportOrchestrator
         .getCloudWord(companyId)
         .map(cloudword => Ok(Json.toJson(cloudword)))

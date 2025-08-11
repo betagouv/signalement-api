@@ -213,7 +213,7 @@
                         </ul>
                     }
                 </div>
-                @if(userRoleOpt.exists(role => UserRole.AdminsAndReadOnlyAndAgents.contains(role))) {
+                @if(userRoleOpt.exists(role => UserRole.AdminsAndReadOnlyAndAgentsWithSSMVM.contains(role))) {
                     <div>
                         <h2>@Messages("reportPDF.report.historyHeader")</h2>
                         <p>

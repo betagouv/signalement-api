@@ -353,11 +353,11 @@ object ReportTable {
       table
         .filter(_.category === ReportCategory.VoitureVehiculeVelo.entryName)
         .filter(report =>
-          report.subcategories @> List(
+          castVarCharArrayToTextArray(report.subcategories) @> List(
             "Reparation_revision_vente_de_vehicule",
             "Probleme_avec_les_airbags_Takata"
           ).bind ||
-            report.subcategories @> List(
+            castVarCharArrayToTextArray(report.subcategories) @> List(
               "Reparation_revision_vente_de_vehicule",
               "Prestation_mal_realisee_ou_pas_realisee"
             ).bind
