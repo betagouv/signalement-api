@@ -20,20 +20,20 @@ class BookmarkController(
   val logger: Logger = Logger(this.getClass)
 
   def addBookmark(uuid: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation.async { request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.forbidImpersonation.async { request =>
       for {
         _ <- bookmarkOrchestrator.addBookmark(uuid, request.identity)
       } yield Ok
     }
 
   def removeBookmark(uuid: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation.async { request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.forbidImpersonation.async { request =>
       for {
         _ <- bookmarkOrchestrator.removeBookmark(uuid, request.identity)
       } yield Ok
     }
 
-  def countBookmarks() = Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { request =>
+  def countBookmarks() = Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async { request =>
     for {
       count <- bookmarkOrchestrator.countBookmarks(request.identity)
     } yield Ok(Json.toJson(count))

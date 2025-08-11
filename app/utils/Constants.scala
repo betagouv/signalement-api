@@ -16,6 +16,7 @@ object Constants {
     case object CONSO         extends EventType
     case object DGCCRF        extends EventType
     case object DGAL          extends EventType
+    case object SSMVM         extends EventType
     case object SUPERADMIN    extends EventType
     case object READONLYADMIN extends EventType
     case object ADMIN         extends EventType
@@ -28,6 +29,7 @@ object Constants {
         case UserRole.ReadOnlyAdmin => READONLYADMIN
         case UserRole.DGCCRF        => DGCCRF
         case UserRole.DGAL          => DGAL
+        case UserRole.SSMVM         => SSMVM
         case UserRole.Professionnel => PRO
       }
 

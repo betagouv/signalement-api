@@ -58,6 +58,14 @@ trait PostgresProfile
         CountGroupBy.column[B](q.toNode)
     }
 
+    // Utilisé pour caster un type mal généré par slick : @>
+    // Cette fonction attend le même type à gauche et à droite
+    // mais slick génère varchar[] @> text[]
+    val castVarCharArrayToTextArray = SimpleExpression.unary[List[String], List[String]] { (s, qb) =>
+      qb.sqlBuilder += "CAST( ": Unit
+      qb.expr(s)
+      qb.sqlBuilder += " AS TEXT[])": Unit
+    }
   }
   override protected def computeCapabilities: Set[slick.basic.Capability] =
     super.computeCapabilities + slick.jdbc.JdbcCapabilities.insertOrUpdate
