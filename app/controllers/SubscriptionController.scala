@@ -24,7 +24,7 @@ class SubscriptionController(
   val logger: Logger = Logger(this.getClass)
 
   def createSubscription =
-    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.forbidImpersonation
       .async(parse.json) { implicit request =>
         request.body
           .validate[SubscriptionCreation]
@@ -38,7 +38,7 @@ class SubscriptionController(
       }
 
   def updateSubscription(uuid: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.forbidImpersonation
       .async(parse.json) { implicit request =>
         request.body
           .validate[SubscriptionUpdate]
@@ -55,19 +55,19 @@ class SubscriptionController(
       }
 
   def getSubscriptions =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async { implicit request =>
       subscriptionOrchestrator.getSubscriptions(request.identity).map(subscriptions => Ok(Json.toJson(subscriptions)))
     }
 
   def getSubscription(uuid: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.allowImpersonation.async { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.allowImpersonation.async { implicit request =>
       subscriptionOrchestrator
         .getSubscription(uuid, request.identity)
         .map(_.map(s => Ok(Json.toJson(s))).getOrElse(NotFound))
     }
 
   def removeSubscription(uuid: UUID) =
-    Act.secured.adminsAndReadonlyAndAgents.forbidImpersonation.async { implicit request =>
+    Act.secured.adminsAndReadonlyAndAgentsWithSSMVM.forbidImpersonation.async { implicit request =>
       subscriptionOrchestrator
         .removeSubscription(uuid, request.identity)
         .map(deletedCount => if (deletedCount > 0) Ok else NotFound)
