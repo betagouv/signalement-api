@@ -1148,7 +1148,7 @@ class ReportOrchestrator(
     company        <- companyOrchestrator.getOrCreate(companySearchResult.toCreation)
     reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))
     files = reportFilesMap.getOrElse(reportId, List.empty).filter(_.origin == ReportFileOrigin.Consumer)
-    newFiles <- files.traverse(f => reportFileOrchestrator.duplicate(f.id, f.filename, None))
+    newFiles <- files.traverse(f => reportFileOrchestrator.duplicateIfExist(f.id, f.filename, None))
 
     reportDraft = ReportDraft(
       gender = report.gender,
@@ -1173,7 +1173,7 @@ class ReportOrchestrator(
       contactAgreement = report.contactAgreement,
       employeeConsumer = report.employeeConsumer,
       forwardToReponseConso = Some(report.forwardToReponseConso),
-      fileIds = newFiles.map(_.id),
+      fileIds = newFiles.flatten.map(_.id),
       vendor = report.vendor,
       tags = report.tags,
       reponseconsoCode = Some(report.reponseconsoCode),
