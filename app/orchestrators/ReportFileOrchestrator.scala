@@ -234,8 +234,17 @@ class ReportFileOrchestrator(
     _   <- s3Service.delete(filename)
   } yield res
 
-  def duplicate(fileId: ReportFileId, filename: String, maybeReportId: Option[UUID]): Future[ReportFile] = for {
-    file <- getFileByIdAndName(fileId, filename)
+  def duplicateIfExist(
+      fileId: ReportFileId,
+      filename: String,
+      maybeReportId: Option[UUID]
+  ): Future[Option[ReportFile]] = for {
+    file      <- getFileByIdAndName(fileId, filename)
+    exist     <- s3Service.exists(file.storageFilename)
+    maybeFile <- if (exist) duplicate(file, filename, maybeReportId).map(Some(_)) else Future.successful(None)
+  } yield maybeFile
+
+  private def duplicate(file: ReportFile, filename: String, maybeReportId: Option[UUID]): Future[ReportFile] = for {
     data <- s3Service.download(file.storageFilename)
     newName = s"${UUID.randomUUID()}_$filename"
     newFile = ReportFile(
@@ -250,7 +259,6 @@ class ReportFileOrchestrator(
     newReportFile <- reportFileRepository.create(newFile)
     _             <- Source.single(data).runWith(s3Service.upload(newReportFile.storageFilename))
   } yield newReportFile
-
   private def checkIsNotYetUsedInReport(file: ReportFile): Try[Unit] =
     file.reportId match {
       case None => Success(())
