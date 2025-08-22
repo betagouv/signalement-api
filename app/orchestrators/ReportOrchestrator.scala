@@ -1148,7 +1148,7 @@ class ReportOrchestrator(
     company        <- companyOrchestrator.getOrCreate(companySearchResult.toCreation)
     reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(List(reportId))
     files = reportFilesMap.getOrElse(reportId, List.empty).filter(_.origin == ReportFileOrigin.Consumer)
-    newFiles <- files.traverse(f => reportFileOrchestrator.duplicate(f.id, f.filename, f.reportId))
+    newFiles <- files.traverse(f => reportFileOrchestrator.duplicate(f.id, f.filename, None))
 
     reportDraft = ReportDraft(
       gender = report.gender,
