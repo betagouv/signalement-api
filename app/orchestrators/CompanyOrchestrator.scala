@@ -151,15 +151,17 @@ class CompanyOrchestrator(
   def getCompanyResponseRate(companyId: UUID, user: User): Future[Int] = {
     val responseReportsFilter =
       ReportFilter(companyIds = Seq(companyId), status = ReportStatus.statusWithProResponse)
-    val totalReportsFilter =
-      ReportFilter(companyIds = Seq(companyId))
+    val totalTransmittedReportsFilter =
+      ReportFilter(companyIds = Seq(companyId), status = ReportStatus.statusAvailableForConsultationByPro)
 
-    val totalReportsCount    = reportRepository.count(Some(user), totalReportsFilter)
-    val responseReportsCount = reportRepository.count(Some(user), responseReportsFilter)
+    val totalTransmittedReportsCount = reportRepository.count(Some(user), totalTransmittedReportsFilter)
+    val responseReportsCount         = reportRepository.count(Some(user), responseReportsFilter)
     for {
-      total     <- totalReportsCount
-      responses <- responseReportsCount
-    } yield (responses.toFloat / total * 100).round
+      totalTransmitted <- totalTransmittedReportsCount
+      responses        <- responseReportsCount
+    } yield
+      if (totalTransmitted == 0) 0
+      else (responses.toFloat / totalTransmitted * 100).round
   }
 
   def searchSimilarCompanyByWebsite(url: String): Future[WebsiteCompanySearchResult] = {

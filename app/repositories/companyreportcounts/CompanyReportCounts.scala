@@ -5,5 +5,6 @@ import java.util.UUID
 case class CompanyReportCounts(
     companyId: UUID,
     totalReports: Long,
-    totalProcessedReports: Long
+    totalProcessedReports: Long,
+    totalTransmittedReports: Long
 )
