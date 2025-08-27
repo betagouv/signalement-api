@@ -105,11 +105,13 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         }
       }
       .map { case (companyTable, companyReportCountView) =>
-        val (totalReports, totalProcessedReports) =
-          companyReportCountView.map(c => (c.totalReports, c.totalProcessedReports)).getOrElse((0L, 0L))
-        val responseRate = If(totalReports === 0L)
+        val (totalTransmittedReports, totalReports, totalProcessedReports) =
+          companyReportCountView
+            .map(c => (c.totalTransmittedReports, c.totalReports, c.totalProcessedReports))
+            .getOrElse((0L, 0L, 0L))
+        val responseRate = If(totalTransmittedReports === 0L)
           .Then(0f)
-          .Else((totalProcessedReports.asColumnOf[Float] / totalReports.asColumnOf[Float]) * 100f)
+          .Else((totalProcessedReports.asColumnOf[Float] / totalTransmittedReports.asColumnOf[Float]) * 100f)
         (companyTable, totalReports, responseRate)
       }
 

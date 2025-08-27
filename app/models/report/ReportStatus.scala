@@ -26,7 +26,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
   case object MalAttribue     extends ReportStatus
   case object SuppressionRGPD extends ReportStatus
 
-  val statusVisibleByPro: Seq[ReportStatus] =
+  val statusAvailableForConsultationByPro =
     Seq(
       TraitementEnCours,
       Transmis,
@@ -34,9 +34,11 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       Infonde,
       NonConsulte,
       ConsulteIgnore,
-      MalAttribue,
-      SuppressionRGPD
+      MalAttribue
     )
+
+  val statusVisibleByPro: Seq[ReportStatus] =
+    statusAvailableForConsultationByPro :+ SuppressionRGPD
 
   val statusWithProResponse = Seq(PromesseAction, Infonde, MalAttribue)
 
