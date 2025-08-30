@@ -30,7 +30,7 @@ ConsumerReportAckProEmail.satisfactionQuestion=Êtes-vous satisfait de cette ré
 ConsumerReportAckProEmail.clickYourChoice=Cliquez sur votre choix :
 ConsumerReportAckProEmail.situationImprovement=Sachez que, quelle que soit la réponse de l''entreprise, les enquêteurs de la répression des fraudes peuvent décider de faire un contrôle, grâce aux informations que vous avez transmises.
 ConsumerReportAckProEmail.waitingForImprovement=Vous souhaitez attendre de voir si la situation s''améliore ?
-ConsumerReportAckProEmail.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation.
+ConsumerReportAckProEmail.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation. Nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage.
 ConsumerReportAckProEmail.satisfactionRequest=Si SignalConso vous donne satisfaction, n''hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> et <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
 ConsumerReportAckProEmail.serviceImprovement= N''hésitez pas à déposer votre avis concernant votre expérience SignalConso et nous faire part de votre satisfaction, des problèmes rencontrés ou de vos propositions d''amélioration sur <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, la plateforme de l''État dédiée à l''amélioration des services publics.
 ConsumerReportAckProEmail.contributionThanks=Votre contribution aide d''autres consommateurs et nous est vraiment indispensable pour nous développer encore et encore !
@@ -42,13 +42,13 @@ ConsumerReportAckProEmail.neutral=Neutre
 ConsumerReportAckProEmail.negative=Mécontent
 ConsumerReportAckProEmail.signalementInfonde=L''entreprise a considéré que ce signalement était infondé :
 ConsumerReportAckProEmail.signalementNonConcerne=L''entreprise a déclaré que ce signalement ne concernait pas son entreprise :
-ConsumerReportAckProEmail.signalementNonAccepteHelp=Vous pouvez néanmoins continuer les démarches pour trouver une solution ou obtenir réparation :
+ConsumerReportAckProEmail.signalementNonAccepteHelp=Si vous n’êtes pas satisfait, nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage. Vous pouvez en revanche poursuivre les démarches nécessaires afin de trouver une solution ou d’obtenir réparation en cliquant sur le bouton ci-dessous.
 ConsumerReportAckProEmail.signalementAccepte=Avec sa réponse, l''entreprise s''est engagée à prendre en compte votre signalement. Elle a pris l''engagement suivant :
 ConsumerReportAckProEmail.engagementReminderEmailPeriodLater=Vous recevrez un nouvel email dans {0} jours pour vous demander si l''entreprise a bien tenu son engagement. Merci de patienter et de ne pas refaire de signalement ou contacter le support avant la fin de ce délai.
 ConsumerReportAckProEmail.youCanReattribute=Vous pouvez réattribuer votre signalement à la bonne entreprise en suivante ce lien :
 ConsumerReportAckProEmail.reattribute=Réattribuer mon signalement
 ConsumerReportAckProEmail.maxDelayToReattribute=Vous disposez de 15 jours pour le réattribuer.
-ConsumerReportAckProEmail.ifYouAreSure=Néanmoins, si vous êtes certain qu''il s''agit bien de la bonne entreprise, vous pouvez poursuivre les démarches pour trouver une solution ou obtenir réparation :
+ConsumerReportAckProEmail.ifYouAreSure=Néanmoins, si vous êtes certain qu''il s''agit bien de la bonne entreprise et que vous n’êtes pas satisfait du retour de l’entreprise, nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage. Vous pouvez en revanche poursuivre les démarches nécessaires afin de trouver une solution ou d’obtenir réparation en cliquant sur le bouton ci-dessous.
 
 ConsumerReportProEngagementEmail.subject=Votre avis sur l''engagement de l''entreprise concernant votre signalement
 ConsumerReportProEngagementEmail.title=Votre avis sur l''engagement de l''entreprise concernant votre signalement
@@ -70,7 +70,7 @@ ConsumerReportProEngagementEmail.signalConsoExplanationHeader=Comprendre SignalC
 ConsumerReportProEngagementEmail.positive=Oui
 ConsumerReportProEngagementEmail.neutral=Partiellement
 ConsumerReportProEngagementEmail.negative=Non
-ConsumerReportProEngagementEmail.signalementNonAccepteHelp=Si vous n’êtes pas satisfait du retour de l’entreprise, vous pouvez poursuivre les démarches pour trouver une solution ou obtenir réparation :
+ConsumerReportProEngagementEmail.signalementNonAccepteHelp=Si vous n’êtes pas satisfait du retour de l’entreprise, nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage. Vous pouvez en revanche poursuivre les démarches nécessaires afin de trouver une solution ou d’obtenir réparation en cliquant sur le bouton ci-dessous.
 
 ConsumerReportAckProEmailOnAdminCompletion.subject=Votre signalement est résolu
 ConsumerReportAckProEmailOnAdminCompletion.title=Votre signalement est résolu
@@ -78,7 +78,7 @@ ConsumerReportAckProEmailOnAdminCompletion.greeting=Bonjour {0} {1},
 ConsumerReportAckProEmailOnAdminCompletion.reportDescription=Vous avez fait un signalement le {0} concernant une entreprise :
 ConsumerReportAckProEmailOnAdminCompletion.companySiret=SIRET : <b>{0}</b>
 ConsumerReportAckProEmailOnAdminCompletion.responseHeader=Vous nous avez communiqué que votre problème a été résolu en dehors de la plateforme SignalConso.
-ConsumerReportAckProEmailOnAdminCompletion.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation.
+ConsumerReportAckProEmailOnAdminCompletion.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation. Nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage.
 ConsumerReportAckProEmailOnAdminCompletion.satisfactionRequest=Si SignalConso vous donne satisfaction, n''hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">Twitter</a> et <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>.
 ConsumerReportAckProEmailOnAdminCompletion.serviceImprovement= N''hésitez pas à déposer votre avis concernant votre expérience SignalConso et nous faire part de votre satisfaction, des problèmes rencontrés ou de vos propositions d''amélioration sur <a href="https://www.plus.transformation.gouv.fr/experience/step_1?pk_campaign=DGCCRF">Services publics +</a>, la plateforme de l''État dédiée à l''amélioration des services publics.
 ConsumerReportAckProEmailOnAdminCompletion.contributionThanks=Votre contribution aide d''autres consommateurs et nous est vraiment indispensable pour nous développer encore et encore !
@@ -91,14 +91,14 @@ ConsumerReportAckProEmailOnAdminCompletion.signalConsoExplanationHeader=Comprend
 
 ReportClosedByNoReadingEmail.subject=L''entreprise n''a pas souhaité consulter votre signalement
 ReportClosedByNoReadingEmail.entrepriseNoConsultation=L''entreprise n''a pas souhaité consulter votre signalement
-ReportClosedByNoReadingEmail.bonjourMessage=Bonjour {0} {1},
+ReportClosedByNoReadingEmail.bonjourMessage=Bonjour {0} {1},z
 ReportClosedByNoReadingEmail.signalementMessage=Vous avez fait un signalement le <b>{0}</b> concernant une entreprise :
 ReportClosedByNoReadingEmail.siretLabel=SIRET : <b>{0}</b>
 ReportClosedByNoReadingEmail.malgreRelancesMessage=Malgré nos relances, <b>l''entreprise n''a pas souhaité lire votre signalement.</b>
 ReportClosedByNoReadingEmail.enqueteurReceivedMessage=Par contre, <b>les enquêteurs de la répression des fraudes ont bien reçu votre signalement.</b>
 ReportClosedByNoReadingEmail.enqueteurDecideMessage=Ils peuvent décider de contrôler ou de surveiller l''entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
 ReportClosedByNoReadingEmail.nouveauSignalementMessage=Si vous retournez dans cette entreprise et constatez que le problème n''a pas été corrigé, faites un nouveau signalement. Savoir que la situation perdure est un élément important pour les enquêteurs.
-ReportClosedByNoReadingEmail.contractualDisputeMessage=Vous pouvez néanmoins continuer les démarches pour trouver une solution ou obtenir réparation.
+ReportClosedByNoReadingEmail.contractualDisputeMessage=Si vous n’êtes pas satisfait, nous vous prions de ne pas contacter notre support à ce sujet, car nous ne sommes pas en mesure d’intervenir davantage. Vous pouvez en revanche poursuivre les démarches nécessaires afin de trouver une solution ou d’obtenir réparation en cliquant sur le bouton ci-dessous.
 ReportClosedByNoReadingEmail.continuerDemarches=Continuer mes démarches
 ReportClosedByNoReadingEmail.reparationLitigeMessage=Si vous avez déjà obtenu répération concernant votre litige, vous pouvez ignorer ce message.
 ReportClosedByNoReadingEmail.aBientotMessage=À bientôt sur SignalConso !
