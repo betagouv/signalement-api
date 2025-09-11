@@ -1,10 +1,12 @@
 package models.report.extract
 
+import models.User
 import models.report.ReportFilter
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 case class ReportExtractName(value: String) extends AnyVal
@@ -12,7 +14,7 @@ case class ReportExtractName(value: String) extends AnyVal
 object ReportExtractName {
   implicit val ReportExtractNameFormat: OFormat[ReportExtractName] = Json.format[ReportExtractName]
 
-  def apply(reportFilter: ReportFilter) = {
+  def apply(reportFilter: ReportFilter, requestedBy: User) = {
 
     def addPrefix(prefix: String, s: Option[String]) =
       s.map(value => s"${prefix}_$value").getOrElse("")
@@ -30,7 +32,9 @@ object ReportExtractName {
     val name = List(departments, siren, category, tags).mkString
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yy")
+    val hourFormatter = DateTimeFormatter.ofPattern("mmHHss")
     val datePart      = LocalDate.now().format(dateFormatter)
+    val hourPart      = LocalDateTime.now().format(hourFormatter)
 
     val finalName = if (name.nonEmpty && name.length < 60) {
       s"${name.trim}.xlsx"
@@ -38,7 +42,10 @@ object ReportExtractName {
       "export.xlsx"
     }
 
-    new ReportExtractName(s"${datePart}_$finalName")
+    new ReportExtractName(
+      s"${datePart}_${hourPart}${requestedBy.firstName.headOption.getOrElse("")}${requestedBy.lastName.headOption
+          .getOrElse("")}_${finalName}"
+    )
   }
 
 }

@@ -151,7 +151,7 @@ object ReportsExtractActor {
         Seq(AccessLevel.ADMIN)
       )
     } yield {
-      val targetFilename = ReportExtractName(filters)
+      val targetFilename = ReportExtractName(filters, requestedBy)
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
