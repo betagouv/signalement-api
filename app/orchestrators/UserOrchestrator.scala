@@ -3,7 +3,6 @@ package orchestrators
 import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.EmailAlreadyExist
-import controllers.error.AppError.UserAccountEmailAlreadyExist
 import controllers.error.AppError.UserNotFound
 import controllers.error.AppError.UserNotFoundById
 import controllers.error.AppError.UserNotInvited
@@ -51,8 +50,6 @@ trait UserOrchestratorInterface {
   def updateEmail(user: User, newEmail: EmailAddress): Future[User]
 
   def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User]
-
-  def createProConnectUser(emailAddress: EmailAddress, role: UserRole): Future[User]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository: EventRepositoryInterface)(implicit
@@ -109,38 +106,6 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       .getOrRaise(
         UserNotInvited(claim.email)
       )
-
-  override def createProConnectUser(emailAddress: EmailAddress, role: UserRole): Future[User] =
-    userRepository
-      .findByEmailIncludingDeleted(emailAddress.value)
-      .flatMap {
-        case Some(user) if user.deletionDate.isDefined =>
-          // Reactivating user
-          userRepository.restore(
-            user.copy(
-              password = "",
-              email = emailAddress,
-              userRole = role,
-              authProvider = ProConnect,
-              authProviderId = None,
-              lastEmailValidation = Some(OffsetDateTime.now())
-            )
-          )
-        case Some(_) => Future.failed(UserAccountEmailAlreadyExist)
-        case None =>
-          val user = User(
-            id = UUID.randomUUID,
-            password = "",
-            email = emailAddress,
-            firstName = "",
-            lastName = "",
-            userRole = role,
-            authProvider = ProConnect,
-            authProviderId = None,
-            lastEmailValidation = Some(OffsetDateTime.now())
-          )
-          userRepository.create(user)
-      }
 
   override def findOrError(emailAddress: EmailAddress): Future[User] =
     userRepository

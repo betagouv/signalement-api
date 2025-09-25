@@ -31,7 +31,6 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
   object dashboard {
     def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
     def login             = url("/connexion")
-    def loginProConnect   = url("/connexion/agents")
     def subscriptionDGCCRFReport(reportId: UUID) = url(
       s"/suivi-des-signalements/report/${reportId.toString}?mtm_campaign=subscription&anchor=attachment"
     )

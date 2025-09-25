@@ -6,7 +6,6 @@ object EmailSubjects {
     s"Vous avez maintenant accès à l'entreprise ${companyName} sur SignalConso"
   val COMPANY_ACCESS_INVITATION     = (companyName: String) => s"Rejoignez l'entreprise ${companyName} sur SignalConso"
   val DGCCRF_ACCESS_LINK            = "Votre accès DGCCRF sur SignalConso"
-  val DGCCRF_PROCONNECT_ACCESS_LINK = "Votre accès DGCCRF sur SignalConso via ProConnect"
   val ADMIN_ACCESS_LINK             = "Votre accès Administrateur sur SignalConso"
   val ADMIN_PROBE_TRIGGERED         = "Sonde Signal conso déclenchée"
   val VALIDATE_EMAIL                = "Veuillez valider cette adresse email"
