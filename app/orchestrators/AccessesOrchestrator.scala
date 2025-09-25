@@ -6,7 +6,6 @@ import cats.implicits.toTraverseOps
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl._
-import models.AuthProvider.ProConnect
 import models._
 import models.token.AdminOrDgccrfTokenKind
 import models.token.AgentAccessToken
@@ -25,7 +24,6 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.EmailAddressService
 import services.emails.EmailDefinitionsAdmin.AdminAccessLink
 import services.emails.EmailDefinitionsDggcrf.DgccrfAgentAccessLink
-import services.emails.EmailDefinitionsDggcrf.DgccrfProConnectInvitation
 import services.emails.EmailDefinitionsDggcrf.DgccrfValidateEmail
 import services.emails.EmailDefinitionsVarious.UpdateEmailAddress
 import services.emails.MailServiceInterface
@@ -244,16 +242,7 @@ class AccessesOrchestrator(
     }
 
   def sendDGCCRFInvitation(invitationRequest: InvitationRequest): Future[Unit] =
-    invitationRequest.authProvider match {
-      case Some(ProConnect) =>
-        for {
-          _ <- userOrchestrator.createProConnectUser(invitationRequest.email, UserRole.DGCCRF)
-          _ <- mailService.send(
-            DgccrfProConnectInvitation.Email("DGCCRF")(invitationRequest.email, frontRoute.dashboard.loginProConnect)
-          )
-        } yield ()
-      case _ => sendAdminOrAgentInvitation(invitationRequest.email, TokenKind.DGCCRFAccount)
-    }
+    sendAdminOrAgentInvitation(invitationRequest.email, TokenKind.DGCCRFAccount)
 
   def sendDGALInvitation(email: EmailAddress): Future[Unit] =
     sendAdminOrAgentInvitation(email, TokenKind.DGALAccount)
