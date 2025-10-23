@@ -592,38 +592,6 @@ object AppError {
     override val titleForLogs: String = "user_not_found"
   }
 
-  final case class ProConnectSessionNotFound(state: String) extends FailedAuthenticationError {
-    override val scErrorCode: String = "SC-0063"
-    override val title: String       = "Cannot find pro connect state"
-    override val details: String =
-      s"State $state ProConnect introuvable "
-    override val titleForLogs: String = "state_not_found"
-  }
-
-  final case class ProConnectSessionInvalidJwt(message: String) extends FailedAuthenticationError {
-    override val scErrorCode: String = "SC-0064"
-    override val title: String       = "Malformed request body"
-    override val details: String =
-      s"Le corps de la réponse (claim )ProConnect  ne correspond pas à ce qui est attendu par l'API : $message"
-    override val titleForLogs: String = "malformed_claim"
-  }
-
-  final case object MissingProConnectTokenId extends FailedAuthenticationError {
-    override val scErrorCode: String = "SC-0065"
-    override val title: String       = "Cannot find pro connect token id"
-    override val details: String =
-      s"Token id ProConnect introuvable dans le cookie "
-    override val titleForLogs: String = "token_id_not_found"
-  }
-
-  final case object MissingProConnectState extends FailedAuthenticationError {
-    override val scErrorCode: String = "SC-0066"
-    override val title: String       = "Cannot find pro connect state"
-    override val details: String =
-      s"State ProConnect introuvable dans le cookie "
-    override val titleForLogs: String = "state_not_found"
-  }
-
   final case class UserNotInvited(login: String) extends ForbiddenError {
     override val scErrorCode: String = "SC-0067"
     override val title: String       = "Cannot perform action on user"
