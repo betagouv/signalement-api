@@ -1,7 +1,6 @@
 package authentication
 
 import authentication.CookieAuthenticator.CookieAuthenticatorSettings
-import cats.implicits.catsSyntaxOptionId
 import controllers.error.AppError.BrokenAuthError
 import models.User
 import play.api.libs.json.Json
@@ -27,9 +26,7 @@ class CookieAuthenticator(
 
   private def create(
       userEmail: EmailAddress,
-      impersonator: Option[EmailAddress] = None,
-      proConnectIdToken: Option[String] = None,
-      proConnectState: Option[String] = None
+      impersonator: Option[EmailAddress] = None
   ): CookieInfos = {
     val now = OffsetDateTime.now()
     CookieInfos(
@@ -39,9 +36,7 @@ class CookieAuthenticator(
       lastUsedDateTime = now,
       expirationDateTime = now.plus(settings.authenticatorExpiry.toMillis, ChronoUnit.MILLIS),
       idleTimeout = settings.authenticatorIdleTimeout,
-      cookieMaxAge = settings.cookieMaxAge,
-      proConnectIdToken = proConnectIdToken,
-      proConnectState = proConnectState
+      cookieMaxAge = settings.cookieMaxAge
     )
   }
 
@@ -82,16 +77,6 @@ class CookieAuthenticator(
       impersonator: Option[EmailAddress]
   ): Either[BrokenAuthError, Cookie] = {
     val cookieInfos = create(userEmail, impersonator)
-    init(cookieInfos)
-  }
-
-  def initProConnectCookie(
-      userEmail: EmailAddress,
-      proConnectIdToken: String,
-      proConnectState: String
-  ): Either[BrokenAuthError, Cookie] = {
-    val cookieInfos =
-      create(userEmail, proConnectIdToken = proConnectIdToken.some, proConnectState = proConnectState.some)
     init(cookieInfos)
   }
 

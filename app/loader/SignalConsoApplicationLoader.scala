@@ -9,8 +9,6 @@ import com.typesafe.config.ConfigFactory
 import config._
 import models.report.sampledata.SampleDataService
 import orchestrators._
-import orchestrators.proconnect.ProConnectClient
-import orchestrators.proconnect.ProConnectOrchestrator
 import orchestrators.reportexport.ReportZipExportService
 import orchestrators.socialmedia.InfluencerOrchestrator
 import orchestrators.socialmedia.SocialBladeClient
@@ -73,8 +71,6 @@ import repositories.influencer.InfluencerRepository
 import repositories.influencer.InfluencerRepositoryInterface
 import repositories.ipblacklist.IpBlackListRepository
 import repositories.probe.ProbeRepository
-import repositories.proconnect.ProConnectSessionRepository
-import repositories.proconnect.ProConnectSessionRepositoryInterface
 import repositories.rating.RatingRepository
 import repositories.rating.RatingRepositoryInterface
 import repositories.report.ReportRepository
@@ -210,11 +206,10 @@ class SignalConsoComponents(
   val companyAccessRepository: CompanyAccessRepositoryInterface         = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
-  val asyncFileRepository: AsyncFileRepositoryInterface                 = new AsyncFileRepository(dbConfig)
-  val authAttemptRepository: AuthAttemptRepositoryInterface             = new AuthAttemptRepository(dbConfig)
-  val authTokenRepository: AuthTokenRepositoryInterface                 = new AuthTokenRepository(dbConfig)
-  val proConnectSessionRepository: ProConnectSessionRepositoryInterface = new ProConnectSessionRepository(dbConfig)
-  def companyRepository: CompanyRepositoryInterface                     = new CompanyRepository(dbConfig)
+  val asyncFileRepository: AsyncFileRepositoryInterface     = new AsyncFileRepository(dbConfig)
+  val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
+  val authTokenRepository: AuthTokenRepositoryInterface     = new AuthTokenRepository(dbConfig)
+  def companyRepository: CompanyRepositoryInterface         = new CompanyRepository(dbConfig)
   val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
     new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface =
@@ -825,21 +820,11 @@ class SignalConsoComponents(
   val asyncFileController =
     new AsyncFileController(asyncFileRepository, s3Service, cookieAuthenticator, controllerComponents)
 
-  val proConnectClient = new ProConnectClient(applicationConfiguration.proConnect)
-  val proConnectOrchestrator =
-    new ProConnectOrchestrator(
-      proConnectClient,
-      proConnectSessionRepository,
-      userOrchestrator,
-      applicationConfiguration.proConnect.allowedProviderIds
-    )
-
   val authController = new AuthController(
     authOrchestrator,
     cookieAuthenticator,
     controllerComponents,
-    applicationConfiguration.app.enableRateLimit,
-    proConnectOrchestrator
+    applicationConfiguration.app.enableRateLimit
   )
 
   val companyAccessController =

@@ -95,21 +95,6 @@ class AuthOrchestrator(
 
   }
 
-  def proConnectLogin(
-      user: User,
-      proConnectIdToken: String,
-      proConnectState: String
-  ): Future[UserSession] = {
-    val eventualUserSession = for {
-      cookie <- authenticator
-        .initProConnectCookie(user.email, proConnectIdToken, proConnectState)
-        .liftTo[Future]
-      _ = logger.debug(s"Successful generated token for user ${user.email.value}")
-    } yield UserSession(cookie, user)
-
-    saveAuthAttemptWithRecovery(user.email.value, eventualUserSession)
-  }
-
   private def saveAuthAttemptWithRecovery[T](login: String, eventualSession: Future[T]): Future[T] =
     if (signalConsoConfiguration.disableAuthAttemptRecording) { eventualSession }
     else {
