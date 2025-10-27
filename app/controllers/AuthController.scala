@@ -14,12 +14,7 @@ import models.auth.UserPassword
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import cats.implicits.catsSyntaxOption
-import cats.implicits.toFunctorOps
-import orchestrators.proconnect.ProConnectOrchestrator
 import utils.EmailAddress
-import cats.syntax.either._
-import _root_.controllers.error.AppError._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -29,8 +24,7 @@ class AuthController(
     authOrchestrator: AuthOrchestrator,
     authenticator: CookieAuthenticator,
     controllerComponents: ControllerComponents,
-    enableRateLimit: Boolean,
-    proConnectOrchestrator: ProConnectOrchestrator
+    enableRateLimit: Boolean
 )(implicit val ec: ExecutionContext)
     extends BaseController(authenticator, controllerComponents, enableRateLimit) {
 
@@ -44,19 +38,6 @@ class AuthController(
       userSession <- authOrchestrator.signalConsoLogin(userLogin)
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
-
-  def startProConnectAuthentication(state: String, nonce: String) =
-    Act.public.standardLimit.async(parse.empty) { _ =>
-      proConnectOrchestrator.saveState(state, nonce).as(NoContent)
-    }
-
-  def proConnectAuthenticate(code: String, state: String) =
-    Act.public.standardLimit.async(parse.empty) { _ =>
-      for {
-        (token_id, user) <- proConnectOrchestrator.login(code, state)
-        userSession      <- authOrchestrator.proConnectLogin(user, token_id, state)
-      } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
-    }
 
   def logAs() = Act.secured.admins.async(parse.json) { implicit request =>
     for {
@@ -76,24 +57,6 @@ class AuthController(
           Future.successful(authenticator.discard(NoContent))
       }
   }
-
-  def logoutProConnect(): Action[AnyContent] =
-    Act.secured.restrictByProvider.proConnect.allowImpersonation.async { implicit request =>
-      request.identity.impersonator match {
-        case Some(impersonator) =>
-          authOrchestrator
-            .logoutAs(impersonator)
-            .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
-        case None =>
-          for {
-            cookiesInfo <- authenticator.extract(request).liftTo[Future]
-            tokenId     <- cookiesInfo.proConnectIdToken.liftTo[Future](MissingProConnectTokenId)
-            state       <- cookiesInfo.proConnectState.liftTo[Future](MissingProConnectState)
-            redirectUrl <- proConnectOrchestrator.endSessionUrl(tokenId, state)
-            result = Ok(redirectUrl)
-          } yield authenticator.discard(result)
-      }
-    }
 
   def getUser(): Action[AnyContent] = Act.secured.all.allowImpersonation.async { implicit request =>
     Future.successful(Ok(Json.toJson(request.identity)))
