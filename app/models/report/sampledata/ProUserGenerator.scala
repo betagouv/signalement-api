@@ -1,6 +1,5 @@
 package models.report.sampledata
 
-import models.AuthProvider.SignalConso
 import models.User
 import models.UserRole
 import models.UserRole.Professionnel
@@ -81,8 +80,6 @@ object ProUserGenerator {
       userRole = userRole,
       lastEmailValidation = Some(OffsetDateTime.now()),
       deletionDate = None,
-      authProvider = SignalConso,
-      authProviderId = None
     )
 
 }

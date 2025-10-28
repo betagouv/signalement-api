@@ -1,6 +1,5 @@
 package utils
 
-import models.AuthProvider.SignalConso
 import models._
 import models.barcode.BarcodeProduct
 import models.company.Address
@@ -57,8 +56,6 @@ object Fixtures {
     lastName = lastName,
     userRole = userRole,
     lastEmailValidation = None,
-    authProvider = SignalConso,
-    authProviderId = None
   )
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")

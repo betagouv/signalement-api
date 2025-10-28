@@ -25,8 +25,6 @@ case class User(
     lastName: String,
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime],
-    authProvider: AuthProvider,
-    authProviderId: Option[String],
     deletionDate: Option[OffsetDateTime] = None,
     impersonator: Option[EmailAddress] = None
 ) {
@@ -45,7 +43,6 @@ object User {
       "lastEmailValidation" -> user.lastEmailValidation,
       "deletionDate"        -> user.deletionDate,
       "impersonator"        -> user.impersonator,
-      "authProvider"        -> user.authProvider
     )
 
 }

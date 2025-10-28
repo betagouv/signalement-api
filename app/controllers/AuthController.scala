@@ -46,7 +46,7 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def logout(): Action[AnyContent] = Act.secured.restrictByProvider.signalConso.allowImpersonation.async {
+  def logout(): Action[AnyContent] = Act.secured.all.allowImpersonation.async {
     implicit request =>
       request.identity.impersonator match {
         case Some(impersonator) =>
@@ -85,7 +85,7 @@ class AuthController(
     }
 
   def changePassword =
-    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async(parse.json) { implicit request =>
+    Act.secured.all.forbidImpersonation.async(parse.json) { implicit request =>
       for {
         updatePassword <- request.parseBodyPrivate[PasswordChange]()
         _              <- authOrchestrator.changePassword(request.identity, updatePassword)
