@@ -154,7 +154,7 @@ class AccountController(
     }
 
   def edit() =
-    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async(parse.json) { implicit request =>
+    Act.secured.all.forbidImpersonation.async(parse.json) { implicit request =>
       for {
         userUpdate     <- request.parseBody[UserUpdate]()
         updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
@@ -173,7 +173,7 @@ class AccountController(
     }
 
   def updateEmailAddress(token: String) =
-    Act.secured.restrictByProvider.signalConso.forbidImpersonation.async { implicit request =>
+    Act.secured.all.forbidImpersonation.async { implicit request =>
       for {
         updatedUser <- accessesOrchestrator.updateEmailAddress(request.identity, token)
         cookie      <- authenticator.initSignalConsoCookie(updatedUser.email, None).liftTo[Future]

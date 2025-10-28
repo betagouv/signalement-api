@@ -1,6 +1,5 @@
 package repositories.user
 
-import models.AuthProvider
 import models.User
 import models.UserRole
 import repositories.DatabaseTable
@@ -18,8 +17,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
   def lastName            = column[String]("lastname")
   def role                = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
-  def authProvider        = column[AuthProvider]("auth_provider")
-  def authProviderId      = column[Option[String]]("auth_provider_id")
   def deletionDate        = column[Option[OffsetDateTime]]("deletion_date")
 
   type UserData =
@@ -31,8 +28,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
         String,
         String,
         Option[OffsetDateTime],
-        AuthProvider,
-        Option[String],
         Option[OffsetDateTime]
     )
 
@@ -45,8 +40,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
           lastName,
           role,
           lastEmailValidation,
-          authProvider,
-          authProviderId,
           deletionDate
         ) =>
       User(
@@ -57,8 +50,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
         lastName,
         UserRole.withName(role),
         lastEmailValidation,
-        authProvider,
-        authProviderId,
         deletionDate = deletionDate,
         impersonator = None
       )
@@ -73,8 +64,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
           lastName,
           role,
           lastEmailValidation,
-          authProvider,
-          authProviderId,
           deletionDate,
           _
         ) =>
@@ -86,8 +75,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
         lastName,
         role.entryName,
         lastEmailValidation,
-        authProvider,
-        authProviderId,
         deletionDate
       )
   }
@@ -100,8 +87,6 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
     lastName,
     role,
     lastEmailValidation,
-    authProvider,
-    authProviderId,
     deletionDate
   ) <> (constructUser, extractUser.lift)
 }
