@@ -79,7 +79,7 @@ object ProUserGenerator {
       lastName = lastName,
       userRole = userRole,
       lastEmailValidation = Some(OffsetDateTime.now()),
-      deletionDate = None,
+      deletionDate = None
     )
 
 }

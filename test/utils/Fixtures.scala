@@ -55,7 +55,7 @@ object Fixtures {
     firstName = firstName,
     lastName = lastName,
     userRole = userRole,
-    lastEmailValidation = None,
+    lastEmailValidation = None
   )
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")

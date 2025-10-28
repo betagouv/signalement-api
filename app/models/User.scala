@@ -42,7 +42,7 @@ object User {
       "role"                -> user.userRole.entryName,
       "lastEmailValidation" -> user.lastEmailValidation,
       "deletionDate"        -> user.deletionDate,
-      "impersonator"        -> user.impersonator,
+      "impersonator"        -> user.impersonator
     )
 
 }

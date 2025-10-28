@@ -119,7 +119,7 @@ object EmailsExamplesUtils {
     firstName = "Jeanne",
     lastName = "Dupont",
     userRole = UserRole.Admin,
-    lastEmailValidation = None,
+    lastEmailValidation = None
   )
 
   def genEvent =

@@ -46,16 +46,15 @@ class AuthController(
     } yield authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
   }
 
-  def logout(): Action[AnyContent] = Act.secured.all.allowImpersonation.async {
-    implicit request =>
-      request.identity.impersonator match {
-        case Some(impersonator) =>
-          authOrchestrator
-            .logoutAs(impersonator)
-            .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
-        case None =>
-          Future.successful(authenticator.discard(NoContent))
-      }
+  def logout(): Action[AnyContent] = Act.secured.all.allowImpersonation.async { implicit request =>
+    request.identity.impersonator match {
+      case Some(impersonator) =>
+        authOrchestrator
+          .logoutAs(impersonator)
+          .map(userSession => authenticator.embed(userSession.cookie, Ok(Json.toJson(userSession.user))))
+      case None =>
+        Future.successful(authenticator.discard(NoContent))
+    }
   }
 
   def getUser(): Action[AnyContent] = Act.secured.all.allowImpersonation.async { implicit request =>
