@@ -13,7 +13,6 @@ import services.AlbertService.AlbertError
 import services.AlbertService.AlbertLarge
 import services.AlbertService.AlbertModel
 import services.AlbertService.AlbertSmall
-import services.AlbertService.Llama70B
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
 import sttp.client3.SttpBackend
@@ -21,6 +20,7 @@ import sttp.client3.UriContext
 import sttp.client3.basicRequest
 import sttp.client3.playJson._
 import sttp.model.Header
+import sttp.model.StatusCode.TooManyRequests
 import utils.AlbertPrompts
 import utils.Logs.RichLogger
 
@@ -41,7 +41,6 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
     val url = uri"https://albert.api.etalab.gouv.fr/v1/chat/completions"
     val modelStr = model match {
       case AlbertLarge => "albert-large"
-      case Llama70B    => "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8"
       case AlbertSmall => "albert-small"
     }
     val body = Json.obj(
@@ -82,6 +81,9 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
             logger.warnWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
             throw AlbertError("Albert call failed")
         }
+      } else if (response.code == TooManyRequests) {
+        logger.warnWithTitle("albert_call", s"Albert call failed too many requests")
+        throw AlbertError("Albert call failed too many requests")
       } else {
         logger.warnWithTitle("albert_call", s"Albert call failed with code ${response.code}")
         throw AlbertError(s"Albert call failed with code ${response.code}")
@@ -194,7 +196,6 @@ object AlbertService {
   case class AlbertError(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 
   sealed trait AlbertModel
-  case object Llama70B    extends AlbertModel
   case object AlbertLarge extends AlbertModel // Currently implemented using Mistral 24B
   case object AlbertSmall extends AlbertModel // Currently implemented using Llama 8B
 

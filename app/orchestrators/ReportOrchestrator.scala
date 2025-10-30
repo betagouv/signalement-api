@@ -1,6 +1,5 @@
 package orchestrators
 
-import actors.AlbertSummaryActor
 import org.apache.pekko.Done
 import cats.data.NonEmptyList
 import cats.data.OptionT
@@ -63,7 +62,6 @@ import utils.Logs.RichLogger
 import utils._
 import cats.syntax.either._
 import io.scalaland.chimney.dsl.TransformationOps
-import org.apache.pekko.actor.typed.ActorRef
 import repositories.user.UserRepositoryInterface
 
 import java.time.LocalDate
@@ -102,7 +100,6 @@ class ReportOrchestrator(
     companySyncService: CompanySyncServiceInterface,
     engagementRepository: EngagementRepositoryInterface,
     subcategoryLabelRepository: SubcategoryLabelRepositoryInterface,
-    albertSummaryActor: ActorRef[AlbertSummaryActor.AlbertSummaryCommand],
     messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
@@ -365,7 +362,6 @@ class ReportOrchestrator(
       _             <- emailNotificationOrchestrator.notifyDgccrfIfNeeded(updatedReport, maybeSubcategoryLabel)
       _             <- notifyConsumer(updatedReport, maybeSubcategoryLabel, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
-      _ = albertSummaryActor.tell(AlbertSummaryActor.Summarize(updatedReport))
     } yield updatedReport
 
   private def createReportMetadata(

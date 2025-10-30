@@ -480,7 +480,6 @@ class SignalConsoComponents(
     companySyncService,
     engagementRepository,
     subcategoryLabelRepository,
-    albertSummaryActor,
     messagesApi
   )
 
