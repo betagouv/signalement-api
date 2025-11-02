@@ -31,7 +31,8 @@ object AlbertPrompts {
        |    **Ton général** : Basez la classification sur le ton et l’intention générale du signalement, plutôt que sur les propos cités de tiers.
        |    Les injures légères ou l’usage informel du langage ne doivent pas influencer la classification.
        |    Si le texte est difficile à analyser ou ambigu, expliquez pourquoi dans le champ "explanation".
-       |    **IMPORTANT** : Fournissez uniquement le JSON BRUT dans votre réponse, sans texte explicatif ou contenu supplémentaire. Aucun formatage ou marqueur json au début.
+       |    **IMPORTANT** : Fournissez uniquement le JSON BRUT dans votre réponse, sans texte explicatif ou contenu supplémentaire. Aucun formatage ou marqueur json au début.  Aucune utilisation de ``` ou de code block n’est autorisée.
+       |    Si vous ajoutez des backticks, du Markdown ou un texte hors JSON, vous échouez à la tâche.
        |
        |Signalement à analyser :
        |
