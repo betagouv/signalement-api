@@ -132,11 +132,11 @@ class AdminController(
   private val allEmailExamples: Seq[(String, (EmailAddress, MessagesApi) => BaseEmail)] =
     allEmailDefinitions.flatMap(readExamplesWithFullKey)
 
-  def getEmailCodes = Act.secured.superAdmins.async { _ =>
+  def getEmailCodes = Act.secured.adminsAndReadonly.async { _ =>
     val keys = allEmailExamples.map(_._1)
     Future.successful(Ok(Json.toJson(keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = Act.secured.superAdmins.async { _ =>
+  def sendTestEmail(templateRef: String, to: String) = Act.secured.adminsAndReadonly.async { _ =>
     val maybeEmail = allEmailExamples
       .find(_._1 == templateRef)
       .map(_._2(EmailAddress(to), controllerComponents.messagesApi))
@@ -155,10 +155,10 @@ class AdminController(
       s"${emailDefinition.category.toString.toLowerCase}.$key" -> fn
     }
 
-  def getPdfCodes = Act.secured.superAdmins { _ =>
+  def getPdfCodes = Act.secured.adminsAndReadonly { _ =>
     Ok(Json.toJson(availablePdfs.map(_._1)))
   }
-  def sendTestPdf(templateRef: String) = Act.secured.superAdmins { _ =>
+  def sendTestPdf(templateRef: String) = Act.secured.adminsAndReadonly { _ =>
     availablePdfs.toMap
       .get(templateRef)
       .map { html =>
