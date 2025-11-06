@@ -102,13 +102,14 @@ class ImportOrchestrator(
                   websiteRepository.update(websiteToUpdate.id, websiteToUpdate)
                 case _ =>
                   for {
-                    identified <- websiteRepository.listIdentified(website.host)
-                    websiteToUpdate = website.copy(
-                      companyCountry = None,
-                      companyId = Some(company.id),
-                      isMarketplace = true
+                    updatedWebsite <- websitesOrchestrator.updateIdentification(
+                      website = website.copy(
+                        companyCountry = None,
+                        companyId = Some(company.id),
+                        isMarketplace = true
+                      ),
+                      user = Some(user)
                     )
-                    updatedWebsite <- websitesOrchestrator.updateIdentification(websiteToUpdate, Some(user))
                     _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(
                       website.host,
                       company,
