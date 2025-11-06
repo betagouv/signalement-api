@@ -102,21 +102,14 @@ class ImportOrchestrator(
                   websiteRepository.update(websiteToUpdate.id, websiteToUpdate)
                 case _ =>
                   for {
-                    identified <- websiteRepository.listIdentified(website.host)
-                    _ <-
-                      if (identified.length > 1 && identified.flatMap(_.companyId).contains(company.id)) {
-                        Future.failed(
-                          CreateWebsiteError(
-                            "L'entreprise ne peut pas être modifiée si plus d'un siret est associé au site web"
-                          )
-                        )
-                      } else Future.unit
-                    websiteToUpdate = website.copy(
-                      companyCountry = None,
-                      companyId = Some(company.id),
-                      isMarketplace = true
+                    updatedWebsite <- websitesOrchestrator.updateIdentification(
+                      website = website.copy(
+                        companyCountry = None,
+                        companyId = Some(company.id),
+                        isMarketplace = true
+                      ),
+                      user = Some(user)
                     )
-                    updatedWebsite <- websitesOrchestrator.updateIdentification(websiteToUpdate, Some(user))
                     _ <- websitesOrchestrator.updatePreviousReportsAssociatedToWebsite(
                       website.host,
                       company,
