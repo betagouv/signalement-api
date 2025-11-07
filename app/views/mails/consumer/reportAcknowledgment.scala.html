@@ -46,7 +46,7 @@
                 @Html(Messages("ReportAckEmail.submitToEuropeanConsumersCenter", "https://www.europe-consommateurs.eu/fr/une-question-une-reclamation"))
                 </p>
                 <p>
-                @Html(Messages("ReportAckEmail.submitToPharos", "https://internet-signalement.gouv.fr"))
+                @Html(Messages("ReportAckEmail.submitToPharos"))
                 </p>
             }
             case Some(country) if country == Country.Andorre => {
@@ -64,7 +64,7 @@
                 @Html(Messages("ReportAckEmail.submitToEconsumerGov", "https://www.econsumer.gov/fr"))
                 </p>
                 <p>
-                @Html(Messages("ReportAckEmail.submitToPharos", "https://internet-signalement.gouv.fr"))
+                @Html(Messages("ReportAckEmail.submitToPharos"))
                 </p>
             }
         }
