@@ -131,6 +131,7 @@ ReportAckEmail.submitToEuropeanConsumersCenter=We recommend submitting your repo
 ReportAckEmail.submitToAndorraCommerceAndConsumption=We invite you to submit your report directly to the Andorra Commerce and Consumption Service: <a href="{0}">{0}</a>
 ReportAckEmail.fraudInvestigatorsTransferReport=However, the Fraud Control investigation team will forward your report to the country''s relevant authorities.
 ReportAckEmail.submitToEconsumerGov=To help authorities fight fraud internationally, we recommend submitting your report on <a href="{0}">{0}</a>
+ReportAckEmail.submitToPharos=If your report concerns the following topics: child exploitation and child sexual abuse material, expression of racism, antisemitism and xenophobia, terrorism and apology for terrorism, please report it via the following Pharos link <a href="{0}">{0}</a>
 ReportAckEmail.questionSubmitted=Your question has been successfully registered in SignalConso.
 ReportAckEmail.respondentWillContactIfNeeded=A member of staff will get back to you if they need any more details. Shortly afterwards, you will receive a final response or be referred to the appropriate department.
 ReportAckEmail.reportNotTransmittedToCompanyExceptFrench=As indicated on our website, your report will not be forwarded to the company unless it is French and identifiable by the SignalConso team.
