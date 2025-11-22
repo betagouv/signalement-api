@@ -123,14 +123,6 @@ class UserRepository(
         .headOption
     )
 
-  override def findByAuthProviderId(authProviderId: String): Future[Option[User]] =
-    db.run(
-      table
-        .filter(_.authProviderId === authProviderId)
-        .result
-        .headOption
-    )
-
   override def findByEmailIncludingDeleted(email: String): Future[Option[User]] =
     db.run(
       fullTableIncludingDeleted

@@ -16,15 +16,12 @@ import utils.SIRET
 import ConsumerAction.ConsumerRequest
 import MaybeUserAction.MaybeUserRequest
 import UserAction.UserRequest
-import UserAction.WithAuthProvider
 import UserAction.WithRole
 import authentication.actions.ImpersonationAction.forbidImpersonationFilter
 import authentication.actions.ImpersonationAction.forbidImpersonationOnCompanyRequestFilter
 import authentication.actions.ImpersonationAction.forbidImpersonationOnMaybeUserFilter
 import com.digitaltangible.playguard.IpRateLimitFilter
 import com.digitaltangible.ratelimit.RateLimiter
-import models.AuthProvider.ProConnect
-import models.AuthProvider.SignalConso
 import models.UserRole.Admins
 import models.UserRole.AdminsAndAgents
 import models.UserRole.AdminsAndReadOnly
@@ -173,10 +170,6 @@ abstract class BaseController(
       val superAdmins       = securedAction.andThen(WithRole(SuperAdmin))
       val adminsAndReadonly = securedAction.andThen(WithRole(AdminsAndReadOnly))
 
-      object restrictByProvider {
-        val signalConso = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(SignalConso)))
-        val proConnect  = AskImpersonationDsl(securedAction.andThen(WithAuthProvider(ProConnect)))
-      }
       // to completely forbid an endpoint, without yet removing the code
       val disabled = securedAction.andThen(disabledActionFilter)
 

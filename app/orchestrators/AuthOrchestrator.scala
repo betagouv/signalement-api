@@ -11,7 +11,6 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
 import controllers.error.AppError._
-import models.AuthProvider
 import models.PaginatedResult
 import models.User
 import models.UserRole
@@ -29,7 +28,6 @@ import utils.Logs.RichLogger
 import utils.EmailAddress
 import utils.PasswordComplexityHelper
 import cats.syntax.either._
-import models.AuthProvider.SignalConso
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -145,7 +143,7 @@ class AuthOrchestrator(
   } yield UserSession(cookie, user)
 
   private def findSignalConsoUserByEmail(emailAddress: String) =
-    userRepository.findByEmail(emailAddress).map(_.filter(_.authProvider == AuthProvider.SignalConso))
+    userRepository.findByEmail(emailAddress)
 
   def forgotPassword(resetPasswordLogin: UserLogin): Future[Unit] =
     findSignalConsoUserByEmail(resetPasswordLogin.login).flatMap {
@@ -211,7 +209,7 @@ class AuthOrchestrator(
             .now()
             .minus(dgccrfDelayBeforeRevalidation)
         )
-      ) && user.authProvider == SignalConso
+      )
 
   private def validateAuthenticationAttempts(login: String): Future[Unit] = for {
     _ <- authAttemptRepository
