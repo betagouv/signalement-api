@@ -14,20 +14,21 @@ object ZipEntryName {
 
   val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
-  private def safeString(stringToSanities: String) = {
+   def safeString(input: String): String = {
+    // Remove newlines, carriage returns, tabs
+    val noBreaks = input
+      .replaceAll("[\n\r\t]", " ")   // replace by single space
 
-    val notAllowedChars = List('\u0000', '\\', '/', ':', '*', '?', '"', '<', '>', '|', '.')
+    // Remove forbidden filename characters
+    val forbidden = "[\\\\/:*?\"<>|]".r
+    val cleaned = forbidden
+      .replaceAllIn(noBreaks, "")     // remove special chars
+      .replaceAll("\\s+", " ")        // normalize spaces
+      .trim()
 
+    // Keep your salt
     val salt = f"${scala.util.Random.nextInt(1000)}%03d"
-    stringToSanities
-      .map { c =>
-        if (notAllowedChars.contains(c)) {
-          ""
-        } else c
-
-      }
-      .mkString
-      .concat(salt)
+    cleaned + "_" + salt
   }
 
   case class AttachmentZipEntryName(value: String) extends ZipEntryName
@@ -58,12 +59,12 @@ object ZipEntryName {
   case class ReportZipEntryName(baseFileName: String, isSingleExport: Boolean) extends ZipEntryName {
     val value =
       if (isSingleExport) {
-        s"$baseFileName/$baseFileName.pdf"
+        s"${safeString(baseFileName)}/${safeString(baseFileName)}.pdf"
       } else {
-        s"$baseFileName.pdf"
+        s"${safeString(baseFileName)}.pdf"
       }
 
-    val directory = if (isSingleExport) s"$baseFileName/" else ""
+    val directory = if (isSingleExport) s"${safeString(baseFileName)}/" else ""
   }
 
   object ReportZipEntryName {

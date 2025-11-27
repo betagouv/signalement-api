@@ -1,7 +1,6 @@
 package orchestrators
 
 import cats.implicits.toTraverseOps
-import controllers.error.AppError.CreateWebsiteError
 import models.User
 import models.company.AccessLevel
 import models.website.IdentificationStatus.Identified
