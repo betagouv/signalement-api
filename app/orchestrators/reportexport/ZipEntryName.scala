@@ -14,7 +14,7 @@ object ZipEntryName {
 
   val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
-  private def safeString(stringToSanities: String) = {
+   def safeString(stringToSanities: String) = {
 
     val notAllowedChars = List('\u0000', '\\', '/', ':', '*', '?', '"', '<', '>', '|', '.')
 
@@ -58,12 +58,12 @@ object ZipEntryName {
   case class ReportZipEntryName(baseFileName: String, isSingleExport: Boolean) extends ZipEntryName {
     val value =
       if (isSingleExport) {
-        s"$baseFileName/$baseFileName.pdf"
+        s"${safeString(baseFileName)}/${safeString(baseFileName)}.pdf"
       } else {
-        s"$baseFileName.pdf"
+        s"${safeString(baseFileName)}.pdf"
       }
 
-    val directory = if (isSingleExport) s"$baseFileName/" else ""
+    val directory = if (isSingleExport) s"${safeString(baseFileName)}/" else ""
   }
 
   object ReportZipEntryName {
