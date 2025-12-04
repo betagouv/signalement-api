@@ -26,7 +26,7 @@ class CookieAuthenticator(
 
   private def create(
       userEmail: EmailAddress,
-      impersonator: Option[EmailAddress] = None
+      impersonator: Option[EmailAddress]
   ): CookieInfos = {
     val now = OffsetDateTime.now()
     CookieInfos(
