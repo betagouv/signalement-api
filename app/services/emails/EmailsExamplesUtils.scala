@@ -1,6 +1,5 @@
 package services.emails
 
-import models.AuthProvider.SignalConso
 import models.Subscription
 import models.User
 import models.UserRole
@@ -120,9 +119,7 @@ object EmailsExamplesUtils {
     firstName = "Jeanne",
     lastName = "Dupont",
     userRole = UserRole.Admin,
-    lastEmailValidation = None,
-    authProvider = SignalConso,
-    authProviderId = None
+    lastEmailValidation = None
   )
 
   def genEvent =

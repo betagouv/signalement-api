@@ -1,11 +1,9 @@
 package orchestrators
 
-import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.EmailAlreadyExist
 import controllers.error.AppError.UserNotFound
 import controllers.error.AppError.UserNotFoundById
-import controllers.error.AppError.UserNotInvited
 import models.AccessToken
 import models.DraftUser
 import models.User
@@ -17,12 +15,8 @@ import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import cats.syntax.option._
-import models.AuthProvider.ProConnect
-import models.AuthProvider.SignalConso
-import models.UserRole.DGCCRF
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
-import models.proconnect.ProConnectClaim
 import repositories.event.EventRepositoryInterface
 import utils.Constants.ActionEvent.USER_DELETION
 import utils.Constants.EventType.ADMIN
@@ -48,8 +42,6 @@ trait UserOrchestratorInterface {
   def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit]
 
   def updateEmail(user: User, newEmail: EmailAddress): Future[User]
-
-  def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository: EventRepositoryInterface)(implicit
@@ -77,8 +69,6 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       firstName = draftUser.firstName,
       lastName = draftUser.lastName,
       userRole = role,
-      authProvider = SignalConso,
-      authProviderId = None,
       lastEmailValidation = Some(OffsetDateTime.now())
     )
     for {
@@ -86,26 +76,6 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       _ <- userRepository.create(user)
     } yield user
   }
-
-  override def getProConnectUser(claim: ProConnectClaim, role: UserRole): Future[User] =
-    OptionT(userRepository.findByAuthProviderId(claim.sub))
-      .orElseF(userRepository.findByEmail(claim.email))
-      .filter(_.userRole == DGCCRF)
-      .semiflatMap { user =>
-        val updated = user.copy(
-          email = EmailAddress(claim.email),
-          firstName = claim.givenName,
-          lastName = claim.usualName,
-          userRole = role,
-          authProvider = ProConnect,
-          authProviderId = claim.sub.some,
-          lastEmailValidation = Some(OffsetDateTime.now())
-        )
-        userRepository.update(user.id, updated)
-      }
-      .getOrRaise(
-        UserNotInvited(claim.email)
-      )
 
   override def findOrError(emailAddress: EmailAddress): Future[User] =
     userRepository
