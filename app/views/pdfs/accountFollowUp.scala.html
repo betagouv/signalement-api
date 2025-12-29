@@ -7,21 +7,19 @@
         company: Company,
         code: String
 )(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
-
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
     <head>
         <meta name="viewport" content="width=device-width" />
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Inactivité du compte SignalConso</title>
 
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")" />
 
     </head>
     <body>
-        <div style="display: block;
-            page-break-after: always">
+        <div style="display: block; page-break-after: always">
             <div class="logo-gouv">
                 <img src='@routes.Assets.versioned("images/gouv.png")'/>
             </div>
@@ -31,11 +29,11 @@
             </div>
 
             <div class="logo-sc">
-                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
+                <img src='@routes.Assets.versioned("images/logo-signal-conso-fond-blanc.png")'/>
             </div>
 
             <div class="sender">
-                <br/>Service SignalConso
+                Service SignalConso
                 <br/>DGCCRF-052
                 <br/>59, boulevard Vincent Auriol
                 <br/>75013 Paris Cedex 13
@@ -107,7 +105,7 @@
                 </p>
             </div>
 
-            <div class="page-end">
+            <div class="page-end text-center">
                 ###
             </div>
         </div>
