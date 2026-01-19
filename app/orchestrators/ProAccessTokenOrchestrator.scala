@@ -193,14 +193,15 @@ class ProAccessTokenOrchestrator(
   def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
     for {
       _ <- validateEmailAdress(user.email.value)
-      _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
       _ <- companies match {
         case Nil => Future.unit
         case c :: _ =>
-          mailService.send(ProNewCompaniesAccesses.Email(user.email, companies, SIREN.fromSIRET(c.siret)))
+          for {
+            _ <- accessTokenRepository.giveCompaniesAccess(companies, user, level)
+            _ <- mailService.send(ProNewCompaniesAccesses.Email(user.email, companies, SIREN.fromSIRET(c.siret)))
+          } yield ()
       }
-      _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
-    } yield ()
+    } yield logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
 
   def addInvitedUserIfNeededAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
     for {

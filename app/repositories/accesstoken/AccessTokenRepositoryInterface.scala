@@ -44,6 +44,8 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
 
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit]
 
+  def giveCompaniesAccess(companies: List[Company], user: User, level: AccessLevel): Future[Unit]
+
   def invalidateToken(token: AccessToken): Future[Int]
 
   def invalidateCompanyJoinAccessTokens(companyIds: List[UUID], tokenIds: List[UUID]): Future[Int]
