@@ -14,16 +14,16 @@ object ZipEntryName {
 
   val pattern = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
-   def safeString(input: String): String = {
+  def safeString(input: String): String = {
     // Remove newlines, carriage returns, tabs
     val noBreaks = input
-      .replaceAll("[\n\r\t]", " ")   // replace by single space
+      .replaceAll("[\n\r\t]", " ") // replace by single space
 
     // Remove forbidden filename characters
     val forbidden = "[\\\\/:*?\"<>|]".r
     val cleaned = forbidden
-      .replaceAllIn(noBreaks, "")     // remove special chars
-      .replaceAll("\\s+", " ")        // normalize spaces
+      .replaceAllIn(noBreaks, "") // remove special chars
+      .replaceAll("\\s+", " ")    // normalize spaces
       .trim()
 
     // Keep your salt

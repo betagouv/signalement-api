@@ -15,7 +15,7 @@ class ZipEntryNameTest extends Specification {
     }
 
     "remove line breaks from the input" in {
-      val input = "GAUTIER\nGARANX\r\nName"
+      val input  = "GAUTIER\nGARANX\r\nName"
       val result = ZipEntryName.safeString(input)
 
       val withoutSalt = result.dropRight(4)
@@ -23,7 +23,7 @@ class ZipEntryNameTest extends Specification {
     }
 
     "remove tabs from the input" in {
-      val input = "GAU\tTIER\tGARANX"
+      val input  = "GAU\tTIER\tGARANX"
       val result = ZipEntryName.safeString(input)
 
       val withoutSalt = result.dropRight(4)
@@ -31,7 +31,7 @@ class ZipEntryNameTest extends Specification {
     }
 
     "normalize multiple spaces into a single space" in {
-      val input = "GAUTIER    GARANX     Name"
+      val input  = "GAUTIER    GARANX     Name"
       val result = ZipEntryName.safeString(input)
 
       val withoutSalt = result.dropRight(4)
@@ -39,7 +39,7 @@ class ZipEntryNameTest extends Specification {
     }
 
     "trim leading and trailing spaces" in {
-      val input = "     GAUTIER GARANX    "
+      val input  = "     GAUTIER GARANX    "
       val result = ZipEntryName.safeString(input)
 
       val withoutSalt = result.dropRight(4)
@@ -47,13 +47,12 @@ class ZipEntryNameTest extends Specification {
     }
 
     "preserve safe characters" in {
-      val input = "GAUTIER_GARANX-2025"
+      val input  = "GAUTIER_GARANX-2025"
       val result = ZipEntryName.safeString(input)
 
       val withoutSalt = result.dropRight(4)
       withoutSalt mustEqual "GAUTIER_GARANX-2025"
     }
-
 
   }
 }

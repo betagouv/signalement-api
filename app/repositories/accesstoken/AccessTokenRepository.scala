@@ -202,6 +202,20 @@ class AccessTokenRepository(
         .transactionally
     ).map(_ => ())
 
+  override def giveCompaniesAccess(companies: List[Company], user: User, level: AccessLevel): Future[Unit] =
+    db.run(
+      DBIO
+        .seq(
+          companyAccessRepository.createCompaniesAccessWithoutRun(companies.map(_.id), user.id, level),
+          table
+            .filter(_.companyId inSetBind companies.map(_.id))
+            .filter(_.emailedTo.isEmpty)
+            .map(_.valid)
+            .update(false)
+        )
+        .transactionally
+    ).map(_ => ())
+
   override def invalidateToken(token: AccessToken): Future[Int] =
     db.run(
       table

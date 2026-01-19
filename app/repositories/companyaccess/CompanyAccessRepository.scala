@@ -153,6 +153,23 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
       )
     )
 
+  override def createCompaniesAccessWithoutRun(
+      companyIds: List[UUID],
+      userId: UUID,
+      level: AccessLevel
+  ): FixedSqlAction[Option[Int], NoStream, Effect.Write] =
+    CompanyAccessTable.table.insertOrUpdateAll(
+      companyIds.map(companyId =>
+        UserAccess(
+          companyId = companyId,
+          userId = userId,
+          level = level,
+          updateDate = OffsetDateTime.now(),
+          creationDate = OffsetDateTime.now()
+        )
+      )
+    )
+
   override def createAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
     db.run(createCompanyAccessWithoutRun(companyId, userId, level))
 
