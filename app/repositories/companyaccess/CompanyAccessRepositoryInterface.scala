@@ -54,8 +54,8 @@ trait CompanyAccessRepositoryInterface {
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
 
   def createCompaniesAccessWithoutRun(
-                                       companyIds: List[UUID],
-                                       userId: UUID,
-                                       level: AccessLevel
-                                     ): FixedSqlAction[Option[Int], PostgresProfile.api.NoStream, Effect.Write]
+      companyIds: List[UUID],
+      userId: UUID,
+      level: AccessLevel
+  ): FixedSqlAction[Option[Int], PostgresProfile.api.NoStream, Effect.Write]
 }
