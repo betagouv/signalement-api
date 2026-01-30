@@ -19,6 +19,7 @@ import sttp.client3.Response
 import sttp.client3.UriContext
 import sttp.client3.asString
 import sttp.client3.basicRequest
+import sttp.model.StatusCode.PaymentRequired
 import utils.Logs.RichLogger
 
 import scala.concurrent.ExecutionContext
@@ -47,6 +48,14 @@ class SocialBladeClient(config: SocialBladeClientConfiguration)(implicit ec: Exe
     request.send(backend).map {
       case Response(Right(body), statusCode, _, _, _, _) if statusCode.isSuccess =>
         handleSuccessResponse(body, username, platform)
+
+      case Response(Right(body), PaymentRequired, _, _, _, _) =>
+        logger.warnWithTitle(
+          "socialblade_client_error",
+          s"No credit left for SocialBlade : $body"
+        )
+        // Act as the username does not exist in social blade
+        None
 
       case Response(Right(body), statusCode, _, _, _, _) =>
         logger.errorWithTitle(
