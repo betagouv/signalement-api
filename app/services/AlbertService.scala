@@ -1,5 +1,6 @@
 package services
 
+import cats.implicits.catsSyntaxOptionId
 import config.AlbertConfiguration
 import models.albert.AlbertProblem
 import models.albert.AlbertProblemsResult
@@ -37,7 +38,7 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  private def chatCompletion(chatPrompt: String, model: AlbertModel = AlbertLarge): Future[String] = {
+  private def chatCompletion(chatPrompt: String, model: AlbertModel = AlbertLarge): Future[Option[String]] = {
     val url = uri"https://albert.api.etalab.gouv.fr/v1/chat/completions"
     val modelStr = model match {
       case AlbertLarge => "albert-large"
@@ -77,13 +78,15 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
               .getOrElse(
                 throw AlbertError(s"Albert call failed, incorrect structure of response body $jsValue")
               )
+              .some
           case Left(e) =>
             logger.warnWithTitle("albert_call", s"Albert call failed ${e.getMessage}")
             throw AlbertError("Albert call failed")
         }
       } else if (response.code == TooManyRequests) {
+        // Ignoring error because that's related to our plan being too limited
         logger.warnWithTitle("albert_call", s"Albert call failed too many requests")
-        throw AlbertError("Albert call failed too many requests")
+        None
       } else {
         logger.warnWithTitle("albert_call", s"Albert call failed with code ${response.code}")
         throw AlbertError(s"Albert call failed with code ${response.code}")
@@ -100,15 +103,12 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
              |Ma question :
              |$question""".stripMargin
         chatCompletion(getPrompt(text))
-          .map(Some(_))
           .recover(_ => None)
       case (Some(description), None) =>
         chatCompletion(getPrompt(description))
-          .map(Some(_))
           .recover(_ => None)
       case (None, Some(question)) =>
         chatCompletion(getPrompt(question))
-          .map(Some(_))
           .recover(_ => None)
       case (None, None) => Future.successful(None)
     }
@@ -138,7 +138,6 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
                 case Right(result) =>
                   val chunks = (result \ "data" \\ "content").map(_.as[String]).mkString("\\n\\n\\n")
                   chatCompletion(AlbertPrompts.codeConso(description.value, chunks))
-                    .map(Some(_))
                     .recover(_ => None)
                 case Left(_) =>
                   Future.successful(None)
@@ -152,13 +151,13 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
 
   def labelCompanyActivity(companyId: UUID, selectedCompanyReportsDescriptions: Seq[String]): Future[Option[String]] =
     for {
-      label <- chatCompletion(AlbertPrompts.labelCompanyActivity(selectedCompanyReportsDescriptions))
-    } yield label match {
-      case "Inclassable" => None
-      case s if s.length > 100 =>
+      maybeLabel <- chatCompletion(AlbertPrompts.labelCompanyActivity(selectedCompanyReportsDescriptions))
+    } yield maybeLabel match {
+      case Some("Inclassable") => None
+      case Some(s) if s.length > 100 =>
         logger.info(s"Invalid Albert result, output way too long for company $companyId : ${s.slice(0, 100)}...")
         None
-      case _ => Some(label)
+      case label => label
     }
 
   def findProblems(
@@ -167,11 +166,12 @@ class AlbertService(albertConfiguration: AlbertConfiguration)(implicit ec: Execu
     val prompt = AlbertPrompts.findProblems(selectedCompanyReportsDescriptions, maxPromptLength = 10000)
     for {
       answer <- chatCompletion(prompt, AlbertLarge)
-    } yield Try(Json.parse(answer)) match {
-      case Failure(ex) =>
+    } yield answer.map(a => Try(Json.parse(a))) match {
+      case None => None
+      case Some(Failure(ex)) =>
         logger.warnWithTitle("albert_problems_invalid_json", "Albert returned something that wasn't a valid JSON", ex)
         None
-      case Success(json) =>
+      case Some(Success(json)) =>
         json.validate[Seq[AlbertProblem]] match {
           case JsError(_) =>
             logger.warnWithTitle(

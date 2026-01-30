@@ -13,7 +13,7 @@ local.conf
 metals.sbt
 .java-version
 conf/local.application.conf
-.clever.json
+.cleve r.json
 .vscode/
 *.env
 *.iml
@@ -25,3 +25,4 @@ javaOptions.sbt
 !/zip.http
 !/generatesql.sh
 !/app/orchestrators/socialmedia/SocialBladeClient.scala
+.clever.json
