@@ -293,7 +293,7 @@ class ProbeOrchestrator(
         "Nombre d'uploads de fichiers par des pros",
         runInterval = 6.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(500)),
+        expectedRange = ExpectedRange(min = Some(1), max = Some(700)),
         query = (dateTime, evaluationPeriod) =>
           reportFileRepository
             .count(
@@ -309,9 +309,9 @@ class ProbeOrchestrator(
         121,
         "reportfiles_consumer_probe",
         "Nombre d'uploads de fichiers par des consos",
-        runInterval = 2.hour,
-        evaluationPeriod = 4.hours,
-        expectedRange = ExpectedRange(min = Some(1), max = Some(1500)),
+        runInterval = 2.hours,
+        evaluationPeriod = 2.hours,
+        expectedRange = ExpectedRange(min = Some(0), max = Some(1500)),
         query = (dateTime, evaluationPeriod) =>
           reportFileRepository
             .count(
