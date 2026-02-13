@@ -76,7 +76,10 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
-Universal / javaOptions ++= Seq(
-  "-J-Xms1356m",
-  "-J-Xmx4096m"
-)
+Universal / javaOptions ++= {
+  sys.env.get("ENV") match {
+    case Some("PROD") => Seq("-J-Xms1356m", "-J-Xmx2048m")
+    case Some("DEMO") => Seq("-J-Xms512m", "-J-Xmx1024m")
+    case _            => Seq.empty
+  }
+}
