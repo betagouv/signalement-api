@@ -7,7 +7,7 @@ version := "1.3.13"
 
 scalaVersion := "2.13.16"
 
-lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
+lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala).enablePlugins(JavaAppPackaging)
 
 libraryDependencies ++= Seq(
   ws,
@@ -76,9 +76,7 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
-javaOptions in run ++= {
-  sys.env.get("ENV") match {
-    case Some("PROD") => Seq("-Xms1356m", "-Xmx2048m")
-    case _            => Seq.empty // No custom settings for dev/test
-  }
-}
+Universal / javaOptions ++= Seq(
+  "-J-Xms1356m",
+  "-J-Xmx4096m"
+)
