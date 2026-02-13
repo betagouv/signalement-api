@@ -76,9 +76,11 @@ object ZipEntryName {
       new ReportZipEntryName(reportName(report), isSingleExport)
 
     private def reportName(report: Report): String = {
-      val date     = report.creationDate.format(pattern)
-      val company  = companyName(report)
-      val consumer = s"${report.firstName}_${report.lastName}"
+      val date    = report.creationDate.format(pattern)
+      val company = companyName(report)
+      val consumer =
+        if (report.contactAgreement) { s"${report.firstName}_${report.lastName}" } else s"anonyme_${scala.util.Random.nextInt(1000000)}"
+
       safeString(s"${date}_${company}_${consumer}")
     }
 
