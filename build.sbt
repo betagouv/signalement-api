@@ -75,3 +75,10 @@ javaOptions += s"-Dtextlogs=${sys.env.getOrElse("USE_TEXT_LOGS", "false")}"
 ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
+
+javaOptions in run ++= {
+  sys.env.get("ENV") match {
+    case Some("PROD") => Seq("-Xms1356m", "-Xmx2048m")
+    case _            => Seq.empty // No custom settings for dev/test
+  }
+}
