@@ -79,7 +79,8 @@ object ZipEntryName {
       val date    = report.creationDate.format(pattern)
       val company = companyName(report)
       val consumer =
-        if (report.contactAgreement) { s"${report.firstName}_${report.lastName}" } else s"anonyme_${scala.util.Random.nextInt(1000000)}"
+        if (report.contactAgreement) { s"${report.firstName}_${report.lastName}" }
+        else s"anonyme_${scala.util.Random.nextInt(1000000)}"
 
       safeString(s"${date}_${company}_${consumer}")
     }
