@@ -185,9 +185,9 @@ class ProbeOrchestrator(
         109,
         "courrierrelance_probe",
         "Nombre d'envois de courriers de relance",
-        runInterval = 7.days,
+        runInterval = 20.days,
         evaluationPeriod = 60.days,
-        expectedRange = ExpectedRange(min = Some(50), max = Some(2000)),
+        expectedRange = ExpectedRange(min = Some(10), max = Some(2000)),
         query = (dateTime, evaluationPeriod) => countEvents(POST_FOLLOW_UP_DOC, dateTime, evaluationPeriod)
       ),
       buildProbe(
