@@ -78,7 +78,6 @@ ThisBuild / libraryDependencySchemes ++= Seq(
 
 Universal / javaOptions ++= {
   sys.env.get("ENV") match {
-    case Some("PROD") => Seq("-J-Xms1356m", "-J-Xmx2048m")
-    case _            => Seq.empty
+    case _ => Seq("-J-Xms1356m", "-J-Xmx2048m")
   }
 }
