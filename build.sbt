@@ -83,15 +83,10 @@ Universal / javaOptions ++= {
         "-J-Xms1356m",
         "-J-Xmx2048m",
         "-J-XX:MaxMetaspaceSize=256m",
-        "-J-XX:MaxGCPauseMillis=200",
-
-        // Safe: caps runaway direct memory, root cause fix
         "-J-XX:MaxDirectMemorySize=512m",
-
-        // Safe: disables heap arenas which are unused anyway
+        "-J-XX:MaxGCPauseMillis=200",
         "-J-Dio.netty.allocator.numHeapArenas=0",
-
-        // Safe: GC visibility you currently lack
+        "-J-Dio.netty.allocator.numDirectArenas=2",
         "-J-Xlog:gc*=info:file=/tmp/gc-app.log:time,uptime,level,tags:filecount=5,filesize=20m"
       )
   }
