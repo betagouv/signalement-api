@@ -68,7 +68,6 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .update(Some(output))
     )
 
-
   override def count(filter: ReportFileFilter): Future[Int] = db.run(
     table
       .filterOpt(filter.start) { case (table, start) =>

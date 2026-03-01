@@ -95,10 +95,10 @@ class ReportFileOrchestrator(
 
       _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
       // Fire and forget scan, if it fails for whatever reason (because external service) the file will be rescanned when user will request it
-      _ <- requestScan(reportFile, file)
+      _ <- requestScan(reportFile)
     } yield reportFile
 
-  private def requestScan(reportFile: ReportFile, file: java.io.File): Future[Unit] =
+  private def requestScan(reportFile: ReportFile): Future[Unit] =
     if (antivirusService.isActive) {
       antivirusService.scan(reportFile.id, reportFile.storageFilename).void
 
@@ -187,7 +187,7 @@ class ReportFileOrchestrator(
               .map(_ => (NotScanned, reportFile))
         }
       } else {
-        //Choice is made to not make file available if not scanned
+        // Choice is made to not make file available if not scanned
         (NotScanned, reportFile).pure[Future]
       }
     } else {
