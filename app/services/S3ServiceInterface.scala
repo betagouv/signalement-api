@@ -1,5 +1,4 @@
 package services
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.Done
@@ -14,8 +13,6 @@ trait S3ServiceInterface {
   def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]]
 
   def download(bucketKey: String): Future[ByteString]
-
-  def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult]
 
   def delete(bucketKey: String): Future[Done]
 

@@ -1,7 +1,6 @@
 package utils
 
 import org.apache.pekko.Done
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -18,8 +17,6 @@ class S3ServiceMock(atomicQueue: ConcurrentLinkedQueue[String] = new ConcurrentL
   override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] = ???
 
   override def download(bucketKey: String): Future[ByteString] = ???
-
-  override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] = ???
 
   override def delete(bucketKey: String): Future[Done] = Future.successful {
     atomicQueue.remove(bucketKey)

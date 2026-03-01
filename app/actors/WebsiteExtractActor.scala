@@ -2,8 +2,6 @@ package actors
 
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.FileIO
 import spoiwo.model._
 import spoiwo.model.enums.CellFill
 import spoiwo.model.enums.CellHorizontalAlignment
@@ -15,7 +13,7 @@ import models._
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import services.S3ServiceInterface
+import services.ExtractService
 import utils.DateUtils
 
 import java.nio.file.Path
@@ -42,21 +40,18 @@ object WebsiteExtractActor {
   def create(
       websiteRepository: WebsiteRepositoryInterface,
       asyncFileRepository: AsyncFileRepositoryInterface,
-      s3Service: S3ServiceInterface,
-      signalConsoConfiguration: SignalConsoConfiguration
-  )(implicit mat: Materializer): Behavior[WebsiteExtractCommand] =
+      signalConsoConfiguration: SignalConsoConfiguration,
+      extractService: ExtractService
+  ): Behavior[WebsiteExtractCommand] =
     Behaviors.setup { context =>
       import context.executionContext
 
       Behaviors.receiveMessage[WebsiteExtractCommand] {
         case ExtractRequest(requestedBy, rawFilters) =>
           val result = for {
-            // FIXME: We might want to move the random name generation
-            // in a common place if we want to reuse it for other async files
             asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
             tmpPath   <- genTmpFile(websiteRepository, signalConsoConfiguration, rawFilters)
-            remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
-            _          <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
+            _         <- extractService.buildAndUploadFile(tmpPath, asyncFile.id, requestedBy, "website-extracts")
           } yield ExtractRequestSuccess(asyncFile.id, requestedBy)
 
           context.pipeToSelf(result) {
@@ -157,11 +152,4 @@ object WebsiteExtractActor {
     }
   }
 
-  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
-      ec: ExecutionContext,
-      mat: Materializer
-  ): Future[String] = {
-    val remotePath = s"website-extracts/${remoteName}"
-    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
-  }
 }

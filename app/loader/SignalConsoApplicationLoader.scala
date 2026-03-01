@@ -262,22 +262,19 @@ class SignalConsoComponents(
 
   lazy val s3Service: S3ServiceInterface = new S3Service(applicationConfiguration.amazonBucketName)
 
-  val albertService = new AlbertService(applicationConfiguration.albert)
+  val albertService  = new AlbertService(applicationConfiguration.albert)
+  val extractService = new ExtractService(asyncFileRepository, s3Service)
 
   //  Actor
-  val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
-    AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
-    "antivirus-scan-actor"
-  )
   val reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand] =
     actorSystem.spawn(
-      ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service),
+      ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, extractService),
       "reported-phones-extract-actor"
     )
 
   val websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand] =
     actorSystem.spawn(
-      WebsiteExtractActor.create(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration),
+      WebsiteExtractActor.create(websiteRepository, asyncFileRepository, signalConsoConfiguration, extractService),
       "websites-extract-actor"
     )
 
@@ -448,7 +445,6 @@ class SignalConsoComponents(
     new ReportFileOrchestrator(
       reportFileRepository,
       visibleReportOrchestrator,
-      antivirusScanActor,
       s3Service,
       reportZipExportService,
       antivirusService
@@ -523,9 +519,8 @@ class SignalConsoComponents(
         companyAccessRepository,
         reportOrchestrator,
         eventRepository,
-        asyncFileRepository,
-        s3Service,
-        signalConsoConfiguration
+        signalConsoConfiguration,
+        extractService
       ),
       "reports-extract-actor"
     )
@@ -881,6 +876,7 @@ class SignalConsoComponents(
 
   val reportFileController =
     new ReportFileController(
+      extractService,
       reportFileOrchestrator,
       visibleReportOrchestrator,
       cookieAuthenticator,

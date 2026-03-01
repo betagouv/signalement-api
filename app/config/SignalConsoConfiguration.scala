@@ -22,7 +22,7 @@ case class SignalConsoConfiguration(
     antivirusServiceConfiguration: AntivirusServiceConfiguration
 )
 
-case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean, downloadDirectory: String)
+case class UploadConfiguration(allowedExtensions: Seq[String])
 
 case class TokenConfiguration(
     companyInitDuration: Option[Period],

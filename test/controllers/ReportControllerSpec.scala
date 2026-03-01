@@ -372,7 +372,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               new S3ServiceMock()
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
-            override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
+            override def uploadConfiguration = UploadConfiguration(Seq.empty)
             override def mobileAppConfiguration = MobileAppConfiguration(
               minimumAppVersionIos = "1.0.0",
               minimumAppVersionAndroid = "1.0.0"
