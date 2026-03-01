@@ -24,7 +24,6 @@ class PDFService(
 ) {
 
   val logger: Logger       = Logger(this.getClass)
-  val tmpDirectory: String = signalConsoConfiguration.tmpDirectory
 
   def createPdfSource(
       htmlDocuments: Seq[HtmlFormat.Appendable]

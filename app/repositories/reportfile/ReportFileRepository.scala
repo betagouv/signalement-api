@@ -68,13 +68,6 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .update(Some(output))
     )
 
-  override def removeStorageFileName(fileId: ReportFileId): Future[Int] = db
-    .run(
-      table
-        .filter(_.id === fileId)
-        .map(_.storageFilename)
-        .update("")
-    )
 
   override def count(filter: ReportFileFilter): Future[Int] = db.run(
     table

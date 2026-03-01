@@ -1,6 +1,5 @@
 package orchestrators
 
-import actors.AntivirusScanActor
 import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
@@ -18,7 +17,6 @@ import orchestrators.ReportFileOrchestrator.ScanStatus
 import orchestrators.ReportFileOrchestrator.Scanned
 import orchestrators.reportexport.ReportZipExportService
 import org.apache.pekko.Done
-import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.FileIO
 import org.apache.pekko.stream.scaladsl.Source
@@ -43,7 +41,6 @@ import scala.util.Success
 class ReportFileOrchestrator(
     reportFileRepository: ReportFileRepositoryInterface,
     visibleReportOrchestrator: VisibleReportOrchestrator,
-    antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3ServiceInterface,
     reportZipExportService: ReportZipExportService,
     antivirusService: AntivirusServiceInterface
@@ -106,7 +103,6 @@ class ReportFileOrchestrator(
       antivirusService.scan(reportFile.id, reportFile.storageFilename).void
 
     } else {
-      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
       Future.unit
     }
 
@@ -191,7 +187,7 @@ class ReportFileOrchestrator(
               .map(_ => (NotScanned, reportFile))
         }
       } else {
-        antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
+        //Choice is made to not make file available if not scanned
         (NotScanned, reportFile).pure[Future]
       }
     } else {
