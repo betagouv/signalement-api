@@ -23,8 +23,7 @@ class PDFService(
     actor: ActorRef[HtmlConverterActor.ConvertCommand]
 ) {
 
-  val logger: Logger       = Logger(this.getClass)
-  val tmpDirectory: String = signalConsoConfiguration.tmpDirectory
+  val logger: Logger = Logger(this.getClass)
 
   def createPdfSource(
       htmlDocuments: Seq[HtmlFormat.Appendable]

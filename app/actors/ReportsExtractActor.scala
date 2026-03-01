@@ -1,5 +1,6 @@
 package actors
 
+import cats.implicits.toFunctorOps
 import config.SignalConsoConfiguration
 import io.scalaland.chimney.dsl.TransformationOps
 import models._
@@ -14,15 +15,12 @@ import models.report.review.ResponseConsumerReview
 import orchestrators.ReportOrchestrator
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.FileIO
 import play.api.Logger
-import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import services.ExcelColumnsService
-import services.S3ServiceInterface
+import services.ExtractService
 import spoiwo.model._
 import spoiwo.model.enums.CellStyleInheritance
 import spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -53,30 +51,27 @@ object ReportsExtractActor {
       companyAccessRepository: CompanyAccessRepositoryInterface,
       reportOrchestrator: ReportOrchestrator,
       eventRepository: EventRepositoryInterface,
-      asyncFileRepository: AsyncFileRepositoryInterface,
-      s3Service: S3ServiceInterface,
-      signalConsoConfiguration: SignalConsoConfiguration
-  )(implicit mat: Materializer): Behavior[ReportsExtractCommand] =
+      signalConsoConfiguration: SignalConsoConfiguration,
+      extractService: ExtractService
+  ): Behavior[ReportsExtractCommand] =
     Behaviors.setup { context =>
       import context.executionContext
 
       Behaviors.receiveMessage[ReportsExtractCommand] {
         case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId) =>
-          val result = for {
-            // FIXME: We might want to move the random name generation
-            // in a common place if we want to reuse it for other async files
-            tmpPath <- genTmpFile(
-              reportOrchestrator,
-              signalConsoConfiguration,
-              eventRepository,
-              companyAccessRepository,
-              requestedBy,
-              filters,
-              zone
-            )
-            remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
-            _          <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
-          } yield ExtractRequestSuccess(fileId, requestedBy)
+          val result = genTmpFile(
+            reportOrchestrator,
+            signalConsoConfiguration,
+            eventRepository,
+            companyAccessRepository,
+            requestedBy,
+            filters,
+            zone
+          ).flatMap(
+            extractService
+              .buildAndUploadFile(_, fileId, requestedBy, "extracts")
+              .as(ExtractRequestSuccess(fileId, requestedBy))
+          )
 
           context.pipeToSelf(result) {
             case Success(success) => success
@@ -224,13 +219,5 @@ object ReportsExtractActor {
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath
     }
-  }
-
-  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
-      ec: ExecutionContext,
-      mat: Materializer
-  ): Future[String] = {
-    val remotePath = s"extracts/$remoteName"
-    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }

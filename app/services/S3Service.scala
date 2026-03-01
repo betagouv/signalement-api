@@ -1,14 +1,11 @@
 package services
 
 import org.apache.pekko.Done
-import org.apache.pekko.stream.IOResult
 import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.FileIO
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import java.nio.file.Path
 import java.time.Duration
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
@@ -39,9 +36,6 @@ class S3Service(bucketName: String)(implicit
 
   override def download(bucketKey: String): Future[ByteString] =
     downloadFromBucket(bucketKey).runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b))
-
-  override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] =
-    downloadFromBucket(bucketKey).runWith(FileIO.toPath(Path.of(filePath)))
 
   def downloadFromBucket(bucketKey: String): Source[ByteString, Future[ObjectMetadata]] =
     pekkoS3Client

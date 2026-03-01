@@ -23,6 +23,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
+import services.ExtractService
 import utils.DateUtils.frenchFileFormatDate
 import utils.Logs.RichLogger
 
@@ -33,6 +34,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportFileController(
+    extractService: ExtractService,
     reportFileOrchestrator: ReportFileOrchestrator,
     visibleReportOrchestrator: VisibleReportOrchestrator,
     authenticator: Authenticator[User],
@@ -139,6 +141,7 @@ class ReportFileController(
             dataPart,
             reportFileId.map(ReportFileId.apply)
           )
+        _ <- extractService.deleteTmpFile(tmpFile.toPath)
       } yield Ok(Json.toJson(ReportFileApi.buildForFileOwner(reportFile)))
     }
 

@@ -20,8 +20,6 @@ trait ReportFileRepositoryInterface extends TypedCRUDRepositoryInterface[ReportF
 
   def setAvOutput(fileId: ReportFileId, output: String): Future[Int]
 
-  def removeStorageFileName(fileId: ReportFileId): Future[Int]
-
   def count(filter: ReportFileFilter): Future[Int]
 
   def streamOrphanReportFiles: Source[ReportFile, NotUsed]
