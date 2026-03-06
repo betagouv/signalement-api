@@ -239,7 +239,7 @@
         @Messages("ReportAckEmail.email", report.email)
         <br/>
         <br/>
-        @if(report.visibleToPro) {
+        @if(report.visibleToPro && report.companyId.isDefined) {
             @if(report.contactAgreement) {
                 <b>@Messages("ReportAckEmail.yes")</b>
             } else {
