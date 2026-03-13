@@ -260,7 +260,7 @@ class ProbeOrchestrator(
         "Nombre de signalements fermés en 'non consulté'",
         runInterval = 12.hours,
         evaluationPeriod = 1.day,
-        expectedRange = ExpectedRange(min = Some(10), max = Some(300)),
+        expectedRange = ExpectedRange(min = Some(10), max = Some(350)),
         query = (dateTime, evaluationPeriod) => countEvents(REPORT_CLOSED_BY_NO_READING, dateTime, evaluationPeriod)
       ),
       buildProbe(
