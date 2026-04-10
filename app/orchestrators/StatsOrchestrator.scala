@@ -62,7 +62,7 @@ class StatsOrchestrator(
 
   } yield {
     val header = "Catégorie,Sous-catégorie,Nombre,Réclamations,Id"
-    val lines  = res.map { case (a, b, c, d,e) => s"$a,$b,$c,$d,$e" }.mkString("\n")
+    val lines  = res.map { case (a, b, c, d, e) => s"$a,$b,$c,$d,$e" }.mkString("\n")
     s"$header\n$lines"
   }
 
