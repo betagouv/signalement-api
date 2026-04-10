@@ -61,8 +61,8 @@ class StatsOrchestrator(
           .map(StatsOrchestrator.buildCSV(minimizedAnomalies.en, _))
 
   } yield {
-    val header = "Catégorie,Sous-catégorie,Nombre,Réclamations"
-    val lines  = res.map { case (a, b, c, d) => s"$a,$b,$c,$d" }.mkString("\n")
+    val header = "Catégorie,Sous-catégorie,Nombre,Réclamations,Id"
+    val lines  = res.map { case (a, b, c, d, e) => s"$a,$b,$c,$d,$e" }.mkString("\n")
     s"$header\n$lines"
   }
 
@@ -207,7 +207,7 @@ object StatsOrchestrator {
   private[orchestrators] def buildCSV(
       arbo: List[ArborescenceNode],
       results: Seq[(String, List[String], Int, Int)]
-  ): List[(String, String, Int, Int)] = {
+  ): List[(String, String, Int, Int, String)] = {
     val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
 
     arbo.map { arborescenceNode =>
@@ -218,7 +218,8 @@ object StatsOrchestrator {
         s"\"${arborescenceNode.path.head._1.label.replace("\"", "\"\"")}\"",
         arborescenceNode.path.tail.map(_._1.label).map(_.replace("\"", "\"\"")).mkString("\"", ";", "\""),
         count,
-        reclamations
+        reclamations,
+        arborescenceNode.path.lastOption.map(_._2.id).getOrElse("")
       )
     }
   }
