@@ -36,7 +36,7 @@ class WebsiteApiService(websiteApiConfiguration: WebsiteApiConfiguration)(implic
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
   def fetchMinimizedAnomalies(): Future[Option[MinimizedAnomalies]] = {
-    val url = uri"${websiteApiConfiguration.url}/v1/categories/minimized"
+    val url = uri"${websiteApiConfiguration.url}/categories/minimized"
     val request = basicRequest
       .get(url)
       .response(asJson[MinimizedAnomalies])
