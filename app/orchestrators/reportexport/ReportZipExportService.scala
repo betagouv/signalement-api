@@ -38,7 +38,7 @@ class ReportZipExportService(
   def reportsSummaryZip(flattenReports: Seq[ReportWithData], user: User) = {
 
     val reportSources =
-      flattenReports.map(buildReportPdfSummarySource(_, user, isSingleExport = flattenReports.size > 1))
+      flattenReports.map(buildReportPdfSummarySource(_, user, isMultipleExport = flattenReports.size > 1))
     buildZip(reportSources, pdfService.createPdfSource, s3Service.downloadFromBucket, s3Service.exists)
 
   }
@@ -49,7 +49,7 @@ class ReportZipExportService(
   ): Source[ByteString, Future[Done]] = {
     val zipEntries = reports.flatMap { reportWithData =>
       val reportWithName: (ReportZipEntryName, ZipElement) =
-        buildReportPdfSummarySource(reportWithData, user, isSingleExport = reports.size > 1)
+        buildReportPdfSummarySource(reportWithData, user, isMultipleExport = reports.size > 1)
       val attachments = buildReportAttachmentsSources(
         reportWithData.report.creationDate,
         reportWithData.files,
@@ -79,12 +79,12 @@ class ReportZipExportService(
   }
 
   private def buildReportPdfSummarySource(
-      reportWithData: ReportWithData,
-      user: User,
-      isSingleExport: Boolean
+                                           reportWithData: ReportWithData,
+                                           user: User,
+                                           isMultipleExport: Boolean
   ): (ReportZipEntryName, ZipReport) =
     (
-      ReportZipEntryName(reportWithData.report, isSingleExport),
+      ReportZipEntryName(reportWithData.report, isMultipleExport),
       ZipReport(htmlFromTemplateGenerator.reportPdf(reportWithData, user))
     )
 
