@@ -79,9 +79,9 @@ class ReportZipExportService(
   }
 
   private def buildReportPdfSummarySource(
-                                           reportWithData: ReportWithData,
-                                           user: User,
-                                           isMultipleExport: Boolean
+      reportWithData: ReportWithData,
+      user: User,
+      isMultipleExport: Boolean
   ): (ReportZipEntryName, ZipReport) =
     (
       ReportZipEntryName(reportWithData.report, isMultipleExport),
