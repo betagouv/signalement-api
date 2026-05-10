@@ -57,14 +57,17 @@ object ZipEntryName {
   }
 
   case class ReportZipEntryName(baseFileName: String, isSingleExport: Boolean) extends ZipEntryName {
+
+    private val safeBaseFileName = safeString(baseFileName)
+
     val value =
       if (isSingleExport) {
-        s"${safeString(baseFileName)}/${safeString(baseFileName)}.pdf"
+        s"${safeBaseFileName}/${safeBaseFileName}.pdf"
       } else {
-        s"${safeString(baseFileName)}.pdf"
+        s"${safeBaseFileName}.pdf"
       }
 
-    val directory = if (isSingleExport) s"${safeString(baseFileName)}/" else ""
+    val directory = if (isSingleExport) s"${safeBaseFileName}/" else ""
   }
 
   object ReportZipEntryName {
