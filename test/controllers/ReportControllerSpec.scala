@@ -373,10 +373,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None, Period.ZERO)
             override def uploadConfiguration = UploadConfiguration(Seq.empty)
-            override def mobileAppConfiguration = MobileAppConfiguration(
-              minimumAppVersionIos = "1.0.0",
-              minimumAppVersionAndroid = "1.0.0"
-            )
 
             override def signalConsoConfiguration: SignalConsoConfiguration =
               SignalConsoConfiguration(
@@ -386,7 +382,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 new URI("http://test.com"),
                 tokenConfiguration,
                 uploadConfiguration,
-                mobileAppConfiguration,
                 reportFileMaxSize = 5,
                 reportMaxNumberOfAttachments = 20,
                 enableRateLimit = false,

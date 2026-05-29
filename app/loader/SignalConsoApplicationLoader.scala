@@ -190,8 +190,6 @@ class SignalConsoComponents(
   def tokenConfiguration                                 = signalConsoConfiguration.token
   def uploadConfiguration: UploadConfiguration           = signalConsoConfiguration.upload
 
-  def mobileAppConfiguration = signalConsoConfiguration.mobileApp
-
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     current = new BCryptPasswordHasher(),
     deprecated = Seq.empty
@@ -850,8 +848,7 @@ class SignalConsoComponents(
     controllerComponents
   )
 
-  val constantController  = new ConstantController(cookieAuthenticator, controllerComponents)
-  val mobileAppController = new MobileAppController(signalConsoConfiguration, cookieAuthenticator, controllerComponents)
+  val constantController = new ConstantController(cookieAuthenticator, controllerComponents)
   val dataEconomieController =
     new DataEconomieController(dataEconomieOrchestrator, apiKeyAuthenticator, controllerComponents)
   val emailValidationController =
@@ -1021,7 +1018,6 @@ class SignalConsoComponents(
       subscriptionController,
       siretExtractorController,
       reportedPhoneController,
-      mobileAppController,
       reportToExternalController,
       dataEconomieController
     )
