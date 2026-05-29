@@ -342,12 +342,6 @@ GET           /api/engagements                                          controll
 POST          /api/engagements/:id/check                                controllers.EngagementController.check(id: EngagementId)
 POST          /api/engagements/:id/uncheck                              controllers.EngagementController.uncheck(id: EngagementId)
 
-#####################
-### MOBILE APP ######
-#####################
-
-GET           /api/mobileapp/requirements                               controllers.MobileAppController.getRequirements()
-
 ########################################
 ########## FOR EXTERNAL SIs ############
 ########################################
