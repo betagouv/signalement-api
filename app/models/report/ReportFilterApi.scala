@@ -26,7 +26,6 @@ case class ReportFilterApi(
     subcategories: Seq[String] = Seq.empty,
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
-    employeeConsumer: Option[Boolean] = None,
     contactAgreement: Option[Boolean] = None,
     hasForeignCountry: Option[Boolean] = None,
     hasWebsite: Option[Boolean] = None,

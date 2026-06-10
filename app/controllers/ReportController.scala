@@ -3,6 +3,7 @@ package controllers
 import authentication.Authenticator
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import controllers.error.AppError.EmployeeConsumerReportCreationForbidden
 import controllers.error.AppError.ReportNotFound
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
@@ -77,6 +78,7 @@ class ReportController(
   def createReport: Action[JsValue] = Act.public.standardLimit.async(parse.json) { implicit request =>
     implicit val userRole: Option[UserRole] = None
     for {
+      _           <- validateReportCreationBody(request.body)
       draftReport <- request.parseBody[ReportDraft]()
       consumerIp = ConsumerIp(request.remoteAddress)
       createdReport <- reportOrchestrator.validateAndCreateReport(draftReport, consumerIp).recover {
@@ -87,6 +89,11 @@ class ReportController(
       }
     } yield Ok(Json.toJson(createdReport))
   }
+
+  private def validateReportCreationBody(body: JsValue): Future[Unit] =
+    if ((body \ "employeeConsumer").asOpt[Boolean].contains(true))
+      Future.failed(EmployeeConsumerReportCreationForbidden)
+    else Future.unit
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =
     Act.secured.admins.async(parse.json) { implicit request =>
