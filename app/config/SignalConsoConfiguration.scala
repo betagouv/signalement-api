@@ -11,7 +11,6 @@ case class SignalConsoConfiguration(
     dashboardURL: URI,
     token: TokenConfiguration,
     upload: UploadConfiguration,
-    mobileApp: MobileAppConfiguration,
     reportsExportLimitMax: Int,
     reportsExportPdfLimitMax: Int,
     reportsListLimitMax: Int,
@@ -32,11 +31,6 @@ case class TokenConfiguration(
     dgccrfDelayBeforeRevalidation: Period,
     dgccrfRevalidationTokenDuration: Option[Period],
     updateEmailAddressDuration: Period
-)
-
-case class MobileAppConfiguration(
-    minimumAppVersionIos: String,
-    minimumAppVersionAndroid: String
 )
 
 case class AntivirusServiceConfiguration(
