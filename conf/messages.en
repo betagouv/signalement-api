@@ -151,7 +151,7 @@ ReportAckEmail.reportSentToFraudInvestigators=If, after multiple reminders, the 
 ReportAckEmail.readOrNot=In any event, the Fraud Control investigation team will also be made aware of your report.
 ReportAckEmail.knowYourRightsForAirCompensation=If you would like to learn more about your right to compensation following a flight cancellation, delay, denied boarding or a downgrade, visit the <a href="{0}">French Civil Aviation Authority</a> website.
 ReportAckEmail.currentProductRecallCampaigns=Ongoing withdrawals/recalls of food and drink products:
-ReportAckEmail.doNotConsumeProductsAndTakePhotos=People in possession of these products are asked not to consume them, to dispose of them immediately, and to follow the instructions provided on rappel.conso.gouv.fr.
+ReportAckEmail.doNotConsumeProductsAndTakePhotos=People in possession of these products are asked not to consume them and to follow the instructions provided on rappel.conso.gouv.fr.
 ReportAckEmail.takePhotosBeforeDisposal=(take photos of the packaging containing product details beforehand: expiration date, lot number, barcode, etc.).
 ReportAckEmail.seekMedicalAdviceIfSymptoms=Individuals who have consumed these products and experience symptoms are advised to consult their general practitioner or go to the emergency room. If there are no symptoms, there is no need to be concerned.
 ReportAckEmail.goodbyeSignalConso=See you soon on SignalConso!
