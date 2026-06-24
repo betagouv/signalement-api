@@ -54,7 +54,6 @@ object EmailsExamplesUtils {
     lastName = "Doe",
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
-    employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
     expirationDate = OffsetDateTime.now().plusDays(50),
     influencer = None,

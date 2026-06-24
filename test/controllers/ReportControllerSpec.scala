@@ -1,6 +1,7 @@
 package controllers
 
 import config._
+import controllers.error.AppError.EmployeeConsumerReportCreationForbidden
 import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
 import loader.SignalConsoComponents
@@ -85,6 +86,27 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Helpers.status(result) must beEqualTo(BAD_REQUEST)
         Helpers.contentAsJson(result) must beEqualTo(
           Json.toJson(ErrorPayload(InvalidEmail(draftReport.get.email.value)))
+        )
+      }
+    }
+
+    "return a BadRequest when employeeConsumer is provided" in new Context {
+      val testEnv = application()
+      import testEnv._
+
+      new WithApplication(app) {
+
+        val jsonBody = Json
+          .toJson(Fixtures.genDraftReport.sample.get)
+          .as[play.api.libs.json.JsObject] + ("employeeConsumer" -> Json.toJson(true))
+
+        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
+
+        val result = route(app, request).get
+
+        Helpers.status(result) must beEqualTo(BAD_REQUEST)
+        Helpers.contentAsJson(result) must beEqualTo(
+          Json.toJson(ErrorPayload(EmployeeConsumerReportCreationForbidden))
         )
       }
     }

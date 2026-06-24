@@ -42,7 +42,6 @@ case class Report(
     consumerPhone: Option[String] = None,
     consumerReferenceNumber: Option[String] = None,
     contactAgreement: Boolean,
-    employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
     status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
@@ -83,13 +82,11 @@ case class Report(
 object Report {
 
   def initialStatus(
-      employeeConsumer: Boolean,
       visibleToPro: Boolean,
       companySiret: Option[SIRET],
       companyCountry: Option[Country]
   ): ReportStatus =
-    if (employeeConsumer) ReportStatus.InformateurInterne
-    else if (!visibleToPro) ReportStatus.NA
+    if (!visibleToPro) ReportStatus.NA
     else if (companySiret.isEmpty) ReportStatus.NA
     else if (companySiret.nonEmpty && companyCountry.isDefined)
       ReportStatus.NA // Company has a french SIRET but a foreign address, we can't send any letter to it
@@ -142,7 +139,6 @@ object Report {
           "ccrfCode"         -> report.ccrfCode,
           "phone"            -> report.phone,
           "consumerPhone"    -> report.consumerPhone,
-          "employeeConsumer" -> report.employeeConsumer,
           "reponseconsoCode" -> report.reponseconsoCode,
           "gender"           -> report.gender,
           "visibleToPro"     -> report.visibleToPro

@@ -805,9 +805,6 @@ object ReportRepository {
       // Grosse optimisation. Force Postgres à utiliser l'index de full text search.
       // Seul cas où c'est beaucoup plus rapide que d'utiliser l'index sur la creation_date
       .optimiseFullTextSearch(filter.details.isDefined)
-      .filterOpt(filter.employeeConsumer) { case ((report, _, _, _, _, _), employeeConsumer) =>
-        report.employeeConsumer === employeeConsumer
-      }
       .filterOpt(filter.contactAgreement) { case ((report, _, _, _, _, _), contactAgreement) =>
         report.contactAgreement === contactAgreement
       }

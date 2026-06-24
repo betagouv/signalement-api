@@ -13,6 +13,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.TraversableMatchers
 import org.specs2.mutable
 import org.specs2.specification.BeforeAfterAll
+import repositories.PostgresProfile.api._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
@@ -29,6 +30,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     with BeforeAfterAll {
 
   val (app, components) = TestApp.buildApp()
+  val db                = components.dbConfig.db
 
   val userAdmin  = Fixtures.genAdminUser.sample.get
   val userDgccrf = Fixtures.genDgccrfUser.sample.get
@@ -161,6 +163,18 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
   }
 
   "ReportRepository" should {
+    "create" should {
+      "insert reports without providing historical employee_consumer column" in {
+        for {
+          employeeConsumer <- db.run(
+            sql"""select employee_consumer from reports where id = ${report.id.toString}::uuid"""
+              .as[Option[Boolean]]
+              .head
+          )
+        } yield employeeConsumer must beNone
+      }
+    }
+
     "getReports" should {
       "not fetch anonymous users" in {
         for {

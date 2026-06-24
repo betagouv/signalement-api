@@ -43,7 +43,6 @@ case class ReportDraft(
     consumerPhone: Option[String],
     consumerReferenceNumber: Option[String],
     contactAgreement: Boolean,
-    employeeConsumer: Boolean,
     forwardToReponseConso: Option[Boolean] = Some(false),
     fileIds: List[ReportFileId],
     vendor: Option[String] = None,
@@ -90,17 +89,14 @@ case class ReportDraft(
       consumerPhone = consumerPhone,
       consumerReferenceNumber = consumerReferenceNumber,
       contactAgreement = contactAgreement,
-      employeeConsumer = employeeConsumer,
       status = Report.initialStatus(
-        employeeConsumer = employeeConsumer,
         visibleToPro = shouldBeVisibleToPro(),
         companySiret = companySiret.orElse(maybeCompany.map(_.siret)),
         companyCountry = companyAddress.orElse(maybeCompany.map(_.address)).flatMap(_.country)
       ),
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags.distinct
-        .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
+      tags = tags.distinct,
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil),
       expirationDate = expirationDate,
@@ -113,7 +109,7 @@ case class ReportDraft(
     )
 
   private def shouldBeVisibleToPro(): Boolean =
-    !employeeConsumer && tags
+    tags
       .intersect(ReportTagHiddenToProfessionnel)
       .isEmpty
 }

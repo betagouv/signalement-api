@@ -267,6 +267,13 @@ object AppError {
 
   }
 
+  final case object EmployeeConsumerReportCreationForbidden extends BadRequestError {
+    override val scErrorCode: String = "SC-0021-01"
+    override val title: String       = "Employee consumer report creation is forbidden"
+    override val details: String = "La création d'un signalement en tant qu'informateur interne n'est plus autorisée."
+    override val titleForLogs: String = "employee_consumer_report_creation_forbidden"
+  }
+
   final case class InvalidReportTagBody(name: String) extends MalformedApiBadRequestError {
     override val scErrorCode: String  = "SC-0022"
     override val title: String        = s"Unknown report tag $name"

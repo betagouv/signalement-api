@@ -69,42 +69,6 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
       )}
     """
 }
-object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
-
-  val address = Address(postalCode = Some(Departments.ALL(0)))
-  val company = Fixtures.genCompany.sample.get.copy(address = address)
-
-  implicit val messagesProvider: MessagesProvider =
-    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
-
-  override def is =
-    s2"""
-         Given a draft report which concerns
-          an experimentation department                                   ${step {
-        draftReport = draftReport.copy(
-          companyName = Some(company.name),
-          companyBrand = company.brand,
-          companyCommercialName = company.commercialName,
-          companyEstablishmentCommercialName = company.establishmentCommercialName,
-          companySiret = Some(company.siret),
-          companyAddress = Some(address)
-        )
-      }}
-          an employee consumer                                            ${step {
-        draftReport = draftReport.copy(employeeConsumer = true)
-      }}
-         When create the report                                           ${step(createReport())}
-         Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-        ReportStatus.InformateurInterne
-      )}
-         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
-        draftReport.email,
-        "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, None, Some(company), Nil).toString
-      )}
-    """
-}
-
 object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
 
   implicit val messagesProvider: MessagesProvider =

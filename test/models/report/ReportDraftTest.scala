@@ -29,7 +29,6 @@ class ReportDraftTest extends Specification {
       val aDraftReport = Fixtures.genDraftReport.sample.get.copy(
         companyAddress = None,
         forwardToReponseConso = None,
-        employeeConsumer = true,
         tags = List(ReportTag.LitigeContractuel),
         reponseconsoCode = None,
         ccrfCode = None,
@@ -74,14 +73,14 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.ccrfCode, Nil)
         .withFieldComputed(_.websiteURL, r => WebsiteURL(r.websiteURL, r.websiteURL.flatMap(_.getHost)))
         .withFieldConst(_.reponseconsoCode, Nil)
-        .withFieldConst(_.tags, Nil)
+        .withFieldConst(_.tags, List(ReportTag.LitigeContractuel))
         .withFieldConst(_.companyAddress, Address())
         .withFieldConst(_.companyId, company.map(_.id))
         .withFieldConst(_.id, reportId)
         .withFieldConst(_.creationDate, creationDate)
         .withFieldConst(_.expirationDate, expirationDate)
-        .withFieldConst(_.visibleToPro, false)
-        .withFieldConst(_.status, ReportStatus.InformateurInterne)
+        .withFieldConst(_.visibleToPro, true)
+        .withFieldConst(_.status, ReportStatus.TraitementEnCours)
         .withFieldConst(_.influencer, None)
         .withFieldConst(_.reopenDate, None)
         .transform
@@ -155,7 +154,6 @@ class ReportDraftTest extends Specification {
 
       val typicalDraftReport = Fixtures.genDraftReport.sample.get.copy(
         tags = List(Hygiene, AbsenceDeMediateur, Ehpad),
-        employeeConsumer = false,
         companySiret = Some(SIRET("11111111111111"))
       )
 
@@ -179,15 +177,6 @@ class ReportDraftTest extends Specification {
       s"initialStatus should be NA when company has not been identified" in {
         val report = generateReportFromDraft(typicalDraftReport.copy(companySiret = None))
         report.status shouldEqual NA
-      }
-
-      s"initialStatus should be InformateurInterne if the draft had employeeCustomer set to true" in {
-        val report = generateReportFromDraft(
-          typicalDraftReport.copy(
-            employeeConsumer = true
-          )
-        )
-        report.status shouldEqual ReportStatus.InformateurInterne
       }
 
       s"initialStatus should be NA when there is tag ReponseConso" in {
