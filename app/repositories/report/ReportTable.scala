@@ -54,7 +54,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def consumerPhone                      = column[Option[String]]("consumer_phone")
   def consumerReferenceNumber            = column[Option[String]]("consumer_reference_number")
   def contactAgreement                   = column[Boolean]("contact_agreement")
-  def employeeConsumer                   = column[Boolean]("employee_consumer")
   def forwardToReponseConso              = column[Boolean]("forward_to_reponseconso")
   def status                             = column[String]("status")
   def vendor                             = column[Option[String]]("vendor")
@@ -114,7 +113,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         consumerPhone ::
         consumerReferenceNumber ::
         contactAgreement ::
-        employeeConsumer ::
         forwardToReponseConso ::
         status ::
         vendor ::
@@ -162,7 +160,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         consumerPhone = consumerPhone,
         consumerReferenceNumber = consumerReferenceNumber,
         contactAgreement = contactAgreement,
-        employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
         status = ReportStatus.withName(status),
         vendor = vendor,
@@ -214,7 +211,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.consumerPhone ::
       r.consumerReferenceNumber ::
       r.contactAgreement ::
-      r.employeeConsumer ::
       r.forwardToReponseConso ::
       r.status.entryName ::
       r.vendor ::
@@ -267,7 +263,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[String] ::
       Boolean ::
       Boolean ::
-      Boolean ::
       String ::
       Option[String] ::
       List[ReportTag] ::
@@ -317,7 +312,6 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       consumerPhone ::
       consumerReferenceNumber ::
       contactAgreement ::
-      employeeConsumer ::
       forwardToReponseConso ::
       status ::
       vendor ::

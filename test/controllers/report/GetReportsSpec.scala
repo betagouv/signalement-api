@@ -129,32 +129,32 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(standaloneCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
+    .copy(status = ReportStatus.TraitementEnCours)
   val reportToProcessOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
+    .copy(status = ReportStatus.TraitementEnCours)
   val reportToProcessOnSubsidiary = Fixtures
     .genReportForCompany(subsidiaryCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
+    .copy(status = ReportStatus.TraitementEnCours)
   val reportFromEmployeeOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = true, status = ReportStatus.InformateurInterne, visibleToPro = false)
+    .copy(status = ReportStatus.InformateurInterne, visibleToPro = false)
   val reportNAOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = false)
+    .copy(status = ReportStatus.NA, visibleToPro = false)
   val reportNAOnHeadOfficeButVisible = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus.NA, visibleToPro = true)
+    .copy(status = ReportStatus.NA, visibleToPro = true)
   val allReports = Seq(
     reportToStandaloneCompany,
     reportToProcessOnHeadOffice,

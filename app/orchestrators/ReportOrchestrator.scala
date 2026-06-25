@@ -549,7 +549,6 @@ class ReportOrchestrator(
                 companyAddress = Address(country = Some(country)),
                 companySiret = None,
                 status = Report.initialStatus(
-                  employeeConsumer = report.employeeConsumer,
                   visibleToPro = report.visibleToPro,
                   companySiret = None,
                   companyCountry = Some(country)
@@ -625,7 +624,6 @@ class ReportOrchestrator(
     val updateDateTime = OffsetDateTime.now()
 
     val newReportStatus = Report.initialStatus(
-      employeeConsumer = existingReport.employeeConsumer,
       visibleToPro = existingReport.visibleToPro,
       companySiret = Some(reportCompany.siret),
       companyCountry = reportCompany.address.country
@@ -1167,7 +1165,6 @@ class ReportOrchestrator(
       consumerPhone = report.consumerPhone,
       consumerReferenceNumber = report.consumerReferenceNumber,
       contactAgreement = report.contactAgreement,
-      employeeConsumer = report.employeeConsumer,
       forwardToReponseConso = Some(report.forwardToReponseConso),
       fileIds = newFiles.flatten.map(_.id),
       vendor = report.vendor,

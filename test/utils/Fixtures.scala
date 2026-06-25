@@ -191,7 +191,6 @@ object Fixtures {
     consumerPhone = None,
     consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
-    employeeConsumer = false,
     fileIds = List.empty
   )
 
@@ -262,7 +261,6 @@ object Fixtures {
     consumerPhone = None,
     consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
-    employeeConsumer = false,
     status = status,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     visibleToPro = true,

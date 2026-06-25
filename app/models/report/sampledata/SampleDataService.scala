@@ -306,7 +306,6 @@ class SampleDataService(
         contactAgreement = conso.contactAgreement,
         consumerPhone = conso.phone,
         consumerReferenceNumber = None,
-        employeeConsumer = r.employeeConsumer,
         forwardToReponseConso = Some(r.tags.contains(ReportTag.ReponseConso)),
         fileIds = List.empty,
         vendor = None,

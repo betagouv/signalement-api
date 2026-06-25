@@ -97,7 +97,6 @@ class ReportFilterTest extends Specification {
         "companyIds"        -> expectedReportFilter.companyIds.map(_.toString),
         "status"            -> expectedReportFilter.status.map(_.entryName),
         "details"           -> expectedReportFilter.details.toSeq,
-        "employeeConsumer"  -> expectedReportFilter.employeeConsumer.toSeq.map(_.toString),
         "hasCompany"        -> expectedReportFilter.hasCompany.toSeq.map(_.toString),
         "withTags"          -> expectedReportFilter.withTags.toSeq.map(_.entryName),
         "withoutTags"       -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
