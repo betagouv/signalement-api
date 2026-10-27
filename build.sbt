@@ -3,11 +3,28 @@ import org.typelevel.scalacoptions.ScalacOptions
 name         := "signalement-api"
 organization := "fr.gouv.beta"
 
-version := "1.3.13"
+version := "1.3.14"
 
 scalaVersion := "2.13.16"
 
-lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala).enablePlugins(JavaAppPackaging)
+lazy val `signalement-api` =
+  (project in file(".")).enablePlugins(PlayScala).enablePlugins(JavaAppPackaging).enablePlugins(BuildInfoPlugin)
+
+// Commit hash: COMMIT_ID is provided by Clever Cloud at build time, fallback to local git
+lazy val gitCommit: String =
+  sys.env
+    .get("COMMIT_ID")
+    .orElse(scala.util.Try(scala.sys.process.Process("git rev-parse HEAD").!!.trim).toOption)
+    .filter(_.nonEmpty)
+    .getOrElse("unknown")
+
+buildInfoKeys := Seq[BuildInfoKey](
+  name,
+  version,
+  BuildInfoKey.action("gitCommit")(gitCommit),
+  BuildInfoKey.action("buildTime")(java.time.Instant.now().toString)
+)
+buildInfoPackage := "buildinfo"
 
 libraryDependencies ++= Seq(
   ws,
