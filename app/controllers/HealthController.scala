@@ -1,6 +1,7 @@
 package controllers
 
 import authentication.Authenticator
+import buildinfo.BuildInfo
 import models.User
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -15,7 +16,14 @@ class HealthController(
 
   def health =
     Act.public.standardLimit { _ =>
-      Ok(Json.obj("name" -> "signalconso-api"))
+      Ok(
+        Json.obj(
+          "name"      -> "signalconso-api",
+          "version"   -> BuildInfo.version,
+          "gitCommit" -> BuildInfo.gitCommit,
+          "buildTime" -> BuildInfo.buildTime
+        )
+      )
     }
 
 }
